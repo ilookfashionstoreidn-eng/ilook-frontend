@@ -189,7 +189,7 @@ const handleSearchOrder = async () => {
   return (
     <div>
     <div className="penjahit-container">
-      <h1>Packing Scan</h1>
+      <h1>Packingan Scan</h1>
     </div>
 
     <div className="tracking-card">
