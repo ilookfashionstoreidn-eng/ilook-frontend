@@ -1,0 +1,55 @@
+.card-list {
+    display: flex;
+    justify-content: space-between;
+    margin-right:450px;
+    align-items: flex-start;
+    margin-top: 50px;
+  }
+  
+  .card {
+    position: relative; /* Elemen referensi untuk posisi absolut */
+    background-color: #e5e7e7;
+    padding: 10px;
+    margin-left: 50px;
+    width: 20%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    min-height: 60px;
+
+}
+
+
+.add-icon {
+  position: absolute;
+ 
+  left: 10px;
+  background-color: #8d8f91;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.child-card {
+  background-color: #ffffff;
+  margin-top: 10px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: "400";
+  display: block;
+}
+
+  
+  .card h3 {
+    margin-top: 0;
+    font-size: 12px;
+    font-weight: "500";
+  }
+  

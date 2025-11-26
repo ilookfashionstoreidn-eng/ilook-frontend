@@ -1,0 +1,183 @@
+/* Aksesoris Styles (Renamed to avoid conflicts) */
+
+.aksesoris-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border-bottom: 1px solid #e9ecef;
+  margin-top: 10px;
+}
+
+.aksesoris-container h1 {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.aksesoris-notif-icon {
+  font-size: 24px;
+  cursor: pointer;
+  color: #b5b7b8;
+}
+
+.aksesoris-readers {
+  font-size: 12px;
+  color: gray;
+  margin-top: 5px;
+}
+
+/* Filter Header */
+.aksesoris-filter-header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 15px;
+  margin-top: 10px;
+  padding-left: 10px;
+  gap: 6px;
+}
+
+.aksesoris-search-bar {
+  display: flex;
+  width: 100%;
+  max-width: 210px;
+  min-width: 102px;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.aksesoris-search-bar input {
+  width: 100%;
+  max-width: 200px;
+  min-width: 110px;
+  height: 35px;
+  padding: 2px 5px;
+  font-size: 13px;
+  border: 1px solid #e9e9eb;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.aksesoris-search-bar input:focus {
+  border-color: #356191;
+}
+
+/* Button Tambah */
+.aksesoris-filter-header button {
+  width: 100%;
+  max-width: 80px;
+  min-width: 60px;
+  height: 35px;
+  padding: 2px;
+  font-size: 13px;
+  font-weight: 510;
+  text-align: center;
+  background-color: rgb(141, 206, 226);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+/* Table Wrapper */
+.aksesoris-table-wrapper {
+  max-height: 700px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  background: white;
+}
+
+/* Table Container */
+.aksesoris-table-container {
+  padding: 7px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  margin-top: 4px;
+  width: 100%;
+  min-width: 200px;
+}
+
+/* Table Styling */
+.aksesoris-table {
+  margin: 0 auto;
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse !important;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  
+}
+
+.aksesoris-table thead {
+  z-index: 9;
+  
+}
+
+.aksesoris-table thead th {
+  background-color: #3d546b;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 15px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.aksesoris-table td {
+  font-size: 14px;
+  padding: 15px 12px;
+  border-bottom: 1px solid #ececec;
+  text-align: center;
+}
+
+/* Hover */
+.aksesoris-table tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .aksesoris-table thead { display: none; }
+
+  .aksesoris-table, 
+  .aksesoris-table tbody,
+  .aksesoris-table tr,
+  .aksesoris-table td {
+    display: block;
+    width: 95%;
+    margin: 0 auto;
+  }
+
+  .aksesoris-table tr {
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .aksesoris-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 5px;
+    position: relative;
+  }
+
+  .aksesoris-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #3d546b;
+  }
+}

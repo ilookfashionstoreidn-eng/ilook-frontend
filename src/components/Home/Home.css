@@ -1,0 +1,249 @@
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+.dashboard-container {
+
+  justify-content: space-between; /* Pisahkan elemen ke kiri dan kanan */
+  align-items: center; /* Ratakan elemen secara vertikal */
+  padding: 20px 20px;
+  width:100%;
+  border-radius: 10px;
+  border-bottom: 1px solid #e9ecef;
+  margin-top: 10px;
+  height: 100vh;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.dashboard-title {
+  font-size: 2.5rem;
+  font-weight: 530;
+  color: #365463;
+  margin: 0;
+}
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-profile img {
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #426372;
+}
+.dashboard-subtitle {
+  font-size: 1rem;
+  color: #555;
+  text-align: left;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column; /* Atur elemen secara vertikal */
+  gap: 20px; /* Jarak antar elemen */
+}
+.card-container {
+display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 60%; /* full, biar ikut layar */
+  background: #ffffff;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  border-radius: 15px;
+}
+.card {
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 250px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.3s;
+}
+
+.card2{
+  background: #f3f7f8;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 400px;
+  height: 430px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.3s;
+}
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+
+}
+.chart-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #426372;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  text-align: center;
+}sistem analisa
+
+.chart-content {
+  display: flex;
+  padding-right:  10px 20px;
+  justify-content: center;
+  align-items: center;
+
+  width: 50%;
+  max-width: 540px;
+  min-width: 300px;
+  max-height: 500px;
+  min-height: 300px;
+}
+.chart-wrapper {
+  flex: 1;
+
+
+}
+
+.chart-info {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.info-color {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.info-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  padding-right: 7px;
+}
+
+.info-percentage {
+  font-size: 14px;
+  color: #666;
+}
+
+.info-percentage {
+  font-size: 14px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .chart-content {
+    width: 200px;
+    height: 160px;
+  }
+}
+
+
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+
+  gap: 20px !important;
+  margin-top: 10px;
+}
+
+ .stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  width: 100%; /* Atur sesuai kebutuhan, bisa max-width juga */
+  max-width: 600px;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.stat-header i {
+  font-size: 24px;
+  color: #4a90e2;
+}
+
+.stat-card.urgent i {
+  color: #e74c3c;
+}
+
+.stat-header h3 {
+  font-size: 18px;
+  color: #333;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  color: #555;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.stat-card.urgent .stat-item {
+  background: #ffe6e6;
+  color:   #a8483e;
+}
+
+.empty-text {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+}

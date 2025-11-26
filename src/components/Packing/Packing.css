@@ -1,0 +1,233 @@
+.packing-container {
+  padding: 20px;
+}
+/* === CARD WRAPPER === */
+.tracking-card {
+  width: 100%;
+  margin: 0 auto 25px auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 24px 28px;
+  display: flex;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 25px;
+  margin-top: 7px;
+
+  flex-direction:column;
+  gap: 10px;
+}
+
+.tracking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.tracking-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 18px;
+}
+
+/* === INPUT + BUTTON === */
+.tracking-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content:flex-start;
+}
+
+.tracking-input-modern {
+  width: 300px; /* 👈 lebih sempit biar proporsional */
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.tracking-input-modern:focus {
+  border-color: #4c8bf5;
+  box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.2);
+}
+
+/* === MODERN BUTTON === */
+.btn-search-modern {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: rgb(144, 212, 233);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  min-width: 100px;
+}
+
+.btn-search-modern:hover {
+  background: rgb(150, 230, 255);
+  transform: translateY(-1px);
+}
+
+.btn-search-modern:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* === MESSAGE BOX === */
+.packing-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-size: 14px;
+  color: #444;
+  border-left: 4px solid #2563eb;
+  text-align: left;
+}
+
+.order-section {
+  margin-top: 20px;
+}
+
+.packing-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.packing-table th{
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.packing-table th,
+.packing-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.packing-table th {
+  background-color: #3d546b;
+}
+/* Biar font-nya lebih besar dan warnanya merah */
+.qty-cell {
+  font-size: 18px; /* ubah sesuai selera */
+  font-weight: bold;
+  text-align: center;
+}
+
+.qty-cell.ordered,
+.qty-cell.scanned {
+  color: red;
+}
+
+.status-ok {
+  color: green;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-wait {
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+.sku-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.sku-label {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 0px;
+}
+
+.sku-input {
+  display: flex;
+  gap: 5px;
+  margin-top: 15px;
+  
+}
+
+.sku-input input {
+  flex: 1;
+  padding: 8px;
+    border-radius: 8px;
+  border: 1px solid #d0d0d0;
+}
+
+.sku-input button {
+  padding: 8px 16px;
+}
+
+.packing-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-validate {
+  background: rgb(144, 212, 233);
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.btn-validate:HOVER {
+  background: rgb(150, 230, 255);
+  transform: translateY(-1px);
+}
+
+.btn-cancel {
+  background: #cfcece;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+/* === PRODUCT IMAGE === */
+.product-image {
+  width: 170px;          /* ukuran default (bisa ubah misal 60px atau 80px) */
+  height: auto;         /* biar proporsional (nggak gepeng) */
+  object-fit: contain;  /* pastikan gambar nggak terpotong */
+  border-radius: 6px;   /* sedikit membulatkan sudut */
+  border: 1px solid #ddd;
+  padding: 3px;
+  background: #f9f9f9;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-image:hover {
+  transform: scale(1.05); /* efek zoom kecil pas hover */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+td img.product-image {
+  display: block;
+  margin: 0 auto;
+}
+
+
+.nomor-seri-input-table {
+  width: 120px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.nomor-seri-input-table:focus {
+  border-color: #4a90e2;
+  box-shadow: 0px 0px 4px rgba(0, 120, 255, 0.3);
+}
