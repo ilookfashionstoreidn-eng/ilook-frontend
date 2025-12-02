@@ -48,11 +48,7 @@ const PembelianBahan = () => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [resData, resPabrik, resGudang] = await Promise.all([
-          API.get("/pembelian-bahan"),
-          API.get("/pabrik"),
-          API.get("/gudang"),
-        ]);
+        const [resData, resPabrik, resGudang] = await Promise.all([API.get("/pembelian-bahan"), API.get("/pabrik"), API.get("/gudang")]);
         setItems(Array.isArray(resData.data) ? resData.data : resData.data?.data || []);
         setPabrikList(resPabrik.data || []);
         setGudangList(resGudang.data || []);
@@ -65,9 +61,7 @@ const PembelianBahan = () => {
     fetchAll();
   }, []);
 
-  const filteredItems = items.filter((b) =>
-    (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -208,27 +202,22 @@ const PembelianBahan = () => {
   };
 
   const handleDownloadBarcode = async (item) => {
-    const endpoints = [
-      `/pembelian-bahan/${item.id}/download-barcode`,
-      `/pembelian-bahan/${item.id}/download-barcodes`,
-      `/pembelian-bahan/${item.id}/downloadBarcode`,
-      `/pembelian-bahan/${item.id}/downloadBarcodes`,
-    ];
+    const endpoints = [`/pembelian-bahan/${item.id}/download-barcode`, `/pembelian-bahan/${item.id}/download-barcodes`, `/pembelian-bahan/${item.id}/downloadBarcode`, `/pembelian-bahan/${item.id}/downloadBarcodes`];
     const tried = [];
     for (const ep of endpoints) {
       try {
         const res = await API.get(ep, {
-          responseType: 'arraybuffer',
-          headers: { Accept: 'application/pdf' },
+          responseType: "arraybuffer",
+          headers: { Accept: "application/pdf" },
         });
-        const ct = (res.headers && (res.headers['content-type'] || res.headers['Content-Type'])) || '';
-        if (!ct.toLowerCase().includes('pdf')) throw new Error(`Unexpected content-type: ${ct}`);
-        const disposition = res.headers && (res.headers['content-disposition'] || res.headers['Content-Disposition']);
+        const ct = (res.headers && (res.headers["content-type"] || res.headers["Content-Type"])) || "";
+        if (!ct.toLowerCase().includes("pdf")) throw new Error(`Unexpected content-type: ${ct}`);
+        const disposition = res.headers && (res.headers["content-disposition"] || res.headers["Content-Disposition"]);
         const match = disposition && disposition.match(/filename="?([^";]+)"?/i);
         const filename = match ? match[1] : `barcode-bahan-${item.id}.pdf`;
-        const blob = new Blob([res.data], { type: 'application/pdf' });
+        const blob = new Blob([res.data], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
@@ -237,11 +226,11 @@ const PembelianBahan = () => {
         window.URL.revokeObjectURL(url);
         return;
       } catch (err) {
-        const status = err.response ? err.response.status : 'ERR';
-        tried.push(`${(API.defaults && API.defaults.baseURL) || ''}${ep} [${status}]`);
+        const status = err.response ? err.response.status : "ERR";
+        tried.push(`${(API.defaults && API.defaults.baseURL) || ""}${ep} [${status}]`);
       }
     }
-    alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(' | ')}`);
+    alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
   };
 
   const handleFormUpdate = async (e) => {
@@ -259,7 +248,7 @@ const PembelianBahan = () => {
 
   const getNamaById = (list, id, field = "nama") => {
     const found = list.find((x) => x.id === id);
-    return found ? (found[field] || found.nama_gudang || found.nama_pabrik || found.nama) : id;
+    return found ? found[field] || found.nama_gudang || found.nama_pabrik || found.nama : id;
   };
 
   return (
@@ -274,12 +263,7 @@ const PembelianBahan = () => {
             <FaPlus /> Tambah
           </button>
           <div className="search-bar1">
-            <input
-              type="text"
-              placeholder="Cari keterangan..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <input type="text" placeholder="Cari keterangan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
@@ -310,8 +294,12 @@ const PembelianBahan = () => {
                   <td>{b.tanggal_kirim}</td>
                   <td>{b.gramasi}</td>
                   <td>
-                    <button className="btn" onClick={() => handleDetailClick(b)}>Detail</button>
-                    <button className="btn" onClick={() => handleDownloadBarcode(b)}>Download Barcode</button>
+                    <button className="btn" onClick={() => handleDetailClick(b)}>
+                      Detail
+                    </button>
+                    <button className="btn" onClick={() => handleDownloadBarcode(b)}>
+                      Download Barcode
+                    </button>
                     <button className="btn-icon" onClick={() => handleEditClick(b)}>
                       <FaEdit />
                     </button>
@@ -330,14 +318,20 @@ const PembelianBahan = () => {
             <form onSubmit={handleFormSubmit} className="modern-form">
               <div className="form-group">
                 <label>Keterangan</label>
-                <input type="text" name="keterangan" value={newItem.keterangan} onChange={handleInputChange} required />
+                <select name="keterangan" value={newItem.keterangan} onChange={handleInputChange} required>
+                  <option value="">Pilih Keterangan</option>
+                  <option value="Utuh">Utuh</option>
+                  <option value="Sisa">Sisa</option>
+                </select>
               </div>
               <div className="form-group">
                 <label>Pabrik</label>
                 <select name="pabrik_id" value={newItem.pabrik_id} onChange={handleInputChange} required>
                   <option value="">Pilih Pabrik</option>
                   {pabrikList.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nama_pabrik || p.nama}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.nama_pabrik || p.nama}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -346,7 +340,9 @@ const PembelianBahan = () => {
                 <select name="gudang_id" value={newItem.gudang_id} onChange={handleInputChange} required>
                   <option value="">Pilih Gudang</option>
                   {gudangList.map((g) => (
-                    <option key={g.id} value={g.id}>{g.nama_gudang || g.nama}</option>
+                    <option key={g.id} value={g.id}>
+                      {g.nama_gudang || g.nama}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -382,28 +378,41 @@ const PembelianBahan = () => {
               <h3>Warna & Rol</h3>
               {newItem.warna.map((w, wi) => (
                 <div key={wi} className="form-group">
-                  <label>Nama Warna</label>
+                  <label>{`Warna ${wi + 1}`}</label>
                   <input type="text" value={w.nama} onChange={(e) => handleWarnaFieldChange(wi, "nama", e.target.value)} required />
                   <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
                   <div style={{ marginTop: 8 }}>
                     {w.rol.map((berat, ri) => (
                       <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                        <input type="number" placeholder="Berat (kg)" value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
-                        <button type="button" className="btn btn-cancel" onClick={() => removeRol(wi, ri)}>Hapus Rol</button>
+                        <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
+                        <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
+                        <button type="button" className="btn btn-cancel" onClick={() => removeRol(wi, ri)}>
+                          Hapus Rol
+                        </button>
                       </div>
                     ))}
-                    <button type="button" className="btn" onClick={() => addRol(wi)}>Tambah Rol</button>
-                    <button type="button" className="btn btn-cancel" onClick={() => removeWarna(wi)} style={{ marginLeft: 8 }}>Hapus Warna</button>
+                    <button type="button" className="btn" onClick={() => addRol(wi)}>
+                      Tambah Rol
+                    </button>
+                    <button type="button" className="btn btn-cancel" onClick={() => removeWarna(wi)} style={{ marginLeft: 8 }}>
+                      Hapus Warna
+                    </button>
                   </div>
                 </div>
               ))}
               <div style={{ marginBottom: 12 }}>
-                <button type="button" className="btn" onClick={addWarna}><FaPlus /> Tambah Warna</button>
+                <button type="button" className="btn" onClick={addWarna}>
+                  <FaPlus /> Tambah Warna
+                </button>
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Simpan</button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>Batal</button>
+                <button type="submit" className="btn btn-submit">
+                  Simpan
+                </button>
+                <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>
+                  Batal
+                </button>
               </div>
             </form>
           </div>
@@ -416,27 +425,52 @@ const PembelianBahan = () => {
             <h2>Detail Pembelian Bahan</h2>
             {detailItem ? (
               <div className="modern-form">
-                <div className="form-group"><strong>ID:</strong> {detailItem.id}</div>
-                <div className="form-group"><strong>Keterangan:</strong> {detailItem.keterangan}</div>
-                <div className="form-group"><strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}</div>
-                <div className="form-group"><strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</div>
-                <div className="form-group"><strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}</div>
-                <div className="form-group"><strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || '-'}
+                <div className="form-group">
+                  <strong>ID:</strong> {detailItem.id}
                 </div>
-                <div className="form-group"><strong>Nama Bahan:</strong> {detailItem.nama_bahan || '-'}</div>
-                <div className="form-group"><strong>Gramasi:</strong> {detailItem.gramasi}</div>
-                <div className="form-group"><strong>Satuan:</strong> {detailItem.satuan || '-'}</div>
-                <div className="form-group"><strong>Lebar Kain:</strong> {detailItem.lebar_kain || '-'}</div>
+                <div className="form-group">
+                  <strong>Keterangan:</strong> {detailItem.keterangan}
+                </div>
+                <div className="form-group">
+                  <strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}
+                </div>
+                <div className="form-group">
+                  <strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}
+                </div>
+                <div className="form-group">
+                  <strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}
+                </div>
+                <div className="form-group">
+                  <strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || "-"}
+                </div>
+                <div className="form-group">
+                  <strong>Nama Bahan:</strong> {detailItem.nama_bahan || "-"}
+                </div>
+                <div className="form-group">
+                  <strong>Gramasi:</strong> {detailItem.gramasi}
+                </div>
+                <div className="form-group">
+                  <strong>Satuan:</strong> {detailItem.satuan || "-"}
+                </div>
+                <div className="form-group">
+                  <strong>Lebar Kain:</strong> {detailItem.lebar_kain || "-"}
+                </div>
                 {detailItem.foto_surat_jalan && (
                   <div className="form-group">
-                    <a href={detailItem.foto_surat_jalan} target="_blank" rel="noreferrer">Lihat Surat Jalan</a>
+                    <a href={detailItem.foto_surat_jalan} target="_blank" rel="noreferrer">
+                      Lihat Surat Jalan
+                    </a>
                   </div>
                 )}
                 <h3>Warna</h3>
                 {(detailItem.warna || []).map((w, wi) => (
                   <div key={wi} className="form-group">
-                    <div><strong>Nama:</strong> {w.nama || w.warna}</div>
-                    <div><strong>Jumlah Rol:</strong> {w.jumlah_rol}</div>
+                    <div>
+                      <strong>Nama:</strong> {w.nama || w.warna}
+                    </div>
+                    <div>
+                      <strong>Jumlah Rol:</strong> {w.jumlah_rol}
+                    </div>
                     <div style={{ marginTop: 6 }}>
                       {(w.rol || []).map((r, ri) => (
                         <div key={ri}>Berat: {r.berat ?? r} kg</div>
@@ -449,7 +483,16 @@ const PembelianBahan = () => {
               <p>Memuat detail...</p>
             )}
             <div className="form-actions">
-              <button type="button" className="btn btn-cancel" onClick={() => { setShowDetail(false); setDetailItem(null); }}>Tutup</button>
+              <button
+                type="button"
+                className="btn btn-cancel"
+                onClick={() => {
+                  setShowDetail(false);
+                  setDetailItem(null);
+                }}
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>
@@ -465,7 +508,9 @@ const PembelianBahan = () => {
                 <select name="pabrik_id" value={editItem.pabrik_id} onChange={handleInputChange} required>
                   <option value="">Pilih Pabrik</option>
                   {pabrikList.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nama_pabrik || p.nama}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.nama_pabrik || p.nama}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -474,7 +519,9 @@ const PembelianBahan = () => {
                 <select name="gudang_id" value={editItem.gudang_id} onChange={handleInputChange} required>
                   <option value="">Pilih Gudang</option>
                   {gudangList.map((g) => (
-                    <option key={g.id} value={g.id}>{g.nama_gudang || g.nama}</option>
+                    <option key={g.id} value={g.id}>
+                      {g.nama_gudang || g.nama}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -491,8 +538,12 @@ const PembelianBahan = () => {
                 <input type="text" name="keterangan" value={editItem.keterangan} onChange={handleInputChange} />
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Perbarui</button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>Batal</button>
+                <button type="submit" className="btn btn-submit">
+                  Perbarui
+                </button>
+                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
+                  Batal
+                </button>
               </div>
             </form>
           </div>

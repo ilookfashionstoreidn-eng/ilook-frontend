@@ -205,14 +205,17 @@ const PabrikList = () => {
                 <td>{pabrik.kontak || "-"}</td>
                 <td>
                   {pabrik.ktp ? (
-                    <a
-                      href={getKtpUrl(pabrik.ktp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link"
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ backgroundColor: "#0d6efd", color: "#fff" }}
+                      onClick={() => {
+                        const url = getKtpUrl(pabrik.ktp);
+                        if (url) window.open(url, "_blank", "noopener,noreferrer");
+                      }}
                     >
                       Lihat KTP
-                    </a>
+                    </button>
                   ) : (
                     "-"
                   )}
@@ -224,12 +227,7 @@ const PabrikList = () => {
                   >
                     <FaEdit />
                   </button>
-                  <button
-                    onClick={() => handleDetailClick(pabrik)}
-                    className="btn-icon"
-                  >
-                    <FaEye />
-                  </button>
+                 
                 </td>
               </tr>
             ))}
