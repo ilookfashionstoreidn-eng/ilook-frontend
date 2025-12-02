@@ -44,6 +44,7 @@ import HppProduk from "./components/Produk/HppProduk";
 import Packing from "./components/Packing/Packing";
 import Logs from "./components/Packing/Logs";
 import Bahan from "./components/Bahan/Bahan";
+import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
 import Seri from "./components/Packing/Seri";
@@ -98,6 +99,7 @@ const App = () => {
           <Route path="packing" element={<Packing/>}/>
           <Route path="logs" element={<Logs/>}/>
           <Route path="bahan" element={<Bahan/>}/>
+          <Route path="pembelianBahan" element={<PembelianBahan/>}/>
           <Route path="pabrik" element={<Pabrik/>}/>
           <Route path="gudang" element={<Gudang/>}/>
           <Route path="seri" element={<Seri/>}/>
