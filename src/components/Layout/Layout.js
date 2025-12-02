@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './Layout.css';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaHome, FaCogs, FaChevronDown, FaChevronUp, FaFolder } from 'react-icons/fa';
+import API from '../../api';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -10,6 +11,7 @@ const Layout = () => {
   const [isJasaOpen, setIsJasaOpen] = useState(false);
   const [isHppOpen, setIsHppOpen] = useState(false);
   const [isPackingOpen, setIsPackingOpen] = useState(false);
+
   const [isGudangOpen, setIsGudangOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState("home"); 
   const [role, setRole] = useState(""); 
@@ -52,6 +54,17 @@ const Layout = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await API.post('/logout');
+    } catch (error) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('role');
+    localStorage.removeItem('foto');
+    navigate('/');
+  };
 
   return (
     <div className="layout-container">
@@ -392,6 +405,13 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link to="pembelianBahan"
+                    className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`}
+                    onClick={() => handleMenuClick("pembelianBahan")}>
+                      Pembelian Bahan
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="pabrik"
                     className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`}
                     onClick={() => handleMenuClick("pabrik")}>
@@ -410,6 +430,10 @@ const Layout = () => {
                 </ul>
               )}            
           </li>     
+
+          <li>
+            <button className="sidebar-link" onClick={handleLogout}>Logout</button>
+          </li>
 
           </ul>
         </nav>

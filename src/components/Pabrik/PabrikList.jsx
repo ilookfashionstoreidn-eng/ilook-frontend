@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import API from "../../api";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
 import { FaPlus, FaEdit, FaEye } from "react-icons/fa";
 
 const PabrikList = () => {
@@ -155,37 +153,32 @@ const PabrikList = () => {
   const getKtpUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
-    const base = (process.env.REACT_APP_API_URL || "").replace(/\/api\/?$/, "");
-    return `${base}/storage/${path}`;
+    return `${process.env.REACT_APP_API_URL}/storage/${path}`;
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
-        <h1>Data Pabrik</h1>
-      </div>
+    <div className="pabrik-container">
+      <h1>Data Pabrik</h1>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <button onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah
-          </button>
-          <div className="search-bar1">
-            <input
-              type="text"
-              placeholder="Cari nama pabrik..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className="filter-header">
+        <button onClick={() => setShowForm(true)} className="btn-primary">
+          <FaPlus /> Tambah Pabrik
+        </button>
+        <input
+          type="text"
+          placeholder="Cari nama pabrik..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+      </div>
 
       {loading ? (
         <p>Memuat data...</p>
       ) : error ? (
         <p className="error">{error}</p>
       ) : (
-        <table className="penjahit-table">
+        <table className="data-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -236,14 +229,13 @@ const PabrikList = () => {
           </tbody>
         </table>
       )}
-      </div>
 
       {/* Modal Tambah */}
       {showForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="modal-overlay">
+          <div className="modal">
             <h2>Tambah Pabrik Baru</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
+            <form onSubmit={handleFormSubmit}>
               <div className="form-group">
                 <label>Nama Pabrik *</label>
                 <input
@@ -277,8 +269,8 @@ const PabrikList = () => {
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Simpan</button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn btn-cancel">
+                <button type="submit" className="btn-submit">Simpan</button>
+                <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">
                   Batal
                 </button>
               </div>
@@ -289,10 +281,10 @@ const PabrikList = () => {
 
       {/* Modal Edit */}
       {showEditForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="modal-overlay">
+          <div className="modal">
             <h2>Edit Pabrik</h2>
-            <form onSubmit={handleFormUpdate} className="modern-form">
+            <form onSubmit={handleFormUpdate}>
               <div className="form-group">
                 <label>Nama Pabrik *</label>
                 <input
@@ -339,8 +331,8 @@ const PabrikList = () => {
                 )}
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Perbarui</button>
-                <button type="button" onClick={() => setShowEditForm(false)} className="btn btn-cancel">
+                <button type="submit" className="btn-submit">Perbarui</button>
+                <button type="button" onClick={() => setShowEditForm(false)} className="btn-cancel">
                   Batal
                 </button>
               </div>
