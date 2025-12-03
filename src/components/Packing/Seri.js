@@ -16,7 +16,7 @@ const Seri = () => {
     const fetchSeri = async () => {
       try {
         setLoading(true);
-        const response = await API.get("/seri"); // GET semua seri
+        const response = await API.get("/seri"); 
         setSeri(response.data);
       } catch (error) {
         setError("Gagal mengambil data seri");
@@ -30,7 +30,7 @@ const Seri = () => {
 const downloadQR = async (id, nomorSeri) => {
   try {
     const response = await API.get(`/seri/${id}/download`, {
-      responseType: "blob", // WAJIB untuk file
+      responseType: "blob", 
     });
 
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -156,7 +156,6 @@ const handleFormSubmit = async (e) => {
           </table>
         </div>
 
-          {/* Modal Form */}
         {showForm && (
         <div className="modal">
           <div className="modal-content">

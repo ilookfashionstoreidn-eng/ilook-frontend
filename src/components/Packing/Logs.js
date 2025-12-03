@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import "../Jahit/Penjahit.css";
 import API from "../../api"; 
 import {FaInfoCircle,FaFileExcel, FaCalendarAlt } from 'react-icons/fa';
+import dayjs from "dayjs";
 
 const Logs = () => {
   const [logs, setLogs] = useState([]);
@@ -25,6 +26,7 @@ const Logs = () => {
     last_page: 1,
   });
 
+  
 const fetchLogs = async (
   start = startDate,
   end = endDate,
@@ -151,7 +153,16 @@ useEffect(() => {
     .catch(err => console.log(err));
 }, []);
 
-  
+const inputDate = "2025-11-26T10:36:08.000000Z";
+const date = new Date(inputDate);
+
+const formatted =
+  date.getDate().toString().padStart(2, "0") + "-" +
+  (date.getMonth() + 1).toString().padStart(2, "0") + "-" +
+  date.getFullYear();
+
+console.log(formatted); // 26-11-2025
+
  return (
    <div>
      <div className="penjahit-container">
@@ -314,7 +325,10 @@ useEffect(() => {
                 <td data-label="Kasir : ">{tc.performed_by}</td>
                 <td data-label="Total : ">{tc.order?.total_items}</td>
                 <td data-label="Total : ">Rp. {tc.order?.total_amount}</td>
-                <td data-label="tanggal : ">{tc.created_at}</td>
+               <td data-label="tanggal : ">
+                  {dayjs(tc.created_at).format("DD-MM-YYYY")}
+                </td>
+
                 <td data-label="Nomor Seri : ">
                 {tc.order?.items
                   ?.flatMap((it) => it.serials?.map((s) => s.serial_number))

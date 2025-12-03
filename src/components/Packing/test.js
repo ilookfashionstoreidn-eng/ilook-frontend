@@ -11,7 +11,6 @@ const Packing = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // 🔸 1. Cek Tracking Number
   const handleSearchOrder = async () => {
     if (!trackingNumber) return;
     setLoading(true);
@@ -38,7 +37,7 @@ const Packing = () => {
     }
   };
 
-  // 🔸 2. Scan SKU produk (barcode / manual)
+  
   const handleScanSku = (e) => {
     e.preventDefault();
     const sku = scannedSku.trim();
@@ -66,7 +65,7 @@ const Packing = () => {
     setScannedSku("");
   };
 
-  // 🔸 3. Submit Validasi ke Backend
+  
   const handleSubmitValidation = async () => {
     if (!order) return;
 
