@@ -1,7 +1,7 @@
 .packing-container {
   padding: 20px;
 }
-/* === CARD WRAPPER === */
+
 .tracking-card {
   width: 100%;
   margin: 0 auto 25px auto;
@@ -31,7 +31,7 @@
   margin-bottom: 18px;
 }
 
-/* === INPUT + BUTTON === */
+
 .tracking-input-wrapper {
   display: flex;
   align-items: center;
@@ -40,7 +40,7 @@
 }
 
 .tracking-input-modern {
-  width: 300px; /* 👈 lebih sempit biar proporsional */
+  width: 300px; 
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid #d0d0d0;
@@ -54,7 +54,7 @@
   box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.2);
 }
 
-/* === MODERN BUTTON === */
+
 .btn-search-modern {
   padding: 10px 18px;
   border: none;
@@ -77,7 +77,7 @@
   cursor: not-allowed;
 }
 
-/* === MESSAGE BOX === */
+
 .packing-message {
   margin-top: 15px;
   padding: 10px;
@@ -113,9 +113,9 @@
 .packing-table th {
   background-color: #3d546b;
 }
-/* Biar font-nya lebih besar dan warnanya merah */
+
 .qty-cell {
-  font-size: 18px; /* ubah sesuai selera */
+  font-size: 18px; 
   font-weight: bold;
   text-align: center;
 }
@@ -195,12 +195,12 @@
   border-radius: 8px;
   cursor: pointer;
 }
-/* === PRODUCT IMAGE === */
+
 .product-image {
-  width: 170px;          /* ukuran default (bisa ubah misal 60px atau 80px) */
-  height: auto;         /* biar proporsional (nggak gepeng) */
-  object-fit: contain;  /* pastikan gambar nggak terpotong */
-  border-radius: 6px;   /* sedikit membulatkan sudut */
+  width: 170px;          
+  height: auto;         
+  object-fit: contain;  
+  border-radius: 6px;   
   border: 1px solid #ddd;
   padding: 3px;
   background: #f9f9f9;
@@ -208,7 +208,7 @@
 }
 
 .product-image:hover {
-  transform: scale(1.05); /* efek zoom kecil pas hover */
+  transform: scale(1.05); 
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 td img.product-image {
