@@ -2,56 +2,78 @@ import React, { useEffect, useState } from "react";
 import "../Jahit/Penjahit.css";
 import "../Cutting/SpkCutting/SpkCuting.css";
 import API from "../../api";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaDownload } from "react-icons/fa";
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
   const [pabrikList, setPabrikList] = useState([]);
   const [gudangList, setGudangList] = useState([]);
+  const [bahanList, setBahanList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isReady, setIsReady] = useState(false); // 🔹 Tambahkan ini
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
+  // Form Tambah
   const [newItem, setNewItem] = useState({
     pabrik_id: "",
     gudang_id: "",
     tanggal_kirim: "",
     no_surat_jalan: "",
     foto_surat_jalan: null,
-    nama_bahan: "",
+    bahan_id: "",
     gramasi: "",
-    satuan: "",
     lebar_kain: "",
     keterangan: "",
+    sku: "",
+    harga: "",
     warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
   });
 
+  // Form Edit
   const [editItem, setEditItem] = useState({
     id: null,
     pabrik_id: "",
     gudang_id: "",
     tanggal_kirim: "",
     no_surat_jalan: "",
-    nama_bahan: "",
+    foto_surat_jalan: null,
+    bahan_id: "",
     gramasi: "",
-    satuan: "",
     lebar_kain: "",
     keterangan: "",
-    warna: [],
+    sku: "",
+    harga: "",
+    warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
   });
 
+  // === FETCH DATA ===
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [resData, resPabrik, resGudang] = await Promise.all([API.get("/pembelian-bahan"), API.get("/pabrik"), API.get("/gudang")]);
-        setItems(Array.isArray(resData.data) ? resData.data : resData.data?.data || []);
+        const [resData, resPabrik, resGudang, resBahan] = await Promise.all([
+          API.get("/pembelian-bahan"),
+          API.get("/pabrik"),
+          API.get("/gudang"),
+          API.get("/bahan"),
+        ]);
+
+        let dataBahan = Array.isArray(resData.data) ? resData.data : resData.data?.data || [];
+        dataBahan = dataBahan.sort((a, b) => b.id - a.id);
+
+        setItems(dataBahan);
         setPabrikList(resPabrik.data || []);
         setGudangList(resGudang.data || []);
+        setBahanList(resBahan.data || []);
+
+        setIsReady(true); // 🔹 Pastikan semua data siap
       } catch (e) {
         setError("Gagal memuat data.");
       } finally {
@@ -61,14 +83,59 @@ const PembelianBahan = () => {
     fetchAll();
   }, []);
 
-  const filteredItems = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()));
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
+  // === PAGINATION ===
+  const filtered = items.filter((b) =>
+    (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // === HELPER ===
+  const getNamaById = (list, id, field = "nama_bahan") => {
+    if (!list || list.length === 0) return "-"; // 🔹 Hindari error jika list kosong
+    const found = list.find((x) => x.id === id);
+    return found ? found[field] || "-" : "-";
+  };
+
+  const formatRupiah = (angka) => {
+    if (!angka && angka !== 0) return "-";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(angka);
+  };
+
+  // === HANDLERS ===
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (showEditForm) {
-      setEditItem((prev) => ({ ...prev, [name]: value }));
+    if (name === "harga") {
+      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+        if (showEditForm) {
+          setEditItem((prev) => ({ ...prev, [name]: value }));
+        } else {
+          setNewItem((prev) => ({ ...prev, [name]: value }));
+        }
+      }
     } else {
-      setNewItem((prev) => ({ ...prev, [name]: value }));
+      if (showEditForm) {
+        setEditItem((prev) => ({ ...prev, [name]: value }));
+      } else {
+        setNewItem((prev) => ({ ...prev, [name]: value }));
+      }
     }
   };
 
@@ -81,12 +148,53 @@ const PembelianBahan = () => {
     }
   };
 
+  const resetForm = () => {
+    setNewItem({
+      pabrik_id: "",
+      gudang_id: "",
+      tanggal_kirim: "",
+      no_surat_jalan: "",
+      foto_surat_jalan: null,
+      bahan_id: "",
+      gramasi: "",
+      lebar_kain: "",
+      keterangan: "",
+      sku: "",
+      harga: "",
+      warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+    });
+    setEditItem({
+      id: null,
+      pabrik_id: "",
+      gudang_id: "",
+      tanggal_kirim: "",
+      no_surat_jalan: "",
+      foto_surat_jalan: null,
+      bahan_id: "",
+      gramasi: "",
+      lebar_kain: "",
+      keterangan: "",
+      sku: "",
+      harga: "",
+      warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+    });
+    setShowForm(false);
+    setShowEditForm(false);
+  };
+
+  // === WARNA & ROL HANDLERS ===
   const addWarna = () => {
-    setNewItem((prev) => ({ ...prev, warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0] }] }));
+    setNewItem((prev) => ({
+      ...prev,
+      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0] }],
+    }));
   };
 
   const removeWarna = (index) => {
-    setNewItem((prev) => ({ ...prev, warna: prev.warna.filter((_, i) => i !== index) }));
+    setNewItem((prev) => ({
+      ...prev,
+      warna: prev.warna.filter((_, i) => i !== index),
+    }));
   };
 
   const handleWarnaFieldChange = (index, key, value) => {
@@ -126,25 +234,58 @@ const PembelianBahan = () => {
     });
   };
 
-  const resetForm = () => {
-    setNewItem({
-      pabrik_id: "",
-      gudang_id: "",
-      tanggal_kirim: "",
-      no_surat_jalan: "",
-      foto_surat_jalan: null,
-      nama_bahan: "",
-      gramasi: "",
-      satuan: "",
-      lebar_kain: "",
-      keterangan: "",
-      warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
-    });
-    setEditItem({ id: null, pabrik_id: "", gudang_id: "", tanggal_kirim: "", no_surat_jalan: "", nama_bahan: "", gramasi: "", satuan: "", lebar_kain: "", keterangan: "", warna: [] });
-    setShowForm(false);
-    setShowEditForm(false);
+  const addWarnaEdit = () => {
+    setEditItem((prev) => ({
+      ...prev,
+      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0] }],
+    }));
   };
 
+  const removeWarnaEdit = (index) => {
+    setEditItem((prev) => ({
+      ...prev,
+      warna: prev.warna.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleWarnaFieldChangeEdit = (index, key, value) => {
+    setEditItem((prev) => {
+      const warna = [...prev.warna];
+      warna[index] = { ...warna[index], [key]: value };
+      return { ...prev, warna };
+    });
+  };
+
+  const addRolEdit = (warnaIndex) => {
+    setEditItem((prev) => {
+      const warna = [...prev.warna];
+      warna[warnaIndex].rol = [...warna[warnaIndex].rol, 0];
+      warna[warnaIndex].jumlah_rol = warna[warnaIndex].rol.length;
+      return { ...prev, warna };
+    });
+  };
+
+  const removeRolEdit = (warnaIndex, rolIndex) => {
+    setEditItem((prev) => {
+      const warna = [...prev.warna];
+      warna[warnaIndex].rol = warna[warnaIndex].rol.filter((_, i) => i !== rolIndex);
+      warna[warnaIndex].jumlah_rol = warna[warnaIndex].rol.length;
+      return { ...prev, warna };
+    });
+  };
+
+  const handleRolChangeEdit = (warnaIndex, rolIndex, value) => {
+    setEditItem((prev) => {
+      const warna = [...prev.warna];
+      const arr = [...warna[warnaIndex].rol];
+      arr[rolIndex] = value;
+      warna[warnaIndex].rol = arr;
+      warna[warnaIndex].jumlah_rol = arr.length;
+      return { ...prev, warna };
+    });
+  };
+
+  // === SUBMIT ===
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -155,10 +296,11 @@ const PembelianBahan = () => {
       formData.append("tanggal_kirim", newItem.tanggal_kirim);
       if (newItem.no_surat_jalan) formData.append("no_surat_jalan", newItem.no_surat_jalan);
       if (newItem.foto_surat_jalan) formData.append("foto_surat_jalan", newItem.foto_surat_jalan);
-      formData.append("nama_bahan", newItem.nama_bahan || "");
+      formData.append("bahan_id", newItem.bahan_id);
       formData.append("gramasi", newItem.gramasi || "");
-      formData.append("satuan", newItem.satuan || "");
       formData.append("lebar_kain", newItem.lebar_kain || "");
+      formData.append("sku", newItem.sku || "");
+      formData.append("harga", newItem.harga || "");
       newItem.warna.forEach((w, i) => {
         formData.append(`warna[${i}][nama]`, w.nama || "");
         formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
@@ -167,9 +309,11 @@ const PembelianBahan = () => {
         });
       });
 
-      const response = await API.post("/pembelian-bahan", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      const response = await API.post("/pembelian-bahan", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const data = Array.isArray(response.data) ? response.data : response.data?.data || response.data;
-      setItems((prev) => [...prev, data]);
+      setItems((prev) => [data, ...prev]);
       resetForm();
       alert("Pembelian bahan berhasil ditambahkan!");
     } catch (error) {
@@ -177,16 +321,92 @@ const PembelianBahan = () => {
     }
   };
 
-  const handleEditClick = (item) => {
-    setEditItem({
-      id: item.id,
-      pabrik_id: item.pabrik_id || "",
-      gudang_id: item.gudang_id || "",
-      tanggal_kirim: item.tanggal_kirim || "",
-      gramasi: item.gramasi || "",
-      keterangan: item.keterangan || "",
-    });
-    setShowEditForm(true);
+  const handleFormUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append("keterangan", editItem.keterangan || "");
+      formData.append("gudang_id", editItem.gudang_id);
+      formData.append("pabrik_id", editItem.pabrik_id);
+      formData.append("tanggal_kirim", editItem.tanggal_kirim);
+      formData.append("bahan_id", editItem.bahan_id);
+      formData.append("gramasi", editItem.gramasi || "");
+      formData.append("lebar_kain", editItem.lebar_kain || "");
+      formData.append("sku", editItem.sku || "");
+      formData.append("harga", editItem.harga || "");
+      if (editItem.no_surat_jalan) formData.append("no_surat_jalan", editItem.no_surat_jalan);
+      if (editItem.foto_surat_jalan) {
+        formData.append("foto_surat_jalan", editItem.foto_surat_jalan);
+      }
+
+      editItem.warna.forEach((w, i) => {
+        formData.append(`warna[${i}][nama]`, w.nama || "");
+        formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
+        w.rol.forEach((berat, j) => {
+          formData.append(`warna[${i}][rol][${j}]`, berat);
+        });
+      });
+
+      const response = await API.post(`/pembelian-bahan/${editItem.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        params: { _method: "PUT" },
+      });
+
+      const updatedData = response.data.data || response.data;
+      setItems((prev) =>
+        prev.map((b) => (b.id === editItem.id ? updatedData : b))
+      );
+      resetForm();
+      alert("Pembelian bahan berhasil diperbarui!");
+    } catch (error) {
+      console.error("Update error:", error);
+      alert(
+        error.response?.data?.message ||
+          (error.response?.data?.errors &&
+            Object.values(error.response.data.errors).flat().join(", ")) ||
+          "Gagal memperbarui pembelian bahan."
+      );
+    }
+  };
+
+  // === LAINNYA ===
+  const handleEditClick = async (item) => {
+    try {
+      const res = await API.get(`/pembelian-bahan/${item.id}`);
+      const data = res.data;
+
+      const warnaForForm = (data.warna || []).map((w) => {
+        const rolValues = (w.rol || []).map(r => r.berat ?? r);
+        return {
+          nama: w.nama || w.warna,
+          jumlah_rol: w.jumlah_rol,
+          rol: rolValues.length > 0 ? rolValues : [0],
+        };
+      });
+
+      if (warnaForForm.length === 0) {
+        warnaForForm.push({ nama: "", jumlah_rol: 1, rol: [0] });
+      }
+
+      setEditItem({
+        id: data.id,
+        pabrik_id: data.pabrik_id || "",
+        gudang_id: data.gudang_id || "",
+        tanggal_kirim: data.tanggal_kirim || "",
+        no_surat_jalan: data.no_surat_jalan || "",
+        bahan_id: data.bahan_id || "",
+        gramasi: data.gramasi || "",
+        lebar_kain: data.lebar_kain || "",
+        keterangan: data.keterangan || "",
+        sku: data.sku || "",
+        harga: data.harga?.toString() || "",
+        foto_surat_jalan: null,
+        warna: warnaForForm,
+      });
+      setShowEditForm(true);
+    } catch (err) {
+      alert("Gagal memuat data untuk edit.");
+    }
   };
 
   const handleDetailClick = async (item) => {
@@ -202,7 +422,7 @@ const PembelianBahan = () => {
   };
 
   const handleDownloadBarcode = async (item) => {
-    const endpoints = [`/pembelian-bahan/${item.id}/download-barcode`, `/pembelian-bahan/${item.id}/download-barcodes`, `/pembelian-bahan/${item.id}/downloadBarcode`, `/pembelian-bahan/${item.id}/downloadBarcodes`];
+    const endpoints = [`/pembelian-bahan/${item.id}/download-barcode`];
     const tried = [];
     for (const ep of endpoints) {
       try {
@@ -210,10 +430,10 @@ const PembelianBahan = () => {
           responseType: "arraybuffer",
           headers: { Accept: "application/pdf" },
         });
-        const ct = (res.headers && (res.headers["content-type"] || res.headers["Content-Type"])) || "";
+        const ct = (res.headers?.["content-type"] || res.headers?.["Content-Type"]) || "";
         if (!ct.toLowerCase().includes("pdf")) throw new Error(`Unexpected content-type: ${ct}`);
-        const disposition = res.headers && (res.headers["content-disposition"] || res.headers["Content-Disposition"]);
-        const match = disposition && disposition.match(/filename="?([^";]+)"?/i);
+        const disposition = res.headers?.["content-disposition"] || res.headers?.["Content-Disposition"];
+        const match = disposition?.match(/filename="?([^";]+)"?/i);
         const filename = match ? match[1] : `barcode-bahan-${item.id}.pdf`;
         const blob = new Blob([res.data], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
@@ -227,28 +447,10 @@ const PembelianBahan = () => {
         return;
       } catch (err) {
         const status = err.response ? err.response.status : "ERR";
-        tried.push(`${(API.defaults && API.defaults.baseURL) || ""}${ep} [${status}]`);
+        tried.push(`${(API.defaults?.baseURL || "")}${ep} [${status}]`);
       }
     }
     alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
-  };
-
-  const handleFormUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await API.post(`/pembelian-bahan/${editItem.id}`, { ...editItem, _method: "PUT" });
-      const data = Array.isArray(response.data) ? response.data : response.data?.data || response.data;
-      setItems((prev) => prev.map((b) => (b.id === editItem.id ? data : b)));
-      resetForm();
-      alert("Pembelian bahan berhasil diperbarui!");
-    } catch (error) {
-      alert(error.response?.data?.message || "Gagal memperbarui pembelian bahan.");
-    }
-  };
-
-  const getNamaById = (list, id, field = "nama") => {
-    const found = list.find((x) => x.id === id);
-    return found ? found[field] || found.nama_gudang || found.nama_pabrik || found.nama : id;
   };
 
   return (
@@ -263,7 +465,12 @@ const PembelianBahan = () => {
             <FaPlus /> Tambah
           </button>
           <div className="search-bar1">
-            <input type="text" placeholder="Cari keterangan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Cari keterangan atau SKU..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -271,46 +478,110 @@ const PembelianBahan = () => {
           <p>Memuat data...</p>
         ) : error ? (
           <p className="error">{error}</p>
+        ) : !isReady ? (
+          <p>Menyiapkan data master...</p> // 🔹 Tunggu data relasi
         ) : (
-          <table className="penjahit-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Keterangan</th>
-                <th>Gudang</th>
-                <th>Pabrik</th>
-                <th>Tanggal Kirim</th>
-                <th>Gramasi</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((b) => (
-                <tr key={b.id}>
-                  <td>{b.id}</td>
-                  <td>{b.keterangan}</td>
-                  <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
-                  <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
-                  <td>{b.tanggal_kirim}</td>
-                  <td>{b.gramasi}</td>
-                  <td>
-                    <button className="btn" onClick={() => handleDetailClick(b)}>
-                      Detail
-                    </button>
-                    <button className="btn" onClick={() => handleDownloadBarcode(b)}>
-                      Download Barcode
-                    </button>
-                    <button className="btn-icon" onClick={() => handleEditClick(b)}>
-                      <FaEdit />
-                    </button>
-                  </td>
+          <>
+            <table className="penjahit-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Keterangan</th>
+                  <th>Nama Bahan</th>
+                  <th>Satuan</th>
+                  <th>Harga</th>
+                  <th>SKU</th>
+                  <th>Gudang</th>
+                  <th>Pabrik</th>
+                  <th>Tanggal Kirim</th>
+                  <th>Gramasi</th>
+                  <th>Barcode</th>
+                  <th>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentItems.map((b, index) => (
+                  <tr key={b.id}>
+                    <td>{indexOfFirstItem + index + 1}</td>
+                    <td>{b.keterangan}</td>
+                    <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
+                    <td>{getNamaById(bahanList, b.bahan_id, "satuan")}</td>
+                    <td>{formatRupiah(b.harga)}</td>
+                    <td>{b.sku || "-"}</td>
+                    <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
+                    <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
+                    <td>{b.tanggal_kirim}</td>
+                    <td>{b.gramasi}</td>
+                    <td>
+                      <button
+                        className="btn-icon"
+                        onClick={() => handleDownloadBarcode(b)}
+                        title="Download Barcode"
+                      >
+                        <FaDownload />
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className="btn-icon"
+                        title="Lihat Detail"
+                        onClick={() => handleDetailClick(b)}
+                        style={{ marginRight: "8px" }}
+                      >
+                        <FaEye />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        title="Edit"
+                        onClick={() => handleEditClick(b)}
+                      >
+                        <FaEdit />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="pagination" style={{ marginTop: "20px", textAlign: "center" }}>
+                <button
+                  className="btn"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      className={`btn ${currentPage === page ? "btn-primary" : ""}`}
+                      onClick={() => goToPage(page)}
+                      style={{ margin: "0 4px" }}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                <button
+                  className="btn"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
+      {/* Modal Tambah */}
       {showForm && (
         <div className="modal">
           <div className="modal-content">
@@ -323,6 +594,38 @@ const PembelianBahan = () => {
                   <option value="Utuh">Utuh</option>
                   <option value="Sisa">Sisa</option>
                 </select>
+              </div>
+              <div className="form-group">
+                <label>Bahan</label>
+                <select name="bahan_id" value={newItem.bahan_id} onChange={handleInputChange} required>
+                  <option value="">Pilih Bahan</option>
+                  {bahanList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.nama_bahan} ({b.satuan})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Harga (Rp)</label>
+                <input
+                  type="text"
+                  name="harga"
+                  value={newItem.harga}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Contoh: 50000"
+                />
+              </div>
+              <div className="form-group">
+                <label>SKU</label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={newItem.sku}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan SKU (opsional)"
+                />
               </div>
               <div className="form-group">
                 <label>Pabrik</label>
@@ -359,16 +662,8 @@ const PembelianBahan = () => {
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
               </div>
               <div className="form-group">
-                <label>Nama Bahan</label>
-                <input type="text" name="nama_bahan" value={newItem.nama_bahan} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
                 <label>Gramasi</label>
                 <input type="number" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
-                <label>Satuan</label>
-                <input type="text" name="satuan" value={newItem.satuan} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
                 <label>Lebar Kain</label>
@@ -379,14 +674,31 @@ const PembelianBahan = () => {
               {newItem.warna.map((w, wi) => (
                 <div key={wi} className="form-group">
                   <label>{`Warna ${wi + 1}`}</label>
-                  <input type="text" value={w.nama} onChange={(e) => handleWarnaFieldChange(wi, "nama", e.target.value)} required />
+                  <input
+                    type="text"
+                    value={w.nama}
+                    onChange={(e) => handleWarnaFieldChange(wi, "nama", e.target.value)}
+                    required
+                  />
                   <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
                   <div style={{ marginTop: 8 }}>
                     {w.rol.map((berat, ri) => (
-                      <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <div
+                        key={ri}
+                        style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}
+                      >
                         <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
-                        <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
-                        <button type="button" className="btn btn-cancel" onClick={() => removeRol(wi, ri)}>
+                        <input
+                          type="number"
+                          placeholder={`Berat ${ri + 1} (kg)`}
+                          value={berat}
+                          onChange={(e) => handleRolChange(wi, ri, e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-cancel"
+                          onClick={() => removeRol(wi, ri)}
+                        >
                           Hapus Rol
                         </button>
                       </div>
@@ -394,7 +706,12 @@ const PembelianBahan = () => {
                     <button type="button" className="btn" onClick={() => addRol(wi)}>
                       Tambah Rol
                     </button>
-                    <button type="button" className="btn btn-cancel" onClick={() => removeWarna(wi)} style={{ marginLeft: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-cancel"
+                      onClick={() => removeWarna(wi)}
+                      style={{ marginLeft: 8 }}
+                    >
                       Hapus Warna
                     </button>
                   </div>
@@ -419,42 +736,25 @@ const PembelianBahan = () => {
         </div>
       )}
 
+      {/* Modal Detail */}
       {showDetail && (
         <div className="modal">
           <div className="modal-content">
             <h2>Detail Pembelian Bahan</h2>
             {detailItem ? (
               <div className="modern-form">
-                <div className="form-group">
-                  <strong>ID:</strong> {detailItem.id}
-                </div>
-                <div className="form-group">
-                  <strong>Keterangan:</strong> {detailItem.keterangan}
-                </div>
-                <div className="form-group">
-                  <strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}
-                </div>
-                <div className="form-group">
-                  <strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}
-                </div>
-                <div className="form-group">
-                  <strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}
-                </div>
-                <div className="form-group">
-                  <strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || "-"}
-                </div>
-                <div className="form-group">
-                  <strong>Nama Bahan:</strong> {detailItem.nama_bahan || "-"}
-                </div>
-                <div className="form-group">
-                  <strong>Gramasi:</strong> {detailItem.gramasi}
-                </div>
-                <div className="form-group">
-                  <strong>Satuan:</strong> {detailItem.satuan || "-"}
-                </div>
-                <div className="form-group">
-                  <strong>Lebar Kain:</strong> {detailItem.lebar_kain || "-"}
-                </div>
+                <div className="form-group"><strong>No:</strong> {items.findIndex(i => i.id === detailItem.id) + 1}</div>
+                <div className="form-group"><strong>Keterangan:</strong> {detailItem.keterangan}</div>
+                <div className="form-group"><strong>Nama Bahan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}</div>
+                <div className="form-group"><strong>Satuan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "satuan")}</div>
+                <div className="form-group"><strong>Harga:</strong> {formatRupiah(detailItem.harga)}</div>
+                <div className="form-group"><strong>SKU:</strong> {detailItem.sku || "-"}</div>
+                <div className="form-group"><strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}</div>
+                <div className="form-group"><strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</div>
+                <div className="form-group"><strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}</div>
+                <div className="form-group"><strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || '-'}</div>
+                <div className="form-group"><strong>Gramasi:</strong> {detailItem.gramasi}</div>
+                <div className="form-group"><strong>Lebar Kain:</strong> {detailItem.lebar_kain || '-'}</div>
                 {detailItem.foto_surat_jalan && (
                   <div className="form-group">
                     <a href={detailItem.foto_surat_jalan} target="_blank" rel="noreferrer">
@@ -465,12 +765,8 @@ const PembelianBahan = () => {
                 <h3>Warna</h3>
                 {(detailItem.warna || []).map((w, wi) => (
                   <div key={wi} className="form-group">
-                    <div>
-                      <strong>Nama:</strong> {w.nama || w.warna}
-                    </div>
-                    <div>
-                      <strong>Jumlah Rol:</strong> {w.jumlah_rol}
-                    </div>
+                    <div><strong>Nama:</strong> {w.nama || w.warna}</div>
+                    <div><strong>Jumlah Rol:</strong> {w.jumlah_rol}</div>
                     <div style={{ marginTop: 6 }}>
                       {(w.rol || []).map((r, ri) => (
                         <div key={ri}>Berat: {r.berat ?? r} kg</div>
@@ -498,14 +794,70 @@ const PembelianBahan = () => {
         </div>
       )}
 
+      {/* Modal Edit */}
       {showEditForm && (
         <div className="modal">
           <div className="modal-content">
             <h2>Edit Pembelian Bahan</h2>
             <form onSubmit={handleFormUpdate} className="modern-form">
               <div className="form-group">
+                <label>Keterangan</label>
+                <select
+                  name="keterangan"
+                  value={editItem.keterangan}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Pilih Keterangan</option>
+                  <option value="Utuh">Utuh</option>
+                  <option value="Sisa">Sisa</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Bahan</label>
+                <select
+                  name="bahan_id"
+                  value={editItem.bahan_id}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Pilih Bahan</option>
+                  {bahanList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.nama_bahan} ({b.satuan})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Harga (Rp)</label>
+                <input
+                  type="text"
+                  name="harga"
+                  value={editItem.harga}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Contoh: 50000"
+                />
+              </div>
+              <div className="form-group">
+                <label>SKU</label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={editItem.sku}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan SKU (opsional)"
+                />
+              </div>
+              <div className="form-group">
                 <label>Pabrik</label>
-                <select name="pabrik_id" value={editItem.pabrik_id} onChange={handleInputChange} required>
+                <select
+                  name="pabrik_id"
+                  value={editItem.pabrik_id}
+                  onChange={handleInputChange}
+                  required
+                >
                   <option value="">Pilih Pabrik</option>
                   {pabrikList.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -516,7 +868,12 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Gudang</label>
-                <select name="gudang_id" value={editItem.gudang_id} onChange={handleInputChange} required>
+                <select
+                  name="gudang_id"
+                  value={editItem.gudang_id}
+                  onChange={handleInputChange}
+                  required
+                >
                   <option value="">Pilih Gudang</option>
                   {gudangList.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -527,21 +884,113 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Tanggal Kirim</label>
-                <input type="date" name="tanggal_kirim" value={editItem.tanggal_kirim} onChange={handleInputChange} required />
+                <input
+                  type="date"
+                  name="tanggal_kirim"
+                  value={editItem.tanggal_kirim}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>No. Surat Jalan</label>
+                <input
+                  type="text"
+                  name="no_surat_jalan"
+                  value={editItem.no_surat_jalan}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Foto Surat Jalan (jpg/png/pdf)</label>
+                <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
+                {editItem.id && !editItem.foto_surat_jalan && (
+                  <p style={{ fontSize: "12px", color: "#666" }}>Pilih file baru untuk mengganti</p>
+                )}
               </div>
               <div className="form-group">
                 <label>Gramasi</label>
-                <input type="text" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} />
+                <input
+                  type="number"
+                  name="gramasi"
+                  value={editItem.gramasi}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
               <div className="form-group">
-                <label>Keterangan</label>
-                <input type="text" name="keterangan" value={editItem.keterangan} onChange={handleInputChange} />
+                <label>Lebar Kain</label>
+                <input
+                  type="number"
+                  name="lebar_kain"
+                  value={editItem.lebar_kain}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
+
+              <h3>Warna & Rol</h3>
+              {editItem.warna.map((w, wi) => (
+                <div key={wi} className="form-group">
+                  <label>{`Warna ${wi + 1}`}</label>
+                  <input
+                    type="text"
+                    value={w.nama}
+                    onChange={(e) => handleWarnaFieldChangeEdit(wi, "nama", e.target.value)}
+                    required
+                  />
+                  <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
+                  <div style={{ marginTop: 8 }}>
+                    {w.rol.map((berat, ri) => (
+                      <div
+                        key={ri}
+                        style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}
+                      >
+                        <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
+                        <input
+                          type="number"
+                          placeholder={`Berat ${ri + 1} (kg)`}
+                          value={berat}
+                          onChange={(e) => handleRolChangeEdit(wi, ri, e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-cancel"
+                          onClick={() => removeRolEdit(wi, ri)}
+                        >
+                          Hapus Rol
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn" onClick={() => addRolEdit(wi)}>
+                      Tambah Rol
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-cancel"
+                      onClick={() => removeWarnaEdit(wi)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      Hapus Warna
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div style={{ marginBottom: 12 }}>
+                <button type="button" className="btn" onClick={addWarnaEdit}>
+                  <FaPlus /> Tambah Warna
+                </button>
+              </div>
+
               <div className="form-actions">
                 <button type="submit" className="btn btn-submit">
                   Perbarui
                 </button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
+                <button
+                  type="button"
+                  className="btn btn-cancel"
+                  onClick={() => setShowEditForm(false)}
+                >
                   Batal
                 </button>
               </div>

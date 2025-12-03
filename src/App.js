@@ -48,6 +48,8 @@ import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
 import Seri from "./components/Packing/Seri";
+import StokBahan from "./components/Bahan/StokBahan";
+import ScanBahan from "./components/Bahan/ScanBahan";
 
 
 const App = () => {
@@ -102,6 +104,8 @@ const App = () => {
           <Route path="pembelianBahan" element={<PembelianBahan/>}/>
           <Route path="pabrik" element={<Pabrik/>}/>
           <Route path="gudang" element={<Gudang/>}/>
+          <Route path="scan-bahan" element={<ScanBahan/>}/>
+          <Route path="stok-bahan" element={<StokBahan/>}/>
           <Route path="seri" element={<Seri/>}/>
          
         </Route>
