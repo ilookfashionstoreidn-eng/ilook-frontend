@@ -20,6 +20,8 @@ const PembelianBahan = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
+
   // Form Tambah
   const [newItem, setNewItem] = useState({
     pabrik_id: "",
@@ -33,7 +35,7 @@ const PembelianBahan = () => {
     keterangan: "",
     sku: "",
     harga: "",
-    warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+    warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
   });
 
   // Form Edit
@@ -50,7 +52,7 @@ const PembelianBahan = () => {
     keterangan: "",
     sku: "",
     harga: "",
-    warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+    warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
   });
 
   // === FETCH DATA ===
@@ -58,12 +60,7 @@ const PembelianBahan = () => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [resData, resPabrik, resGudang, resBahan] = await Promise.all([
-          API.get("/pembelian-bahan"),
-          API.get("/pabrik"),
-          API.get("/gudang"),
-          API.get("/bahan"),
-        ]);
+        const [resData, resPabrik, resGudang, resBahan] = await Promise.all([API.get("/pembelian-bahan"), API.get("/pabrik"), API.get("/gudang"), API.get("/bahan")]);
 
         let dataBahan = Array.isArray(resData.data) ? resData.data : resData.data?.data || [];
         dataBahan = dataBahan.sort((a, b) => b.id - a.id);
@@ -88,10 +85,7 @@ const PembelianBahan = () => {
   }, [searchTerm]);
 
   // === PAGINATION ===
-  const filtered = items.filter((b) =>
-    (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase()));
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
@@ -186,7 +180,7 @@ const PembelianBahan = () => {
   const addWarna = () => {
     setNewItem((prev) => ({
       ...prev,
-      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0] }],
+      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     }));
   };
 
@@ -237,7 +231,7 @@ const PembelianBahan = () => {
   const addWarnaEdit = () => {
     setEditItem((prev) => ({
       ...prev,
-      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0] }],
+      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     }));
   };
 
@@ -302,7 +296,8 @@ const PembelianBahan = () => {
       formData.append("sku", newItem.sku || "");
       formData.append("harga", newItem.harga || "");
       newItem.warna.forEach((w, i) => {
-        formData.append(`warna[${i}][nama]`, w.nama || "");
+        const namaWarna = w.isCustom ? w.customNama || "" : w.nama || "";
+        formData.append(`warna[${i}][nama]`, namaWarna);
         formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
         w.rol.forEach((berat, j) => {
           formData.append(`warna[${i}][rol][${j}]`, berat);
@@ -340,7 +335,8 @@ const PembelianBahan = () => {
       }
 
       editItem.warna.forEach((w, i) => {
-        formData.append(`warna[${i}][nama]`, w.nama || "");
+        const namaWarna = w.isCustom ? w.customNama || "" : w.nama || "";
+        formData.append(`warna[${i}][nama]`, namaWarna);
         formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
         w.rol.forEach((berat, j) => {
           formData.append(`warna[${i}][rol][${j}]`, berat);
@@ -353,19 +349,12 @@ const PembelianBahan = () => {
       });
 
       const updatedData = response.data.data || response.data;
-      setItems((prev) =>
-        prev.map((b) => (b.id === editItem.id ? updatedData : b))
-      );
+      setItems((prev) => prev.map((b) => (b.id === editItem.id ? updatedData : b)));
       resetForm();
       alert("Pembelian bahan berhasil diperbarui!");
     } catch (error) {
       console.error("Update error:", error);
-      alert(
-        error.response?.data?.message ||
-          (error.response?.data?.errors &&
-            Object.values(error.response.data.errors).flat().join(", ")) ||
-          "Gagal memperbarui pembelian bahan."
-      );
+      alert(error.response?.data?.message || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) || "Gagal memperbarui pembelian bahan.");
     }
   };
 
@@ -376,16 +365,20 @@ const PembelianBahan = () => {
       const data = res.data;
 
       const warnaForForm = (data.warna || []).map((w) => {
-        const rolValues = (w.rol || []).map(r => r.berat ?? r);
+        const rawNama = w.nama || w.warna;
+        const rolValues = (w.rol || []).map((r) => r.berat ?? r);
+        const isPreset = WARNA_OPTIONS.includes(rawNama);
         return {
-          nama: w.nama || w.warna,
+          nama: isPreset ? rawNama : "",
           jumlah_rol: w.jumlah_rol,
           rol: rolValues.length > 0 ? rolValues : [0],
+          isCustom: !isPreset,
+          customNama: isPreset ? "" : rawNama,
         };
       });
 
       if (warnaForForm.length === 0) {
-        warnaForForm.push({ nama: "", jumlah_rol: 1, rol: [0] });
+        warnaForForm.push({ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" });
       }
 
       setEditItem({
@@ -430,7 +423,7 @@ const PembelianBahan = () => {
           responseType: "arraybuffer",
           headers: { Accept: "application/pdf" },
         });
-        const ct = (res.headers?.["content-type"] || res.headers?.["Content-Type"]) || "";
+        const ct = res.headers?.["content-type"] || res.headers?.["Content-Type"] || "";
         if (!ct.toLowerCase().includes("pdf")) throw new Error(`Unexpected content-type: ${ct}`);
         const disposition = res.headers?.["content-disposition"] || res.headers?.["Content-Disposition"];
         const match = disposition?.match(/filename="?([^";]+)"?/i);
@@ -447,7 +440,7 @@ const PembelianBahan = () => {
         return;
       } catch (err) {
         const status = err.response ? err.response.status : "ERR";
-        tried.push(`${(API.defaults?.baseURL || "")}${ep} [${status}]`);
+        tried.push(`${API.defaults?.baseURL || ""}${ep} [${status}]`);
       }
     }
     alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
@@ -465,12 +458,7 @@ const PembelianBahan = () => {
             <FaPlus /> Tambah
           </button>
           <div className="search-bar1">
-            <input
-              type="text"
-              placeholder="Cari keterangan atau SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
@@ -513,28 +501,15 @@ const PembelianBahan = () => {
                     <td>{b.tanggal_kirim}</td>
                     <td>{b.gramasi}</td>
                     <td>
-                      <button
-                        className="btn-icon"
-                        onClick={() => handleDownloadBarcode(b)}
-                        title="Download Barcode"
-                      >
+                      <button className="btn-icon" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
                         <FaDownload />
                       </button>
                     </td>
                     <td>
-                      <button
-                        className="btn-icon"
-                        title="Lihat Detail"
-                        onClick={() => handleDetailClick(b)}
-                        style={{ marginRight: "8px" }}
-                      >
+                      <button className="btn-icon" title="Lihat Detail" onClick={() => handleDetailClick(b)} style={{ marginRight: "8px" }}>
                         <FaEye />
                       </button>
-                      <button
-                        className="btn-icon"
-                        title="Edit"
-                        onClick={() => handleEditClick(b)}
-                      >
+                      <button className="btn-icon" title="Edit" onClick={() => handleEditClick(b)}>
                         <FaEdit />
                       </button>
                     </td>
@@ -546,33 +521,20 @@ const PembelianBahan = () => {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="pagination" style={{ marginTop: "20px", textAlign: "center" }}>
-                <button
-                  className="btn"
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
+                <button className="btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
 
                 {[...Array(totalPages)].map((_, i) => {
                   const page = i + 1;
                   return (
-                    <button
-                      key={page}
-                      className={`btn ${currentPage === page ? "btn-primary" : ""}`}
-                      onClick={() => goToPage(page)}
-                      style={{ margin: "0 4px" }}
-                    >
+                    <button key={page} className={`btn ${currentPage === page ? "btn-primary" : ""}`} onClick={() => goToPage(page)} style={{ margin: "0 4px" }}>
                       {page}
                     </button>
                   );
                 })}
 
-                <button
-                  className="btn"
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
+                <button className="btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
                   Next
                 </button>
               </div>
@@ -608,24 +570,11 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Harga (Rp)</label>
-                <input
-                  type="text"
-                  name="harga"
-                  value={newItem.harga}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Contoh: 50000"
-                />
+                <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
               </div>
               <div className="form-group">
                 <label>SKU</label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={newItem.sku}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan SKU (opsional)"
-                />
+                <input type="text" name="sku" value={newItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
               </div>
               <div className="form-group">
                 <label>Pabrik</label>
@@ -674,31 +623,36 @@ const PembelianBahan = () => {
               {newItem.warna.map((w, wi) => (
                 <div key={wi} className="form-group">
                   <label>{`Warna ${wi + 1}`}</label>
-                  <input
-                    type="text"
-                    value={w.nama}
-                    onChange={(e) => handleWarnaFieldChange(wi, "nama", e.target.value)}
+                  <select
+                    value={w.isCustom ? "Lainnya" : w.nama}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "Lainnya") {
+                        handleWarnaFieldChange(wi, "isCustom", true);
+                        handleWarnaFieldChange(wi, "nama", "");
+                      } else {
+                        handleWarnaFieldChange(wi, "isCustom", false);
+                        handleWarnaFieldChange(wi, "nama", value);
+                        handleWarnaFieldChange(wi, "customNama", "");
+                      }
+                    }}
                     required
-                  />
+                  >
+                    <option value="">Pilih Warna</option>
+                    {WARNA_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChange(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
                   <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
                   <div style={{ marginTop: 8 }}>
                     {w.rol.map((berat, ri) => (
-                      <div
-                        key={ri}
-                        style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}
-                      >
+                      <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                         <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
-                        <input
-                          type="number"
-                          placeholder={`Berat ${ri + 1} (kg)`}
-                          value={berat}
-                          onChange={(e) => handleRolChange(wi, ri, e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-cancel"
-                          onClick={() => removeRol(wi, ri)}
-                        >
+                        <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
+                        <button type="button" className="btn btn-cancel" onClick={() => removeRol(wi, ri)}>
                           Hapus Rol
                         </button>
                       </div>
@@ -706,12 +660,7 @@ const PembelianBahan = () => {
                     <button type="button" className="btn" onClick={() => addRol(wi)}>
                       Tambah Rol
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-cancel"
-                      onClick={() => removeWarna(wi)}
-                      style={{ marginLeft: 8 }}
-                    >
+                    <button type="button" className="btn btn-cancel" onClick={() => removeWarna(wi)} style={{ marginLeft: 8 }}>
                       Hapus Warna
                     </button>
                   </div>
@@ -743,18 +692,42 @@ const PembelianBahan = () => {
             <h2>Detail Pembelian Bahan</h2>
             {detailItem ? (
               <div className="modern-form">
-                <div className="form-group"><strong>No:</strong> {items.findIndex(i => i.id === detailItem.id) + 1}</div>
-                <div className="form-group"><strong>Keterangan:</strong> {detailItem.keterangan}</div>
-                <div className="form-group"><strong>Nama Bahan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}</div>
-                <div className="form-group"><strong>Satuan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "satuan")}</div>
-                <div className="form-group"><strong>Harga:</strong> {formatRupiah(detailItem.harga)}</div>
-                <div className="form-group"><strong>SKU:</strong> {detailItem.sku || "-"}</div>
-                <div className="form-group"><strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}</div>
-                <div className="form-group"><strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</div>
-                <div className="form-group"><strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}</div>
-                <div className="form-group"><strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || '-'}</div>
-                <div className="form-group"><strong>Gramasi:</strong> {detailItem.gramasi}</div>
-                <div className="form-group"><strong>Lebar Kain:</strong> {detailItem.lebar_kain || '-'}</div>
+                <div className="form-group">
+                  <strong>No:</strong> {items.findIndex((i) => i.id === detailItem.id) + 1}
+                </div>
+                <div className="form-group">
+                  <strong>Keterangan:</strong> {detailItem.keterangan}
+                </div>
+                <div className="form-group">
+                  <strong>Nama Bahan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}
+                </div>
+                <div className="form-group">
+                  <strong>Satuan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "satuan")}
+                </div>
+                <div className="form-group">
+                  <strong>Harga:</strong> {formatRupiah(detailItem.harga)}
+                </div>
+                <div className="form-group">
+                  <strong>SKU:</strong> {detailItem.sku || "-"}
+                </div>
+                <div className="form-group">
+                  <strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}
+                </div>
+                <div className="form-group">
+                  <strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}
+                </div>
+                <div className="form-group">
+                  <strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}
+                </div>
+                <div className="form-group">
+                  <strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || "-"}
+                </div>
+                <div className="form-group">
+                  <strong>Gramasi:</strong> {detailItem.gramasi}
+                </div>
+                <div className="form-group">
+                  <strong>Lebar Kain:</strong> {detailItem.lebar_kain || "-"}
+                </div>
                 {detailItem.foto_surat_jalan && (
                   <div className="form-group">
                     <a href={detailItem.foto_surat_jalan} target="_blank" rel="noreferrer">
@@ -765,8 +738,12 @@ const PembelianBahan = () => {
                 <h3>Warna</h3>
                 {(detailItem.warna || []).map((w, wi) => (
                   <div key={wi} className="form-group">
-                    <div><strong>Nama:</strong> {w.nama || w.warna}</div>
-                    <div><strong>Jumlah Rol:</strong> {w.jumlah_rol}</div>
+                    <div>
+                      <strong>Nama:</strong> {w.nama || w.warna}
+                    </div>
+                    <div>
+                      <strong>Jumlah Rol:</strong> {w.jumlah_rol}
+                    </div>
                     <div style={{ marginTop: 6 }}>
                       {(w.rol || []).map((r, ri) => (
                         <div key={ri}>Berat: {r.berat ?? r} kg</div>
@@ -802,12 +779,7 @@ const PembelianBahan = () => {
             <form onSubmit={handleFormUpdate} className="modern-form">
               <div className="form-group">
                 <label>Keterangan</label>
-                <select
-                  name="keterangan"
-                  value={editItem.keterangan}
-                  onChange={handleInputChange}
-                  required
-                >
+                <select name="keterangan" value={editItem.keterangan} onChange={handleInputChange} required>
                   <option value="">Pilih Keterangan</option>
                   <option value="Utuh">Utuh</option>
                   <option value="Sisa">Sisa</option>
@@ -815,12 +787,7 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Bahan</label>
-                <select
-                  name="bahan_id"
-                  value={editItem.bahan_id}
-                  onChange={handleInputChange}
-                  required
-                >
+                <select name="bahan_id" value={editItem.bahan_id} onChange={handleInputChange} required>
                   <option value="">Pilih Bahan</option>
                   {bahanList.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -831,33 +798,15 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Harga (Rp)</label>
-                <input
-                  type="text"
-                  name="harga"
-                  value={editItem.harga}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Contoh: 50000"
-                />
+                <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
               </div>
               <div className="form-group">
                 <label>SKU</label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={editItem.sku}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan SKU (opsional)"
-                />
+                <input type="text" name="sku" value={editItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
               </div>
               <div className="form-group">
                 <label>Pabrik</label>
-                <select
-                  name="pabrik_id"
-                  value={editItem.pabrik_id}
-                  onChange={handleInputChange}
-                  required
-                >
+                <select name="pabrik_id" value={editItem.pabrik_id} onChange={handleInputChange} required>
                   <option value="">Pilih Pabrik</option>
                   {pabrikList.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -868,12 +817,7 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Gudang</label>
-                <select
-                  name="gudang_id"
-                  value={editItem.gudang_id}
-                  onChange={handleInputChange}
-                  required
-                >
+                <select name="gudang_id" value={editItem.gudang_id} onChange={handleInputChange} required>
                   <option value="">Pilih Gudang</option>
                   {gudangList.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -884,80 +828,60 @@ const PembelianBahan = () => {
               </div>
               <div className="form-group">
                 <label>Tanggal Kirim</label>
-                <input
-                  type="date"
-                  name="tanggal_kirim"
-                  value={editItem.tanggal_kirim}
-                  onChange={handleInputChange}
-                  required
-                />
+                <input type="date" name="tanggal_kirim" value={editItem.tanggal_kirim} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
                 <label>No. Surat Jalan</label>
-                <input
-                  type="text"
-                  name="no_surat_jalan"
-                  value={editItem.no_surat_jalan}
-                  onChange={handleInputChange}
-                />
+                <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} />
               </div>
               <div className="form-group">
                 <label>Foto Surat Jalan (jpg/png/pdf)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
-                {editItem.id && !editItem.foto_surat_jalan && (
-                  <p style={{ fontSize: "12px", color: "#666" }}>Pilih file baru untuk mengganti</p>
-                )}
+                {editItem.id && !editItem.foto_surat_jalan && <p style={{ fontSize: "12px", color: "#666" }}>Pilih file baru untuk mengganti</p>}
               </div>
               <div className="form-group">
                 <label>Gramasi</label>
-                <input
-                  type="number"
-                  name="gramasi"
-                  value={editItem.gramasi}
-                  onChange={handleInputChange}
-                  required
-                />
+                <input type="number" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
                 <label>Lebar Kain</label>
-                <input
-                  type="number"
-                  name="lebar_kain"
-                  value={editItem.lebar_kain}
-                  onChange={handleInputChange}
-                  required
-                />
+                <input type="number" name="lebar_kain" value={editItem.lebar_kain} onChange={handleInputChange} required />
               </div>
 
               <h3>Warna & Rol</h3>
               {editItem.warna.map((w, wi) => (
                 <div key={wi} className="form-group">
                   <label>{`Warna ${wi + 1}`}</label>
-                  <input
-                    type="text"
-                    value={w.nama}
-                    onChange={(e) => handleWarnaFieldChangeEdit(wi, "nama", e.target.value)}
+                  <select
+                    value={w.isCustom ? "Lainnya" : w.nama}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "Lainnya") {
+                        handleWarnaFieldChangeEdit(wi, "isCustom", true);
+                        handleWarnaFieldChangeEdit(wi, "nama", "");
+                      } else {
+                        handleWarnaFieldChangeEdit(wi, "isCustom", false);
+                        handleWarnaFieldChangeEdit(wi, "nama", value);
+                        handleWarnaFieldChangeEdit(wi, "customNama", "");
+                      }
+                    }}
                     required
-                  />
+                  >
+                    <option value="">Pilih Warna</option>
+                    {WARNA_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChangeEdit(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
                   <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
                   <div style={{ marginTop: 8 }}>
                     {w.rol.map((berat, ri) => (
-                      <div
-                        key={ri}
-                        style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}
-                      >
+                      <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                         <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
-                        <input
-                          type="number"
-                          placeholder={`Berat ${ri + 1} (kg)`}
-                          value={berat}
-                          onChange={(e) => handleRolChangeEdit(wi, ri, e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-cancel"
-                          onClick={() => removeRolEdit(wi, ri)}
-                        >
+                        <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChangeEdit(wi, ri, e.target.value)} />
+                        <button type="button" className="btn btn-cancel" onClick={() => removeRolEdit(wi, ri)}>
                           Hapus Rol
                         </button>
                       </div>
@@ -965,12 +889,7 @@ const PembelianBahan = () => {
                     <button type="button" className="btn" onClick={() => addRolEdit(wi)}>
                       Tambah Rol
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-cancel"
-                      onClick={() => removeWarnaEdit(wi)}
-                      style={{ marginLeft: 8 }}
-                    >
+                    <button type="button" className="btn btn-cancel" onClick={() => removeWarnaEdit(wi)} style={{ marginLeft: 8 }}>
                       Hapus Warna
                     </button>
                   </div>
@@ -986,11 +905,7 @@ const PembelianBahan = () => {
                 <button type="submit" className="btn btn-submit">
                   Perbarui
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-cancel"
-                  onClick={() => setShowEditForm(false)}
-                >
+                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
                   Batal
                 </button>
               </div>

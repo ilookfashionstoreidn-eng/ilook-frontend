@@ -48,9 +48,10 @@ import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
 import Seri from "./components/Packing/Seri";
-import StokBahan from "./components/Bahan/StokBahan";
+import StokPerBahan from "./components/Bahan/StokPerBahan";
 import ScanBahan from "./components/Bahan/ScanBahan";
-
+import ScanStokBahanKeluar from "./components/Bahan/ScanStokBahanKeluar";
+import RiwayatStokBahanKeluar from "./components/Bahan/RiwayatStokBahanKeluar";
 
 const App = () => {
   return (
@@ -76,41 +77,41 @@ const App = () => {
           <Route path="/kinerja/:kategori" element={<Kinerja />} />
           <Route path="produk" element={<Produk />} />
           <Route path="historyPendapatan" element={<HistoryPendapatan />} />
-          <Route path="aksesoris" element={<Aksesoris/>} />
+          <Route path="aksesoris" element={<Aksesoris />} />
           <Route path="pembelianA" element={<PembelianAksesoris />} />
-          <Route path="pembelianB" element={<PembelianBAksesoris/>} />
-          <Route path="stok-aksesoris" element={<StokAksesoris/>} />
-          <Route path="petugas-c" element={<PesananPetugasC/>} />
-           <Route path="petugas-d" element={<PesananPetugasD/>} />
-          <Route path="tukangCutting" element={<TukangCutting/>} />
-          <Route path="spkcutting" element={<SpkCutting/>} />
-          <Route path="hasilcutting" element={<HasilCutting/>} />
-          <Route path="hutangc" element={<HutangCutting/>} />
-          <Route path="cashboanc" element={<CashboanCutting/>} />
-          <Route path="pendapatancutting" element={<PendapatanCutting/>} />
-          <Route path="pendapatanhistory" element={<HistoryPendapatanCutting/>} />
-          <Route path="markeran" element={<MarkeranProduk/>}/>
-          <Route path="tukangJasa" element={<TukangJasa/>}/>
-          <Route path="spkjasa" element={<SpkJasa/>}/>
-          <Route path="hasiljasa" element={<HasilJasa/>}/>
-          <Route path="cashboanjasa" element={<CashboanJasa/>}/>
-          <Route path="hutangjasa" element={<HutangJasa/>}/>
-          <Route path="pendapatanjasa" element={<PendapatanJasa/>}/>
-          <Route path="pendapatanhistoryjasa" element={<HistoryPendapatanJasa/>} />
-          <Route path="hppProduk" element={<HppProduk/>}/>
-          <Route path="packing" element={<Packing/>}/>
-          <Route path="logs" element={<Logs/>}/>
-          <Route path="bahan" element={<Bahan/>}/>
-          <Route path="pembelianBahan" element={<PembelianBahan/>}/>
-          <Route path="pabrik" element={<Pabrik/>}/>
-          <Route path="gudang" element={<Gudang/>}/>
-          <Route path="scan-bahan" element={<ScanBahan/>}/>
-          <Route path="stok-bahan" element={<StokBahan/>}/>
-          <Route path="seri" element={<Seri/>}/>
-         
+          <Route path="pembelianB" element={<PembelianBAksesoris />} />
+          <Route path="stok-aksesoris" element={<StokAksesoris />} />
+          <Route path="petugas-c" element={<PesananPetugasC />} />
+          <Route path="petugas-d" element={<PesananPetugasD />} />
+          <Route path="tukangCutting" element={<TukangCutting />} />
+          <Route path="spkcutting" element={<SpkCutting />} />
+          <Route path="hasilcutting" element={<HasilCutting />} />
+          <Route path="hutangc" element={<HutangCutting />} />
+          <Route path="cashboanc" element={<CashboanCutting />} />
+          <Route path="pendapatancutting" element={<PendapatanCutting />} />
+          <Route path="pendapatanhistory" element={<HistoryPendapatanCutting />} />
+          <Route path="markeran" element={<MarkeranProduk />} />
+          <Route path="tukangJasa" element={<TukangJasa />} />
+          <Route path="spkjasa" element={<SpkJasa />} />
+          <Route path="hasiljasa" element={<HasilJasa />} />
+          <Route path="cashboanjasa" element={<CashboanJasa />} />
+          <Route path="hutangjasa" element={<HutangJasa />} />
+          <Route path="pendapatanjasa" element={<PendapatanJasa />} />
+          <Route path="pendapatanhistoryjasa" element={<HistoryPendapatanJasa />} />
+          <Route path="hppProduk" element={<HppProduk />} />
+          <Route path="packing" element={<Packing />} />
+          <Route path="logs" element={<Logs />} />
+          <Route path="bahan" element={<Bahan />} />
+          <Route path="pembelianBahan" element={<PembelianBahan />} />
+          <Route path="pabrik" element={<Pabrik />} />
+          <Route path="gudang" element={<Gudang />} />
+          <Route path="scan-bahan" element={<ScanBahan />} />
+          <Route path="stok-per-bahan" element={<StokPerBahan />} />
+          <Route path="scan-stok-bahan-keluar" element={<ScanStokBahanKeluar />} />
+          <Route path="riwayat-stok-bahan-keluar" element={<RiwayatStokBahanKeluar />} />
+          <Route path="seri" element={<Seri />} />
         </Route>
       </Routes>
-    
     </Router>
   );
 };
