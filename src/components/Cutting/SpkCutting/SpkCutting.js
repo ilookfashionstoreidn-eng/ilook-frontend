@@ -429,10 +429,12 @@ const SpkCutting = () => {
                       </tr>
                       <tr>
                         {selectedDetailSpk.bagian.map((_, i) => (
-                          <>
-                            <th key={`nama-${i}`}>NAMA BAHAN</th>
-                            <th key={`qty-${i}`}>QTY</th>
-                          </>
+                          <React.Fragment key={`subheader-${i}`}>
+                            <th>NAMA BAHAN</th>
+                            <th>WARNA</th>
+                            <th>QTY</th>
+                            <th>BERAT (KG)</th>
+                          </React.Fragment>
                         ))}
                       </tr>
                     </thead>
