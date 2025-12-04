@@ -16,6 +16,9 @@ const Packing = () => {
   const skuInputRef = useRef(null);
   const serialInputRefs = useRef({});
   const submitButtonRef = useRef(null);
+  const [canSubmitByEnter, setCanSubmitByEnter] = useState(false);
+const [prevSerials, setPrevSerials] = useState({});
+
 
 
   const playSound = (type) => {
@@ -26,6 +29,8 @@ const Packing = () => {
       noproduk: "/sounds/produktidaksesuai.mp3",
       sudahpacking: "/sounds/orderansudahpacking.mp3",
       validasiok: "/sounds/validasiberhasil.mp3",
+      noseri: "/sounds/noseri.mp3",
+      isinoseri: "/sounds/isinoseri.mp3",
       
     };
     const audio = new Audio(soundMap[type]);
@@ -85,7 +90,6 @@ const handleSearchOrder = async () => {
   const sku = scannedSku.trim();
   if (!sku) return;
 
-  // ⛔ CEK: Apakah ada nomor seri yang belum diisi?
   const skuBelumLengkap = scannedItems.find(item =>
     item.serials.some(s => !s || s.trim() === "")
   );
@@ -94,18 +98,17 @@ const handleSearchOrder = async () => {
     setMessage(
       `⚠️ Harap isi semua nomor seri untuk SKU ${skuBelumLengkap.sku} sebelum scan SKU lain.`
     );
-    playSound("error");
-    setScannedSku("");  // ⬅️ Kosongkan input SKU
+    playSound("isinoseri");
+    setScannedSku("");  
     return;
   }
 
-  // 🔍 Lanjut proses scan SKU normal
   const itemIndex = scannedItems.findIndex((item) => item.sku == sku);
 
   if (itemIndex === -1) {
     setMessage(`❌ SKU ${sku} tidak ditemukan dalam order`);
     playSound("noproduk");
-    setScannedSku(""); // ⬅️ Kosongkan input SKU
+    setScannedSku(""); 
     return;
   }
 
@@ -152,6 +155,9 @@ const handleSearchOrder = async () => {
     if (item.serials.length !== item.scanned_qty) {
       setMessage(`⚠️ Jumlah nomor seri SKU ${item.sku} tidak sesuai qty scan`);
       playSound("error");
+      
+setCanSubmitByEnter(false);
+
       return;
     }
   }
@@ -189,7 +195,7 @@ const handleSearchOrder = async () => {
   return (
     <div>
     <div className="penjahit-container">
-      <h1>Packingan Scan</h1>
+      <h1>Packing Scan</h1>
     </div>
 
     <div className="tracking-card">
@@ -262,46 +268,59 @@ const handleSearchOrder = async () => {
               <input
                 type="text"
                 value={serial}
+                autoFocus
+                onKeyDown={(e) => {
                   
-                        autoFocus
+                }}
                 onChange={(e) => {
-                  const updated = [...scannedItems];
-                  updated[idx].serials[sIdx] = e.target.value;
-                  setScannedItems(updated);
-                  
-              // 1. Cek apakah SKU ini sudah lengkap semua nomor serinya
-              const isCurrentItemComplete =
-                updated[idx].serials.length === updated[idx].ordered_qty &&
-                updated[idx].serials.every(s => s.trim() !== "");
+                  const val = e.target.value;
+                    const key = `${idx}-${sIdx}`;
 
-              // 2. Kalau SKU ini belum lengkap → balikkan fokus ke scan SKU
-              if (!isCurrentItemComplete) {
-                setTimeout(() => {
-                  skuInputRef.current?.focus();
-                }, 50);
-                return;
+                if (val.length > 9) {
+                  setMessage("❌ Nomor seri lebih dari 9 karakter!");
+                  playSound("noseri");
+
+                  const key = `${idx}-${sIdx}`;
+                  e.target.value = prevSerials[key] || "";
+                  return;
                 }
+                  setPrevSerials(prev => ({ ...prev, [key]: val }));
 
-                // 3. SKU ini sudah lengkap → cek apakah semua SKU juga lengkap
-                const allSkuComplete = updated.every(item =>
-                  item.serials.length === item.ordered_qty &&
-                  item.serials.every(s => s.trim() !== "")
-                );
+                  const updated = [...scannedItems];
+                  updated[idx].serials[sIdx] = val;
+                  setScannedItems(updated);
 
-                // 4. Kalau semua SKU sudah lengkap → fokus ke submit
-                if (allSkuComplete) {
+                  const isCurrentItemComplete =
+                    updated[idx].serials.length === updated[idx].ordered_qty &&
+                    updated[idx].serials.every(s => s.trim() !== "");
+
+                  if (!isCurrentItemComplete) {
+                    setTimeout(() => {
+                      skuInputRef.current?.focus();
+                    }, 50);
+                    return;
+                  }
+
+                  const allSkuComplete = updated.every(item =>
+                    item.serials.length === item.ordered_qty &&
+                    item.serials.every(s => s.trim() !== "")
+                  );
+
+                 if (allSkuComplete) {
                   setTimeout(() => {
+                    setCanSubmitByEnter(true);  
                     submitButtonRef.current?.focus();
                   }, 50);
-                } else {
-                  // 5. Kalau belum → kembali ke scan SKU (untuk scan produk berikutnya)
-                  setTimeout(() => {
+                  }
+                  else {
+                    setTimeout(() => {
                     skuInputRef.current?.focus();
-                  }, 50);
-                }
-
+                    }, 50);
+                  }
                 }}
               />
+
+
             ))}
 
               </td>
@@ -341,15 +360,20 @@ const handleSearchOrder = async () => {
         </form>
       </div>
 
-        
           <div className="packing-actions">
            <button
-              ref={submitButtonRef}
-              onClick={handleSubmitValidation}
-              className="btn-validate"
-            >
-              Submit Validasi
-            </button>
+            ref={submitButtonRef}
+            className="btn-validate"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canSubmitByEnter) {
+                handleSubmitValidation();
+              }
+            }}
+            onClick={handleSubmitValidation}
+          >
+            Submit Validasi
+          </button>
+
 
             <button
               onClick={() => {
