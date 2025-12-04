@@ -155,7 +155,7 @@ const PembelianBahan = () => {
       keterangan: "",
       sku: "",
       harga: "",
-      warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+      warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     });
     setEditItem({
       id: null,
@@ -170,7 +170,7 @@ const PembelianBahan = () => {
       keterangan: "",
       sku: "",
       harga: "",
-      warna: [{ nama: "", jumlah_rol: 1, rol: [0] }],
+      warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     });
     setShowForm(false);
     setShowEditForm(false);
