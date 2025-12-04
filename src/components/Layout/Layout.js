@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import './Layout.css';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { FaBars, FaTimes, FaHome, FaCogs, FaChevronDown, FaChevronUp, FaFolder } from 'react-icons/fa';
-import API from '../../api';
+import React, { useState, useEffect } from "react";
+import "./Layout.css";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { FaBars, FaTimes, FaHome, FaCogs, FaChevronDown, FaChevronUp, FaFolder } from "react-icons/fa";
+import API from "../../api";
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -13,8 +13,8 @@ const Layout = () => {
   const [isPackingOpen, setIsPackingOpen] = useState(false);
 
   const [isGudangOpen, setIsGudangOpen] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("home"); 
-  const [role, setRole] = useState(""); 
+  const [activeMenu, setActiveMenu] = useState("home");
+  const [role, setRole] = useState("");
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
 
   useEffect(() => {
@@ -25,30 +25,30 @@ const Layout = () => {
   const toggleCmtMenu = () => {
     setIsCmtOpen(!isCmtOpen);
   };
-    const toggleCuttingMenu = () => {
+  const toggleCuttingMenu = () => {
     setIsCuttingOpen(!isCuttingOpen);
   };
-    const toggleJasaMenu = () => {
+  const toggleJasaMenu = () => {
     setIsJasaOpen(!isJasaOpen);
   };
 
-    const toggleHppMenu = () => {
+  const toggleHppMenu = () => {
     setIsHppOpen(!isHppOpen);
   };
-    const togglePackingMenu = () => {
+  const togglePackingMenu = () => {
     setIsPackingOpen(!isPackingOpen);
   };
-    const toggleGudangMenu = () => {
+  const toggleGudangMenu = () => {
     setIsGudangOpen(!isGudangOpen);
   };
 
-   const toggleAksesorisMenu = () => {
+  const toggleAksesorisMenu = () => {
     setIsAksesorisOpen(!isAksesorisOpen);
   };
 
   const handleMenuClick = (menu) => {
-    setActiveMenu(menu); 
-    setIsSidebarOpen(false); 
+    setActiveMenu(menu);
+    setIsSidebarOpen(false);
   };
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -57,13 +57,13 @@ const Layout = () => {
   const navigate = useNavigate();
   const handleLogout = async () => {
     try {
-      await API.post('/logout');
+      await API.post("/logout");
     } catch (error) {}
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('role');
-    localStorage.removeItem('foto');
-    navigate('/');
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    localStorage.removeItem("foto");
+    navigate("/");
   };
 
   return (
@@ -94,33 +94,25 @@ const Layout = () => {
               </div>
               {isCmtOpen && (
                 <ul className="dropdown-menu">
-                 
-                 
                   <li>
                     <Link to="penjahit" className={`dropdown-link ${activeMenu === "penjahit" ? "active" : ""}`} onClick={() => handleMenuClick("penjahit")}>
                       CMT
                     </Link>
                   </li>
                   <li>
-
                     <Link to="spkcmt" className={`dropdown-link ${activeMenu === "spk" ? "active" : ""}`} onClick={() => handleMenuClick("spk")}>
                       SPK
                     </Link>
                   </li>
 
-                 
+                  <li>
+                    <Link to="kinerja2" className={`dropdown-link ${activeMenu === "kinerja2" ? "active" : ""}`} onClick={() => handleMenuClick("kinerja2")}>
+                      Kinerja
+                    </Link>
+                  </li>
 
-                 
-                    <li>
-                     <Link to="kinerja2" className={`dropdown-link ${activeMenu === "kinerja2" ? "active" : ""}`} onClick={() => handleMenuClick("kinerja2")}>
-                        Kinerja 
-                     </Link>
-                    </li>
-                    
-                    
                   {role !== "penjahit" && (
                     <>
-                   
                       <li>
                         <Link to="pengiriman" className={`dropdown-link ${activeMenu === "pengiriman" ? "active" : ""}`} onClick={() => handleMenuClick("pengiriman")}>
                           Pengiriman
@@ -132,121 +124,76 @@ const Layout = () => {
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="cashbon"
-                          className={`dropdown-link ${activeMenu === "cashbon" ? "active" : ""}`}
-                          onClick={() => handleMenuClick("casbon")}
-                        >
+                        <Link to="cashbon" className={`dropdown-link ${activeMenu === "cashbon" ? "active" : ""}`} onClick={() => handleMenuClick("casbon")}>
                           Casbon
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="pendapatan"
-                          className={`dropdown-link ${activeMenu === "pendapatan" ? "active" : ""}`}
-                          onClick={() => handleMenuClick("pendapatan")}
-                        >
+                        <Link to="pendapatan" className={`dropdown-link ${activeMenu === "pendapatan" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan")}>
                           Pendapatan
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="historyPendapatan"
-                          className={`dropdown-link ${activeMenu === "historyPendapatan" ? "active" : ""}`}
-                          onClick={() => handleMenuClick("historyPendapatan")}
-                        >
+                        <Link to="historyPendapatan" className={`dropdown-link ${activeMenu === "historyPendapatan" ? "active" : ""}`} onClick={() => handleMenuClick("historyPendapatan")}>
                           History Pendapatan
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="deadline"
-                          className={`dropdown-link ${activeMenu === "deadline" ? "active" : ""}`}
-                          onClick={() => handleMenuClick("deadline")}
-                        >
+                        <Link to="deadline" className={`dropdown-link ${activeMenu === "deadline" ? "active" : ""}`} onClick={() => handleMenuClick("deadline")}>
                           Log Deadline
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="status"
-                          className={`dropdown-link ${activeMenu === "status" ? "active" : ""}`}
-                          onClick={() => handleMenuClick("status")}
-                        >
+                        <Link to="status" className={`dropdown-link ${activeMenu === "status" ? "active" : ""}`} onClick={() => handleMenuClick("status")}>
                           Log Status
                         </Link>
                       </li>
-                      
-                     
-                    
-
                     </>
                   )}
                 </ul>
               )}
-        <li>
-    
-          <li>
-              <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
-                <FaCogs className="icon" /> Aksesoris
-                <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-              </div>
-              {isAksesorisOpen && (
-                      <ul className="dropdown-menu">
-                        <li>
-                          <Link
-                            to="aksesoris"
-                            className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`}
-                            onClick={() => handleMenuClick("aksesoris")}
-                          >
-                            Data Aksesoris
-                          </Link>
-                        </li>
-                       <li>
-                          <Link
-                            to="pembelianA"
-                            className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`}
-                            onClick={() => handleMenuClick("pembelianA")}
-                          >
-                            Pembelian Aksesoris Toko
-                          </Link>
-                        </li>
-                       
-                       
-                        <li>
-                          <Link
-                            to="petugas-c"
-                            className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`}
-                            onClick={() => handleMenuClick("petugas-c")}
-                          >
-                            Pembelian Aksesoris CMT
-                          </Link>
-                        </li>
+              <li>
+                <li>
+                  <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
+                    <FaCogs className="icon" /> Aksesoris
+                    <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+                  </div>
+                  {isAksesorisOpen && (
+                    <ul className="dropdown-menu">
+                      <li>
+                        <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
+                          Data Aksesoris
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="pembelianA" className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianA")}>
+                          Pembelian Aksesoris Toko
+                        </Link>
+                      </li>
 
-                         
-                       
-                      </ul>
-                    )}
-                  </li>
-
-        </li>     
-              
-        </li>
-          <li>
+                      <li>
+                        <Link to="petugas-c" className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`} onClick={() => handleMenuClick("petugas-c")}>
+                          Pembelian Aksesoris CMT
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              </li>
+            </li>
+            <li>
               <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cutting" ? "active" : ""}`}>
                 <FaCogs className="icon" /> CUTTING
                 <span className={`arrow ${isCuttingOpen ? "open" : ""}`}>{isCuttingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
               {isCuttingOpen && (
                 <ul className="dropdown-menu">
-                 
-                 
                   <li>
                     <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
-                     Tukang Cutting
+                      Tukang Cutting
                     </Link>
                   </li>
-                  
+
                   <li>
                     <Link to="markeran" className={`dropdown-link ${activeMenu === "markeran" ? "active" : ""}`} onClick={() => handleMenuClick("markeran")}>
                       Markeran Produk
@@ -254,40 +201,40 @@ const Layout = () => {
                   </li>
                   <li>
                     <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
-                      SPK 
+                      SPK
                     </Link>
                   </li>
                   <li>
                     <Link to="hasilcutting" className={`dropdown-link ${activeMenu === "hasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("hasilcutting")}>
-                      Hasil 
+                      Hasil
                     </Link>
                   </li>
-                   <li>
+                  <li>
                     <Link to="hutangc" className={`dropdown-link ${activeMenu === "hutangc" ? "active" : ""}`} onClick={() => handleMenuClick("hutangc")}>
-                      Hutang 
+                      Hutang
                     </Link>
                   </li>
-                    <li>
+                  <li>
                     <Link to="cashboanc" className={`dropdown-link ${activeMenu === "cashboanc" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanc")}>
-                      Cashboan 
+                      Cashboan
                     </Link>
                   </li>
-                  
-                   <li>
+
+                  <li>
                     <Link to="pendapatancutting" className={`dropdown-link ${activeMenu === "pendapatancutting" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatancutting")}>
-                      Pendapatan 
+                      Pendapatan
                     </Link>
                   </li>
-                    <li>
+                  <li>
                     <Link to="pendapatanhistory" className={`dropdown-link ${activeMenu === "pendapatanhistory" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistory")}>
                       History Pendapatan
                     </Link>
                   </li>
                 </ul>
-              )}            
-          </li>   
+              )}
+            </li>
 
-           <li>
+            <li>
               <div onClick={toggleJasaMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "jasa" ? "active" : ""}`}>
                 <FaCogs className="icon" /> JASA
                 <span className={`arrow ${isJasaOpen ? "open" : ""}`}>{isJasaOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -299,20 +246,20 @@ const Layout = () => {
                       Tukang Jasa
                     </Link>
                   </li>
-                  
+
                   <li>
                     <Link to="spkjasa" className={`dropdown-link ${activeMenu === "spkjasa" ? "active" : ""}`} onClick={() => handleMenuClick("spkjasa")}>
                       Spk Jasa
                     </Link>
                   </li>
 
-                    <li>
+                  <li>
                     <Link to="hasiljasa" className={`dropdown-link ${activeMenu === "hasiljasa" ? "active" : ""}`} onClick={() => handleMenuClick("hasiljasa")}>
-                       Hasil Jasa
+                      Hasil Jasa
                     </Link>
                   </li>
 
-                   <li>
+                  <li>
                     <Link to="cashboanjasa" className={`dropdown-link ${activeMenu === "cashboanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanjasa")}>
                       Cashboan
                     </Link>
@@ -324,23 +271,21 @@ const Layout = () => {
                     </Link>
                   </li>
 
-                    <li>
+                  <li>
                     <Link to="pendapatanjasa" className={`dropdown-link ${activeMenu === "pendapatanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanjasa")}>
                       Pendapatan
                     </Link>
                   </li>
-                <li>
+                  <li>
                     <Link to="pendapatanhistoryjasa" className={`dropdown-link ${activeMenu === "pendapatanhistoryjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistoryjasa")}>
                       History Pendapatan
                     </Link>
                   </li>
                 </ul>
-              )}            
-          </li>   
+              )}
+            </li>
 
-
-
-          <li>
+            <li>
               <div onClick={toggleHppMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "hpp" ? "active" : ""}`}>
                 <FaCogs className="icon" /> Produk
                 <span className={`arrow ${isHppOpen ? "open" : ""}`}>{isHppOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -352,14 +297,11 @@ const Layout = () => {
                       Hpp Produk
                     </Link>
                   </li>
-                  
-                  
                 </ul>
-              )}            
-          </li>     
+              )}
+            </li>
 
-          
-          <li>
+            <li>
               <div onClick={togglePackingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "packing" ? "active" : ""}`}>
                 <FaCogs className="icon" /> Packing
                 <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -371,26 +313,21 @@ const Layout = () => {
                       Packing
                     </Link>
                   </li>
-                   <li>
+                  <li>
                     <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
                       History scan
                     </Link>
                   </li>
-                   <li>
+                  <li>
                     <Link to="seri" className={`dropdown-link ${activeMenu === "seri" ? "active" : ""}`} onClick={() => handleMenuClick("seri")}>
                       Seri
                     </Link>
                   </li>
-                  
-                  
                 </ul>
-              )}            
-          </li>     
+              )}
+            </li>
 
-
-
-
-<li>
+            <li>
               <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "hpp" ? "active" : ""}`}>
                 <FaCogs className="icon" /> Gudang
                 <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -398,57 +335,54 @@ const Layout = () => {
               {isGudangOpen && (
                 <ul className="dropdown-menu">
                   <li>
-                    <Link to="bahan" 
-                    className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} 
-                    onClick={() => handleMenuClick("bahan")}>
+                  <li>
+                    <Link to="gudang" className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`} onClick={() => handleMenuClick("gudang")}>
+                      Gudang
+                    </Link>
+                  </li> 
+                  <li>
+                    <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
+                      Pabrik
+                    </Link>
+                  </li>
+                    <Link to="bahan" className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} onClick={() => handleMenuClick("bahan")}>
                       Bahan
                     </Link>
                   </li>
                   <li>
-                    <Link to="pembelianBahan"
-                    className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`}
-                    onClick={() => handleMenuClick("pembelianBahan")}>
+                    <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
                       Pembelian Bahan
                     </Link>
                   </li>
                   <li>
-                    <Link to="scan-bahan"
-                    className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`}
-                    onClick={() => handleMenuClick("scan-bahan")}>
+                    <Link to="scan-bahan" className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("scan-bahan")}>
                       Scan Bahan
                     </Link>
                   </li>
                   <li>
-                    <Link to="stok-bahan"
-                    className={`dropdown-link ${activeMenu === "stok-bahan" ? "active" : ""}`}
-                    onClick={() => handleMenuClick("stok-bahan")}>
+                    <Link to="stok-per-bahan" className={`dropdown-link ${activeMenu === "stok-per-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-per-bahan")}>
                       Stok Bahan
                     </Link>
                   </li>
                   <li>
-                    <Link to="pabrik"
-                    className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`}
-                    onClick={() => handleMenuClick("pabrik")}>
-                      Pabrik
+                    <Link to="scan-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "scan-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("scan-stok-bahan-keluar")}>
+                      Scan Stok Bahan Keluar
+                    </Link>
+                    <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
+                      Riwayat Stok Bahan Keluar
                     </Link>
                   </li>
-                  <li>
-                    <Link to="gudang"
-                    className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`}
-                    onClick={() => handleMenuClick("gudang")}>
-                      Gudang
-                    </Link>
-                  </li>
-                  
-                  
+                 
+                 
                 </ul>
-              )}            
-          </li>     
+              )}
+            </li>
 
-          <li>
-            <button className="sidebar-link" onClick={handleLogout}>Logout</button>
-          </li>
-
+            <li>
+              <button className="sidebar-link" onClick={handleLogout}>
+                Logout
+              </button>
+            </li>
           </ul>
         </nav>
       </aside>

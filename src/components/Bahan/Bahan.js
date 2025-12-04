@@ -196,7 +196,7 @@ const Bahan = () => {
       <div className="table-container">
         <div className="filter-header1">
           <button onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah Bahan
+            <FaPlus /> Tambah
           </button>
           <div className="search-bar1">
             <input type="text" placeholder="Cari nama bahan, deskripsi, atau satuan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
