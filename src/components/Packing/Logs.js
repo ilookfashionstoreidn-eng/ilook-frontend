@@ -324,9 +324,9 @@ console.log(formatted); // 26-11-2025
                 <td data-label="tracking number : ">{tc.order?.tracking_number}</td>
                 <td data-label="Kasir : ">{tc.performed_by}</td>
                 <td data-label="Total : ">{tc.order?.total_items}</td>
-               <td data-label="Total : ">Rp. {tc.order?.total_amount}</td>
+                <td data-label="Total : ">Rp. {tc.order?.total_amount}</td>
                <td data-label="tanggal : ">
-                  {tc.created_at ? new Date(tc.created_at).toLocaleDateString("id-ID") : "-"}
+                  {dayjs(tc.created_at).format("DD-MM-YYYY")}
                 </td>
 
                 <td data-label="Nomor Seri : ">
