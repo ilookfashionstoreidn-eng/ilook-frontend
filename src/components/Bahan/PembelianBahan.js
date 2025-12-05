@@ -730,27 +730,43 @@ const PembelianBahan = () => {
                 </div>
                 {detailItem.foto_surat_jalan && (
                   <div className="form-group">
-                    <a href={detailItem.foto_surat_jalan} target="_blank" rel="noreferrer">
-                      Lihat Surat Jalan
+                    <strong>Lihat Surat Jalan:</strong>{" "}
+                    <a href={detailItem.foto_surat_jalan.startsWith("http") ? detailItem.foto_surat_jalan : `http://localhost:8000/storage/${detailItem.foto_surat_jalan}`} target="_blank" rel="noreferrer">
+                      {detailItem.no_surat_jalan || "Lihat Surat Jalan"}
                     </a>
                   </div>
                 )}
-                <h3>Warna</h3>
-                {(detailItem.warna || []).map((w, wi) => (
-                  <div key={wi} className="form-group">
-                    <div>
-                      <strong>Nama:</strong> {w.nama || w.warna}
+                <h3>Warna & Rol</h3>
+                {detailItem.warna && detailItem.warna.length > 0 ? (
+                  detailItem.warna.map((w, wi) => (
+                    <div key={wi} className="form-group" style={{ border: "1px solid #ddd", padding: "12px", marginBottom: "12px", borderRadius: "4px" }}>
+                      <div style={{ marginBottom: "8px" }}>
+                        <strong>Warna:</strong> {w.warna || w.nama || "-"}
+                      </div>
+                      <div style={{ marginBottom: "8px" }}>
+                        <strong>Jumlah Rol:</strong> {w.jumlah_rol || (w.rol ? w.rol.length : 0)}
+                      </div>
+                      <div style={{ marginTop: "8px" }}>
+                        <strong>Berat Rol:</strong>
+                        {w.rol && w.rol.length > 0 ? (
+                          <ul style={{ marginTop: "4px", paddingLeft: "20px" }}>
+                            {w.rol.map((r, ri) => (
+                              <li key={ri}>
+                                Rol {ri + 1}: {r.berat !== null && r.berat !== undefined ? `${r.berat} kg` : typeof r === "number" ? `${r} kg` : "-"}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div style={{ marginTop: "4px", color: "#666" }}>Tidak ada data rol</div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <strong>Jumlah Rol:</strong> {w.jumlah_rol}
-                    </div>
-                    <div style={{ marginTop: 6 }}>
-                      {(w.rol || []).map((r, ri) => (
-                        <div key={ri}>Berat: {r.berat ?? r} kg</div>
-                      ))}
-                    </div>
+                  ))
+                ) : (
+                  <div className="form-group" style={{ color: "#666" }}>
+                    Tidak ada data warna
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               <p>Memuat detail...</p>

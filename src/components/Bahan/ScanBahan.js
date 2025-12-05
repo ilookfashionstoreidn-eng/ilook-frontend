@@ -6,6 +6,7 @@ import { FaQrcode, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const ScanBahan = () => {
   const inputRef = useRef(null);
+  const scanInputRef = useRef(null);
   const [barcode, setBarcode] = useState("");
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
@@ -113,7 +114,10 @@ const ScanBahan = () => {
       setScanInput("");
       // Refresh tabel stok setelah scan berhasil
       fetchStok();
-      inputRef.current?.focus();
+      // Focus kembali ke input scan, bukan ke input search barcode
+      setTimeout(() => {
+        scanInputRef.current?.focus();
+      }, 100);
     } catch (error) {
       const msg = error.response?.data?.message || "Gagal memindai barcode.";
       setScanMessage(msg);
@@ -134,7 +138,7 @@ const ScanBahan = () => {
           <FaQrcode style={{ marginRight: "8px" }} /> Scan Barcode Rol
         </h3>
         <form onSubmit={handleScan} style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "16px" }}>
-          <input type="text" value={scanInput} onChange={(e) => setScanInput(e.target.value)} placeholder="Masukkan barcode rol..." style={{ padding: "8px 12px", flex: 1, borderRadius: "4px", border: "1px solid #ccc" }} />
+          <input ref={scanInputRef} type="text" value={scanInput} onChange={(e) => setScanInput(e.target.value)} placeholder="Masukkan barcode rol..." style={{ padding: "8px 12px", flex: 1, borderRadius: "4px", border: "1px solid #ccc" }} />
           <button type="submit" className="btn" style={{ padding: "8px 16px" }} disabled={scanStatus === "loading"}>
             {scanStatus === "loading" ? "Memindai..." : "Scan"}
           </button>

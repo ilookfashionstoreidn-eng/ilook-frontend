@@ -127,7 +127,7 @@ const ScanStokBahanKeluar = () => {
         <div className="tracking-input-wrapper">
           <input
             type="text"
-            placeholder="Scan / masukkan SPK Cutting ID..."
+            placeholder="masukkan nomor seri..."
             value={spkCuttingId}
             onChange={(e) => setSpkCuttingId(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchSpkCuttingDetail()}
