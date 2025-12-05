@@ -133,7 +133,7 @@ const ScanBahan = () => {
 
         {/* Tabel Stok Bahan */}
         <div style={{ marginTop: "30px" }}>
-          <h3 style={{ marginBottom: "15px" }}>Daftar Stok Bahan</h3>
+          <h3 style={{ marginBottom: "15px" }}>Daftar Stock Bahan</h3>
           <div className="filter-header1">
             <div className="search-bar1">
               <input type="text" placeholder="Cari barcode, nama bahan, atau warna..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
