@@ -335,16 +335,16 @@ const Layout = () => {
               {isGudangOpen && (
                 <ul className="dropdown-menu">
                   <li>
-                  <li>
-                    <Link to="gudang" className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`} onClick={() => handleMenuClick("gudang")}>
-                      Gudang
-                    </Link>
-                  </li> 
-                  <li>
                     <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
                       Pabrik
                     </Link>
                   </li>
+                  <li>
+                    <Link to="gudang" className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`} onClick={() => handleMenuClick("gudang")}>
+                      Gudang
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="bahan" className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} onClick={() => handleMenuClick("bahan")}>
                       Bahan
                     </Link>
@@ -368,12 +368,12 @@ const Layout = () => {
                     <Link to="scan-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "scan-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("scan-stok-bahan-keluar")}>
                       Scan Stok Bahan Keluar
                     </Link>
+                  </li>
+                  <li>
                     <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
                       Riwayat Stok Bahan Keluar
                     </Link>
                   </li>
-                 
-                 
                 </ul>
               )}
             </li>

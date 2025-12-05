@@ -74,7 +74,7 @@ const StokPerBahan = () => {
   return (
     <div>
       <div className="penjahit-container">
-        <h1>Stok Per Bahan</h1>
+        <h1>Stok Bahan</h1>
       </div>
 
       <div className="table-container">
@@ -162,38 +162,114 @@ const StokPerBahan = () => {
                         {isExpanded && item.detail && item.detail.length > 0 && (
                           <tr>
                             <td colSpan="8" style={{ padding: "0", backgroundColor: "#f8f9fa" }}>
-                              <div style={{ padding: "15px" }}>
-                                <h4 style={{ marginBottom: "10px", color: "#495057" }}>Detail Stok - {item.nama_bahan}</h4>
-                                <table
+                              <div style={{ padding: "20px" }}>
+                                <h4 style={{ marginBottom: "15px", color: "#495057", fontSize: "18px" }}>Detail Stok - {item.nama_bahan}</h4>
+
+                                {/* Summary Info */}
+                                <div
                                   style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse",
-                                    fontSize: "14px",
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                                    gap: "15px",
+                                    marginBottom: "20px",
                                   }}
                                 >
-                                  <thead>
-                                    <tr style={{ backgroundColor: "#e9ecef" }}>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Barcode</th>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Warna</th>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Berat (kg)</th>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Gudang</th>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Pabrik</th>
-                                      <th style={{ padding: "8px", border: "1px solid #dee2e6" }}>Tanggal Scan</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {item.detail.map((detail, idx) => (
-                                      <tr key={idx}>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.barcode}</td>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.warna || "-"}</td>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.berat}</td>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.nama_gudang || "-"}</td>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.nama_pabrik || "-"}</td>
-                                        <td style={{ padding: "8px", border: "1px solid #dee2e6" }}>{detail.scanned_at ? new Date(detail.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
+                                    <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#007bff" }}>{item.total_rol}</p>
+                                  </div>
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Warna</strong>
+                                    <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{item.warna ? item.warna.length : 0}</p>
+                                  </div>
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
+                                    <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{item.total_berat.toLocaleString("id-ID")} kg</p>
+                                  </div>
+                                </div>
+
+                                {/* Breakdown per Warna */}
+                                <h5 style={{ marginBottom: "15px", color: "#495057", fontSize: "16px" }}>Rincian Per Warna</h5>
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                                    gap: "15px",
+                                  }}
+                                >
+                                  {(() => {
+                                    // Group by warna
+                                    const warnaGroups = {};
+                                    item.detail.forEach((detail) => {
+                                      const warna = detail.warna || "Tidak Diketahui";
+                                      if (!warnaGroups[warna]) {
+                                        warnaGroups[warna] = {
+                                          count: 0,
+                                          berat: 0,
+                                        };
+                                      }
+                                      warnaGroups[warna].count += 1;
+                                      warnaGroups[warna].berat += parseFloat(detail.berat) || 0;
+                                    });
+
+                                    return Object.entries(warnaGroups).map(([warna, data], idx) => (
+                                      <div
+                                        key={idx}
+                                        style={{
+                                          padding: "15px",
+                                          backgroundColor: "white",
+                                          borderRadius: "8px",
+                                          border: "1px solid #dee2e6",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            padding: "4px 12px",
+                                            borderRadius: "12px",
+                                            backgroundColor: "#007bff",
+                                            color: "white",
+                                            fontSize: "13px",
+                                            fontWeight: "bold",
+                                            marginBottom: "10px",
+                                            display: "inline-block",
+                                            textTransform: "capitalize",
+                                          }}
+                                        >
+                                          {warna}
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
+                                          <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{data.count}</p>
+                                        </div>
+                                        <div>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
+                                          <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{data.berat.toFixed(2)} kg</p>
+                                        </div>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
                               </div>
                             </td>
                           </tr>

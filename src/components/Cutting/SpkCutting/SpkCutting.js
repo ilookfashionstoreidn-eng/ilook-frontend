@@ -136,7 +136,6 @@ const SpkCutting = () => {
           bahan_id: parseInt(bahan.bahan_id),
           warna: bahan.warna || null,
           qty: parseFloat(bahan.qty),
-          berat: bahan.berat ? parseFloat(bahan.berat) : null,
         })),
       })),
     };
@@ -209,7 +208,7 @@ const SpkCutting = () => {
 
   const addBahan = (bagianIndex) => {
     const updated = [...newSpkCutting.bagian];
-    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", qty: "", berat: "" });
+    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", qty: "" });
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
@@ -292,8 +291,8 @@ const SpkCutting = () => {
             <h2>Tambah SPK Cutting</h2>
             <form onSubmit={handleFormSubmit} className="modern-form">
               <div className="form-group">
-                <label>ID SPK Cutting:</label>
-                <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting} onChange={handleInputChange} placeholder="Masukkan ID SPK" required />
+                <label>Nomor Seri:</label>
+                <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting} onChange={handleInputChange} placeholder="Masukkan Nomor Seri" required />
               </div>
               <div className="form-group">
                 <label>Tukang Cutting:</label>
@@ -367,7 +366,6 @@ const SpkCutting = () => {
                         ))}
                       </select>
                       <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
-                      <input type="number" step="0.01" placeholder="Berat (Estimasi)" value={bahan.berat || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "berat", e.target.value)} />
                       <button type="button" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
                         Hapus Bahan
                       </button>
@@ -422,17 +420,18 @@ const SpkCutting = () => {
                     <thead>
                       <tr>
                         {selectedDetailSpk.bagian.map((bagian, i) => (
-                          <th key={i} colSpan="4" style={{ textAlign: "center" }}>
+                          <th key={i} colSpan="3" style={{ textAlign: "center" }}>
                             {bagian.nama_bagian.toUpperCase()}
                           </th>
                         ))}
                       </tr>
                       <tr>
                         {selectedDetailSpk.bagian.map((_, i) => (
-                          <>
-                            <th key={`nama-${i}`}>NAMA BAHAN</th>
-                            <th key={`qty-${i}`}>QTY</th>
-                          </>
+                          <React.Fragment key={`subheader-${i}`}>
+                            <th>NAMA BAHAN</th>
+                            <th>WARNA</th>
+                            <th>QTY</th>
+                          </React.Fragment>
                         ))}
                       </tr>
                     </thead>
@@ -448,7 +447,6 @@ const SpkCutting = () => {
                                 <td key={`nama-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.bahan?.nama_bahan || bahan.nama_bahan : ""}</td>
                                 <td key={`warna-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.warna || "-" : ""}</td>
                                 <td key={`qty-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.qty : ""}</td>
-                                <td key={`berat-${bagianIndex}-${rowIndex}`}>{bahan ? (bahan.berat ? `${bahan.berat} kg` : "-") : ""}</td>
                               </>
                             );
                           })}
@@ -468,7 +466,6 @@ const SpkCutting = () => {
                               <td key={`value-total-${i}`}>
                                 <strong>{total}</strong>
                               </td>
-                              <td key={`berat-total-${i}`}>-</td>
                             </>
                           );
                         })}
@@ -476,7 +473,7 @@ const SpkCutting = () => {
 
                       {/* total keseluruhan */}
                       <tr>
-                        <td colSpan={selectedDetailSpk.bagian.length * 4} style={{ textAlign: "right" }}>
+                        <td colSpan={selectedDetailSpk.bagian.length * 3} style={{ textAlign: "right" }}>
                           <strong>JUMLAH TOTAL: {selectedDetailSpk.bagian.reduce((sum, bagian) => sum + bagian.bahan.reduce((s, b) => s + (parseFloat(b.qty) || 0), 0), 0)}</strong>
                         </td>
                       </tr>
