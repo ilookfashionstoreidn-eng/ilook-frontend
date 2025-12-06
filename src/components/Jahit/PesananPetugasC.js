@@ -228,12 +228,12 @@ const handlePetugasDFormSubmit = async (e) => {
 const handleOpenPetugasDForm = (petugasC) => {
   if (petugasC.status === 'pending') {
     setSelectedPesanan(petugasC);
-    setShowFormPetugasD(false);  // Menyembunyikan form Petugas C
-    setShowFormPetugasD(true);   // Menampilkan form Petugas D
+    setShowFormPetugasD(false);  
+    setShowFormPetugasD(true);   
   }
 };
 const handleBarcodeChange = (e) => {
-  setBarcodeInput(e.target.value); // hanya update input sementara
+  setBarcodeInput(e.target.value); 
 };
 
 

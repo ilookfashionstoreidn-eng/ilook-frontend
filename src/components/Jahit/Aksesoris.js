@@ -128,12 +128,17 @@ const filteredAksesoris = aksesoris.filter((item) =>
 
   
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewAksesoris((prev) => ({
-        ...prev,
-        [name]: value, 
-    }));
+  const { name, value } = e.target;
+
+  setNewAksesoris((prev) => ({
+    ...prev,
+    [name]: 
+      name === "nama_aksesoris" || name === "jenis_aksesoris"
+        ? value.toUpperCase()
+        : value
+  }));
 };
+
 
 const handleFileChange = (e) => {
     setNewAksesoris(prev => ({
@@ -271,11 +276,12 @@ const handleEditFileChange = (e) => {
 
             <td data-label="Foto Aksesoris : ">
               {aksesoris.foto_aksesoris ? (
-                <img
-                  src={`${process.env.REACT_APP_API_URL.replace("/api", "")}/storage/${aksesoris.foto_aksesoris}`}
-                  alt="Foto Aksesoris"
-                  style={{ width: "80px", height: "47px", objectFit: "cover" }}
-                />
+               <img
+                src={`${process.env.REACT_APP_FILE_URL}/storage/${aksesoris.foto_aksesoris}`}
+                alt="Foto Aksesoris"
+                style={{ width: "80px", height: "47px", objectFit: "cover" }}
+              />
+
               ) : (
                 "-"
               )}
