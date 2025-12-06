@@ -8,25 +8,33 @@ const Seri = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [data, setData] = useState([]);
+const [currentPage, setCurrentPage] = useState(1);
+const [lastPage, setLastPage] = useState(1);
   const [newSeri, setNewSeri] = useState({
   nomor_seri: "",
   sku: ""
   });
 
 
+  const fetchSeri = async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await API.get(`/seri?page=${page}`); // UPDATED
+
+      setSeri(response.data.data);        // updated: hanya ambil array
+      setCurrentPage(response.data.current_page);
+      setLastPage(response.data.last_page);
+
+    } catch (error) {
+      setError("Gagal mengambil data seri");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSeri = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/seri"); 
-        setSeri(response.data);
-      } catch (error) {
-        setError("Gagal mengambil data seri");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSeri();
+    fetchSeri(1);
   }, []);
 
 const downloadQR = async (id, nomorSeri) => {
@@ -158,12 +166,34 @@ const handleFormSubmit = async (e) => {
                 ))}
             </tbody>
           </table>
+
+            
+            <div className="pagination">
+  <button
+    disabled={currentPage === 1}
+    onClick={() => fetchSeri(currentPage - 1)}
+  >
+    Prev
+  </button>
+
+  <span>
+    Halaman {currentPage} / {lastPage}
+  </span>
+
+  <button
+    disabled={currentPage === lastPage}
+    onClick={() => fetchSeri(currentPage + 1)}
+  >
+    Next
+  </button>
+</div>
+
         </div>
 
         {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h2>Tambah Aksesoris </h2>
+            <h2>Tambah Seri dan SKU </h2>
             <form onSubmit={handleFormSubmit} className="modern-form">
               <div className="form-group">
                 <label>Nomor Seri:</label>

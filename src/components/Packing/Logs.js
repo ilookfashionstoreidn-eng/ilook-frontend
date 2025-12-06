@@ -345,7 +345,7 @@ console.log(formatted); // 26-11-2025
             ))}
           </tbody>
         </table>
-          <div className="pagination">
+        <div className="pagination">
 
         <button
           disabled={pagination.current_page === 1}
