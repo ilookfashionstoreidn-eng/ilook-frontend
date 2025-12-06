@@ -120,6 +120,10 @@ const SpkCutting = () => {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
           return;
         }
+        if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
+          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Masukkan warna custom terlebih dahulu!`);
+          return;
+        }
         if (!bahan.qty || bahan.qty <= 0) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
           return;
@@ -134,7 +138,8 @@ const SpkCutting = () => {
         ...bagian,
         bahan: bagian.bahan.map((bahan) => ({
           bahan_id: parseInt(bahan.bahan_id),
-          warna: bahan.warna || null,
+          // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
+          warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
           qty: parseFloat(bahan.qty),
         })),
       })),
@@ -196,6 +201,18 @@ const SpkCutting = () => {
   const handleBahanChange = (bagianIndex, bahanIndex, key, value) => {
     const updated = [...newSpkCutting.bagian];
     updated[bagianIndex].bahan[bahanIndex][key] = value;
+
+    // Jika warna diubah ke "Lainnya", reset warna_custom
+    if (key === "warna" && value !== "Lainnya") {
+      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
+    }
+
+    setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const handleWarnaCustomChange = (bagianIndex, bahanIndex, value) => {
+    const updated = [...newSpkCutting.bagian];
+    updated[bagianIndex].bahan[bahanIndex].warna_custom = value;
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
@@ -208,7 +225,7 @@ const SpkCutting = () => {
 
   const addBahan = (bagianIndex) => {
     const updated = [...newSpkCutting.bagian];
-    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", qty: "" });
+    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
@@ -365,6 +382,9 @@ const SpkCutting = () => {
                           </option>
                         ))}
                       </select>
+                      {bahan.warna === "Lainnya" && (
+                        <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required style={{ marginTop: "8px" }} />
+                      )}
                       <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
                       <button type="button" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
                         Hapus Bahan
