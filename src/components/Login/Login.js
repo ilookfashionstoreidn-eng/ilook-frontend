@@ -42,7 +42,8 @@ const Login = () => {
         errorMessage += error.response.data?.message || error.response.data?.error || error.message;
       } else if (error.request) {
         // Request was made but no response received
-        errorMessage += "Tidak ada respons dari server. Pastikan backend berjalan di http://localhost:8000";
+        const apiUrl = process.env.REACT_APP_API_URL || "http://localhost/ilook-backend/public/api";
+        errorMessage += `Tidak ada respons dari server. Pastikan backend berjalan di ${apiUrl.replace("/api", "")}`;
       } else {
         // Error setting up request
         errorMessage += error.message || "Terjadi kesalahan saat mengirim request";

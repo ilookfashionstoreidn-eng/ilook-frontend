@@ -1,0 +1,582 @@
+/* ===================================
+   STOK BAHAN - MODERN UI
+   Future Blue Gradient Theme
+   =================================== */
+
+/* Container */
+.stok-bahan-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+/* Header Section */
+.stok-bahan-header {
+  background: transparent;
+  color: #17457c;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.stok-bahan-header-icon {
+  font-size: 42px;
+  background: transparent;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0487d8;
+}
+
+.stok-bahan-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Table Container */
+.stok-bahan-table-container {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Filter Header */
+.stok-bahan-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.stok-bahan-btn-add {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.stok-bahan-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.stok-bahan-btn-add:active {
+  transform: translateY(0);
+}
+
+.stok-bahan-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.stok-bahan-search-bar input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.stok-bahan-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Table */
+.stok-bahan-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.stok-bahan-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.stok-bahan-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.stok-bahan-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.stok-bahan-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.stok-bahan-table tbody tr {
+  background: white;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.stok-bahan-table tbody tr:hover {
+  background: #e3f2fd;
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
+}
+
+.stok-bahan-table tbody td {
+  padding: 14px 12px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+/* Badge */
+.stok-bahan-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stok-bahan-badge.utuh {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.stok-bahan-badge.sisa {
+  background: linear-gradient(135deg, #0487d8 0%, #1976d2 100%);
+  color: white;
+}
+
+/* Price */
+.stok-bahan-price {
+  color: #17457c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Action Buttons */
+.stok-bahan-btn-icon {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stok-bahan-btn-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.stok-bahan-btn-icon.view {
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+}
+
+.stok-bahan-btn-icon.edit {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+}
+
+.stok-bahan-btn-icon.download {
+  background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);
+}
+
+/* Pagination */
+.stok-bahan-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.stok-bahan-pagination button {
+  padding: 10px 16px;
+  border: 2px solid #b3d9f2;
+  background: white;
+  color: #17457c;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.stok-bahan-pagination button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+  transform: translateY(-2px);
+}
+
+.stok-bahan-pagination button.active {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+}
+
+.stok-bahan-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.stok-bahan-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.stok-bahan-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 35px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stok-bahan-modal-content h2 {
+  margin: 0 0 25px 0;
+  color: #17457c;
+  font-size: 26px;
+  font-weight: 700;
+  border-bottom: 3px solid #0487d8;
+  padding-bottom: 15px;
+}
+
+.stok-bahan-modal-content h3 {
+  margin: 25px 0 15px 0;
+  color: #17457c;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Form */
+.stok-bahan-form {
+  display: grid;
+  gap: 20px;
+}
+
+.stok-bahan-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.stok-bahan-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stok-bahan-form-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.stok-bahan-form-group input,
+.stok-bahan-form-group select,
+.stok-bahan-form-group textarea {
+  padding: 12px 14px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.stok-bahan-form-group input:focus,
+.stok-bahan-form-group select:focus,
+.stok-bahan-form-group textarea:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Warna Section */
+.stok-bahan-warna-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 15px;
+  background: #e3f2fd;
+}
+
+.stok-bahan-warna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.stok-bahan-warna-header h4 {
+  margin: 0;
+  color: #17457c;
+  font-size: 16px;
+}
+
+.stok-bahan-rol-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.stok-bahan-rol-item label {
+  min-width: 120px;
+  font-size: 13px;
+}
+
+.stok-bahan-rol-item input {
+  flex: 1;
+}
+
+/* Buttons */
+.stok-bahan-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stok-bahan-btn-primary {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.stok-bahan-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.stok-bahan-btn-secondary {
+  background: linear-gradient(135deg, #757575 0%, #424242 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stok-bahan-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.stok-bahan-btn-success {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.stok-bahan-btn-danger {
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  color: white;
+}
+
+.stok-bahan-form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #b3d9f2;
+}
+
+/* Detail View */
+.stok-bahan-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stok-bahan-detail-item {
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 10px;
+  border-left: 4px solid #0487d8;
+}
+
+.stok-bahan-detail-item strong {
+  display: block;
+  color: #17457c;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.stok-bahan-detail-item span {
+  color: #333;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.stok-bahan-warna-card {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 15px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.stok-bahan-warna-card:hover {
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Loading & Error */
+.stok-bahan-loading,
+.stok-bahan-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+.stok-bahan-error {
+  color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stok-bahan-table-container {
+    overflow-x: auto;
+  }
+
+  .stok-bahan-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stok-bahan-header {
+    padding: 20px;
+  }
+
+  .stok-bahan-header h1 {
+    font-size: 24px;
+  }
+
+  .stok-bahan-header-icon {
+    font-size: 32px;
+    padding: 12px;
+  }
+
+  .stok-bahan-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stok-bahan-search-bar {
+    max-width: 100%;
+  }
+
+  .stok-bahan-modal-content {
+    padding: 25px;
+  }
+
+  .stok-bahan-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .stok-bahan-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stok-bahan-form-actions {
+    flex-direction: column;
+  }
+
+  .stok-bahan-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stok-bahan-page {
+    padding: 10px;
+  }
+
+  .stok-bahan-table-container {
+    padding: 15px;
+  }
+
+  .stok-bahan-pagination {
+    gap: 5px;
+  }
+
+  .stok-bahan-pagination button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+

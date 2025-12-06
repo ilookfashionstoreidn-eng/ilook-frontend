@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
+import "./StokPerBahan.css";
 import API from "../../api";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaBoxes } from "react-icons/fa";
 
 const StokPerBahan = () => {
   const [data, setData] = useState([]);
@@ -72,25 +71,28 @@ const StokPerBahan = () => {
 
   // === RENDER ===
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="stok-bahan-page">
+      <div className="stok-bahan-header">
+        <div className="stok-bahan-header-icon">
+          <FaBoxes />
+        </div>
         <h1>Stok Bahan</h1>
       </div>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <div className="search-bar1">
+      <div className="stok-bahan-table-container">
+        <div className="stok-bahan-filter-header">
+          <div className="stok-bahan-search-bar">
             <input type="text" placeholder="Cari nama bahan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {loading ? (
-          <p>Memuat data stok...</p>
+          <p className="stok-bahan-loading">Memuat data stok...</p>
         ) : error ? (
-          <p className="error">{error}</p>
+          <p className="stok-bahan-error">{error}</p>
         ) : (
           <>
-            <table className="penjahit-table">
+            <table className="stok-bahan-table">
               <thead>
                 <tr>
                   <th style={{ width: "50px" }}>No</th>
@@ -283,21 +285,21 @@ const StokPerBahan = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination" style={{ marginTop: "20px", textAlign: "center" }}>
-                <button className="btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <div className="stok-bahan-pagination">
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
 
                 {[...Array(totalPages)].map((_, i) => {
                   const page = i + 1;
                   return (
-                    <button key={page} className={`btn ${currentPage === page ? "btn-primary" : ""}`} onClick={() => goToPage(page)} style={{ margin: "0 4px" }}>
+                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
                       {page}
                     </button>
                   );
                 })}
 
-                <button className="btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
                   Next
                 </button>
               </div>

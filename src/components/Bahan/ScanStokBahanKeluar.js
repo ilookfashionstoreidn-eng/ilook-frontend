@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
-import "../Packing/Packing.css";
+import "./ScanStokBahanKeluar.css";
 import API from "../../api";
 import { toast } from "react-toastify";
+import { FaBarcode } from "react-icons/fa";
 
 const ScanStokBahanKeluar = () => {
   const [spkCuttingId, setSpkCuttingId] = useState("");
@@ -117,45 +116,49 @@ const ScanStokBahanKeluar = () => {
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="scan-stok-page">
+      <div className="scan-stok-header">
+        <div className="scan-stok-header-icon">
+          <FaBarcode />
+        </div>
         <h1>Scan Stok Bahan Keluar</h1>
       </div>
 
-      <div className="tracking-card">
-        {/* Input SPK Cutting ID */}
-        <div className="tracking-input-wrapper">
-          <input
-            type="text"
-            placeholder="masukkan nomor seri..."
-            value={spkCuttingId}
-            onChange={(e) => setSpkCuttingId(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchSpkCuttingDetail()}
-            className="tracking-input-modern"
-            autoFocus
-          />
-          <button onClick={fetchSpkCuttingDetail} className="btn-search-modern" disabled={loading}>
-            {loading ? "Loading..." : "Cari SPK Cutting"}
-          </button>
+      <div className="scan-stok-table-container">
+        <div className="scan-stok-filter-header">
+          <div className="scan-stok-search-bar">
+            <input
+              type="text"
+              placeholder="Masukkan nomor seri..."
+              value={spkCuttingId}
+              onChange={(e) => setSpkCuttingId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchSpkCuttingDetail()}
+              autoFocus
+            />
+            <button className="scan-stok-btn-primary" onClick={fetchSpkCuttingDetail} disabled={loading}>
+              {loading ? "Loading..." : "Cari SPK Cutting"}
+            </button>
+          </div>
         </div>
 
         {error && (
-          <div className="packing-message" style={{ backgroundColor: "#f8d7da", color: "#721c24", borderLeftColor: "#dc3545" }}>
-            {error}
-          </div>
+          <p className="scan-stok-error">{error}</p>
         )}
 
         {/* Detail SPK Cutting */}
         {spkCuttingDetail && (
-          <div className="order-section">
-            <h2>SPK Cutting #{spkCuttingDetail.spk_cutting?.id_spk_cutting}</h2>
-            <p>
-              <strong>Nama Produk:</strong> {spkCuttingDetail.spk_cutting?.nama_produk || "-"}
-            </p>
+          <div className="scan-stok-detail-section">
+            <h3>SPK Cutting #{spkCuttingDetail.spk_cutting?.id_spk_cutting}</h3>
+            <div className="scan-stok-detail-grid">
+              <div className="scan-stok-detail-item">
+                <strong>Nama Produk</strong>
+                <span>{spkCuttingDetail.spk_cutting?.nama_produk || "-"}</span>
+              </div>
+            </div>
 
             {/* List Bahan */}
-            <h4 style={{ marginBottom: "15px", marginTop: "20px" }}>Daftar Bahan:</h4>
-            <table className="packing-table">
+            <h4 style={{ marginBottom: "15px", marginTop: "20px", color: "#17457c" }}>Daftar Bahan:</h4>
+            <table className="scan-stok-table">
               <thead>
                 <tr>
                   <th>No</th>
@@ -205,41 +208,38 @@ const ScanStokBahanKeluar = () => {
 
             {/* Scan Barcode Section */}
             {selectedBahan && (
-              <div className="sku-input-wrapper" style={{ marginTop: "20px" }}>
-                <div style={{ marginBottom: "15px" }}>
-                  <p>
-                    <strong>Bahan yang dipilih:</strong> {selectedBahan.nama_bahan}
-                  </p>
-                  <p>
-                    <strong>Warna:</strong> {selectedBahan.warna || "-"}
-                  </p>
+              <div className="scan-stok-scan-section">
+                <div className="scan-stok-detail-grid" style={{ marginBottom: "15px" }}>
+                  <div className="scan-stok-detail-item">
+                    <strong>Bahan yang dipilih</strong>
+                    <span>{selectedBahan.nama_bahan}</span>
+                  </div>
+                  <div className="scan-stok-detail-item">
+                    <strong>Warna</strong>
+                    <span>{selectedBahan.warna || "-"}</span>
+                  </div>
                 </div>
-                <label className="sku-label">Scan Barcode Bahan</label>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    scanBarcode();
-                  }}
-                  className="sku-input"
-                >
-                  <input id="barcode-input" type="text" placeholder="Scan atau ketik barcode dan tekan Enter" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleScanBarcode} autoFocus />
-                  <button type="submit" disabled={loading || !barcode.trim()}>
-                    {loading ? "Memvalidasi..." : "Scan"}
-                  </button>
-                </form>
+                <div className="scan-stok-form-group">
+                  <label>Scan Barcode Bahan</label>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      scanBarcode();
+                    }}
+                    style={{ display: "flex", gap: "10px" }}
+                  >
+                    <input id="barcode-input" type="text" placeholder="Scan atau ketik barcode dan tekan Enter" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleScanBarcode} autoFocus style={{ flex: 1, padding: "12px 14px", border: "2px solid #b3d9f2", borderRadius: "10px" }} />
+                    <button type="submit" className="scan-stok-btn-primary" disabled={loading || !barcode.trim()}>
+                      {loading ? "Memvalidasi..." : "Scan"}
+                    </button>
+                  </form>
+                </div>
 
                 {/* Scan Result */}
                 {scanResult && (
-                  <div
-                    className="packing-message"
-                    style={{
-                      backgroundColor: scanResult.success ? "#d4edda" : "#f8d7da",
-                      color: scanResult.success ? "#155724" : "#721c24",
-                      borderLeftColor: scanResult.success ? "#28a745" : "#dc3545",
-                    }}
-                  >
+                  <p className={scanResult.success ? "scan-stok-loading" : "scan-stok-error"} style={{ padding: "15px", marginTop: "15px", borderRadius: "8px", background: scanResult.success ? "#e3f2fd" : "#ffebee", color: scanResult.success ? "#17457c" : "#f44336" }}>
                     <strong>{scanResult.success ? "✓ Berhasil" : "✗ Gagal"}</strong> - {scanResult.message}
-                  </div>
+                  </p>
                 )}
               </div>
             )}
@@ -247,8 +247,8 @@ const ScanStokBahanKeluar = () => {
             {/* List Scanned Items */}
             {scannedItems.length > 0 && (
               <div style={{ marginTop: "30px" }}>
-                <h4 style={{ marginBottom: "15px" }}>Barcode yang Berhasil Di-scan:</h4>
-                <table className="packing-table">
+                <h4 style={{ marginBottom: "15px", color: "#17457c" }}>Barcode yang Berhasil Di-scan:</h4>
+                <table className="scan-stok-table">
                   <thead>
                     <tr>
                       <th>No</th>

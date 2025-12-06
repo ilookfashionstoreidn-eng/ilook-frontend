@@ -1,0 +1,671 @@
+/* ===================================
+   PABRIK - MODERN UI
+   Future Blue Gradient Theme
+   =================================== */
+
+/* Container */
+.pabrik-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+/* Header Section */
+.pabrik-header {
+  background: transparent;
+  color: #17457c;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.pabrik-header-icon {
+  font-size: 42px;
+  background: transparent;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0487d8;
+}
+
+.pabrik-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Table Container */
+.pabrik-table-container {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Filter Header */
+.pabrik-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pabrik-btn-add {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pabrik-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.pabrik-btn-add:active {
+  transform: translateY(0);
+}
+
+.pabrik-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.pabrik-search-bar input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.pabrik-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Table */
+.pabrik-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.pabrik-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.pabrik-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.pabrik-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.pabrik-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.pabrik-table tbody tr {
+  background: white;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.pabrik-table tbody tr:hover {
+  background: #e3f2fd;
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
+}
+
+.pabrik-table tbody td {
+  padding: 14px 12px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+/* Badge */
+.pabrik-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pabrik-badge.utuh {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.pabrik-badge.sisa {
+  background: linear-gradient(135deg, #0487d8 0%, #1976d2 100%);
+  color: white;
+}
+
+/* Price */
+.pabrik-price {
+  color: #17457c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Action Buttons */
+.pabrik-btn-icon {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pabrik-btn-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pabrik-btn-icon.view {
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+}
+
+.pabrik-btn-icon.edit {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+}
+
+.pabrik-btn-icon.download {
+  background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);
+}
+
+/* Pagination */
+.pabrik-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.pabrik-pagination button {
+  padding: 10px 16px;
+  border: 2px solid #b3d9f2;
+  background: white;
+  color: #17457c;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.pabrik-pagination button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+  transform: translateY(-2px);
+}
+
+.pabrik-pagination button.active {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+}
+
+.pabrik-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.pabrik-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.pabrik-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 35px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pabrik-modal-content h2 {
+  margin: 0 0 25px 0;
+  color: #17457c;
+  font-size: 26px;
+  font-weight: 700;
+  border-bottom: 3px solid #0487d8;
+  padding-bottom: 15px;
+}
+
+.pabrik-modal-content h3 {
+  margin: 25px 0 15px 0;
+  color: #17457c;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Form */
+.pabrik-form {
+  display: grid;
+  gap: 20px;
+}
+
+.pabrik-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.pabrik-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pabrik-form-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.pabrik-form-group input,
+.pabrik-form-group select,
+.pabrik-form-group textarea {
+  padding: 12px 14px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.pabrik-form-group input:focus,
+.pabrik-form-group select:focus,
+.pabrik-form-group textarea:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Warna Section */
+.pabrik-warna-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 15px;
+  background: #e3f2fd;
+}
+
+.pabrik-warna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.pabrik-warna-header h4 {
+  margin: 0;
+  color: #17457c;
+  font-size: 16px;
+}
+
+.pabrik-rol-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pabrik-rol-item label {
+  min-width: 120px;
+  font-size: 13px;
+}
+
+.pabrik-rol-item input {
+  flex: 1;
+}
+
+/* Buttons */
+.pabrik-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pabrik-btn-primary {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pabrik-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.pabrik-btn-secondary {
+  background: linear-gradient(135deg, #757575 0%, #424242 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pabrik-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pabrik-btn-success {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.pabrik-btn-danger {
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  color: white;
+}
+
+.pabrik-form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #b3d9f2;
+}
+
+/* Detail View */
+.pabrik-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.pabrik-detail-item {
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 10px;
+  border-left: 4px solid #0487d8;
+}
+
+.pabrik-detail-item strong {
+  display: block;
+  color: #17457c;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.pabrik-detail-item span {
+  color: #333;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.pabrik-warna-card {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 15px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.pabrik-warna-card:hover {
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.15);
+  transform: translateY(-2px);
+}
+
+/* File Upload */
+.file-upload-wrapper {
+  margin-top: 10px;
+}
+
+.file-upload-area {
+  border: 2px dashed #b3d9f2;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f8fbff;
+  position: relative;
+}
+
+.file-upload-area:hover {
+  border-color: #0487d8;
+  background: #e3f2fd;
+}
+
+.file-upload-area.has-file {
+  border-color: #0487d8;
+  background: #e3f2fd;
+}
+
+.file-upload-icon {
+  font-size: 32px;
+  color: #0487d8;
+  margin-bottom: 10px;
+}
+
+.file-upload-text {
+  font-weight: 600;
+  color: #17457c;
+  margin-bottom: 5px;
+}
+
+.file-upload-hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.file-upload-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploaded-file {
+  margin-top: 15px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.uploaded-file-name {
+  flex: 1;
+  color: #17457c;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.file-preview {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8fbff;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.file-preview a {
+  color: #0487d8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.file-preview a:hover {
+  text-decoration: underline;
+}
+
+/* Loading & Error */
+.pabrik-loading,
+.pabrik-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+.pabrik-error {
+  color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .pabrik-table-container {
+    overflow-x: auto;
+  }
+
+  .pabrik-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pabrik-header {
+    padding: 20px;
+  }
+
+  .pabrik-header h1 {
+    font-size: 24px;
+  }
+
+  .pabrik-header-icon {
+    font-size: 32px;
+    padding: 12px;
+  }
+
+  .pabrik-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pabrik-search-bar {
+    max-width: 100%;
+  }
+
+  .pabrik-modal-content {
+    padding: 25px;
+  }
+
+  .pabrik-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pabrik-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pabrik-form-actions {
+    flex-direction: column;
+  }
+
+  .pabrik-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pabrik-page {
+    padding: 10px;
+  }
+
+  .pabrik-table-container {
+    padding: 15px;
+  }
+
+  .pabrik-pagination {
+    gap: 5px;
+  }
+
+  .pabrik-pagination button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
