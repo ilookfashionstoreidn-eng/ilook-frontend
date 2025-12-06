@@ -9,8 +9,10 @@ const Seri = () => {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newSeri, setNewSeri] = useState({
-    nomor_seri: ""
+  nomor_seri: "",
+  sku: ""
   });
+
 
   useEffect(() => {
     const fetchSeri = async () => {
@@ -30,21 +32,27 @@ const Seri = () => {
 const downloadQR = async (id, nomorSeri) => {
   try {
     const response = await API.get(`/seri/${id}/download`, {
-      responseType: "blob", 
+      responseType: "blob",
     });
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `qr-${nomorSeri}.svg`);
+    link.setAttribute("download", `qr-seri-${nomorSeri}.pdf`);
     document.body.appendChild(link);
     link.click();
+
     link.remove();
     window.URL.revokeObjectURL(url);
+
   } catch (error) {
     console.error("Error downloading file:", error);
+    alert("Gagal mengunduh file.");
   }
 };
+
 
 const handleFormSubmit = async (e) => {
   e.preventDefault();
@@ -52,7 +60,9 @@ const handleFormSubmit = async (e) => {
   console.log("Data yang dikirim:", newSeri.nomor_seri);
 
   const formData = new FormData();
-  formData.append("nomor_seri", newSeri.nomor_seri);
+    formData.append("nomor_seri", newSeri.nomor_seri);
+    formData.append("sku", newSeri.sku);
+
 
   try {
     const response = await API.post("/seri", formData, {
@@ -64,7 +74,11 @@ const handleFormSubmit = async (e) => {
     alert("Seri berhasil ditambahkan!");
     setSeri((prev) => [...prev, response.data]);
     setShowForm(false);
-    setNewSeri({ nomor_seri: "" });
+    setNewSeri({
+      nomor_seri: "",
+      sku: ""
+    });
+
 
   } catch (error) {
     console.error("Error:", error.response?.data?.message || error.message);
@@ -78,7 +92,7 @@ const handleFormSubmit = async (e) => {
     const { name, value } = e.target;
     setNewSeri((prev) => ({
         ...prev,
-        [name]: value, 
+        [name]: value.toUpperCase(), 
     }));
 };
 
@@ -110,7 +124,7 @@ const handleFormSubmit = async (e) => {
               <tr>
                 <th>ID</th>
                 <th>Nomor Seri</th>
-                <th>QR Code</th>
+                <th>SKU</th>
                 <th>Download</th>
               </tr>
             </thead>
@@ -118,23 +132,13 @@ const handleFormSubmit = async (e) => {
             <tbody>
               {seri
                 .filter((item) =>
-                  item.nomor_seri
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase())
+                 (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase())
                 )
                 .map((item) => (
                   <tr key={item.id}>
                     <td data-label="Id:">{item.id}</td>
                     <td data-label="Nomor Seri:">{item.nomor_seri}</td>
-
-                    <td data-label="QR:">
-                      <img
-                        src={`data:image/svg+xml;base64,${item.qr_svg_base64}`}
-                        alt="QR"
-                        width="80"
-                      />
-                    </td>
-
+                  <td data-label="SKU:">{item.sku}</td>
                   <td>
                 <button
                   onClick={() => downloadQR(item.id, item.nomor_seri)}
@@ -172,6 +176,19 @@ const handleFormSubmit = async (e) => {
                   required
                 />
               </div>
+
+              <div className="form-group">
+                <label>SKU:</label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={newSeri.sku}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan SKU"
+                  required
+                />
+              </div>
+
             
               <div className="form-actions">
                 <button type="submit" className="btn btn-submit">
