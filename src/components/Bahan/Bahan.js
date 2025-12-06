@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
+import "./Bahan.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaTshirt } from "react-icons/fa";
 
 const Bahan = () => {
   const [items, setItems] = useState([]);
@@ -164,7 +163,7 @@ const Bahan = () => {
   };
 
   // === HAPUS ===
-  
+
   const handleDelete = async (id, nama) => {
     if (!window.confirm(`Yakin ingin menghapus bahan "${nama}"?`)) return;
 
@@ -188,28 +187,33 @@ const Bahan = () => {
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="bahan-page">
+      <div className="bahan-header">
+        <div className="bahan-header-icon">
+          <FaTshirt />
+        </div>
         <h1>Master Bahan</h1>
       </div>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <button onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah
+      <div className="bahan-table-container">
+        <div className="bahan-filter-header">
+          <button className="bahan-btn-add" onClick={() => setShowForm(true)}>
+            <FaPlus /> Tambah Bahan
           </button>
-          <div className="search-bar1">
+          <div className="bahan-search-bar">
             <input type="text" placeholder="Cari nama bahan, deskripsi, atau satuan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {loading ? (
-          <p>Memuat data...</p>
+          <p className="bahan-loading">Memuat data...</p>
         ) : error ? (
-          <p className="error">{error}</p>
+          <p className="bahan-error">{error}</p>
+        ) : currentItems.length === 0 ? (
+          <p className="bahan-loading">Belum ada data bahan</p>
         ) : (
           <>
-            <table className="penjahit-table">
+            <table className="bahan-table">
               <thead>
                 <tr>
                   <th>No</th>
@@ -217,7 +221,7 @@ const Bahan = () => {
                   <th>Deskripsi</th>
                   <th>Harga</th>
                   <th>Satuan</th>
-                  <th>Aksi</th>
+                  <th style={{ textAlign: "center" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -226,13 +230,15 @@ const Bahan = () => {
                     <td>{indexOfFirstItem + index + 1}</td>
                     <td>{b.nama_bahan}</td>
                     <td>{b.deskripsi || "-"}</td>
-                    <td>{formatRupiah(b.harga)}</td>
-                    <td>{b.satuan === "kg" ? "Kilogram (kg)" : b.satuan === "yard" ? "Yard" : b.satuan}</td>
+                    <td className="bahan-price">{formatRupiah(b.harga)}</td>
                     <td>
-                      <button className="btn-icon" title="Edit" onClick={() => handleEditClick(b)} style={{ marginRight: "8px" }}>
+                      <span className="bahan-badge">{b.satuan === "kg" ? "Kilogram (kg)" : b.satuan === "yard" ? "Yard" : b.satuan}</span>
+                    </td>
+                    <td>
+                      <button className="bahan-btn-icon edit" onClick={() => handleEditClick(b)} title="Edit" style={{ marginRight: "8px" }}>
                         <FaEdit />
                       </button>
-                      <button className="btn-icon" title="Hapus" onClick={() => handleDelete(b.id, b.nama_bahan)} style={{ color: "#dc3545" }}>
+                      <button className="bahan-btn-icon delete" onClick={() => handleDelete(b.id, b.nama_bahan)} title="Hapus">
                         <FaTrash />
                       </button>
                     </td>
@@ -243,21 +249,21 @@ const Bahan = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination" style={{ marginTop: "20px", textAlign: "center" }}>
-                <button className="btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <div className="bahan-pagination">
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
 
                 {[...Array(totalPages)].map((_, i) => {
                   const page = i + 1;
                   return (
-                    <button key={page} className={`btn ${currentPage === page ? "btn-primary" : ""}`} onClick={() => goToPage(page)} style={{ margin: "0 4px" }}>
+                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
                       {page}
                     </button>
                   );
                 })}
 
-                <button className="btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
                   Next
                 </button>
               </div>
@@ -268,37 +274,39 @@ const Bahan = () => {
 
       {/* Modal Tambah */}
       {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Tambah Bahan</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
-                <label>Nama Bahan</label>
-                <input type="text" name="nama_bahan" value={newItem.nama_bahan} onChange={handleInputChange} required placeholder="Contoh: Katun, Polyester" />
+        <div className="bahan-modal">
+          <div className="bahan-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Tambah Bahan Baru</h2>
+            <form onSubmit={handleFormSubmit} className="bahan-form">
+              <div className="bahan-form-group">
+                <label>Nama Bahan *</label>
+                <input type="text" name="nama_bahan" value={newItem.nama_bahan} onChange={handleInputChange} required placeholder="Contoh: Katun, Polyester, Wol" />
               </div>
-              <div className="form-group">
+              <div className="bahan-form-group">
                 <label>Deskripsi (Opsional)</label>
                 <textarea name="deskripsi" value={newItem.deskripsi} onChange={handleInputChange} rows="3" placeholder="Deskripsi tambahan tentang bahan ini" />
               </div>
-              <div className="form-group">
-                <label>Harga (Rp)</label>
-                <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+              <div className="bahan-form-row">
+                <div className="bahan-form-group">
+                  <label>Harga (Rp) *</label>
+                  <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                </div>
+                <div className="bahan-form-group">
+                  <label>Satuan *</label>
+                  <select name="satuan" value={newItem.satuan} onChange={handleInputChange} required>
+                    {SATUAN_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Satuan</label>
-                <select name="satuan" value={newItem.satuan} onChange={handleInputChange} required>
-                  {SATUAN_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+              <div className="bahan-form-actions">
+                <button type="submit" className="bahan-btn bahan-btn-primary">
                   Simpan
                 </button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>
+                <button type="button" className="bahan-btn bahan-btn-secondary" onClick={resetForm}>
                   Batal
                 </button>
               </div>
@@ -309,37 +317,39 @@ const Bahan = () => {
 
       {/* Modal Edit */}
       {showEditForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="bahan-modal">
+          <div className="bahan-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Edit Bahan</h2>
-            <form onSubmit={handleFormUpdate} className="modern-form">
-              <div className="form-group">
-                <label>Nama Bahan</label>
-                <input type="text" name="nama_bahan" value={editItem.nama_bahan} onChange={handleInputChange} required placeholder="Contoh: Katun, Polyester" />
+            <form onSubmit={handleFormUpdate} className="bahan-form">
+              <div className="bahan-form-group">
+                <label>Nama Bahan *</label>
+                <input type="text" name="nama_bahan" value={editItem.nama_bahan} onChange={handleInputChange} required placeholder="Contoh: Katun, Polyester, Wol" />
               </div>
-              <div className="form-group">
+              <div className="bahan-form-group">
                 <label>Deskripsi (Opsional)</label>
                 <textarea name="deskripsi" value={editItem.deskripsi} onChange={handleInputChange} rows="3" placeholder="Deskripsi tambahan tentang bahan ini" />
               </div>
-              <div className="form-group">
-                <label>Harga (Rp)</label>
-                <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+              <div className="bahan-form-row">
+                <div className="bahan-form-group">
+                  <label>Harga (Rp) *</label>
+                  <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                </div>
+                <div className="bahan-form-group">
+                  <label>Satuan *</label>
+                  <select name="satuan" value={editItem.satuan} onChange={handleInputChange} required>
+                    {SATUAN_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Satuan</label>
-                <select name="satuan" value={editItem.satuan} onChange={handleInputChange} required>
-                  {SATUAN_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+              <div className="bahan-form-actions">
+                <button type="submit" className="bahan-btn bahan-btn-primary">
                   Perbarui
                 </button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
+                <button type="button" className="bahan-btn bahan-btn-secondary" onClick={resetForm}>
                   Batal
                 </button>
               </div>

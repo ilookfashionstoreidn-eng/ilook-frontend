@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
+import "./Gudang.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaTrash, FaWarehouse } from "react-icons/fa";
 
 const Gudang = () => {
   const [gudangs, setGudangs] = useState([]);
@@ -106,39 +105,39 @@ const Gudang = () => {
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="gudang-page">
+      <div className="gudang-header">
+        <div className="gudang-header-icon">
+          <FaWarehouse />
+        </div>
         <h1>Data Gudang</h1>
       </div>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <button onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah
+      <div className="gudang-table-container">
+        <div className="gudang-filter-header">
+          <button className="gudang-btn-add" onClick={() => setShowForm(true)}>
+            <FaPlus /> Tambah Gudang
           </button>
-          <div className="search-bar1">
-            <input
-              type="text"
-              placeholder="Cari nama gudang..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="gudang-search-bar">
+            <input type="text" placeholder="Cari nama gudang..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {loading ? (
-          <p>Memuat data...</p>
+          <p className="gudang-loading">Memuat data...</p>
         ) : error ? (
-          <p className="error">{error}</p>
+          <p className="gudang-error">{error}</p>
+        ) : filtered.length === 0 ? (
+          <p className="gudang-loading">Belum ada data gudang</p>
         ) : (
-          <table className="penjahit-table">
+          <table className="gudang-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Nama Gudang</th>
                 <th>Alamat</th>
                 <th>PIC</th>
-                <th>Aksi</th>
+                <th style={{ textAlign: "center" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -149,10 +148,13 @@ const Gudang = () => {
                   <td>{g.alamat || "-"}</td>
                   <td>{g.pic || "-"}</td>
                   <td>
-                    <button className="btn-icon" onClick={() => handleEditClick(g)}>
+                    <button className="gudang-btn-icon view" onClick={() => handleDetailClick(g)} title="Detail" style={{ marginRight: "8px" }}>
+                      <FaEye />
+                    </button>
+                    <button className="gudang-btn-icon edit" onClick={() => handleEditClick(g)} title="Edit" style={{ marginRight: "8px" }}>
                       <FaEdit />
                     </button>
-                    <button className="btn-icon" onClick={() => handleDelete(g)}>
+                    <button className="gudang-btn-icon delete" onClick={() => handleDelete(g)} title="Hapus">
                       <FaTrash />
                     </button>
                   </td>
@@ -164,25 +166,29 @@ const Gudang = () => {
       </div>
 
       {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Tambah Gudang</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
+        <div className="gudang-modal">
+          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Tambah Gudang Baru</h2>
+            <form onSubmit={handleFormSubmit} className="gudang-form">
+              <div className="gudang-form-group">
                 <label>Nama Gudang *</label>
-                <input type="text" name="nama_gudang" value={newGudang.nama_gudang} onChange={handleInputChange} required />
+                <input type="text" name="nama_gudang" value={newGudang.nama_gudang} onChange={handleInputChange} placeholder="Masukkan nama gudang" required />
               </div>
-              <div className="form-group">
+              <div className="gudang-form-group">
                 <label>Alamat</label>
-                <input type="text" name="alamat" value={newGudang.alamat} onChange={handleInputChange} />
+                <textarea name="alamat" value={newGudang.alamat} onChange={handleInputChange} placeholder="Alamat lengkap gudang" rows="3" />
               </div>
-              <div className="form-group">
-                <label>PIC</label>
-                <input type="text" name="pic" value={newGudang.pic} onChange={handleInputChange} />
+              <div className="gudang-form-group">
+                <label>PIC (Person In Charge)</label>
+                <input type="text" name="pic" value={newGudang.pic} onChange={handleInputChange} placeholder="Nama penanggung jawab gudang" />
               </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Simpan</button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>Batal</button>
+              <div className="gudang-form-actions">
+                <button type="submit" className="gudang-btn gudang-btn-primary">
+                  Simpan
+                </button>
+                <button type="button" className="gudang-btn gudang-btn-secondary" onClick={resetForm}>
+                  Batal
+                </button>
               </div>
             </form>
           </div>
@@ -190,25 +196,29 @@ const Gudang = () => {
       )}
 
       {showEditForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="gudang-modal">
+          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Edit Gudang</h2>
-            <form onSubmit={handleFormUpdate} className="modern-form">
-              <div className="form-group">
+            <form onSubmit={handleFormUpdate} className="gudang-form">
+              <div className="gudang-form-group">
                 <label>Nama Gudang *</label>
-                <input type="text" name="nama_gudang" value={editGudang.nama_gudang} onChange={handleInputChange} required />
+                <input type="text" name="nama_gudang" value={editGudang.nama_gudang} onChange={handleInputChange} placeholder="Masukkan nama gudang" required />
               </div>
-              <div className="form-group">
+              <div className="gudang-form-group">
                 <label>Alamat</label>
-                <input type="text" name="alamat" value={editGudang.alamat} onChange={handleInputChange} />
+                <textarea name="alamat" value={editGudang.alamat} onChange={handleInputChange} placeholder="Alamat lengkap gudang" rows="3" />
               </div>
-              <div className="form-group">
-                <label>PIC</label>
-                <input type="text" name="pic" value={editGudang.pic} onChange={handleInputChange} />
+              <div className="gudang-form-group">
+                <label>PIC (Person In Charge)</label>
+                <input type="text" name="pic" value={editGudang.pic} onChange={handleInputChange} placeholder="Nama penanggung jawab gudang" />
               </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">Perbarui</button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>Batal</button>
+              <div className="gudang-form-actions">
+                <button type="submit" className="gudang-btn gudang-btn-primary">
+                  Perbarui
+                </button>
+                <button type="button" className="gudang-btn gudang-btn-secondary" onClick={resetForm}>
+                  Batal
+                </button>
               </div>
             </form>
           </div>
@@ -216,17 +226,31 @@ const Gudang = () => {
       )}
 
       {isDetailOpen && selectedGudang && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="gudang-modal">
+          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Detail Gudang</h2>
-            <div className="detail-content">
-              <p><strong>ID:</strong> {selectedGudang.id}</p>
-              <p><strong>Nama Gudang:</strong> {selectedGudang.nama_gudang}</p>
-              <p><strong>Alamat:</strong> {selectedGudang.alamat || "-"}</p>
-              <p><strong>PIC:</strong> {selectedGudang.pic || "-"}</p>
+            <div className="gudang-detail-grid">
+              <div className="gudang-detail-item">
+                <strong>ID</strong>
+                <span>{selectedGudang.id}</span>
+              </div>
+              <div className="gudang-detail-item">
+                <strong>Nama Gudang</strong>
+                <span>{selectedGudang.nama_gudang}</span>
+              </div>
+              <div className="gudang-detail-item">
+                <strong>Alamat</strong>
+                <span>{selectedGudang.alamat || "-"}</span>
+              </div>
+              <div className="gudang-detail-item">
+                <strong>PIC (Person In Charge)</strong>
+                <span>{selectedGudang.pic || "-"}</span>
+              </div>
             </div>
-            <div className="form-actions">
-              <button type="button" className="btn btn-cancel" onClick={closeDetail}>Tutup</button>
+            <div className="gudang-form-actions">
+              <button onClick={closeDetail} className="gudang-btn gudang-btn-secondary">
+                Tutup
+              </button>
             </div>
           </div>
         </div>
@@ -235,4 +259,4 @@ const Gudang = () => {
   );
 };
 
-export default Gudang
+export default Gudang;

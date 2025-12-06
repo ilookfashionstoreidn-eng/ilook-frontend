@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
+import "./RiwayatStokBahanKeluar.css";
 import API from "../../api";
 import { toast } from "react-toastify";
+import { FaHistory } from "react-icons/fa";
 
 const RiwayatStokBahanKeluar = () => {
   const [data, setData] = useState([]);
@@ -59,43 +59,34 @@ const RiwayatStokBahanKeluar = () => {
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="riwayat-stok-page">
+      <div className="riwayat-stok-header">
+        <div className="riwayat-stok-header-icon">
+          <FaHistory />
+        </div>
         <h1>Riwayat Stok Bahan Keluar</h1>
       </div>
 
-      <div className="table-container">
-        {/* Filter dengan layout seperti Scan Packing / Scan Stok Bahan Keluar */}
-        <div className="tracking-card">
-          <div className="tracking-input-wrapper">
-            <input
-              type="text"
-              placeholder="Scan / masukkan SPK Cutting ID..."
-              value={searchSpkCuttingId}
-              onChange={(e) => setSearchSpkCuttingId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch(e)}
-              className="tracking-input-modern"
-            />
-            <button onClick={handleSearch} className="btn-search-modern" disabled={loading}>
+      <div className="riwayat-stok-table-container">
+        <div className="riwayat-stok-filter-header">
+          <div className="riwayat-stok-search-bar">
+            <input type="text" placeholder="Scan / masukkan SPK Cutting ID..." value={searchSpkCuttingId} onChange={(e) => setSearchSpkCuttingId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch(e)} />
+            <button className="riwayat-stok-btn-primary" onClick={handleSearch} disabled={loading}>
               {loading ? "Loading..." : "Cari SPK Cutting"}
             </button>
           </div>
-
-          {error && (
-            <div className="packing-message" style={{ backgroundColor: "#f8d7da", color: "#721c24", borderLeftColor: "#dc3545" }}>
-              {error}
-            </div>
-          )}
         </div>
+
+        {error && <p className="riwayat-stok-error">{error}</p>}
 
         {/* Table */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "20px" }}>Memuat data...</div>
+          <p className="riwayat-stok-loading">Memuat data...</p>
         ) : data.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "20px" }}>Tidak ada data</div>
+          <p className="riwayat-stok-loading">Tidak ada data</p>
         ) : (
           <>
-            <table className="penjahit-table">
+            <table className="riwayat-stok-table">
               <thead>
                 <tr>
                   <th>No</th>
@@ -128,15 +119,15 @@ const RiwayatStokBahanKeluar = () => {
 
             {/* Pagination */}
             {lastPage > 1 && (
-              <div style={{ marginTop: "20px", display: "flex", justifyContent: "center", gap: "10px" }}>
-                <button className="btn" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-                  Sebelumnya
+              <div className="riwayat-stok-pagination">
+                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                  Previous
                 </button>
-                <span style={{ padding: "10px" }}>
+                <span style={{ padding: "10px", color: "#17457c", fontWeight: 600 }}>
                   Halaman {currentPage} dari {lastPage}
                 </span>
-                <button className="btn" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage}>
-                  Selanjutnya
+                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage}>
+                  Next
                 </button>
               </div>
             )}

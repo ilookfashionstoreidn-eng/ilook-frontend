@@ -1,0 +1,586 @@
+/* ===================================
+   GUDANG - MODERN UI
+   Future Blue Gradient Theme
+   =================================== */
+
+/* Container */
+.gudang-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+/* Header Section */
+.gudang-header {
+  background: transparent;
+  color: #17457c;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.gudang-header-icon {
+  font-size: 42px;
+  background: transparent;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0487d8;
+}
+
+.gudang-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Table Container */
+.gudang-table-container {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Filter Header */
+.gudang-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.gudang-btn-add {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.gudang-btn-add:active {
+  transform: translateY(0);
+}
+
+.gudang-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.gudang-search-bar input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.gudang-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Table */
+.gudang-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.gudang-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.gudang-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.gudang-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.gudang-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.gudang-table tbody tr {
+  background: white;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.gudang-table tbody tr:hover {
+  background: #e3f2fd;
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
+}
+
+.gudang-table tbody td {
+  padding: 14px 12px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+/* Badge */
+.gudang-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.gudang-badge.utuh {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.gudang-badge.sisa {
+  background: linear-gradient(135deg, #0487d8 0%, #1976d2 100%);
+  color: white;
+}
+
+/* Price */
+.gudang-price {
+  color: #17457c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Action Buttons */
+.gudang-btn-icon {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gudang-btn-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-btn-icon.view {
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+}
+
+.gudang-btn-icon.edit {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+}
+
+.gudang-btn-icon.delete {
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+}
+
+.gudang-btn-icon.download {
+  background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);
+}
+
+/* Pagination */
+.gudang-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.gudang-pagination button {
+  padding: 10px 16px;
+  border: 2px solid #b3d9f2;
+  background: white;
+  color: #17457c;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.gudang-pagination button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+  transform: translateY(-2px);
+}
+
+.gudang-pagination button.active {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: #17457c;
+}
+
+.gudang-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.gudang-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.gudang-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 35px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gudang-modal-content h2 {
+  margin: 0 0 25px 0;
+  color: #17457c;
+  font-size: 26px;
+  font-weight: 700;
+  border-bottom: 3px solid #0487d8;
+  padding-bottom: 15px;
+}
+
+.gudang-modal-content h3 {
+  margin: 25px 0 15px 0;
+  color: #17457c;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Form */
+.gudang-form {
+  display: grid;
+  gap: 20px;
+}
+
+.gudang-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.gudang-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gudang-form-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.gudang-form-group input,
+.gudang-form-group select,
+.gudang-form-group textarea {
+  padding: 12px 14px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.gudang-form-group input:focus,
+.gudang-form-group select:focus,
+.gudang-form-group textarea:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Warna Section */
+.gudang-warna-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 15px;
+  background: #e3f2fd;
+}
+
+.gudang-warna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.gudang-warna-header h4 {
+  margin: 0;
+  color: #17457c;
+  font-size: 16px;
+}
+
+.gudang-rol-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.gudang-rol-item label {
+  min-width: 120px;
+  font-size: 13px;
+}
+
+.gudang-rol-item input {
+  flex: 1;
+}
+
+/* Buttons */
+.gudang-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gudang-btn-primary {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.gudang-btn-secondary {
+  background: linear-gradient(135deg, #757575 0%, #424242 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.gudang-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.gudang-btn-success {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.gudang-btn-danger {
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  color: white;
+}
+
+.gudang-form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #b3d9f2;
+}
+
+/* Detail View */
+.gudang-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.gudang-detail-item {
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 10px;
+  border-left: 4px solid #0487d8;
+}
+
+.gudang-detail-item strong {
+  display: block;
+  color: #17457c;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.gudang-detail-item span {
+  color: #333;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.gudang-warna-card {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 15px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.gudang-warna-card:hover {
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Loading & Error */
+.gudang-loading,
+.gudang-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+.gudang-error {
+  color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .gudang-table-container {
+    overflow-x: auto;
+  }
+
+  .gudang-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gudang-header {
+    padding: 20px;
+  }
+
+  .gudang-header h1 {
+    font-size: 24px;
+  }
+
+  .gudang-header-icon {
+    font-size: 32px;
+    padding: 12px;
+  }
+
+  .gudang-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gudang-search-bar {
+    max-width: 100%;
+  }
+
+  .gudang-modal-content {
+    padding: 25px;
+  }
+
+  .gudang-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-form-actions {
+    flex-direction: column;
+  }
+
+  .gudang-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .gudang-page {
+    padding: 10px;
+  }
+
+  .gudang-table-container {
+    padding: 15px;
+  }
+
+  .gudang-pagination {
+    gap: 5px;
+  }
+
+  .gudang-pagination button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../Jahit/Penjahit.css";
-import "../Cutting/SpkCutting/SpkCuting.css";
+import "./PembelianBahan.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaDownload } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart } from "react-icons/fa";
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
@@ -447,30 +446,33 @@ const PembelianBahan = () => {
   };
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="pembelian-bahan-page">
+      <div className="pembelian-bahan-header">
+        <div className="pembelian-bahan-header-icon">
+          <FaShoppingCart />
+        </div>
         <h1>Pembelian Bahan</h1>
       </div>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <button onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah
+      <div className="pembelian-bahan-table-container">
+        <div className="pembelian-bahan-filter-header">
+          <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
+            <FaPlus /> Tambah Pembelian
           </button>
-          <div className="search-bar1">
+          <div className="pembelian-bahan-search-bar">
             <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {loading ? (
-          <p>Memuat data...</p>
+          <p className="pembelian-bahan-loading">Memuat data...</p>
         ) : error ? (
-          <p className="error">{error}</p>
+          <p className="pembelian-bahan-error">{error}</p>
         ) : !isReady ? (
-          <p>Menyiapkan data master...</p> // 🔹 Tunggu data relasi
+          <p className="pembelian-bahan-loading">Menyiapkan data master...</p>
         ) : (
           <>
-            <table className="penjahit-table">
+            <table className="pembelian-bahan-table">
               <thead>
                 <tr>
                   <th>No</th>
@@ -491,25 +493,27 @@ const PembelianBahan = () => {
                 {currentItems.map((b, index) => (
                   <tr key={b.id}>
                     <td>{indexOfFirstItem + index + 1}</td>
-                    <td>{b.keterangan}</td>
+                    <td>
+                      <span className={`pembelian-bahan-badge ${b.keterangan?.toLowerCase()}`}>{b.keterangan}</span>
+                    </td>
                     <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
                     <td>{getNamaById(bahanList, b.bahan_id, "satuan")}</td>
-                    <td>{formatRupiah(b.harga)}</td>
+                    <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
                     <td>{b.sku || "-"}</td>
                     <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                     <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
                     <td>{b.tanggal_kirim}</td>
                     <td>{b.gramasi}</td>
                     <td>
-                      <button className="btn-icon" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
+                      <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
                         <FaDownload />
                       </button>
                     </td>
                     <td>
-                      <button className="btn-icon" title="Lihat Detail" onClick={() => handleDetailClick(b)} style={{ marginRight: "8px" }}>
+                      <button className="pembelian-bahan-btn-icon view" title="Lihat Detail" onClick={() => handleDetailClick(b)} style={{ marginRight: "8px" }}>
                         <FaEye />
                       </button>
-                      <button className="btn-icon" title="Edit" onClick={() => handleEditClick(b)}>
+                      <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
                         <FaEdit />
                       </button>
                     </td>
@@ -520,21 +524,21 @@ const PembelianBahan = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination" style={{ marginTop: "20px", textAlign: "center" }}>
-                <button className="btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <div className="pembelian-bahan-pagination">
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
 
                 {[...Array(totalPages)].map((_, i) => {
                   const page = i + 1;
                   return (
-                    <button key={page} className={`btn ${currentPage === page ? "btn-primary" : ""}`} onClick={() => goToPage(page)} style={{ margin: "0 4px" }}>
+                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
                       {page}
                     </button>
                   );
                 })}
 
-                <button className="btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
                   Next
                 </button>
               </div>
@@ -545,138 +549,160 @@ const PembelianBahan = () => {
 
       {/* Modal Tambah */}
       {showForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="pembelian-bahan-modal">
+          <div className="pembelian-bahan-modal-content">
             <h2>Tambah Pembelian Bahan</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
-                <label>Keterangan</label>
-                <select name="keterangan" value={newItem.keterangan} onChange={handleInputChange} required>
-                  <option value="">Pilih Keterangan</option>
-                  <option value="Utuh">Utuh</option>
-                  <option value="Sisa">Sisa</option>
-                </select>
+            <form onSubmit={handleFormSubmit} className="pembelian-bahan-form">
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Keterangan</label>
+                  <select name="keterangan" value={newItem.keterangan} onChange={handleInputChange} required>
+                    <option value="">Pilih Keterangan</option>
+                    <option value="Utuh">Utuh</option>
+                    <option value="Sisa">Sisa</option>
+                  </select>
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Bahan</label>
+                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Bahan</option>
+                    {bahanList.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.nama_bahan} ({b.satuan})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Bahan</label>
-                <select name="bahan_id" value={newItem.bahan_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Bahan</option>
-                  {bahanList.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.nama_bahan} ({b.satuan})
-                    </option>
-                  ))}
-                </select>
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Harga (Rp)</label>
+                  <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>SKU</label>
+                  <input type="text" name="sku" value={newItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Harga (Rp)</label>
-                <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Pabrik</label>
+                  <select name="pabrik_id" value={newItem.pabrik_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Pabrik</option>
+                    {pabrikList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama_pabrik || p.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Gudang</label>
+                  <select name="gudang_id" value={newItem.gudang_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Gudang</option>
+                    {gudangList.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.nama_gudang || g.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>SKU</label>
-                <input type="text" name="sku" value={newItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Tanggal Kirim</label>
+                  <input type="date" name="tanggal_kirim" value={newItem.tanggal_kirim} onChange={handleInputChange} required />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>No. Surat Jalan</label>
+                  <input type="text" name="no_surat_jalan" value={newItem.no_surat_jalan} onChange={handleInputChange} />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Pabrik</label>
-                <select name="pabrik_id" value={newItem.pabrik_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Pabrik</option>
-                  {pabrikList.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nama_pabrik || p.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Gudang</label>
-                <select name="gudang_id" value={newItem.gudang_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Gudang</option>
-                  {gudangList.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.nama_gudang || g.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Tanggal Kirim</label>
-                <input type="date" name="tanggal_kirim" value={newItem.tanggal_kirim} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
-                <label>No. Surat Jalan</label>
-                <input type="text" name="no_surat_jalan" value={newItem.no_surat_jalan} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
+
+              <div className="pembelian-bahan-form-group">
                 <label>Foto Surat Jalan (jpg/png/pdf)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
               </div>
-              <div className="form-group">
-                <label>Gramasi</label>
-                <input type="number" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
-                <label>Lebar Kain</label>
-                <input type="number" name="lebar_kain" value={newItem.lebar_kain} onChange={handleInputChange} required />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Gramasi</label>
+                  <input type="number" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Lebar Kain</label>
+                  <input type="number" name="lebar_kain" value={newItem.lebar_kain} onChange={handleInputChange} required />
+                </div>
               </div>
 
               <h3>Warna & Rol</h3>
               {newItem.warna.map((w, wi) => (
-                <div key={wi} className="form-group">
-                  <label>{`Warna ${wi + 1}`}</label>
-                  <select
-                    value={w.isCustom ? "Lainnya" : w.nama}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "Lainnya") {
-                        handleWarnaFieldChange(wi, "isCustom", true);
-                        handleWarnaFieldChange(wi, "nama", "");
-                      } else {
-                        handleWarnaFieldChange(wi, "isCustom", false);
-                        handleWarnaFieldChange(wi, "nama", value);
-                        handleWarnaFieldChange(wi, "customNama", "");
-                      }
-                    }}
-                    required
-                  >
-                    <option value="">Pilih Warna</option>
-                    {WARNA_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChange(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
-                  <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
-                  <div style={{ marginTop: 8 }}>
+                <div key={wi} className="pembelian-bahan-warna-section">
+                  <div className="pembelian-bahan-warna-header">
+                    <h4>Warna {wi + 1}</h4>
+                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeWarna(wi)}>
+                      Hapus Warna
+                    </button>
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label>Pilih Warna</label>
+                    <select
+                      value={w.isCustom ? "Lainnya" : w.nama}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "Lainnya") {
+                          handleWarnaFieldChange(wi, "isCustom", true);
+                          handleWarnaFieldChange(wi, "nama", "");
+                        } else {
+                          handleWarnaFieldChange(wi, "isCustom", false);
+                          handleWarnaFieldChange(wi, "nama", value);
+                          handleWarnaFieldChange(wi, "customNama", "");
+                        }
+                      }}
+                      required
+                    >
+                      <option value="">Pilih Warna</option>
+                      {WARNA_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChange(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label>Jumlah Rol: {w.rol.length}</label>
+                  </div>
+                  <div>
                     {w.rol.map((berat, ri) => (
-                      <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                        <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
+                      <div key={ri} className="pembelian-bahan-rol-item">
+                        <label>Berat {ri + 1} (kg)</label>
                         <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
-                        <button type="button" className="btn btn-cancel" onClick={() => removeRol(wi, ri)}>
-                          Hapus Rol
+                        <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeRol(wi, ri)}>
+                          Hapus
                         </button>
                       </div>
                     ))}
-                    <button type="button" className="btn" onClick={() => addRol(wi)}>
-                      Tambah Rol
-                    </button>
-                    <button type="button" className="btn btn-cancel" onClick={() => removeWarna(wi)} style={{ marginLeft: 8 }}>
-                      Hapus Warna
+                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={() => addRol(wi)}>
+                      <FaPlus /> Tambah Rol
                     </button>
                   </div>
                 </div>
               ))}
-              <div style={{ marginBottom: 12 }}>
-                <button type="button" className="btn" onClick={addWarna}>
+              <div style={{ marginBottom: 20 }}>
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarna}>
                   <FaPlus /> Tambah Warna
                 </button>
               </div>
 
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+              <div className="pembelian-bahan-form-actions">
+                <button type="submit" className="pembelian-bahan-btn pembelian-bahan-btn-primary">
                   Simpan
                 </button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary" onClick={() => setShowForm(false)}>
                   Batal
                 </button>
               </div>
@@ -687,94 +713,109 @@ const PembelianBahan = () => {
 
       {/* Modal Detail */}
       {showDetail && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="pembelian-bahan-modal">
+          <div className="pembelian-bahan-modal-content">
             <h2>Detail Pembelian Bahan</h2>
             {detailItem ? (
-              <div className="modern-form">
-                <div className="form-group">
-                  <strong>No:</strong> {items.findIndex((i) => i.id === detailItem.id) + 1}
-                </div>
-                <div className="form-group">
-                  <strong>Keterangan:</strong> {detailItem.keterangan}
-                </div>
-                <div className="form-group">
-                  <strong>Nama Bahan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}
-                </div>
-                <div className="form-group">
-                  <strong>Satuan:</strong> {getNamaById(bahanList, detailItem.bahan_id, "satuan")}
-                </div>
-                <div className="form-group">
-                  <strong>Harga:</strong> {formatRupiah(detailItem.harga)}
-                </div>
-                <div className="form-group">
-                  <strong>SKU:</strong> {detailItem.sku || "-"}
-                </div>
-                <div className="form-group">
-                  <strong>Pabrik:</strong> {getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}
-                </div>
-                <div className="form-group">
-                  <strong>Gudang:</strong> {getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}
-                </div>
-                <div className="form-group">
-                  <strong>Tanggal Kirim:</strong> {detailItem.tanggal_kirim}
-                </div>
-                <div className="form-group">
-                  <strong>No. Surat Jalan:</strong> {detailItem.no_surat_jalan || "-"}
-                </div>
-                <div className="form-group">
-                  <strong>Gramasi:</strong> {detailItem.gramasi}
-                </div>
-                <div className="form-group">
-                  <strong>Lebar Kain:</strong> {detailItem.lebar_kain || "-"}
+              <>
+                <div className="pembelian-bahan-detail-grid">
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>No</strong>
+                    <span>{items.findIndex((i) => i.id === detailItem.id) + 1}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Keterangan</strong>
+                    <span>{detailItem.keterangan}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Nama Bahan</strong>
+                    <span>{getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Satuan</strong>
+                    <span>{getNamaById(bahanList, detailItem.bahan_id, "satuan")}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Harga</strong>
+                    <span className="pembelian-bahan-price">{formatRupiah(detailItem.harga)}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>SKU</strong>
+                    <span>{detailItem.sku || "-"}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Pabrik</strong>
+                    <span>{getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Gudang</strong>
+                    <span>{getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Tanggal Kirim</strong>
+                    <span>{detailItem.tanggal_kirim}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>No. Surat Jalan</strong>
+                    <span>{detailItem.no_surat_jalan || "-"}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Gramasi</strong>
+                    <span>{detailItem.gramasi}</span>
+                  </div>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Lebar Kain</strong>
+                    <span>{detailItem.lebar_kain || "-"}</span>
+                  </div>
                 </div>
                 {detailItem.foto_surat_jalan && (
-                  <div className="form-group">
-                    <strong>Lihat Surat Jalan:</strong>{" "}
-                    <a href={detailItem.foto_surat_jalan.startsWith("http") ? detailItem.foto_surat_jalan : `http://localhost:8000/storage/${detailItem.foto_surat_jalan}`} target="_blank" rel="noreferrer">
-                      {detailItem.no_surat_jalan || "Lihat Surat Jalan"}
-                    </a>
+                  <div className="pembelian-bahan-detail-item">
+                    <strong>Surat Jalan</strong>
+                    <span>
+                      <a href={detailItem.foto_surat_jalan.startsWith("http") ? detailItem.foto_surat_jalan : `http://localhost:8000/storage/${detailItem.foto_surat_jalan}`} target="_blank" rel="noreferrer" style={{ color: "#17457c" }}>
+                        {detailItem.no_surat_jalan || "Lihat Surat Jalan"}
+                      </a>
+                    </span>
                   </div>
                 )}
+
                 <h3>Warna & Rol</h3>
                 {detailItem.warna && detailItem.warna.length > 0 ? (
                   detailItem.warna.map((w, wi) => (
-                    <div key={wi} className="form-group" style={{ border: "1px solid #ddd", padding: "12px", marginBottom: "12px", borderRadius: "4px" }}>
-                      <div style={{ marginBottom: "8px" }}>
-                        <strong>Warna:</strong> {w.warna || w.nama || "-"}
+                    <div key={wi} className="pembelian-bahan-warna-card">
+                      <div style={{ marginBottom: "12px" }}>
+                        <strong style={{ color: "#17457c" }}>Warna:</strong> {w.warna || w.nama || "-"}
                       </div>
-                      <div style={{ marginBottom: "8px" }}>
-                        <strong>Jumlah Rol:</strong> {w.jumlah_rol || (w.rol ? w.rol.length : 0)}
+                      <div style={{ marginBottom: "12px" }}>
+                        <strong style={{ color: "#17457c" }}>Jumlah Rol:</strong> {w.jumlah_rol || (w.rol ? w.rol.length : 0)}
                       </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <strong>Berat Rol:</strong>
+                      <div>
+                        <strong style={{ color: "#17457c" }}>Berat Rol:</strong>
                         {w.rol && w.rol.length > 0 ? (
-                          <ul style={{ marginTop: "4px", paddingLeft: "20px" }}>
+                          <ul style={{ marginTop: "8px", paddingLeft: "20px" }}>
                             {w.rol.map((r, ri) => (
-                              <li key={ri}>
+                              <li key={ri} style={{ marginBottom: "4px" }}>
                                 Rol {ri + 1}: {r.berat !== null && r.berat !== undefined ? `${r.berat} kg` : typeof r === "number" ? `${r} kg` : "-"}
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <div style={{ marginTop: "4px", color: "#666" }}>Tidak ada data rol</div>
+                          <div style={{ marginTop: "8px", color: "#666" }}>Tidak ada data rol</div>
                         )}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="form-group" style={{ color: "#666" }}>
-                    Tidak ada data warna
-                  </div>
+                  <div style={{ color: "#666", textAlign: "center", padding: "20px" }}>Tidak ada data warna</div>
                 )}
-              </div>
+              </>
             ) : (
-              <p>Memuat detail...</p>
+              <p className="pembelian-bahan-loading">Memuat detail...</p>
             )}
-            <div className="form-actions">
+            <div className="pembelian-bahan-form-actions">
               <button
                 type="button"
-                className="btn btn-cancel"
+                className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
                 onClick={() => {
                   setShowDetail(false);
                   setDetailItem(null);
@@ -789,139 +830,161 @@ const PembelianBahan = () => {
 
       {/* Modal Edit */}
       {showEditForm && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="pembelian-bahan-modal">
+          <div className="pembelian-bahan-modal-content">
             <h2>Edit Pembelian Bahan</h2>
-            <form onSubmit={handleFormUpdate} className="modern-form">
-              <div className="form-group">
-                <label>Keterangan</label>
-                <select name="keterangan" value={editItem.keterangan} onChange={handleInputChange} required>
-                  <option value="">Pilih Keterangan</option>
-                  <option value="Utuh">Utuh</option>
-                  <option value="Sisa">Sisa</option>
-                </select>
+            <form onSubmit={handleFormUpdate} className="pembelian-bahan-form">
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Keterangan</label>
+                  <select name="keterangan" value={editItem.keterangan} onChange={handleInputChange} required>
+                    <option value="">Pilih Keterangan</option>
+                    <option value="Utuh">Utuh</option>
+                    <option value="Sisa">Sisa</option>
+                  </select>
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Bahan</label>
+                  <select name="bahan_id" value={editItem.bahan_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Bahan</option>
+                    {bahanList.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.nama_bahan} ({b.satuan})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Bahan</label>
-                <select name="bahan_id" value={editItem.bahan_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Bahan</option>
-                  {bahanList.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.nama_bahan} ({b.satuan})
-                    </option>
-                  ))}
-                </select>
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Harga (Rp)</label>
+                  <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>SKU</label>
+                  <input type="text" name="sku" value={editItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Harga (Rp)</label>
-                <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Pabrik</label>
+                  <select name="pabrik_id" value={editItem.pabrik_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Pabrik</option>
+                    {pabrikList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama_pabrik || p.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Gudang</label>
+                  <select name="gudang_id" value={editItem.gudang_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Gudang</option>
+                    {gudangList.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.nama_gudang || g.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>SKU</label>
-                <input type="text" name="sku" value={editItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Tanggal Kirim</label>
+                  <input type="date" name="tanggal_kirim" value={editItem.tanggal_kirim} onChange={handleInputChange} required />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>No. Surat Jalan</label>
+                  <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Pabrik</label>
-                <select name="pabrik_id" value={editItem.pabrik_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Pabrik</option>
-                  {pabrikList.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nama_pabrik || p.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Gudang</label>
-                <select name="gudang_id" value={editItem.gudang_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Gudang</option>
-                  {gudangList.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.nama_gudang || g.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Tanggal Kirim</label>
-                <input type="date" name="tanggal_kirim" value={editItem.tanggal_kirim} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
-                <label>No. Surat Jalan</label>
-                <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
+
+              <div className="pembelian-bahan-form-group">
                 <label>Foto Surat Jalan (jpg/png/pdf)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
                 {editItem.id && !editItem.foto_surat_jalan && <p style={{ fontSize: "12px", color: "#666" }}>Pilih file baru untuk mengganti</p>}
               </div>
-              <div className="form-group">
-                <label>Gramasi</label>
-                <input type="number" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} required />
-              </div>
-              <div className="form-group">
-                <label>Lebar Kain</label>
-                <input type="number" name="lebar_kain" value={editItem.lebar_kain} onChange={handleInputChange} required />
+
+              <div className="pembelian-bahan-form-row">
+                <div className="pembelian-bahan-form-group">
+                  <label>Gramasi</label>
+                  <input type="number" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} required />
+                </div>
+                <div className="pembelian-bahan-form-group">
+                  <label>Lebar Kain</label>
+                  <input type="number" name="lebar_kain" value={editItem.lebar_kain} onChange={handleInputChange} required />
+                </div>
               </div>
 
               <h3>Warna & Rol</h3>
               {editItem.warna.map((w, wi) => (
-                <div key={wi} className="form-group">
-                  <label>{`Warna ${wi + 1}`}</label>
-                  <select
-                    value={w.isCustom ? "Lainnya" : w.nama}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "Lainnya") {
-                        handleWarnaFieldChangeEdit(wi, "isCustom", true);
-                        handleWarnaFieldChangeEdit(wi, "nama", "");
-                      } else {
-                        handleWarnaFieldChangeEdit(wi, "isCustom", false);
-                        handleWarnaFieldChangeEdit(wi, "nama", value);
-                        handleWarnaFieldChangeEdit(wi, "customNama", "");
-                      }
-                    }}
-                    required
-                  >
-                    <option value="">Pilih Warna</option>
-                    {WARNA_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChangeEdit(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
-                  <label style={{ marginTop: 8 }}>Jumlah Rol: {w.rol.length}</label>
-                  <div style={{ marginTop: 8 }}>
+                <div key={wi} className="pembelian-bahan-warna-section">
+                  <div className="pembelian-bahan-warna-header">
+                    <h4>Warna {wi + 1}</h4>
+                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeWarnaEdit(wi)}>
+                      Hapus Warna
+                    </button>
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label>Pilih Warna</label>
+                    <select
+                      value={w.isCustom ? "Lainnya" : w.nama}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "Lainnya") {
+                          handleWarnaFieldChangeEdit(wi, "isCustom", true);
+                          handleWarnaFieldChangeEdit(wi, "nama", "");
+                        } else {
+                          handleWarnaFieldChangeEdit(wi, "isCustom", false);
+                          handleWarnaFieldChangeEdit(wi, "nama", value);
+                          handleWarnaFieldChangeEdit(wi, "customNama", "");
+                        }
+                      }}
+                      required
+                    >
+                      <option value="">Pilih Warna</option>
+                      {WARNA_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChangeEdit(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label>Jumlah Rol: {w.rol.length}</label>
+                  </div>
+                  <div>
                     {w.rol.map((berat, ri) => (
-                      <div key={ri} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                        <label style={{ minWidth: 120 }}>{`Berat ${ri + 1} (kg)`}</label>
+                      <div key={ri} className="pembelian-bahan-rol-item">
+                        <label>Berat {ri + 1} (kg)</label>
                         <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChangeEdit(wi, ri, e.target.value)} />
-                        <button type="button" className="btn btn-cancel" onClick={() => removeRolEdit(wi, ri)}>
-                          Hapus Rol
+                        <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeRolEdit(wi, ri)}>
+                          Hapus
                         </button>
                       </div>
                     ))}
-                    <button type="button" className="btn" onClick={() => addRolEdit(wi)}>
-                      Tambah Rol
-                    </button>
-                    <button type="button" className="btn btn-cancel" onClick={() => removeWarnaEdit(wi)} style={{ marginLeft: 8 }}>
-                      Hapus Warna
+                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={() => addRolEdit(wi)}>
+                      <FaPlus /> Tambah Rol
                     </button>
                   </div>
                 </div>
               ))}
-              <div style={{ marginBottom: 12 }}>
-                <button type="button" className="btn" onClick={addWarnaEdit}>
+              <div style={{ marginBottom: 20 }}>
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarnaEdit}>
                   <FaPlus /> Tambah Warna
                 </button>
               </div>
 
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+              <div className="pembelian-bahan-form-actions">
+                <button type="submit" className="pembelian-bahan-btn pembelian-bahan-btn-primary">
                   Perbarui
                 </button>
-                <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary" onClick={() => setShowEditForm(false)}>
                   Batal
                 </button>
               </div>
