@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "./SpkCutting.css";
 import API from "../../../api";
-import { FaPlus, FaInfoCircle } from "react-icons/fa";
+import { FaPlus, FaInfoCircle, FaEdit, FaDownload } from "react-icons/fa";
 
 const SpkCutting = () => {
   const [spkCutting, setSpkCutting] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [produkList, setProdukList] = useState([]);
   const [tukangList, setTukangList] = useState([]);
@@ -16,8 +18,8 @@ const SpkCutting = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // List warna untuk dropdown
-  const warnaList = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
+  // List nama bagian untuk dropdown
+  const namaBagianList = ["fullbody", "atasan", "bawahan", "combinasi"];
 
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
   const fetchSpkNumber = async (tukangCuttingId) => {
@@ -41,6 +43,18 @@ const SpkCutting = () => {
   };
 
   const [newSpkCutting, setNewSpkCutting] = useState({
+    id_spk_cutting: "",
+    produk_id: "",
+    tanggal_batas_kirim: "",
+    harga_jasa: "",
+    satuan_harga: "Pcs",
+    keterangan: "",
+    tukang_cutting_id: "",
+    bagian: [],
+  });
+
+  const [editSpkCutting, setEditSpkCutting] = useState({
+    id: null,
     id_spk_cutting: "",
     produk_id: "",
     tanggal_batas_kirim: "",
@@ -115,6 +129,49 @@ const SpkCutting = () => {
 
     fetchBahan();
   }, []);
+
+  // Fungsi untuk fetch warna berdasarkan bahan_id
+  const fetchWarnaByBahan = async (bahanId) => {
+    if (!bahanId) {
+      return [];
+    }
+    try {
+      const response = await API.get("/stok-bahan/warna-dengan-stok", {
+        params: { bahan_id: bahanId },
+      });
+      const warnaData = response.data || [];
+      // Pastikan "Lainnya" selalu ada di list dengan stok 999 (selalu bisa dipilih)
+      const hasLainnya = warnaData.some((item) => {
+        const warna = typeof item === "string" ? item : item.warna;
+        return warna === "Lainnya";
+      });
+      if (!hasLainnya) {
+        warnaData.push({ warna: "Lainnya", stok: 999 });
+      }
+      return warnaData;
+    } catch (error) {
+      console.error("Gagal mengambil data warna:", error);
+      // Fallback ke list warna default jika API error
+      return [
+        { warna: "Putih", stok: 0 },
+        { warna: "Hitam", stok: 0 },
+        { warna: "Merah", stok: 0 },
+        { warna: "Biru", stok: 0 },
+        { warna: "Hijau", stok: 0 },
+        { warna: "Kuning", stok: 0 },
+        { warna: "Abu-abu", stok: 0 },
+        { warna: "Coklat", stok: 0 },
+        { warna: "Pink", stok: 0 },
+        { warna: "Ungu", stok: 0 },
+        { warna: "Orange", stok: 0 },
+        { warna: "Navy", stok: 0 },
+        { warna: "Maroon", stok: 0 },
+        { warna: "Beige", stok: 0 },
+        { warna: "Khaki", stok: 0 },
+        { warna: "Lainnya", stok: 999 }, // "Lainnya" selalu bisa dipilih
+      ];
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -268,9 +325,18 @@ const SpkCutting = () => {
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
-  const handleBahanChange = (bagianIndex, bahanIndex, key, value) => {
+  const handleBahanChange = async (bagianIndex, bahanIndex, key, value) => {
     const updated = [...newSpkCutting.bagian];
     updated[bagianIndex].bahan[bahanIndex][key] = value;
+
+    // Jika bahan_id berubah, fetch warna untuk bahan tersebut dan reset warna
+    if (key === "bahan_id" && value) {
+      const warnaData = await fetchWarnaByBahan(value);
+      updated[bagianIndex].bahan[bahanIndex].warna = "";
+      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
+      // Simpan warna list untuk bahan ini
+      updated[bagianIndex].bahan[bahanIndex].warnaList = warnaData;
+    }
 
     // Jika warna diubah ke "Lainnya", reset warna_custom
     if (key === "warna" && value !== "Lainnya") {
@@ -307,6 +373,238 @@ const SpkCutting = () => {
 
   const handleDetailClick = (spk) => {
     setSelectedDetailSpk(spk); // Simpan data hutang yang dipilih
+  };
+
+  const handleDownloadQr = async (spkId) => {
+    try {
+      const response = await API.get(`/spk_cutting/${spkId}/download-qr`, {
+        responseType: "blob", // Penting untuk download file
+      });
+
+      // Buat URL untuk blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `qr-code-spk-cutting-${spkId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading QR code:", error);
+      alert(error.response?.data?.message || "Gagal mengunduh QR code.");
+    }
+  };
+
+  const handleEditClick = async (spk) => {
+    try {
+      const response = await API.get(`/spk_cutting/${spk.id}`);
+      const data = response.data.data || response.data;
+
+      // Transform data untuk form edit
+      const bagianData = await Promise.all(
+        (data.bagian || []).map(async (bagian) => {
+          const bahanData = await Promise.all(
+            (bagian.bahan || []).map(async (bahan) => {
+              const bahanId = bahan.bahan_id?.toString() || "";
+              // Fetch warna untuk bahan ini
+              const warnaData = bahanId ? await fetchWarnaByBahan(bahanId) : [];
+              return {
+                bahan_id: bahanId,
+                warna: bahan.warna || "",
+                warna_custom: warnaData.some((item) => {
+                  const warnaItem = typeof item === "string" ? item : item.warna;
+                  return warnaItem === bahan.warna;
+                })
+                  ? ""
+                  : bahan.warna || "",
+                qty: bahan.qty?.toString() || "",
+                warnaList: warnaData,
+              };
+            })
+          );
+          return {
+            nama_bagian: bagian.nama_bagian || "",
+            bahan: bahanData,
+          };
+        })
+      );
+
+      setEditSpkCutting({
+        id: data.id,
+        id_spk_cutting: data.id_spk_cutting || "",
+        produk_id: data.produk_id?.toString() || "",
+        tanggal_batas_kirim: data.tanggal_batas_kirim || "",
+        harga_jasa: data.harga_jasa?.toString() || "",
+        satuan_harga: data.satuan_harga || "Pcs",
+        keterangan: data.keterangan || "",
+        tukang_cutting_id: data.tukang_cutting_id?.toString() || "",
+        bagian: bagianData.length > 0 ? bagianData : [{ nama_bagian: "", bahan: [] }],
+      });
+
+      setShowEditForm(true);
+    } catch (error) {
+      console.error("Error loading SPK for edit:", error);
+      alert("Gagal memuat data untuk edit.");
+    }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditSpkCutting((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditBagianChange = (index, key, value) => {
+    const updated = [...editSpkCutting.bagian];
+    updated[index][key] = value;
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const handleEditBahanChange = async (bagianIndex, bahanIndex, key, value) => {
+    const updated = [...editSpkCutting.bagian];
+    updated[bagianIndex].bahan[bahanIndex][key] = value;
+
+    // Jika bahan_id berubah, fetch warna untuk bahan tersebut dan reset warna
+    if (key === "bahan_id" && value) {
+      const warnaData = await fetchWarnaByBahan(value);
+      updated[bagianIndex].bahan[bahanIndex].warna = "";
+      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
+      // Simpan warna list untuk bahan ini
+      updated[bagianIndex].bahan[bahanIndex].warnaList = warnaData;
+    }
+
+    // Jika warna diubah ke "Lainnya", reset warna_custom
+    if (key === "warna" && value !== "Lainnya") {
+      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
+    }
+
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const handleEditWarnaCustomChange = (bagianIndex, bahanIndex, value) => {
+    const updated = [...editSpkCutting.bagian];
+    updated[bagianIndex].bahan[bahanIndex].warna_custom = value;
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const addEditBagian = () => {
+    setEditSpkCutting((prev) => ({
+      ...prev,
+      bagian: [...prev.bagian, { nama_bagian: "", bahan: [] }],
+    }));
+  };
+
+  const addEditBahan = (bagianIndex) => {
+    const updated = [...editSpkCutting.bagian];
+    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const removeEditBahan = (bagianIndex, bahanIndex) => {
+    const updated = [...editSpkCutting.bagian];
+    updated[bagianIndex].bahan.splice(bahanIndex, 1);
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+  };
+
+  const handleFormUpdate = async (e) => {
+    e.preventDefault();
+
+    // Validasi
+    if (editSpkCutting.bagian.length === 0) {
+      alert("Minimal harus ada 1 bagian!");
+      return;
+    }
+
+    for (let i = 0; i < editSpkCutting.bagian.length; i++) {
+      const bagian = editSpkCutting.bagian[i];
+      if (!bagian.nama_bagian || bagian.nama_bagian.trim() === "") {
+        alert(`Bagian ${i + 1}: Nama bagian harus diisi!`);
+        return;
+      }
+      if (bagian.bahan.length === 0) {
+        alert(`Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
+        return;
+      }
+      for (let j = 0; j < bagian.bahan.length; j++) {
+        const bahan = bagian.bahan[j];
+        if (!bahan.bahan_id) {
+          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
+          return;
+        }
+        if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
+          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Warna custom harus diisi jika memilih "Lainnya"!`);
+          return;
+        }
+        if (!bahan.qty || bahan.qty <= 0) {
+          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
+          return;
+        }
+      }
+    }
+
+    // Konversi bahan_id menjadi integer
+    const dataToSend = {
+      produk_id: parseInt(editSpkCutting.produk_id),
+      tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
+      harga_jasa: parseFloat(editSpkCutting.harga_jasa),
+      satuan_harga: editSpkCutting.satuan_harga,
+      keterangan: editSpkCutting.keterangan || "",
+      tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
+      bagian: editSpkCutting.bagian.map((bagian) => ({
+        nama_bagian: bagian.nama_bagian,
+        bahan: bagian.bahan.map((bahan) => ({
+          bahan_id: parseInt(bahan.bahan_id),
+          // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
+          warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
+          qty: parseFloat(bahan.qty),
+        })),
+      })),
+    };
+
+    console.log("Data SPK Cutting yang dikirim untuk update:", dataToSend);
+
+    try {
+      const response = await API.put(`/spk_cutting/${editSpkCutting.id}`, dataToSend);
+
+      console.log("Response:", response.data);
+      alert("SPK Cutting berhasil diperbarui!");
+
+      // Update list SPK Cutting dengan data terbaru, urutkan descending
+      setSpkCutting((prev) => {
+        const updated = prev.map((item) => (item.id === editSpkCutting.id ? response.data.data : item));
+        return updated.sort((a, b) => b.id - a.id);
+      });
+
+      // Reset form
+      setEditSpkCutting({
+        id: null,
+        id_spk_cutting: "",
+        produk_id: "",
+        tanggal_batas_kirim: "",
+        harga_jasa: "",
+        satuan_harga: "Pcs",
+        keterangan: "",
+        tukang_cutting_id: "",
+        bagian: [],
+      });
+
+      setShowEditForm(false);
+    } catch (error) {
+      console.error("Error:", error.response?.data || error.message);
+
+      // Tampilkan error detail dari backend
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        const errorMessages = Object.keys(errors)
+          .map((key) => {
+            return `${key}: ${errors[key].join(", ")}`;
+          })
+          .join("\n");
+        alert(`Validasi gagal:\n${errorMessages}`);
+      } else {
+        alert(error.response?.data?.message || "Terjadi kesalahan saat memperbarui SPK Cutting.");
+      }
+    }
   };
 
   return (
@@ -384,8 +682,14 @@ const SpkCutting = () => {
                     </td>
                     <td>{new Date(spk.created_at).toLocaleDateString("id-ID")}</td>
                     <td>
-                      <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail">
+                      <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail" style={{ marginRight: "8px" }}>
                         <FaInfoCircle />
+                      </button>
+                      <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ marginRight: "8px" }}>
+                        <FaEdit />
+                      </button>
+                      <button className="spk-cutting-btn-icon download" onClick={() => handleDownloadQr(spk.id)} title="Download QR Code" disabled={!spk.barcode}>
+                        <FaDownload />
                       </button>
                     </td>
                   </tr>
@@ -491,7 +795,14 @@ const SpkCutting = () => {
                   <h4>Bagian {bagianIndex + 1}</h4>
                   <div className="spk-cutting-form-group">
                     <label>Nama Bagian:</label>
-                    <input type="text" placeholder="Nama Bagian" value={bagian.nama_bagian} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required />
+                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
+                      <option value="">Pilih Nama Bagian</option>
+                      {namaBagianList.map((nama, idx) => (
+                        <option key={idx} value={nama}>
+                          {nama.charAt(0).toUpperCase() + nama.slice(1)}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {bagian.bahan.map((bahan, bahanIndex) => (
@@ -504,13 +815,18 @@ const SpkCutting = () => {
                           </option>
                         ))}
                       </select>
-                      <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)}>
-                        <option value="">Pilih Warna</option>
-                        {warnaList.map((warna, idx) => (
-                          <option key={idx} value={warna}>
-                            {warna}
-                          </option>
-                        ))}
+                      <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
+                        <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
+                        {(bahan.warnaList || []).map((item, idx) => {
+                          const warna = typeof item === "string" ? item : item.warna;
+                          const stok = typeof item === "object" ? item.stok : 999;
+                          const isDisabled = stok === 0 && warna !== "Lainnya";
+                          return (
+                            <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                              {warna} {stok !== 999 && `(${stok} stok)`}
+                            </option>
+                          );
+                        })}
                       </select>
                       {bahan.warna === "Lainnya" && <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />}
                       <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
@@ -555,6 +871,10 @@ const SpkCutting = () => {
               <div className="spk-cutting-detail-item">
                 <strong>Nomor SPK</strong>
                 <span>{selectedDetailSpk.id_spk_cutting}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
+                <strong>Barcode</strong>
+                <span>{selectedDetailSpk.barcode || "-"}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Tukang Cutting</strong>
@@ -677,6 +997,143 @@ const SpkCutting = () => {
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showEditForm && (
+        <div className="spk-cutting-modal">
+          <div className="spk-cutting-modal-content">
+            <h2>Edit SPK Cutting</h2>
+            <form onSubmit={handleFormUpdate} className="spk-cutting-form">
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Tukang Cutting:</label>
+                  <select name="tukang_cutting_id" value={editSpkCutting.tukang_cutting_id} onChange={handleEditInputChange} required>
+                    <option value="">Pilih Tukang</option>
+                    {tukangList.map((tukang) => (
+                      <option key={tukang.id} value={tukang.id}>
+                        {tukang.nama_tukang_cutting}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Nomor Seri SPK:</label>
+                  <input type="text" name="id_spk_cutting" value={editSpkCutting.id_spk_cutting || ""} readOnly disabled />
+                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>Nomor seri tidak dapat diubah.</small>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Produk:</label>
+                  <select name="produk_id" value={editSpkCutting.produk_id} onChange={handleEditInputChange} required>
+                    <option value="">Pilih Produk</option>
+                    {produkList.map((produk) => (
+                      <option key={produk.id} value={produk.id}>
+                        {produk.nama_produk}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Tanggal Batas Kirim:</label>
+                  <input type="date" name="tanggal_batas_kirim" value={editSpkCutting.tanggal_batas_kirim} onChange={handleEditInputChange} required />
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Harga Jasa:</label>
+                  <input type="number" name="harga_jasa" value={editSpkCutting.harga_jasa} onChange={handleEditInputChange} required />
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Satuan Harga:</label>
+                  <select name="satuan_harga" value={editSpkCutting.satuan_harga} onChange={handleEditInputChange} required>
+                    <option value="Pcs">Pcs</option>
+                    <option value="Lusin">Lusin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-group">
+                <label>Keterangan:</label>
+                <textarea name="keterangan" value={editSpkCutting.keterangan} onChange={handleEditInputChange} />
+              </div>
+
+              {/* Bagian dan Bahan */}
+              <h3>Bagian & Bahan</h3>
+              {editSpkCutting.bagian.map((bagian, bagianIndex) => (
+                <div key={bagianIndex} className="spk-cutting-bagian-section">
+                  <h4>Bagian {bagianIndex + 1}</h4>
+                  <div className="spk-cutting-form-group">
+                    <label>Nama Bagian:</label>
+                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
+                      <option value="">Pilih Nama Bagian</option>
+                      {namaBagianList.map((nama, idx) => (
+                        <option key={idx} value={nama}>
+                          {nama.charAt(0).toUpperCase() + nama.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {bagian.bahan.map((bahan, bahanIndex) => (
+                    <div key={bahanIndex} className="spk-cutting-bahan-group">
+                      <select value={bahan.bahan_id || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "bahan_id", e.target.value)} required>
+                        <option value="">Pilih Bahan</option>
+                        {bahanList.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.nama_bahan}
+                          </option>
+                        ))}
+                      </select>
+                      <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
+                        <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
+                        {(bahan.warnaList || []).map((item, idx) => {
+                          const warna = typeof item === "string" ? item : item.warna;
+                          const stok = typeof item === "object" ? item.stok : 999;
+                          const isDisabled = stok === 0 && warna !== "Lainnya";
+                          return (
+                            <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                              {warna} {stok !== 999 && `(${stok} stok)`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {bahan.warna === "Lainnya" && (
+                        <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleEditWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />
+                      )}
+                      <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
+                      <button type="button" onClick={() => removeEditBahan(bagianIndex, bahanIndex)}>
+                        Hapus Bahan
+                      </button>
+                    </div>
+                  ))}
+
+                  <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addEditBahan(bagianIndex)}>
+                    <FaPlus /> Tambah Bahan
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={addEditBagian}>
+                <FaPlus /> Tambah Bagian
+              </button>
+
+              <div className="spk-cutting-form-actions">
+                <button type="submit" className="spk-cutting-btn spk-cutting-btn-primary">
+                  Perbarui
+                </button>
+                <button type="button" className="spk-cutting-btn spk-cutting-btn-secondary" onClick={() => setShowEditForm(false)}>
+                  Batal
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

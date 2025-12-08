@@ -18,6 +18,7 @@ const PembelianBahan = () => {
   const [isReady, setIsReady] = useState(false); // 🔹 Tambahkan ini
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [noSuratJalanError, setNoSuratJalanError] = useState("");
 
   const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
@@ -113,8 +114,39 @@ const PembelianBahan = () => {
   };
 
   // === HANDLERS ===
-  const handleInputChange = (e) => {
+  const checkNoSuratJalan = async (noSuratJalan, currentId = null) => {
+    if (!noSuratJalan || noSuratJalan.trim() === "") {
+      setNoSuratJalanError("");
+      return true;
+    }
+
+    // Cek apakah nomor surat jalan sudah ada di data yang sudah di-fetch
+    const existing = items.find((item) => item.no_surat_jalan && item.no_surat_jalan.toLowerCase().trim() === noSuratJalan.toLowerCase().trim() && item.id !== currentId);
+
+    if (existing) {
+      setNoSuratJalanError("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+      return false;
+    }
+
+    setNoSuratJalanError("");
+    return true;
+  };
+
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
+
+    // Validasi nomor surat jalan
+    if (name === "no_surat_jalan") {
+      if (showEditForm) {
+        setEditItem((prev) => ({ ...prev, [name]: value }));
+        await checkNoSuratJalan(value, editItem.id);
+      } else {
+        setNewItem((prev) => ({ ...prev, [name]: value }));
+        await checkNoSuratJalan(value);
+      }
+      return;
+    }
+
     if (name === "harga") {
       if (value === "" || /^\d*\.?\d*$/.test(value)) {
         if (showEditForm) {
@@ -171,6 +203,7 @@ const PembelianBahan = () => {
       harga: "",
       warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     });
+    setNoSuratJalanError("");
     setShowForm(false);
     setShowEditForm(false);
   };
@@ -281,6 +314,16 @@ const PembelianBahan = () => {
   // === SUBMIT ===
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    // Validasi nomor surat jalan sebelum submit
+    if (newItem.no_surat_jalan && newItem.no_surat_jalan.trim() !== "") {
+      const isValid = await checkNoSuratJalan(newItem.no_surat_jalan);
+      if (!isValid) {
+        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        return;
+      }
+    }
+
     try {
       const formData = new FormData();
       formData.append("keterangan", newItem.keterangan || "");
@@ -309,14 +352,30 @@ const PembelianBahan = () => {
       const data = Array.isArray(response.data) ? response.data : response.data?.data || response.data;
       setItems((prev) => [data, ...prev]);
       resetForm();
+      setNoSuratJalanError("");
       alert("Pembelian bahan berhasil ditambahkan!");
     } catch (error) {
-      alert(error.response?.data?.message || "Gagal menambah pembelian bahan.");
+      if (error.response?.data?.errors?.no_surat_jalan) {
+        setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
+        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+      } else {
+        alert(error.response?.data?.message || "Gagal menambah pembelian bahan.");
+      }
     }
   };
 
   const handleFormUpdate = async (e) => {
     e.preventDefault();
+
+    // Validasi nomor surat jalan sebelum submit
+    if (editItem.no_surat_jalan && editItem.no_surat_jalan.trim() !== "") {
+      const isValid = await checkNoSuratJalan(editItem.no_surat_jalan, editItem.id);
+      if (!isValid) {
+        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        return;
+      }
+    }
+
     try {
       const formData = new FormData();
       formData.append("keterangan", editItem.keterangan || "");
@@ -350,10 +409,16 @@ const PembelianBahan = () => {
       const updatedData = response.data.data || response.data;
       setItems((prev) => prev.map((b) => (b.id === editItem.id ? updatedData : b)));
       resetForm();
+      setNoSuratJalanError("");
       alert("Pembelian bahan berhasil diperbarui!");
     } catch (error) {
       console.error("Update error:", error);
-      alert(error.response?.data?.message || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) || "Gagal memperbarui pembelian bahan.");
+      if (error.response?.data?.errors?.no_surat_jalan) {
+        setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
+        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+      } else {
+        alert(error.response?.data?.message || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) || "Gagal memperbarui pembelian bahan.");
+      }
     }
   };
 
@@ -483,7 +548,7 @@ const PembelianBahan = () => {
                   <th>SKU</th>
                   <th>Gudang</th>
                   <th>Pabrik</th>
-                  <th>Tanggal Kirim</th>
+                  <th>Tanggal Diterima</th>
                   <th>Gramasi</th>
                   <th>Barcode</th>
                   <th>Aksi</th>
@@ -613,12 +678,13 @@ const PembelianBahan = () => {
 
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
-                  <label>Tanggal Kirim</label>
+                  <label>Tanggal Diterima</label>
                   <input type="date" name="tanggal_kirim" value={newItem.tanggal_kirim} onChange={handleInputChange} required />
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>No. Surat Jalan</label>
-                  <input type="text" name="no_surat_jalan" value={newItem.no_surat_jalan} onChange={handleInputChange} />
+                  <input type="text" name="no_surat_jalan" value={newItem.no_surat_jalan} onChange={handleInputChange} className={noSuratJalanError ? "error" : ""} />
+                  {noSuratJalanError && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "4px" }}>{noSuratJalanError}</span>}
                 </div>
               </div>
 
@@ -752,7 +818,7 @@ const PembelianBahan = () => {
                     <span>{getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</span>
                   </div>
                   <div className="pembelian-bahan-detail-item">
-                    <strong>Tanggal Kirim</strong>
+                    <strong>Tanggal Diterima</strong>
                     <span>{detailItem.tanggal_kirim}</span>
                   </div>
                   <div className="pembelian-bahan-detail-item">
@@ -894,12 +960,13 @@ const PembelianBahan = () => {
 
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
-                  <label>Tanggal Kirim</label>
+                  <label>Tanggal Diterima</label>
                   <input type="date" name="tanggal_kirim" value={editItem.tanggal_kirim} onChange={handleInputChange} required />
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>No. Surat Jalan</label>
-                  <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} />
+                  <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} className={noSuratJalanError ? "error" : ""} />
+                  {noSuratJalanError && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "4px" }}>{noSuratJalanError}</span>}
                 </div>
               </div>
 

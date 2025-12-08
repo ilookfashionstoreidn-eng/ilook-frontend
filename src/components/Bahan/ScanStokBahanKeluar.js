@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./ScanStokBahanKeluar.css";
 import API from "../../api";
 import { toast } from "react-toastify";
@@ -6,6 +6,7 @@ import { FaBarcode } from "react-icons/fa";
 
 const ScanStokBahanKeluar = () => {
   const [spkCuttingId, setSpkCuttingId] = useState("");
+  const [spkCuttingBarcode, setSpkCuttingBarcode] = useState("");
   const [spkCuttingDetail, setSpkCuttingDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -13,11 +14,28 @@ const ScanStokBahanKeluar = () => {
   const [selectedBahan, setSelectedBahan] = useState(null);
   const [scanResult, setScanResult] = useState(null);
   const [scannedItems, setScannedItems] = useState([]);
+  const [scanMode, setScanMode] = useState("id"); // "id" atau "barcode"
+  const barcodeTimeoutRef = useRef(null);
+  const spkBarcodeTimeoutRef = useRef(null);
+
+  // Cleanup timeout saat component unmount
+  useEffect(() => {
+    return () => {
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+      if (spkBarcodeTimeoutRef.current) {
+        clearTimeout(spkBarcodeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch detail SPK Cutting
-  const fetchSpkCuttingDetail = async () => {
-    if (!spkCuttingId || spkCuttingId.trim() === "") {
-      setError("Masukkan SPK Cutting ID terlebih dahulu");
+  const fetchSpkCuttingDetail = async (inputValue = null) => {
+    const searchValue = inputValue || (scanMode === "barcode" ? spkCuttingBarcode : spkCuttingId);
+
+    if (!searchValue || searchValue.trim() === "") {
+      setError(scanMode === "barcode" ? "Masukkan atau scan barcode SPK Cutting terlebih dahulu" : "Masukkan SPK Cutting ID terlebih dahulu");
       return;
     }
 
@@ -29,7 +47,7 @@ const ScanStokBahanKeluar = () => {
       setScanResult(null);
       setScannedItems([]);
 
-      const response = await API.get(`/stok-bahan-keluar/spk-cutting/${spkCuttingId}`);
+      const response = await API.get(`/stok-bahan-keluar/spk-cutting/${searchValue.trim()}`);
       setSpkCuttingDetail(response.data);
 
       if (response.data.bahan_detail && response.data.bahan_detail.length > 0) {
@@ -37,6 +55,13 @@ const ScanStokBahanKeluar = () => {
         if (response.data.bahan_detail.length === 1) {
           setSelectedBahan(response.data.bahan_detail[0]);
         }
+      }
+
+      // Reset input setelah berhasil
+      if (scanMode === "barcode") {
+        setSpkCuttingBarcode("");
+      } else {
+        setSpkCuttingId("");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Gagal mengambil detail SPK Cutting");
@@ -46,20 +71,72 @@ const ScanStokBahanKeluar = () => {
     }
   };
 
-  // Handle scan barcode
-  const handleScanBarcode = async (e) => {
-    if (e.key === "Enter" && barcode.trim() !== "") {
-      await scanBarcode();
+  // Handle scan barcode SPK Cutting - auto trigger saat input berubah
+  const handleSpkCuttingBarcodeChange = (value) => {
+    setSpkCuttingBarcode(value);
+
+    // Clear timeout sebelumnya jika ada
+    if (spkBarcodeTimeoutRef.current) {
+      clearTimeout(spkBarcodeTimeoutRef.current);
+    }
+
+    const trimmedValue = value.trim();
+
+    // Auto trigger jika barcode sudah lengkap (dimulai dengan SPKC- dan panjangnya cukup)
+    if (trimmedValue.startsWith("SPKC-") && trimmedValue.length >= 10 && !loading) {
+      // Delay kecil untuk memastikan semua karakter sudah ter-input dari scanner
+      spkBarcodeTimeoutRef.current = setTimeout(async () => {
+        // Langsung proses karena sudah validasi format dan panjang
+        await fetchSpkCuttingDetail(trimmedValue);
+      }, 200); // Kurangi delay menjadi 200ms untuk respons lebih cepat
     }
   };
 
-  const scanBarcode = async () => {
+  // Handle Enter key (opsional, untuk manual input)
+  const handleScanSpkCuttingBarcode = async (e) => {
+    if (e.key === "Enter" && spkCuttingBarcode.trim() !== "") {
+      await fetchSpkCuttingDetail(spkCuttingBarcode.trim());
+    }
+  };
+
+  // Handle scan barcode bahan - auto trigger saat input berubah
+  const handleBarcodeChange = (value) => {
+    setBarcode(value);
+
+    // Clear timeout sebelumnya jika ada
+    if (barcodeTimeoutRef.current) {
+      clearTimeout(barcodeTimeoutRef.current);
+    }
+
+    const trimmedValue = value.trim();
+
+    // Auto trigger jika barcode sudah lengkap (biasanya barcode scanner mengirim data dengan cepat)
+    // Barcode biasanya panjangnya minimal 8 karakter
+    if (trimmedValue.length >= 8 && !loading && selectedBahan) {
+      // Delay kecil untuk memastikan semua karakter sudah ter-input dari scanner
+      barcodeTimeoutRef.current = setTimeout(async () => {
+        // Langsung proses karena sudah validasi panjang
+        await scanBarcode(trimmedValue);
+      }, 200); // Kurangi delay menjadi 200ms untuk respons lebih cepat
+    }
+  };
+
+  // Handle Enter key (opsional, untuk manual input)
+  const handleScanBarcode = async (e) => {
+    if (e.key === "Enter" && barcode.trim() !== "") {
+      await scanBarcode(barcode.trim());
+    }
+  };
+
+  const scanBarcode = async (barcodeValue = null) => {
+    const barcodeToScan = barcodeValue || barcode;
+
     if (!selectedBahan) {
       toast.error("Pilih bahan terlebih dahulu");
       return;
     }
 
-    if (!barcode || barcode.trim() === "") {
+    if (!barcodeToScan || barcodeToScan.trim() === "") {
       toast.error("Masukkan barcode terlebih dahulu");
       return;
     }
@@ -76,7 +153,7 @@ const ScanStokBahanKeluar = () => {
       const response = await API.post("/stok-bahan-keluar/scan", {
         spk_cutting_id: spkCuttingDetail.spk_cutting.id,
         spk_cutting_bahan_id: selectedBahan.spk_cutting_bahan_id,
-        barcode: barcode.trim(),
+        barcode: barcodeToScan.trim(),
       });
 
       if (response.data.valid) {
@@ -126,24 +203,60 @@ const ScanStokBahanKeluar = () => {
 
       <div className="scan-stok-table-container">
         <div className="scan-stok-filter-header">
-          <div className="scan-stok-search-bar">
-            <input
-              type="text"
-              placeholder="Masukkan nomor seri..."
-              value={spkCuttingId}
-              onChange={(e) => setSpkCuttingId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && fetchSpkCuttingDetail()}
-              autoFocus
-            />
-            <button className="scan-stok-btn-primary" onClick={fetchSpkCuttingDetail} disabled={loading}>
-              {loading ? "Loading..." : "Cari SPK Cutting"}
+          {/* Toggle Mode */}
+          <div style={{ display: "flex", gap: "10px", marginBottom: "15px", alignItems: "center" }}>
+            <button
+              className={scanMode === "id" ? "scan-stok-btn-primary" : "scan-stok-btn-secondary"}
+              onClick={() => {
+                setScanMode("id");
+                setSpkCuttingId("");
+                setSpkCuttingBarcode("");
+                setSpkCuttingDetail(null);
+              }}
+              style={{ padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer" }}
+            >
+              Input Manual
+            </button>
+            <button
+              className={scanMode === "barcode" ? "scan-stok-btn-primary" : "scan-stok-btn-secondary"}
+              onClick={() => {
+                setScanMode("barcode");
+                setSpkCuttingId("");
+                setSpkCuttingBarcode("");
+                setSpkCuttingDetail(null);
+              }}
+              style={{ padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer" }}
+            >
+              Scan Barcode SPK
             </button>
           </div>
+
+          {/* Input berdasarkan mode - berada di bawah tombol */}
+          {scanMode === "barcode" ? (
+            <div className="scan-stok-search-bar" style={{ marginTop: "10px" }}>
+              <input type="text" placeholder="Scan barcode SPK Cutting (SPKC-XXXXXXXX)" value={spkCuttingBarcode} onChange={(e) => handleSpkCuttingBarcodeChange(e.target.value)} onKeyDown={handleScanSpkCuttingBarcode} autoFocus />
+              <button className="scan-stok-btn-primary" onClick={() => fetchSpkCuttingDetail(spkCuttingBarcode.trim())} disabled={loading || !spkCuttingBarcode.trim()}>
+                {loading ? "Loading..." : "Cari SPK Cutting"}
+              </button>
+            </div>
+          ) : (
+            <div className="scan-stok-search-bar" style={{ marginTop: "10px" }}>
+              <input
+                type="text"
+                placeholder="Masukkan SPK Cutting ID atau Nomor Seri (contoh: NR-01)"
+                value={spkCuttingId}
+                onChange={(e) => setSpkCuttingId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchSpkCuttingDetail(spkCuttingId.trim())}
+                autoFocus
+              />
+              <button className="scan-stok-btn-primary" onClick={() => fetchSpkCuttingDetail(spkCuttingId.trim())} disabled={loading || !spkCuttingId.trim()}>
+                {loading ? "Loading..." : "Cari SPK Cutting"}
+              </button>
+            </div>
+          )}
         </div>
 
-        {error && (
-          <p className="scan-stok-error">{error}</p>
-        )}
+        {error && <p className="scan-stok-error">{error}</p>}
 
         {/* Detail SPK Cutting */}
         {spkCuttingDetail && (
@@ -228,7 +341,16 @@ const ScanStokBahanKeluar = () => {
                     }}
                     style={{ display: "flex", gap: "10px" }}
                   >
-                    <input id="barcode-input" type="text" placeholder="Scan atau ketik barcode dan tekan Enter" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleScanBarcode} autoFocus style={{ flex: 1, padding: "12px 14px", border: "2px solid #b3d9f2", borderRadius: "10px" }} />
+                    <input
+                      id="barcode-input"
+                      type="text"
+                      placeholder="Scan barcode bahan - otomatis terdeteksi"
+                      value={barcode}
+                      onChange={(e) => handleBarcodeChange(e.target.value)}
+                      onKeyDown={handleScanBarcode}
+                      autoFocus
+                      style={{ flex: 1, padding: "12px 14px", border: "2px solid #b3d9f2", borderRadius: "10px" }}
+                    />
                     <button type="submit" className="scan-stok-btn-primary" disabled={loading || !barcode.trim()}>
                       {loading ? "Memvalidasi..." : "Scan"}
                     </button>
@@ -237,7 +359,10 @@ const ScanStokBahanKeluar = () => {
 
                 {/* Scan Result */}
                 {scanResult && (
-                  <p className={scanResult.success ? "scan-stok-loading" : "scan-stok-error"} style={{ padding: "15px", marginTop: "15px", borderRadius: "8px", background: scanResult.success ? "#e3f2fd" : "#ffebee", color: scanResult.success ? "#17457c" : "#f44336" }}>
+                  <p
+                    className={scanResult.success ? "scan-stok-loading" : "scan-stok-error"}
+                    style={{ padding: "15px", marginTop: "15px", borderRadius: "8px", background: scanResult.success ? "#e3f2fd" : "#ffebee", color: scanResult.success ? "#17457c" : "#f44336" }}
+                  >
                     <strong>{scanResult.success ? "✓ Berhasil" : "✗ Gagal"}</strong> - {scanResult.message}
                   </p>
                 )}
