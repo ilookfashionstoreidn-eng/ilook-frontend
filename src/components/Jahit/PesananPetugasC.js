@@ -255,11 +255,18 @@ const handleBarcodeScan = async () => {
   if (!scanned) return;
 
   try {
-    // Cek barcode ke backend
     const res = await API.get(`/cek-barcode/${scanned}`);
-    const aksesorisScan = res.data.aksesoris_id;
 
-    // Ambil daftar aksesoris valid dari pesanan
+    const aksesorisScan = res.data.aksesoris_id;
+    const statusBarcode = res.data.barcode_status; // ← PERBAIKAN DI SINI
+
+    // CEK STATUS BARCODE
+    if (statusBarcode === "terpakai") {
+      alert("❌ Barcode ini sudah TERPAKAI dan tidak bisa digunakan lagi!");
+      setBarcodeInput("");
+      return;
+    }
+
     const aksesorisValid = selectedPesanan.detail_pesanan.map(
       (dp) => dp.aksesoris_id
     );
@@ -280,8 +287,10 @@ const handleBarcodeScan = async () => {
   // Barcode valid → masukkan
   if (newDataPetugasD.barcode.includes(scanned)) {
     alert("⚠ Barcode sudah pernah ditambahkan!");
+
   } else if (newDataPetugasD.barcode.length >= selectedPesanan.jumlah_dipesan) {
     alert("⚠ Jumlah barcode sudah penuh sesuai pesanan!");
+
   } else {
     setNewDataPetugasD(prev => ({
       ...prev,
@@ -291,6 +300,7 @@ const handleBarcodeScan = async () => {
 
   setBarcodeInput(""); // reset
 };
+
 
 
 const fetchPage = async (page) => {
