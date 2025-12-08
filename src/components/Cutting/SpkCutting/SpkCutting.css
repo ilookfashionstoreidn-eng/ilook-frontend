@@ -1,17 +1,24 @@
 /* ===================================
-   PEMBELIAN BAHAN - MODERN UI
+   SPK CUTTING - MODERN UI
    Future Blue Gradient Theme
    =================================== */
 
+/* Disabled option styling */
+select option:disabled {
+  color: #999 !important;
+  opacity: 0.5 !important;
+  background-color: #f5f5f5 !important;
+}
+
 /* Container */
-.pembelian-bahan-page {
+.spk-cutting-page {
   min-height: 100vh;
   background: #ffffff;
   padding: 20px;
 }
 
 /* Header Section */
-.pembelian-bahan-header {
+.spk-cutting-header {
   background: transparent;
   color: #17457c;
   padding: 30px;
@@ -23,7 +30,7 @@
   gap: 15px;
 }
 
-.pembelian-bahan-header-icon {
+.spk-cutting-header-icon {
   font-size: 42px;
   background: transparent;
   padding: 15px;
@@ -34,7 +41,7 @@
   color: #0487d8;
 }
 
-.pembelian-bahan-header h1 {
+.spk-cutting-header h1 {
   margin: 0;
   font-size: 32px;
   font-weight: 700;
@@ -42,7 +49,7 @@
 }
 
 /* Table Container */
-.pembelian-bahan-table-container {
+.spk-cutting-table-container {
   background: white;
   border-radius: 15px;
   padding: 25px;
@@ -50,7 +57,7 @@
 }
 
 /* Filter Header */
-.pembelian-bahan-filter-header {
+.spk-cutting-filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -59,7 +66,7 @@
   gap: 15px;
 }
 
-.pembelian-bahan-btn-add {
+.spk-cutting-btn-add {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
   border: none;
@@ -75,22 +82,22 @@
   box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
 }
 
-.pembelian-bahan-btn-add:hover {
+.spk-cutting-btn-add:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
 }
 
-.pembelian-bahan-btn-add:active {
+.spk-cutting-btn-add:active {
   transform: translateY(0);
 }
 
-.pembelian-bahan-search-bar {
+.spk-cutting-search-bar {
   position: relative;
   flex: 1;
   max-width: 400px;
 }
 
-.pembelian-bahan-search-bar input {
+.spk-cutting-search-bar input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #b3d9f2;
@@ -100,14 +107,14 @@
   background: #fff;
 }
 
-.pembelian-bahan-search-bar input:focus {
+.spk-cutting-search-bar input:focus {
   outline: none;
   border-color: #0487d8;
   box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
 }
 
 /* Table */
-.pembelian-bahan-table {
+.spk-cutting-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -116,12 +123,12 @@
   border-radius: 12px;
 }
 
-.pembelian-bahan-table thead {
+.spk-cutting-table thead {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
 }
 
-.pembelian-bahan-table thead th {
+.spk-cutting-table thead th {
   padding: 16px 12px;
   text-align: left;
   font-weight: 600;
@@ -131,27 +138,27 @@
   white-space: nowrap;
 }
 
-.pembelian-bahan-table thead th:first-child {
+.spk-cutting-table thead th:first-child {
   border-top-left-radius: 12px;
 }
 
-.pembelian-bahan-table thead th:last-child {
+.spk-cutting-table thead th:last-child {
   border-top-right-radius: 12px;
 }
 
-.pembelian-bahan-table tbody tr {
+.spk-cutting-table tbody tr {
   background: white;
   transition: all 0.3s ease;
   border-bottom: 1px solid #f5f5f5;
 }
 
-.pembelian-bahan-table tbody tr:hover {
+.spk-cutting-table tbody tr:hover {
   background: #e3f2fd;
   transform: scale(1.01);
   box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
 }
 
-.pembelian-bahan-table tbody td {
+.spk-cutting-table tbody td {
   padding: 14px 12px;
   font-size: 14px;
   color: #333;
@@ -159,7 +166,7 @@
 }
 
 /* Badge */
-.pembelian-bahan-badge {
+.spk-cutting-badge {
   display: inline-block;
   padding: 6px 12px;
   border-radius: 6px;
@@ -169,25 +176,25 @@
   letter-spacing: 0.3px;
 }
 
-.pembelian-bahan-badge.utuh {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-  color: white;
-}
-
-.pembelian-bahan-badge.sisa {
+.spk-cutting-badge.in-progress {
   background: linear-gradient(135deg, #0487d8 0%, #1976d2 100%);
   color: white;
 }
 
+.spk-cutting-badge.completed {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
 /* Price */
-.pembelian-bahan-price {
+.spk-cutting-price {
   color: #17457c;
   font-weight: 600;
   font-size: 14px;
 }
 
 /* Action Buttons */
-.pembelian-bahan-btn-icon {
+.spk-cutting-btn-icon {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
   border: none;
@@ -201,25 +208,36 @@
   justify-content: center;
 }
 
-.pembelian-bahan-btn-icon:hover {
+.spk-cutting-btn-icon:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
 }
 
-.pembelian-bahan-btn-icon.view {
+.spk-cutting-btn-icon.view {
   background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
 }
 
-.pembelian-bahan-btn-icon.edit {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+.spk-cutting-btn-icon.edit {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
 }
 
-.pembelian-bahan-btn-icon.download {
-  background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);
+.spk-cutting-btn-icon.download {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+}
+
+.spk-cutting-btn-icon.download:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.spk-cutting-btn-icon.download:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* Pagination */
-.pembelian-bahan-pagination {
+.spk-cutting-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -228,7 +246,7 @@
   flex-wrap: wrap;
 }
 
-.pembelian-bahan-pagination button {
+.spk-cutting-pagination button {
   padding: 10px 16px;
   border: 2px solid #b3d9f2;
   background: white;
@@ -240,26 +258,26 @@
   font-size: 14px;
 }
 
-.pembelian-bahan-pagination button:hover:not(:disabled) {
+.spk-cutting-pagination button:hover:not(:disabled) {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
   border-color: #17457c;
   transform: translateY(-2px);
 }
 
-.pembelian-bahan-pagination button.active {
+.spk-cutting-pagination button.active {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
   border-color: #17457c;
 }
 
-.pembelian-bahan-pagination button:disabled {
+.spk-cutting-pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Modal */
-.pembelian-bahan-modal {
+.spk-cutting-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -274,7 +292,7 @@
   overflow-y: auto;
 }
 
-.pembelian-bahan-modal-content {
+.spk-cutting-modal-content {
   background: white;
   border-radius: 20px;
   padding: 35px;
@@ -297,7 +315,7 @@
   }
 }
 
-.pembelian-bahan-modal-content h2 {
+.spk-cutting-modal-content h2 {
   margin: 0 0 25px 0;
   color: #17457c;
   font-size: 26px;
@@ -306,45 +324,47 @@
   padding-bottom: 15px;
 }
 
-.pembelian-bahan-modal-content h3 {
+.spk-cutting-modal-content h3 {
   margin: 25px 0 15px 0;
   color: #17457c;
   font-size: 20px;
   font-weight: 600;
 }
 
+.spk-cutting-modal-content h4 {
+  margin: 20px 0 10px 0;
+  color: #17457c;
+  font-size: 18px;
+  font-weight: 600;
+}
+
 /* Form */
-.pembelian-bahan-form {
+.spk-cutting-form {
   display: grid;
   gap: 20px;
 }
 
-.pembelian-bahan-form-row {
+.spk-cutting-form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
 
-.pembelian-bahan-form-group {
+.spk-cutting-form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.pembelian-bahan-form-group label {
+.spk-cutting-form-group label {
   font-weight: 600;
   color: #555;
   font-size: 14px;
 }
 
-.pembelian-bahan-form-group input.error {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-}
-
-.pembelian-bahan-form-group input,
-.pembelian-bahan-form-group select,
-.pembelian-bahan-form-group textarea {
+.spk-cutting-form-group input,
+.spk-cutting-form-group select,
+.spk-cutting-form-group textarea {
   padding: 12px 14px;
   border: 2px solid #b3d9f2;
   border-radius: 10px;
@@ -353,16 +373,22 @@
   font-family: inherit;
 }
 
-.pembelian-bahan-form-group input:focus,
-.pembelian-bahan-form-group select:focus,
-.pembelian-bahan-form-group textarea:focus {
+.spk-cutting-form-group input:focus,
+.spk-cutting-form-group select:focus,
+.spk-cutting-form-group textarea:focus {
   outline: none;
   border-color: #0487d8;
   box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
 }
 
-/* Warna Section */
-.pembelian-bahan-warna-section {
+.spk-cutting-form-group input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  color: #999;
+}
+
+/* Bagian Section */
+.spk-cutting-bagian-section {
   border: 2px solid #b3d9f2;
   border-radius: 12px;
   padding: 20px;
@@ -370,37 +396,43 @@
   background: #e3f2fd;
 }
 
-.pembelian-bahan-warna-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.pembelian-bahan-warna-header h4 {
-  margin: 0;
-  color: #17457c;
-  font-size: 16px;
-}
-
-.pembelian-bahan-rol-item {
+.spk-cutting-bahan-group {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.pembelian-bahan-rol-item label {
-  min-width: 120px;
-  font-size: 13px;
-}
-
-.pembelian-bahan-rol-item input {
+.spk-cutting-bahan-group select,
+.spk-cutting-bahan-group input {
   flex: 1;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 2px solid #b3d9f2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.spk-cutting-bahan-group button {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.spk-cutting-bahan-group button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
 /* Buttons */
-.pembelian-bahan-btn {
+.spk-cutting-btn {
   padding: 12px 20px;
   border: none;
   border-radius: 10px;
@@ -413,39 +445,34 @@
   gap: 8px;
 }
 
-.pembelian-bahan-btn-primary {
+.spk-cutting-btn-primary {
   background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
 }
 
-.pembelian-bahan-btn-primary:hover {
+.spk-cutting-btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
 }
 
-.pembelian-bahan-btn-secondary {
+.spk-cutting-btn-secondary {
   background: linear-gradient(135deg, #757575 0%, #424242 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.pembelian-bahan-btn-secondary:hover {
+.spk-cutting-btn-secondary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
-.pembelian-bahan-btn-success {
+.spk-cutting-btn-success {
   background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
   color: white;
 }
 
-.pembelian-bahan-btn-danger {
-  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
-  color: white;
-}
-
-.pembelian-bahan-form-actions {
+.spk-cutting-form-actions {
   display: flex;
   gap: 15px;
   justify-content: flex-end;
@@ -455,21 +482,21 @@
 }
 
 /* Detail View */
-.pembelian-bahan-detail-grid {
+.spk-cutting-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }
 
-.pembelian-bahan-detail-item {
+.spk-cutting-detail-item {
   padding: 15px;
   background: #e3f2fd;
   border-radius: 10px;
   border-left: 4px solid #0487d8;
 }
 
-.pembelian-bahan-detail-item strong {
+.spk-cutting-detail-item strong {
   display: block;
   color: #17457c;
   font-size: 12px;
@@ -478,108 +505,132 @@
   letter-spacing: 0.5px;
 }
 
-.pembelian-bahan-detail-item span {
+.spk-cutting-detail-item span {
   color: #333;
   font-size: 15px;
   font-weight: 500;
 }
 
-.pembelian-bahan-warna-card {
-  border: 2px solid #b3d9f2;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 15px;
-  background: white;
-  transition: all 0.3s ease;
+/* Scrollable Table */
+.spk-cutting-scrollable-table {
+  overflow-x: auto;
+  margin-top: 20px;
 }
 
-.pembelian-bahan-warna-card:hover {
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.15);
-  transform: translateY(-2px);
+.spk-cutting-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.spk-cutting-log-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.spk-cutting-log-table thead th {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.spk-cutting-log-table tbody td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 13px;
+}
+
+.spk-cutting-log-table tbody tr:hover {
+  background: #e3f2fd;
 }
 
 /* Loading & Error */
-.pembelian-bahan-loading,
-.pembelian-bahan-error {
+.spk-cutting-loading,
+.spk-cutting-error {
   text-align: center;
   padding: 40px;
   font-size: 16px;
   color: #666;
 }
 
-.pembelian-bahan-error {
+.spk-cutting-error {
   color: #f44336;
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .pembelian-bahan-table-container {
+  .spk-cutting-table-container {
     overflow-x: auto;
   }
 
-  .pembelian-bahan-table {
-    min-width: 1000px;
+  .spk-cutting-table {
+    min-width: 1200px;
   }
 }
 
 @media (max-width: 768px) {
-  .pembelian-bahan-header {
+  .spk-cutting-header {
     padding: 20px;
   }
 
-  .pembelian-bahan-header h1 {
+  .spk-cutting-header h1 {
     font-size: 24px;
   }
 
-  .pembelian-bahan-header-icon {
+  .spk-cutting-header-icon {
     font-size: 32px;
     padding: 12px;
   }
 
-  .pembelian-bahan-filter-header {
+  .spk-cutting-filter-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .pembelian-bahan-search-bar {
+  .spk-cutting-search-bar {
     max-width: 100%;
   }
 
-  .pembelian-bahan-modal-content {
+  .spk-cutting-modal-content {
     padding: 25px;
   }
 
-  .pembelian-bahan-form-row {
+  .spk-cutting-form-row {
     grid-template-columns: 1fr;
   }
 
-  .pembelian-bahan-detail-grid {
+  .spk-cutting-detail-grid {
     grid-template-columns: 1fr;
   }
 
-  .pembelian-bahan-form-actions {
+  .spk-cutting-form-actions {
     flex-direction: column;
   }
 
-  .pembelian-bahan-form-actions button {
+  .spk-cutting-form-actions button {
     width: 100%;
   }
 }
 
 @media (max-width: 480px) {
-  .pembelian-bahan-page {
+  .spk-cutting-page {
     padding: 10px;
   }
 
-  .pembelian-bahan-table-container {
+  .spk-cutting-table-container {
     padding: 15px;
   }
 
-  .pembelian-bahan-pagination {
+  .spk-cutting-pagination {
     gap: 5px;
   }
 
-  .pembelian-bahan-pagination button {
+  .spk-cutting-pagination button {
     padding: 8px 12px;
     font-size: 12px;
   }

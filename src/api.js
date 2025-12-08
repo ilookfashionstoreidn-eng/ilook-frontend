@@ -28,6 +28,9 @@ API.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("role");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("foto");
+      localStorage.removeItem("loginTimestamp"); // Hapus timestamp login
       window.location.href = "/";
     }
     return Promise.reject(error);

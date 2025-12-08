@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { FaBars, FaTimes, FaHome, FaCogs, FaChevronDown, FaChevronUp, FaFolder } from "react-icons/fa";
+import { FaBars, FaTimes, FaHome, FaCogs, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import API from "../../api";
 
 const Layout = () => {
@@ -17,10 +17,48 @@ const Layout = () => {
   const [role, setRole] = useState("");
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
 
+  const navigate = useNavigate();
+  const handleLogout = useCallback(async () => {
+    try {
+      await API.post("/logout");
+    } catch (error) {}
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    localStorage.removeItem("foto");
+    localStorage.removeItem("loginTimestamp"); // Hapus timestamp login
+    navigate("/");
+  }, [navigate]);
+
   useEffect(() => {
     const userRole = localStorage.getItem("role"); // Ambil role dari localStorage
     setRole(userRole);
-  }, []);
+
+    // Cek apakah session sudah expired (lebih dari 1 minggu)
+    const checkSessionExpiry = () => {
+      const loginTimestamp = localStorage.getItem("loginTimestamp");
+      if (loginTimestamp) {
+        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 1 minggu dalam milliseconds
+        const now = Date.now();
+        const timeSinceLogin = now - parseInt(loginTimestamp);
+
+        if (timeSinceLogin > oneWeekInMs) {
+          // Session expired, logout user
+          handleLogout();
+        }
+      }
+    };
+
+    // Cek saat component mount
+    checkSessionExpiry();
+
+    // Cek setiap 1 jam untuk memastikan session tidak expired
+    const expiryCheckInterval = setInterval(checkSessionExpiry, 60 * 60 * 1000);
+
+    return () => {
+      clearInterval(expiryCheckInterval);
+    };
+  }, [handleLogout]);
 
   const toggleCmtMenu = () => {
     setIsCmtOpen(!isCmtOpen);
@@ -52,18 +90,6 @@ const Layout = () => {
   };
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const navigate = useNavigate();
-  const handleLogout = async () => {
-    try {
-      await API.post("/logout");
-    } catch (error) {}
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("role");
-    localStorage.removeItem("foto");
-    navigate("/");
   };
 
   return (

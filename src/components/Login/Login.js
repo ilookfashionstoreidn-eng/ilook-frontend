@@ -21,6 +21,8 @@ const Login = () => {
       localStorage.setItem("userId", data.user.id);
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("foto", data.user.foto);
+      // Simpan timestamp login untuk pengecekan expiry (1 minggu)
+      localStorage.setItem("loginTimestamp", Date.now().toString());
 
       console.log("Role dari LocalStorage setelah disimpan:", localStorage.getItem("role"));
 

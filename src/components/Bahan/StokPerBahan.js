@@ -96,19 +96,20 @@ const StokPerBahan = () => {
               <thead>
                 <tr>
                   <th style={{ width: "50px" }}>No</th>
-                  <th style={{ width: "200px" }}>Nama Bahan</th>
-                  <th style={{ width: "100px" }}>Total Berat (kg)</th>
-                  <th style={{ width: "100px" }}>Total Rol</th>
-                  <th style={{ width: "150px" }}>Warna</th>
-                  <th style={{ width: "150px" }}>Gudang</th>
                   <th style={{ width: "150px" }}>Pabrik</th>
+                  <th style={{ width: "200px" }}>Nama Bahan</th>
+                  <th style={{ width: "150px" }}>Warna</th>
+                  <th style={{ width: "100px" }}>Total Rol</th>
+                  <th style={{ width: "120px" }}>Total Berat (kg)</th>
+                  <th style={{ width: "100px" }}>Status</th>
+                  <th style={{ width: "120px" }}>SKU</th>
                   <th style={{ width: "80px" }}>Detail</th>
                 </tr>
               </thead>
               <tbody>
                 {currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
+                    <td colSpan="9" style={{ textAlign: "center", padding: "20px" }}>
                       Tidak ada data stok
                     </td>
                   </tr>
@@ -119,9 +120,8 @@ const StokPerBahan = () => {
                       <React.Fragment key={item.nama_bahan}>
                         <tr>
                           <td>{indexOfFirstItem + index + 1}</td>
+                          <td>{item.pabrik && item.pabrik.length > 0 ? <span>{item.pabrik.join(", ")}</span> : <span>-</span>}</td>
                           <td style={{ fontWeight: "bold" }}>{item.nama_bahan}</td>
-                          <td>{item.total_berat.toLocaleString("id-ID")}</td>
-                          <td>{item.total_rol}</td>
                           <td>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                               {item.warna && item.warna.length > 0 ? (
@@ -144,8 +144,23 @@ const StokPerBahan = () => {
                               )}
                             </div>
                           </td>
-                          <td>{item.gudang && item.gudang.length > 0 ? <span>{item.gudang.join(", ")}</span> : <span>-</span>}</td>
-                          <td>{item.pabrik && item.pabrik.length > 0 ? <span>{item.pabrik.join(", ")}</span> : <span>-</span>}</td>
+                          <td>{item.total_rol}</td>
+                          <td>{item.total_berat.toLocaleString("id-ID")}</td>
+                          <td>
+                            <span
+                              style={{
+                                padding: "4px 12px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                backgroundColor: item.status === "Utuh" ? "#28a745" : item.status === "Sisa" ? "#ffc107" : "#6c757d",
+                                color: item.status === "Utuh" || item.status === "Sisa" ? "white" : "#fff",
+                              }}
+                            >
+                              {item.status || "-"}
+                            </span>
+                          </td>
+                          <td>{item.sku || "-"}</td>
                           <td style={{ textAlign: "center" }}>
                             <button
                               onClick={() => toggleExpand(item.nama_bahan)}
@@ -163,7 +178,7 @@ const StokPerBahan = () => {
                         </tr>
                         {isExpanded && item.detail && item.detail.length > 0 && (
                           <tr>
-                            <td colSpan="8" style={{ padding: "0", backgroundColor: "#f8f9fa" }}>
+                            <td colSpan="9" style={{ padding: "0", backgroundColor: "#f8f9fa" }}>
                               <div style={{ padding: "20px" }}>
                                 <h4 style={{ marginBottom: "15px", color: "#495057", fontSize: "18px" }}>Detail Stok - {item.nama_bahan}</h4>
 
@@ -216,7 +231,7 @@ const StokPerBahan = () => {
                                 <div
                                   style={{
                                     display: "grid",
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                                     gap: "15px",
                                   }}
                                 >
@@ -229,10 +244,20 @@ const StokPerBahan = () => {
                                         warnaGroups[warna] = {
                                           count: 0,
                                           berat: 0,
+                                          utuh: 0,
+                                          sisa: 0,
                                         };
                                       }
                                       warnaGroups[warna].count += 1;
                                       warnaGroups[warna].berat += parseFloat(detail.berat) || 0;
+                                      
+                                      // Hitung utuh dan sisa berdasarkan keterangan
+                                      const keterangan = detail.keterangan || "";
+                                      if (keterangan.toLowerCase() === "utuh") {
+                                        warnaGroups[warna].utuh += 1;
+                                      } else if (keterangan.toLowerCase() === "sisa") {
+                                        warnaGroups[warna].sisa += 1;
+                                      }
                                     });
 
                                     return Object.entries(warnaGroups).map(([warna, data], idx) => (
@@ -263,6 +288,14 @@ const StokPerBahan = () => {
                                         <div style={{ marginBottom: "10px" }}>
                                           <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
                                           <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{data.count}</p>
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Utuh</strong>
+                                          <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#28a745" }}>{data.utuh}</p>
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Sisa</strong>
+                                          <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#ffc107" }}>{data.sisa}</p>
                                         </div>
                                         <div>
                                           <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
