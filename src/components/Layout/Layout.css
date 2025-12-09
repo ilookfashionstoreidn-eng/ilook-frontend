@@ -3,33 +3,61 @@
   height: 100vh;
   overflow: hidden;
 }
+
+/* ===================================
+   SIDEBAR - MODERN UI
+   Premium Blue Gradient Theme
+   =================================== */
+
 /* Sidebar Styles */
 .sidebar {
-  width: 16%;
-  max-width: 210px;
-  background-color: #2c3e50;
-  color: #ecf0f1;
-  transition: transform 0.3s ease-in-out;
+  width: 280px;
+  background: linear-gradient(180deg, #183559 0%, #094368 100%);
+  color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(0);
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+.sidebar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .sidebar-header {
-  padding: 20px;
+  padding: 25px 20px;
   text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  background-color: #34495e;
+  font-size: 22px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-menu {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 10px 0;
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-menu::-webkit-scrollbar {
@@ -37,16 +65,17 @@
 }
 
 .sidebar-menu::-webkit-scrollbar-track {
-  background: #34495e;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
 .sidebar-menu::-webkit-scrollbar-thumb {
-  background: #7f8c8d;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
 }
 
 .sidebar-menu::-webkit-scrollbar-thumb:hover {
-  background: #95a5a6;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .sidebar-menu ul {
@@ -58,129 +87,258 @@
 .sidebar-link {
   display: flex;
   align-items: center;
-  padding: 15px;
-  color: #ecf0f1;
-  gap: 10px;
+  padding: 14px 20px;
+  color: rgba(255, 255, 255, 0.9);
+  gap: 12px;
   text-decoration: none;
   font-size: 14px;
-  border-bottom: 1px solid #34495e;
-  transition: background-color 0.3s;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
 }
 
-.sidebar-link:hover,
+.sidebar-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: white;
+  transform: scaleY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  padding-left: 23px;
+  transform: translateX(3px);
+}
+
+.sidebar-link:hover::before {
+  transform: scaleY(1);
+}
+
 .sidebar-link.active {
-  background-color: rgb(141, 206, 226);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-left-color: white;
+  font-weight: 600;
+  box-shadow: inset 4px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-link.active::before {
+  transform: scaleY(1);
 }
 
 .icon {
   flex-shrink: 0;
+  font-size: 18px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-toggle {
+  justify-content: space-between;
 }
 
 .dropdown-menu {
   list-style: none;
-  padding-left: 20px;
-  background-color: #34495e;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  margin-left: 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 0;
+}
+
+.dropdown-menu.show {
+  max-height: 1000px;
+  padding: 8px 0;
+  opacity: 1;
 }
 
 .dropdown-link {
-  display: block;
-  padding: 10px;
-  color: #ecf0f1;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 12px 40px;
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  font-size: 14px;
-
-  transition: background-color 0.3s;
+  font-size: 13px;
+  font-weight: 400;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-left: 2px solid transparent;
 }
 
-.dropdown-link:hover,
+.dropdown-link::before {
+  content: "▸";
+  position: absolute;
+  left: 20px;
+  font-size: 10px;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.dropdown-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  padding-left: 45px;
+  border-left-color: rgba(255, 255, 255, 0.5);
+}
+
+.dropdown-link:hover::before {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
 .dropdown-link.active {
-  background-color: #73c6df;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-weight: 600;
+  border-left-color: white;
+  padding-left: 45px;
+}
+
+.dropdown-link.active::before {
+  opacity: 1;
+  color: white;
 }
 
 .arrow {
   margin-left: auto;
-  transition: transform 0.3s;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .arrow.open {
   transform: rotate(180deg);
+  opacity: 1;
 }
 
 /* Main content styles */
 .main-content {
   flex: 1;
-  background-color: #ecf0f1;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   overflow: auto;
-  transition: margin-left 0.3s ease-in-out;
-  padding: 5px 10px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
 }
 
 .menu-button {
-  display: none; /* Default: tidak terlihat di desktop */
-  position: absolute;
-  top: 5px;
-  left: 10px;
-  background: none;
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
   border: none;
-  color: rgb(180, 181, 182);
+  color: white;
   font-size: 20px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 1001;
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(4, 135, 216, 0.3);
+  transition: all 0.3s ease;
 }
+
 .menu-button:hover {
-  color: rgb(108, 110, 112);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+  background: linear-gradient(135deg, #284e7c 0%, #0d3b58 100%);
 }
 
 /* Sidebar Responsif */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    left: -260px; /* Sidebar disembunyikan */
-    width: 250px;
+    left: -280px;
+    width: 280px;
     height: 100vh;
-    background-color: #2c3e50;
-    transition: left 0.3s ease-in-out;
-    z-index: 999;
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
   }
 
   .sidebar.open {
-    left: 0; /* Sidebar muncul saat tombol diklik */
+    left: 0;
   }
 
   .menu-button {
-    display: block; /* Muncul di mobile */
+    display: flex;
   }
 
   .main-content {
-    margin-left: 0; /* Pastikan tidak terpengaruh sidebar */
+    margin-left: 0;
     width: 100%;
-    padding: 20px 10px;
   }
+
   .sidebar-header {
     font-size: 18px;
+    padding: 20px 15px;
+  }
+
+  .sidebar-link {
+    padding: 12px 18px;
+    font-size: 13px;
+  }
+
+  .dropdown-link {
+    padding: 10px 18px 10px 35px;
+    font-size: 12px;
   }
 }
+
 @media (max-width: 1280px) {
+  .sidebar {
+    width: 260px;
+  }
+
   .sidebar-header {
-    font-size: 16px;
+    font-size: 20px;
+    padding: 22px 18px;
   }
 }
 
-/* Sidebar toggle button */
-.sidebar-toggle {
+/* Overlay untuk mobile */
+.sidebar-overlay {
+  display: none;
   position: fixed;
-  top: 15px;
-  left: 15px;
-  background-color: #2980b9;
-  color: #ecf0f1;
-  border: none;
-  padding: 10px 15px;
-  font-size: 18px;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 1100;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.3s ease;
 }
 
-.sidebar-toggle:hover {
-  background-color: #1abc9c;
+.sidebar-overlay.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
