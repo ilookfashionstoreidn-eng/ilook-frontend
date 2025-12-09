@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../Jahit/Penjahit.css";
+import "./Seri.css";
 import API from "../../api";
+import { FaPlus, FaQrcode, FaBarcode, FaDownload, FaHashtag, FaCheckCircle } from "react-icons/fa";
 
 const Seri = () => {
   const [seri, setSeri] = useState([]);
@@ -8,24 +9,21 @@ const Seri = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [data, setData] = useState([]);
-const [currentPage, setCurrentPage] = useState(1);
-const [lastPage, setLastPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [newSeri, setNewSeri] = useState({
-  nomor_seri: "",
-  sku: ""
+    nomor_seri: "",
+    sku: "",
   });
-
 
   const fetchSeri = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await API.get(`/seri?page=${page}`); // UPDATED
-
-      setSeri(response.data.data);        // updated: hanya ambil array
+      const response = await API.get(`/seri?page=${page}`);
+      setSeri(response.data.data);
       setCurrentPage(response.data.current_page);
       setLastPage(response.data.last_page);
-
+      setError(null);
     } catch (error) {
       setError("Gagal mengambil data seri");
     } finally {
@@ -37,198 +35,178 @@ const [lastPage, setLastPage] = useState(1);
     fetchSeri(1);
   }, []);
 
-const downloadQR = async (id, nomorSeri) => {
-  try {
-    const response = await API.get(`/seri/${id}/download`, {
-      responseType: "blob",
-    });
+  const downloadQR = async (id, nomorSeri) => {
+    try {
+      const response = await API.get(`/seri/${id}/download`, {
+        responseType: "blob",
+      });
 
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `qr-seri-${nomorSeri}.pdf`);
-    document.body.appendChild(link);
-    link.click();
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `qr-seri-${nomorSeri}.pdf`);
+      document.body.appendChild(link);
+      link.click();
 
-    link.remove();
-    window.URL.revokeObjectURL(url);
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Gagal mengunduh file.");
+    }
+  };
 
-  } catch (error) {
-    console.error("Error downloading file:", error);
-    alert("Gagal mengunduh file.");
-  }
-};
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
 
+    console.log("Data yang dikirim:", newSeri.nomor_seri);
 
-const handleFormSubmit = async (e) => {
-  e.preventDefault();
-
-  console.log("Data yang dikirim:", newSeri.nomor_seri);
-
-  const formData = new FormData();
+    const formData = new FormData();
     formData.append("nomor_seri", newSeri.nomor_seri);
     formData.append("sku", newSeri.sku);
 
+    try {
+      const response = await API.post("/seri", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-  try {
-    const response = await API.post("/seri", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+      alert("Seri berhasil ditambahkan!");
+      await fetchSeri(currentPage); // Refresh data
+      setShowForm(false);
+      setNewSeri({
+        nomor_seri: "",
+        sku: "",
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data?.message || error.message);
+      alert(error.response?.data?.message || "Terjadi kesalahan saat menambahkan seri.");
+    }
+  };
 
-    alert("Seri berhasil ditambahkan!");
-    setSeri((prev) => [...prev, response.data]);
-    setShowForm(false);
-    setNewSeri({
-      nomor_seri: "",
-      sku: ""
-    });
-
-
-  } catch (error) {
-    console.error("Error:", error.response?.data?.message || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat menambahkan seri.");
-  }
-};
-
-
-  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewSeri((prev) => ({
-        ...prev,
-        [name]: value.toUpperCase(), 
+      ...prev,
+      [name]: value.toUpperCase(),
     }));
-};
+  };
 
+  // Filter dan sort data
+  const filteredData = seri.filter((item) => (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.sku ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || item.id?.toString().includes(searchTerm));
 
+  // Sort data berdasarkan ID descending (yang baru di atas)
+  const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
 
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="seri-page">
+      <div className="seri-header">
+        <div className="seri-header-icon">
+          <FaQrcode />
+        </div>
         <h1>Data Seri</h1>
       </div>
 
-      <div className="table-container">
-        <div className="filter-header1">
-          <button onClick={() => setShowForm(true)}>Tambah</button>
-
-          <div className="search-bar1">
-            <input
-              type="text"
-              placeholder="Cari nomor seri..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <div className="seri-table-container">
+        <div className="seri-filter-header">
+          <button className="seri-btn-add" onClick={() => setShowForm(true)}>
+            <FaPlus /> Tambah Seri
+          </button>
+          <div className="seri-search-bar">
+            <input type="text" placeholder="Cari nomor seri, SKU, atau ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
-        <div className="table-container">
-          <table className="penjahit-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nomor Seri</th>
-                <th>SKU</th>
-                <th>Download</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {seri
-                .filter((item) =>
-                 (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((item) => (
+        {loading ? (
+          <div className="seri-loading">Memuat data...</div>
+        ) : error ? (
+          <div className="seri-error">{error}</div>
+        ) : sortedData.length === 0 ? (
+          <div className="seri-empty-state">
+            <div className="seri-empty-state-icon">📦</div>
+            <p>Tidak ada data seri</p>
+          </div>
+        ) : (
+          <div className="seri-table-wrapper">
+            <table className="seri-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nomor Seri</th>
+                  <th>SKU</th>
+                  <th>Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedData.map((item, index) => (
                   <tr key={item.id}>
-                    <td data-label="Id:">{item.id}</td>
-                    <td data-label="Nomor Seri:">{item.nomor_seri}</td>
-                  <td data-label="SKU:">{item.sku}</td>
-                  <td>
-                <button
-                  onClick={() => downloadQR(item.id, item.nomor_seri)}
-                  style={{
-                    padding: "6px 12px",
-                    background: "black",
-                    color: "white",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Download QR
-                </button>
-              </td>
-
+                    <td>{index + 1}</td>
+                    <td>
+                      <strong style={{ color: "#0487d8" }}>{item.nomor_seri}</strong>
+                    </td>
+                    <td>
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <FaBarcode style={{ color: "#0487d8" }} />
+                        {item.sku}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="seri-btn-download" onClick={() => downloadQR(item.id, item.nomor_seri)}>
+                        <FaDownload /> Download QR
+                      </button>
+                    </td>
                   </tr>
                 ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
+        )}
 
-            
-            <div className="pagination">
-  <button
-    disabled={currentPage === 1}
-    onClick={() => fetchSeri(currentPage - 1)}
-  >
-    Prev
-  </button>
+        {sortedData.length > 0 && (
+          <div className="seri-pagination">
+            <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1)}>
+              ← Prev
+            </button>
+            <span>
+              Halaman {currentPage} / {lastPage}
+            </span>
+            <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1)}>
+              Next →
+            </button>
+          </div>
+        )}
+      </div>
 
-  <span>
-    Halaman {currentPage} / {lastPage}
-  </span>
-
-  <button
-    disabled={currentPage === lastPage}
-    onClick={() => fetchSeri(currentPage + 1)}
-  >
-    Next
-  </button>
-</div>
-
-        </div>
-
-        {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Tambah Seri dan SKU </h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
-                <label>Nomor Seri:</label>
-                <input
-                  type="text"
-                  name="nomor_seri"
-                  value={newSeri.nomor_seri}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan nomor_seri"
-                  required
-                />
+      {/* Modal Form */}
+      {showForm && (
+        <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
+          <div className="seri-modal-content">
+            <h2>
+              <FaPlus /> Tambah Seri dan SKU
+            </h2>
+            <form onSubmit={handleFormSubmit} className="seri-form">
+              <div className="seri-form-group">
+                <label>
+                  <FaHashtag /> Nomor Seri:
+                </label>
+                <input type="text" name="nomor_seri" value={newSeri.nomor_seri} onChange={handleInputChange} placeholder="Masukkan nomor seri" required />
               </div>
 
-              <div className="form-group">
-                <label>SKU:</label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={newSeri.sku}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan SKU"
-                  required
-                />
+              <div className="seri-form-group">
+                <label>
+                  <FaBarcode /> SKU:
+                </label>
+                <input type="text" name="sku" value={newSeri.sku} onChange={handleInputChange} placeholder="Masukkan SKU" required />
               </div>
 
-            
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
-                  Simpan
+              <div className="seri-form-actions">
+                <button type="submit" className="seri-btn-submit">
+                  <FaCheckCircle /> Simpan
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-cancel"
-                  onClick={() => setShowForm(false)}
-                >
+                <button type="button" className="seri-btn-cancel" onClick={() => setShowForm(false)}>
                   Batal
                 </button>
               </div>
@@ -236,8 +214,6 @@ const handleFormSubmit = async (e) => {
           </div>
         </div>
       )}
-
-      </div>
     </div>
   );
 };
