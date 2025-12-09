@@ -1,0 +1,326 @@
+/* ===================================
+   PEMBELIAN AKSESORIS B (CMT) - MODERN UI
+   Premium Blue Gradient Theme
+   =================================== */
+
+/* Container */
+.pembelian-b-aksesoris-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding: 20px;
+}
+
+/* Header Section */
+.pembelian-b-aksesoris-header {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  padding: 30px 40px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 24px rgba(4, 135, 216, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pembelian-b-aksesoris-header::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.pembelian-b-aksesoris-header-icon {
+  font-size: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 18px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.pembelian-b-aksesoris-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  z-index: 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Table Container */
+.pembelian-b-aksesoris-table-container {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* Filter Header */
+.pembelian-b-aksesoris-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pembelian-b-aksesoris-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.pembelian-b-aksesoris-search-bar input {
+  width: 100%;
+  padding: 14px 20px 14px 45px;
+  border: 2px solid #e0e7ef;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.pembelian-b-aksesoris-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+}
+
+.pembelian-b-aksesoris-search-bar::before {
+  content: "🔍";
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  z-index: 1;
+}
+
+/* Table Wrapper */
+.pembelian-b-aksesoris-table-wrapper {
+  overflow-x: auto;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.pembelian-b-aksesoris-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.pembelian-b-aksesoris-table thead {
+  background: linear-gradient(135deg, #17457c 0%, #0487d8 100%);
+  color: white;
+}
+
+.pembelian-b-aksesoris-table thead th {
+  padding: 18px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+}
+
+.pembelian-b-aksesoris-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pembelian-b-aksesoris-table tbody tr:hover {
+  background: #f8f9ff;
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(4, 135, 216, 0.1);
+}
+
+.pembelian-b-aksesoris-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.pembelian-b-aksesoris-table tbody td {
+  padding: 18px 16px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+/* Status Badges */
+.pembelian-b-aksesoris-status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pembelian-b-aksesoris-status-badge.valid {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pembelian-b-aksesoris-status-badge.invalid {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.pembelian-b-aksesoris-status-badge.disabled {
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.pembelian-b-aksesoris-btn-download {
+  background: transparent;
+  color: #0487d8;
+  border: 2px solid #0487d8;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pembelian-b-aksesoris-btn-download:hover {
+  background: #0487d8;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pembelian-b-aksesoris-btn-download:disabled,
+.pembelian-b-aksesoris-btn-download.disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading & Empty States */
+.pembelian-b-aksesoris-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.pembelian-b-aksesoris-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.pembelian-b-aksesoris-empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.pembelian-b-aksesoris-error {
+  text-align: center;
+  padding: 20px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pembelian-b-aksesoris-page {
+    padding: 15px;
+  }
+
+  .pembelian-b-aksesoris-header {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pembelian-b-aksesoris-header h1 {
+    font-size: 24px;
+  }
+
+  .pembelian-b-aksesoris-table-container {
+    padding: 15px;
+  }
+
+  .pembelian-b-aksesoris-table {
+    font-size: 12px;
+  }
+
+  .pembelian-b-aksesoris-table thead th,
+  .pembelian-b-aksesoris-table tbody td {
+    padding: 12px 8px;
+  }
+
+  .pembelian-b-aksesoris-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pembelian-b-aksesoris-search-bar {
+    max-width: 100%;
+  }
+}
+
+/* Scrollbar Styling */
+.pembelian-b-aksesoris-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.pembelian-b-aksesoris-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.pembelian-b-aksesoris-table-wrapper::-webkit-scrollbar-thumb {
+  background: #0487d8;
+  border-radius: 10px;
+}
+
+.pembelian-b-aksesoris-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #17457c;
+}
