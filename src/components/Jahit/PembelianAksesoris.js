@@ -132,6 +132,9 @@ const PembelianAksesoris = () => {
     try {
       await API.post("/pembelian-aksesoris-b", payload);
       alert("Verifikasi berhasil disimpan!");
+
+
+      await fetchPembelianA();
       setShowModal(false);
       setJumlahTerverifikasi(""); // reset form
     } catch (error) {
