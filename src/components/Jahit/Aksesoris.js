@@ -4,7 +4,8 @@ import API from "../../api";
 import { FaPlus, FaEdit, FaBox } from "react-icons/fa";
 
 const Aksesoris = () => {
-  const [aksesoris, setAksesoris] = useState([]);
+  const [aksesoris, setAksesoris] = useState({ data: [] });
+
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -12,6 +13,7 @@ const Aksesoris = () => {
   const [showCustomJenisAksesoris, setShowCustomJenisAksesoris] = useState(false);
   const [editAksesoris, setEditAksesoris] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
+const [page, setPage] = useState(1);
 
   const [newAksesoris, setNewAksesoris] = useState({
     nama_aksesoris: "",
@@ -49,24 +51,37 @@ const Aksesoris = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchAksesoris = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/aksesoris");
-        setAksesoris(response.data);
-      } catch (error) {
-        setError("Gagal mengambil data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAksesoris();
-  }, []);
+const fetchAksesoris = async (page = 1) => {
+  try {
+    setLoading(true);
+    const response = await API.get("/aksesoris?page=" + page);
+    setAksesoris(response.data);
+  } catch (error) {
+    setError("Gagal mengambil data");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  // Urutkan data berdasarkan ID descending (yang baru di atas) lalu filter
-  const sortedAksesoris = [...aksesoris].sort((a, b) => b.id - a.id);
-  const filteredAksesoris = sortedAksesoris.filter((item) => item.nama_aksesoris.toLowerCase().includes(searchTerm.toLowerCase()));
+useEffect(() => {
+  fetchAksesoris(page);
+}, [page]);
+
+
+
+const fetchPage = (newPage) => {
+  if (newPage >= 1 && newPage <= aksesoris.last_page) {
+    setPage(newPage);
+  }
+};
+
+
+const sortedAksesoris = [...(aksesoris.data || [])].sort((a, b) => b.id - a.id);
+
+const filteredAksesoris = sortedAksesoris.filter((item) =>
+  item.nama_aksesoris.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
 
   const handleFormSubmit = async (e) => {
     e.preventDefault(); // Mencegah refresh halaman
@@ -101,9 +116,12 @@ const Aksesoris = () => {
 
       alert("Produk berhasil ditambahkan!");
 
-      // Tambahkan produk baru ke state
-      setAksesoris((prevAksesoris) => [...prevAksesoris, response.data]);
+      setAksesoris((prev) => ({
+        ...prev,
+        data: [...prev.data, response.data],
+      }));
 
+      await fetchAksesoris();
       setShowForm(false); // Tutup modal
 
       // Reset form input
@@ -237,7 +255,7 @@ const Aksesoris = () => {
               </thead>
 
               <tbody>
-                {filteredAksesoris.map((aksesoris, index) => (
+                {aksesoris.data && aksesoris.data.map((aksesoris, index) => (
                   <tr key={aksesoris.id}>
                     <td>{index + 1}</td>
                     <td>{aksesoris.nama_aksesoris}</td>
@@ -266,7 +284,30 @@ const Aksesoris = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+
+          {aksesoris.data?.length > 0 && (
+  <div className="pembelian-aksesoris-pagination">
+    <button
+      disabled={page === 1}
+      onClick={() => fetchPage(page - 1)}
+    >
+      ← Prev
+    </button>
+
+    <span>
+      Halaman {aksesoris.current_page} / {aksesoris.last_page}
+    </span>
+
+    <button
+      disabled={page === aksesoris.last_page}
+      onClick={() => fetchPage(page + 1)}
+    >
+      Next →
+    </button>
+  </div>
+)}
+
+      </div>
         )}
       </div>
       {/* Modal Form */}
