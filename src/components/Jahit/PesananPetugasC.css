@@ -1,0 +1,800 @@
+/* ===================================
+   PESANAN PETUGAS C (PEMBELIAN AKSESORIS CMT) - MODERN UI
+   Premium Blue Gradient Theme
+   =================================== */
+
+/* Container */
+.pesanan-petugas-c-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding: 20px;
+}
+
+/* Header Section */
+.pesanan-petugas-c-header {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  padding: 30px 40px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 24px rgba(4, 135, 216, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pesanan-petugas-c-header::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.pesanan-petugas-c-header-icon {
+  font-size: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 18px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.pesanan-petugas-c-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  z-index: 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Table Container */
+.pesanan-petugas-c-table-container {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* Filter Header */
+.pesanan-petugas-c-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pesanan-petugas-c-btn-add {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(4, 135, 216, 0.3);
+}
+
+.pesanan-petugas-c-btn-add:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(4, 135, 216, 0.4);
+}
+
+.pesanan-petugas-c-btn-add:active {
+  transform: translateY(-1px);
+}
+
+.pesanan-petugas-c-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.pesanan-petugas-c-search-bar input {
+  width: 100%;
+  padding: 14px 20px 14px 45px;
+  border: 2px solid #e0e7ef;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.pesanan-petugas-c-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+}
+
+.pesanan-petugas-c-search-bar::before {
+  content: "🔍";
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  z-index: 1;
+}
+
+/* Table Wrapper */
+.pesanan-petugas-c-table-wrapper {
+  overflow-x: auto;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+.pesanan-petugas-c-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  table-layout: auto;
+}
+
+.pesanan-petugas-c-table thead {
+  background: linear-gradient(135deg, #17457c 0%, #0487d8 100%);
+  color: white;
+}
+
+.pesanan-petugas-c-table thead th {
+  padding: 18px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  white-space: nowrap;
+}
+
+/* Set lebar kolom berdasarkan konten */
+.pesanan-petugas-c-table thead th:nth-child(1),
+.pesanan-petugas-c-table tbody td:nth-child(1) {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(2),
+.pesanan-petugas-c-table tbody td:nth-child(2) {
+  width: auto;
+  min-width: 150px;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(3),
+.pesanan-petugas-c-table tbody td:nth-child(3) {
+  width: auto;
+  min-width: 150px;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(4),
+.pesanan-petugas-c-table tbody td:nth-child(4) {
+  width: auto;
+  min-width: 120px;
+  text-align: center;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(5),
+.pesanan-petugas-c-table tbody td:nth-child(5) {
+  width: auto;
+  min-width: 140px;
+  text-align: right;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(6),
+.pesanan-petugas-c-table tbody td:nth-child(6) {
+  width: auto;
+  min-width: 180px;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(7),
+.pesanan-petugas-c-table tbody td:nth-child(7) {
+  width: auto;
+  min-width: 160px;
+}
+
+.pesanan-petugas-c-table thead th:nth-child(8),
+.pesanan-petugas-c-table tbody td:nth-child(8) {
+  width: auto;
+  min-width: 150px;
+}
+
+.pesanan-petugas-c-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pesanan-petugas-c-table tbody tr:hover {
+  background: #f8f9ff;
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(4, 135, 216, 0.1);
+}
+
+.pesanan-petugas-c-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.pesanan-petugas-c-table tbody td {
+  padding: 18px 16px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+/* Kolom tertentu yang perlu wrap */
+.pesanan-petugas-c-table tbody td:nth-child(2),
+.pesanan-petugas-c-table tbody td:nth-child(3) {
+  white-space: normal;
+}
+
+/* Status Badges */
+.pesanan-petugas-c-status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pesanan-petugas-c-status-badge.pending {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.pesanan-petugas-c-status-badge.verified {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pesanan-petugas-c-status-badge.completed {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+/* Action Buttons */
+.pesanan-petugas-c-btn-detail {
+  background: transparent;
+  color: #0487d8;
+  border: 2px solid #0487d8;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pesanan-petugas-c-btn-detail:hover {
+  background: #0487d8;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pesanan-petugas-c-btn-verify {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pesanan-petugas-c-btn-verify:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Price Display */
+.pesanan-petugas-c-price {
+  font-weight: 600;
+  color: #0487d8;
+  font-size: 14px;
+}
+
+/* Pagination */
+.pesanan-petugas-c-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.pesanan-petugas-c-pagination button {
+  background: white;
+  border: 2px solid #e0e7ef;
+  color: #17457c;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.pesanan-petugas-c-pagination button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pesanan-petugas-c-pagination button:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pesanan-petugas-c-pagination span {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #17457c;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+/* Modal */
+.pesanan-petugas-c-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pesanan-petugas-c-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 35px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pesanan-petugas-c-modal-content h2,
+.pesanan-petugas-c-modal-content h3 {
+  margin: 0 0 25px 0;
+  color: #17457c;
+  font-size: 24px;
+  font-weight: 700;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e7ef;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pesanan-petugas-c-modal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.pesanan-petugas-c-modal-content table thead {
+  background: linear-gradient(135deg, #17457c 0%, #0487d8 100%);
+  color: white;
+}
+
+.pesanan-petugas-c-modal-content table th,
+.pesanan-petugas-c-modal-content table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e7ef;
+}
+
+.pesanan-petugas-c-modal-content table tbody tr:hover {
+  background: #f8f9ff;
+}
+
+.pesanan-petugas-c-modal-close {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.pesanan-petugas-c-modal-close:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+/* Form Styles */
+.pesanan-petugas-c-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pesanan-petugas-c-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pesanan-petugas-c-form-group label {
+  font-weight: 600;
+  color: #17457c;
+  font-size: 14px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pesanan-petugas-c-form-group input,
+.pesanan-petugas-c-form-group select {
+  padding: 14px 18px;
+  border: 2px solid #e0e7ef;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  font-family: inherit;
+}
+
+.pesanan-petugas-c-form-group input:focus,
+.pesanan-petugas-c-form-group select:focus {
+  outline: none;
+  border-color: #0487d8;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+}
+
+.pesanan-petugas-c-form-group input[readonly],
+.pesanan-petugas-c-form-group input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Detail Item Styles */
+.pesanan-petugas-c-detail-item {
+  background: #f8f9fa;
+  border: 2px solid #e0e7ef;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.pesanan-petugas-c-detail-item:hover {
+  border-color: #0487d8;
+  background: #f0f7ff;
+}
+
+.pesanan-petugas-c-detail-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pesanan-petugas-c-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pesanan-petugas-c-detail-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #17457c;
+}
+
+.pesanan-petugas-c-detail-field input,
+.pesanan-petugas-c-detail-field select {
+  padding: 10px 14px;
+  border: 2px solid #e0e7ef;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.pesanan-petugas-c-detail-field input:focus,
+.pesanan-petugas-c-detail-field select:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+/* Buttons */
+.pesanan-petugas-c-btn-remove {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.pesanan-petugas-c-btn-remove:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.pesanan-petugas-c-btn-add-detail {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.pesanan-petugas-c-btn-add-detail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.pesanan-petugas-c-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e7ef;
+}
+
+.pesanan-petugas-c-btn-submit {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(4, 135, 216, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pesanan-petugas-c-btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.pesanan-petugas-c-btn-cancel {
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e0e7ef;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pesanan-petugas-c-btn-cancel:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+}
+
+/* Loading & Empty States */
+.pesanan-petugas-c-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.pesanan-petugas-c-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.pesanan-petugas-c-empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.pesanan-petugas-c-error {
+  text-align: center;
+  padding: 20px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pesanan-petugas-c-page {
+    padding: 15px;
+  }
+
+  .pesanan-petugas-c-header {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pesanan-petugas-c-header h1 {
+    font-size: 24px;
+  }
+
+  .pesanan-petugas-c-table-container {
+    padding: 15px;
+  }
+
+  .pesanan-petugas-c-table {
+    font-size: 12px;
+  }
+
+  .pesanan-petugas-c-table thead th,
+  .pesanan-petugas-c-table tbody td {
+    padding: 12px 8px;
+  }
+
+  .pesanan-petugas-c-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pesanan-petugas-c-search-bar {
+    max-width: 100%;
+  }
+
+  .pesanan-petugas-c-modal-content {
+    padding: 20px;
+    width: 95%;
+  }
+
+  .pesanan-petugas-c-detail-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pesanan-petugas-c-form-actions {
+    flex-direction: column;
+  }
+
+  .pesanan-petugas-c-form-actions button {
+    width: 100%;
+  }
+}
+
+/* Scrollbar Styling */
+.pesanan-petugas-c-table-wrapper::-webkit-scrollbar,
+.pesanan-petugas-c-modal-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-track,
+.pesanan-petugas-c-modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-thumb,
+.pesanan-petugas-c-modal-content::-webkit-scrollbar-thumb {
+  background: #0487d8;
+  border-radius: 10px;
+}
+
+.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-thumb:hover,
+.pesanan-petugas-c-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #17457c;
+}

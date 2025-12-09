@@ -1,138 +1,164 @@
 import React, { useEffect, useState } from "react";
-import "./Penjahit.css";
-import API from "../../api"; 
+import "./PembelianBAksesoris.css";
+import API from "../../api";
+import { FaShoppingCart, FaDownload, FaCheckCircle, FaTimesCircle, FaUser, FaBox } from "react-icons/fa";
 
 const PembelianBAksesoris = () => {
-    const [pembelianB, setPembelianB] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error,setError] = useState(null);
-    const [showForm, setShowForm] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [aksesorisList, setAksesorisList] = useState([]);
+  const [pembelianB, setPembelianB] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-useEffect(() => {
+  useEffect(() => {
     const fetchPembelianB = async () => {
-        try{
-            setLoading(true);
-            const response = await API.get("pembelian-aksesoris-b");
-            setPembelianB(response.data);
-        }catch (error){
-            setError(false);
-        }
+      try {
+        setLoading(true);
+        const response = await API.get("pembelian-aksesoris-b");
+        setPembelianB(response.data);
+        setError(null);
+      } catch (error) {
+        setError("Gagal mengambil data");
+      } finally {
+        setLoading(false);
+      }
     };
     fetchPembelianB();
-}, []);
+  }, []);
 
-const handleDownloadBarcode = async (id) => {
-  try {
-    const response = await API.get(`/barcode-download/${id}`, {
-      responseType: 'blob', // Mendapatkan response berupa binary (PDF)
-    });
-    
-    // Membuat file dari response dan men-trigger download
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `barcode_aksesoris_${id}.pdf`;
-    link.click();
-  } catch (error) {
-    console.error("Terjadi kesalahan saat mengunduh barcode:", error);
-  }
-};
+  const handleDownloadBarcode = async (id) => {
+    try {
+      const response = await API.get(`/barcode-download/${id}`, {
+        responseType: "blob",
+      });
 
-return (
-    <div>
-       <div className="penjahit-container">
-         <h1>Pembelian Aksesoris Petugas B</h1>
-       </div>
-  
-       <div className="table-container">
-           <div className="filter-header1">
-           <button 
-           onClick={() => setShowForm(true)}>
-             Tambah
-           </button>
-           <div className="search-bar1">
-             <input
-               type="text"
-               placeholder="Cari nama aksesoris..."
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-             />
-           </div>
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `barcode_aksesoris_${id}.pdf`;
+      link.click();
+    } catch (error) {
+      console.error("Terjadi kesalahan saat mengunduh barcode:", error);
+      alert("Gagal mengunduh barcode. Silakan coba lagi.");
+    }
+  };
 
-      
-         </div>
-         
-           <div className="table-container">
-           <table className="penjahit-table">
-             <thead>
-               <tr>
-      
-                  <th>Id Pembelian A</th>
+  // Filter data berdasarkan search term
+  const filteredData = pembelianB.filter((item) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      item.pembelian_a?.aksesoris?.nama_aksesoris?.toLowerCase().includes(searchLower) ||
+      item.user?.name?.toLowerCase().includes(searchLower) ||
+      item.pembelian_a_id?.toString().includes(searchLower) ||
+      item.id?.toString().includes(searchLower)
+    );
+  });
+
+  // Sort data berdasarkan ID descending (yang baru di atas)
+  const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
+
+  return (
+    <div className="pembelian-b-aksesoris-page">
+      <div className="pembelian-b-aksesoris-header">
+        <div className="pembelian-b-aksesoris-header-icon">
+          <FaShoppingCart />
+        </div>
+        <h1>Pembelian Aksesoris CMT (Petugas B)</h1>
+      </div>
+
+      <div className="pembelian-b-aksesoris-table-container">
+        <div className="pembelian-b-aksesoris-filter-header">
+          <div className="pembelian-b-aksesoris-search-bar">
+            <input type="text" placeholder="Cari nama aksesoris, user, atau ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="pembelian-b-aksesoris-loading">Memuat data...</div>
+        ) : error ? (
+          <div className="pembelian-b-aksesoris-error">{error}</div>
+        ) : sortedData.length === 0 ? (
+          <div className="pembelian-b-aksesoris-empty-state">
+            <div className="pembelian-b-aksesoris-empty-state-icon">📦</div>
+            <p>Tidak ada data pembelian aksesoris</p>
+          </div>
+        ) : (
+          <div className="pembelian-b-aksesoris-table-wrapper">
+            <table className="pembelian-b-aksesoris-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>ID Pembelian A</th>
                   <th>User</th>
                   <th>Nama Aksesoris</th>
                   <th>Jumlah Verifikasi</th>
                   <th>Status Verifikasi</th>
                   <th>Waktu Verifikasi</th>
                   <th>Actions</th>
-               
-    
                 </tr>
               </thead>
               <tbody>
-                {pembelianB.map((pembelianB) => (
+                {sortedData.map((pembelianB, index) => (
                   <tr key={pembelianB.id}>
-                  
-                    <td data-label="Nama Aksesoris : ">{pembelianB.pembelian_a_id}</td>
-                    <td data-label="User : ">{pembelianB.user?.name || 'Tidak Diketahui'}</td>
-                   
-                    <td data-label="Nama Aksesoris : ">
-                    {pembelianB.pembelian_a?.aksesoris?.nama_aksesoris || '-'}
+                    <td>{index + 1}</td>
+                    <td>
+                      <strong>#{pembelianB.pembelian_a_id}</strong>
                     </td>
-
-                    <td data-label="Jumlah Pembelian : ">{pembelianB.jumlah_terverifikasi}</td>
-                    <td data-label="Harga Satuan : " style={{ color: pembelianB.status_verifikasi === 'valid' ? 'green' : 'red' }}>
-                      {pembelianB.status_verifikasi}
+                    <td>
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <FaUser style={{ color: "#0487d8" }} />
+                        {pembelianB.user?.name || "Tidak Diketahui"}
+                      </span>
                     </td>
-                    <td data-label="Tanggal Pembelian : ">
-                    {new Date(pembelianB.created_at).toLocaleDateString('id-ID', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}{' '}
-                    {new Date(pembelianB.created_at).toLocaleTimeString('en-GB', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-
-                  <td>
-                {!pembelianB.barcode_downloaded && (
-                  <button
-                    onClick={() => handleDownloadBarcode(pembelianB.id)}
-                    className="download-button"
-                    style={{ color: 'green', textDecoration: 'underline' }} // Garis bawah dan warna hijau
-                  >
-                    Download Barcode
-                  </button>
-                )}
-                {pembelianB.barcode_downloaded === 1 && (
-                  <span style={{ color: '#4F4F4F' }}>Barcode Sudah Didownload</span>
-                )}
-              </td>
-
+                    <td>
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <FaBox style={{ color: "#0487d8" }} />
+                        <strong>{pembelianB.pembelian_a?.aksesoris?.nama_aksesoris || "-"}</strong>
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 600, color: "#0487d8" }}>{pembelianB.jumlah_terverifikasi}</span>
+                    </td>
+                    <td>
+                      <span className={`pembelian-b-aksesoris-status-badge ${pembelianB.status_verifikasi === "valid" ? "valid" : "invalid"}`}>
+                        {pembelianB.status_verifikasi === "valid" ? (
+                          <>
+                            <FaCheckCircle /> Valid
+                          </>
+                        ) : (
+                          <>
+                            <FaTimesCircle /> Invalid
+                          </>
+                        )}
+                      </span>
+                    </td>
+                    <td>
+                      {new Date(pembelianB.created_at).toLocaleDateString("id-ID", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}{" "}
+                      {new Date(pembelianB.created_at).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td>
+                      {!pembelianB.barcode_downloaded ? (
+                        <button onClick={() => handleDownloadBarcode(pembelianB.id)} className="pembelian-b-aksesoris-btn-download">
+                          <FaDownload /> Download Barcode
+                        </button>
+                      ) : (
+                        <span className="pembelian-b-aksesoris-status-badge disabled">Barcode Sudah Didownload</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            </div>
-     </div>
-    
-
- 
-        
- </div>   
-   )
- }
-export default PembelianBAksesoris
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+export default PembelianBAksesoris;
