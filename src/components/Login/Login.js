@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Login.css"; // Import file CSS
+import "./Login.css";
 import API from "../../api";
+import { FaAsterisk, FaGoogle } from "react-icons/fa";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -56,26 +57,44 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <img src="/path/to/logo.png" alt="" className="logo" />
-          <h2>ILOOK ADMIN</h2>
-          <p>Please input your email and password</p>
-        </div>
-        <form onSubmit={handleLogin} className="login-form">
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username" required className="login-input" />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required className="login-input" />
-          <div className="login-options">
-            <label>
-              <input type="checkbox" />
-              Remember this Device
-            </label>
+    <div className="login-page">
+      {/* Left Column - Branding Section */}
+      <div className="login-left">
+        <div className="login-left-content">
+          <div className="login-logo-icon">
+            <FaAsterisk />
           </div>
-          <button type="submit" className="login-button">
-            Sign In
-          </button>
-        </form>
+          <h1 className="login-greeting">Hello iLook! 👋</h1>
+          <p className="login-tagline">Kelola produksi pakaian dengan efisien. Sistem manajemen terintegrasi untuk memudahkan proses dari bahan hingga produk jadi.</p>
+        </div>
+      </div>
+
+      {/* Right Column - Login Form Section */}
+      <div className="login-right">
+        <div className="login-right-content">
+          <h2 className="login-app-name">iLook</h2>
+          <h3 className="login-welcome">Welcome Back!</h3>
+          
+
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="login-form-group">
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email atau Username" required className="login-input" />
+            </div>
+
+            <div className="login-form-group">
+              <label className="login-label">Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan password" required className="login-input" />
+            </div>
+
+            <button type="submit" className="login-button-primary">
+              Login Now
+            </button>
+
+            
+
+           
+          </form>
+        </div>
       </div>
     </div>
   );
