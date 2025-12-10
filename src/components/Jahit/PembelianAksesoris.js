@@ -98,10 +98,17 @@ const PembelianAksesoris = () => {
   useEffect(() => {
     const fetchAksesoris = async () => {
       try {
-        const response = await API.get("/aksesoris");
-        setAksesorisList(response.data);
+        // Fetch semua data tanpa pagination, atau fetch dengan page besar
+        const response = await API.get("/aksesoris?page=1&per_page=1000"); // Ambil banyak data
+        // API mengembalikan pagination object dengan struktur: { data: [...], current_page, last_page, ... }
+        // Akses array aksesoris dari response.data.data
+        const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
+        console.log("Aksesoris data fetched:", data.length, "items");
+        setAksesorisList(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Gagal mengambil data aksesoris:", err);
+        // Set ke array kosong jika error
+        setAksesorisList([]);
       }
     };
 
@@ -132,7 +139,6 @@ const PembelianAksesoris = () => {
     try {
       await API.post("/pembelian-aksesoris-b", payload);
       alert("Verifikasi berhasil disimpan!");
-
 
       await fetchPembelianA();
       setShowModal(false);
@@ -309,7 +315,7 @@ const PembelianAksesoris = () => {
                 </label>
                 <select name="aksesoris_id" value={newPembelian.aksesoris_id} onChange={handleInputChange} required>
                   <option value="">-- Pilih Aksesoris --</option>
-                  {aksesorisList.map((aksesoris) => (
+                  {(Array.isArray(aksesorisList) ? aksesorisList : []).map((aksesoris) => (
                     <option key={aksesoris.id} value={aksesoris.id}>
                       {aksesoris.nama_aksesoris}
                     </option>
