@@ -19,6 +19,8 @@ const PembelianBahan = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [noSuratJalanError, setNoSuratJalanError] = useState("");
+  const [usePPN, setUsePPN] = useState(false);
+  const [usePPNEdit, setUsePPNEdit] = useState(false);
 
   const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
@@ -113,6 +115,77 @@ const PembelianBahan = () => {
     }).format(angka);
   };
 
+  // Fungsi untuk menghitung total jumlah roll dari semua warna
+  const calculateTotalRoll = (warnaArray) => {
+    if (!warnaArray || !Array.isArray(warnaArray)) return 0;
+    return warnaArray.reduce((total, w) => {
+      const jumlahRol = w.jumlah_rol || w.rol?.length || 0;
+      return total + jumlahRol;
+    }, 0);
+  };
+
+  // Fungsi untuk mendapatkan harga bahan dari bahanList berdasarkan bahan_id
+  const getHargaBahan = (bahanId) => {
+    if (!bahanId || !bahanList || bahanList.length === 0) return 0;
+    const bahan = bahanList.find((b) => b.id === parseInt(bahanId));
+    return bahan ? parseFloat(bahan.harga) || 0 : 0;
+  };
+
+  // Fungsi untuk mendapatkan satuan bahan dari bahanList berdasarkan bahan_id
+  const getSatuanBahan = (bahanId) => {
+    if (!bahanId || !bahanList || bahanList.length === 0) return "kg";
+    const bahan = bahanList.find((b) => b.id === parseInt(bahanId));
+    return bahan ? bahan.satuan || "kg" : "kg";
+  };
+
+  // Fungsi untuk menghitung total berat semua roll
+  const calculateTotalBerat = (warnaArray) => {
+    if (!warnaArray || !Array.isArray(warnaArray)) return 0;
+    let totalBerat = 0;
+    warnaArray.forEach((w) => {
+      if (w.rol && Array.isArray(w.rol)) {
+        w.rol.forEach((berat) => {
+          const beratNum = parseFloat(berat) || 0;
+          totalBerat += beratNum;
+        });
+      }
+    });
+    return totalBerat;
+  };
+
+  // Fungsi untuk menghitung total harga berdasarkan harga bahan, satuan, dan total berat roll
+  const calculateTotalHarga = (bahanId, warnaArray) => {
+    const hargaBahan = getHargaBahan(bahanId);
+    const satuanBahan = getSatuanBahan(bahanId);
+    const totalBerat = calculateTotalBerat(warnaArray);
+
+    // Jika satuan adalah kg atau yard, kalikan harga dengan total berat
+    // Harga bahan adalah harga per kg atau per yard
+    return hargaBahan * totalBerat;
+  };
+
+  // Fungsi untuk menghitung harga setelah PPN (11%)
+  const calculateHargaWithPPN = (harga) => {
+    const hargaNum = parseFloat(harga) || 0;
+    return hargaNum * 1.11; // Tambah 11%
+  };
+
+  // Fungsi untuk format angka ke rupiah (untuk display di input)
+  const formatRupiahInput = (value) => {
+    if (!value && value !== 0) return "";
+    // Hapus semua karakter non-digit
+    const number = value.toString().replace(/\D/g, "");
+    if (!number) return "";
+    // Format dengan pemisah ribuan
+    return parseInt(number).toLocaleString("id-ID");
+  };
+
+  // Fungsi untuk unformat rupiah ke angka (untuk value)
+  const unformatRupiah = (rupiahString) => {
+    if (!rupiahString) return "";
+    return rupiahString.toString().replace(/\D/g, "");
+  };
+
   // === HANDLERS ===
   const checkNoSuratJalan = async (noSuratJalan, currentId = null) => {
     if (!noSuratJalan || noSuratJalan.trim() === "") {
@@ -148,12 +221,13 @@ const PembelianBahan = () => {
     }
 
     if (name === "harga") {
-      if (value === "" || /^\d*\.?\d*$/.test(value)) {
-        if (showEditForm) {
-          setEditItem((prev) => ({ ...prev, [name]: value }));
-        } else {
-          setNewItem((prev) => ({ ...prev, [name]: value }));
-        }
+      // Format rupiah saat input
+      const unformatted = unformatRupiah(value);
+      const formatted = formatRupiahInput(unformatted);
+      if (showEditForm) {
+        setEditItem((prev) => ({ ...prev, [name]: formatted }));
+      } else {
+        setNewItem((prev) => ({ ...prev, [name]: formatted }));
       }
     } else {
       if (showEditForm) {
@@ -204,10 +278,11 @@ const PembelianBahan = () => {
       warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
     });
     setNoSuratJalanError("");
+    setUsePPN(false);
+    setUsePPNEdit(false);
     setShowForm(false);
     setShowEditForm(false);
   };
-
 
   const addWarna = () => {
     setNewItem((prev) => ({
@@ -336,7 +411,11 @@ const PembelianBahan = () => {
       formData.append("gramasi", newItem.gramasi || "");
       formData.append("lebar_kain", newItem.lebar_kain || "");
       formData.append("sku", newItem.sku || "");
-      formData.append("harga", newItem.harga || "");
+      // Hitung harga yang akan dikirim ke DB
+      // Unformat rupiah ke angka, lalu jika PPN dicentang tambahkan 11%
+      const hargaInput = parseFloat(unformatRupiah(newItem.harga)) || 0;
+      const hargaForDB = usePPN ? calculateHargaWithPPN(hargaInput) : hargaInput;
+      formData.append("harga", hargaForDB.toString());
       newItem.warna.forEach((w, i) => {
         const namaWarna = w.isCustom ? w.customNama || "" : w.nama || "";
         formData.append(`warna[${i}][nama]`, namaWarna);
@@ -386,7 +465,11 @@ const PembelianBahan = () => {
       formData.append("gramasi", editItem.gramasi || "");
       formData.append("lebar_kain", editItem.lebar_kain || "");
       formData.append("sku", editItem.sku || "");
-      formData.append("harga", editItem.harga || "");
+      // Hitung harga yang akan dikirim ke DB
+      // Unformat rupiah ke angka, lalu jika PPN dicentang tambahkan 11%
+      const hargaInput = parseFloat(unformatRupiah(editItem.harga)) || 0;
+      const hargaForDB = usePPNEdit ? calculateHargaWithPPN(hargaInput) : hargaInput;
+      formData.append("harga", hargaForDB.toString());
       if (editItem.no_surat_jalan) formData.append("no_surat_jalan", editItem.no_surat_jalan);
       if (editItem.foto_surat_jalan) {
         formData.append("foto_surat_jalan", editItem.foto_surat_jalan);
@@ -445,6 +528,9 @@ const PembelianBahan = () => {
         warnaForForm.push({ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" });
       }
 
+      // Ambil harga dari master bahan (bahanList) berdasarkan bahan_id
+      const hargaBahan = getHargaBahan(data.bahan_id);
+
       setEditItem({
         id: data.id,
         pabrik_id: data.pabrik_id || "",
@@ -456,7 +542,7 @@ const PembelianBahan = () => {
         lebar_kain: data.lebar_kain || "",
         keterangan: data.keterangan || "",
         sku: data.sku || "",
-        harga: data.harga?.toString() || "",
+        harga: formatRupiahInput(hargaBahan.toString()),
         foto_surat_jalan: null,
         warna: warnaForForm,
       });
@@ -644,6 +730,17 @@ const PembelianBahan = () => {
                 <div className="pembelian-bahan-form-group">
                   <label>Harga (Rp)</label>
                   <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input type="checkbox" id="ppn-checkbox" checked={usePPN} onChange={(e) => setUsePPN(e.target.checked)} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+                    <label htmlFor="ppn-checkbox" style={{ cursor: "pointer", fontSize: "14px", color: "#555", fontWeight: "normal" }}>
+                      Gunakan PPN (11%)
+                    </label>
+                  </div>
+                  {usePPN && newItem.harga && (
+                    <div style={{ marginTop: "8px", padding: "8px 12px", backgroundColor: "#e3f2fd", borderRadius: "6px", fontSize: "13px", color: "#17457c" }}>
+                      <strong>Harga Setelah PPN:</strong> {formatRupiah(calculateHargaWithPPN(parseFloat(unformatRupiah(newItem.harga)) || 0))}
+                    </div>
+                  )}
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>SKU</label>
@@ -745,7 +842,7 @@ const PembelianBahan = () => {
                   <div>
                     {w.rol.map((berat, ri) => (
                       <div key={ri} className="pembelian-bahan-rol-item">
-                        <label>Berat {ri + 1} (kg)</label>
+                        <label>Berat / Panjang {ri + 1} (kg / yard)</label>
                         <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
                         <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeRol(wi, ri)}>
                           Hapus
@@ -762,6 +859,22 @@ const PembelianBahan = () => {
                 <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarna}>
                   <FaPlus /> Tambah Warna
                 </button>
+              </div>
+
+              {/* Total Jumlah Rol dan Total Harga */}
+              <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
+                <div className="pembelian-bahan-form-row">
+                  <div className="pembelian-bahan-form-group">
+                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll</label>
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>{calculateTotalRoll(newItem.warna)}</div>
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Harga (Rp)</label>
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                      {formatRupiah(calculateTotalHarga(newItem.bahan_id, newItem.warna))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="pembelian-bahan-form-actions">
@@ -925,7 +1038,18 @@ const PembelianBahan = () => {
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
                   <label>Harga (Rp)</label>
-                  <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
+                  <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50.000" />
+                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input type="checkbox" id="ppn-checkbox-edit" checked={usePPNEdit} onChange={(e) => setUsePPNEdit(e.target.checked)} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+                    <label htmlFor="ppn-checkbox-edit" style={{ cursor: "pointer", fontSize: "14px", color: "#555", fontWeight: "normal" }}>
+                      Gunakan PPN (11%)
+                    </label>
+                  </div>
+                  {usePPNEdit && editItem.harga && (
+                    <div style={{ marginTop: "8px", padding: "8px 12px", backgroundColor: "#e3f2fd", borderRadius: "6px", fontSize: "13px", color: "#17457c" }}>
+                      <strong>Harga Setelah PPN:</strong> {formatRupiah(calculateHargaWithPPN(parseFloat(unformatRupiah(editItem.harga)) || 0))}
+                    </div>
+                  )}
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>SKU</label>
@@ -1045,6 +1169,33 @@ const PembelianBahan = () => {
                 <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarnaEdit}>
                   <FaPlus /> Tambah Warna
                 </button>
+              </div>
+
+              {/* Total Jumlah Rol dan Total Harga */}
+              <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
+                <div className="pembelian-bahan-form-row">
+                  <div className="pembelian-bahan-form-group">
+                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll</label>
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>{calculateTotalRoll(editItem.warna)}</div>
+                  </div>
+                  <div className="pembelian-bahan-form-group">
+                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Berat</label>
+                    <div style={{ fontSize: "18px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                      {calculateTotalBerat(editItem.warna).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {getSatuanBahan(editItem.bahan_id) === "kg" ? "kg" : "yard"}
+                    </div>
+                  </div>
+                  <div className="pembelian-bahan-form-group" style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Harga (Rp)</label>
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                      {formatRupiah(calculateTotalHarga(editItem.bahan_id, editItem.warna))}
+                    </div>
+                    <div style={{ marginTop: "8px", fontSize: "12px", color: "#666", textAlign: "center" }}>
+                      (Harga = {formatRupiah(getHargaBahan(editItem.bahan_id))} × {calculateTotalBerat(editItem.warna).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                      {getSatuanBahan(editItem.bahan_id) === "kg" ? "kg" : "yard"})
+                    </div>
+                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#666", textAlign: "center" }}>(Harga roll tidak termasuk PPN)</div>
+                  </div>
+                </div>
               </div>
 
               <div className="pembelian-bahan-form-actions">

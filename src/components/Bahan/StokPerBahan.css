@@ -23,6 +23,171 @@
   gap: 15px;
 }
 
+/* Dashboard Section */
+.stok-bahan-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.stok-bahan-dashboard-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  color: white;
+  min-height: 140px;
+}
+
+.stok-bahan-dashboard-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stok-bahan-dashboard-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stok-bahan-dashboard-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+.stok-bahan-dashboard-card:hover::before {
+  opacity: 1;
+}
+
+.stok-bahan-dashboard-card:hover::after {
+  opacity: 1;
+}
+
+.stok-bahan-dashboard-icon {
+  font-size: 56px;
+  opacity: 0.95;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.stok-bahan-dashboard-content {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.stok-bahan-dashboard-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.95;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stok-bahan-dashboard-value {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.1;
+  word-break: break-word;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-wrap: break-word;
+}
+
+/* Adjust font size for large numbers */
+.stok-bahan-dashboard-card:nth-child(4) .stok-bahan-dashboard-value {
+  font-size: 28px;
+}
+
+@media (max-width: 768px) {
+  .stok-bahan-dashboard-card:nth-child(4) .stok-bahan-dashboard-value {
+    font-size: 22px;
+  }
+}
+
+.stok-bahan-dashboard-subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Responsive Dashboard */
+@media (max-width: 1200px) {
+  .stok-bahan-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  .stok-bahan-dashboard-card {
+    padding: 25px;
+    min-height: 130px;
+  }
+
+  .stok-bahan-dashboard-icon {
+    font-size: 48px;
+  }
+
+  .stok-bahan-dashboard-value {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stok-bahan-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .stok-bahan-dashboard-card {
+    padding: 20px;
+    gap: 15px;
+    min-height: 120px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stok-bahan-dashboard-icon {
+    font-size: 40px;
+  }
+
+  .stok-bahan-dashboard-value {
+    font-size: 28px;
+  }
+
+  .stok-bahan-dashboard-label {
+    font-size: 12px;
+  }
+
+  .stok-bahan-dashboard-subtitle {
+    font-size: 11px;
+  }
+}
+
 .stok-bahan-header-icon {
   font-size: 42px;
   background: transparent;
@@ -49,6 +214,34 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
+/* Table Wrapper */
+.stok-bahan-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border-radius: 12px;
+  background: white;
+  position: relative;
+}
+
+.stok-bahan-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.stok-bahan-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.stok-bahan-table-wrapper::-webkit-scrollbar-thumb {
+  background: #0487d8;
+  border-radius: 10px;
+}
+
+.stok-bahan-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #17457c;
+}
+
 /* Filter Header */
 .stok-bahan-filter-header {
   display: flex;
@@ -57,6 +250,34 @@
   margin-bottom: 25px;
   flex-wrap: wrap;
   gap: 15px;
+}
+
+.stok-bahan-filter-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.stok-bahan-btn-filter {
+  padding: 10px 20px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  background: white;
+  color: #17457c;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stok-bahan-btn-filter:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stok-bahan-btn-filter.active {
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
 }
 
 .stok-bahan-btn-add {
@@ -579,4 +800,3 @@
     font-size: 12px;
   }
 }
-
