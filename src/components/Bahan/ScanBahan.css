@@ -106,6 +106,82 @@
   box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
 }
 
+/* Filter Tanggal */
+.scan-bahan-filter-tanggal {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid #e0e7ef;
+}
+
+.scan-bahan-filter-tanggal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  color: #17457c;
+}
+
+.scan-bahan-filter-icon {
+  font-size: 18px;
+  color: #0487d8;
+}
+
+.scan-bahan-filter-tanggal-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #17457c;
+}
+
+.scan-bahan-filter-tanggal-inputs {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.scan-bahan-date-input {
+  padding: 10px 14px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+  font-family: inherit;
+  width: 100%;
+  min-width: 180px;
+}
+
+.scan-bahan-date-input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+.scan-bahan-filter-tanggal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.scan-bahan-filter-info {
+  margin-top: 15px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  color: #17457c;
+  font-size: 14px;
+  border-left: 4px solid #0487d8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scan-bahan-filter-info strong {
+  font-weight: 600;
+}
+
 /* Table */
 .scan-bahan-table {
   width: 100%;
@@ -540,6 +616,19 @@
     max-width: 100%;
   }
 
+  .scan-bahan-filter-tanggal-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scan-bahan-filter-tanggal-actions {
+    width: 100%;
+  }
+
+  .scan-bahan-filter-tanggal-actions button {
+    width: 100%;
+  }
+
   .scan-bahan-modal-content {
     padding: 25px;
   }
@@ -579,4 +668,3 @@
     font-size: 12px;
   }
 }
-

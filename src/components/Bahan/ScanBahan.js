@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ScanBahan.css";
 import API from "../../api";
-import { FaQrcode, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaQrcode, FaCalendarAlt } from "react-icons/fa";
 
 const ScanBahan = () => {
   const scanInputRef = useRef(null);
@@ -13,9 +13,11 @@ const ScanBahan = () => {
   // State untuk tabel stok
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tanggalMulai, setTanggalMulai] = useState("");
+  const [tanggalAkhir, setTanggalAkhir] = useState("");
+  const [filterAktif, setFilterAktif] = useState(false);
   const [stokLoading, setStokLoading] = useState(false);
   const [stokError, setStokError] = useState(null);
-  const [expandedItems, setExpandedItems] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -25,7 +27,7 @@ const ScanBahan = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, filterAktif]);
 
   // Cleanup timeout saat component unmount
   useEffect(() => {
@@ -49,10 +51,57 @@ const ScanBahan = () => {
     }
   };
 
-  // === PAGINATION ===
-  const filtered = items.filter(
-    (item) => (item.barcode || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.nama_bahan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.warna || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // === FILTER LOGIC ===
+  const filtered = items.filter((item) => {
+    // Filter berdasarkan search term
+    const matchesSearch =
+      (item.barcode || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.nama_bahan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.warna || "").toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filter berdasarkan tanggal scan (hanya jika filter aktif)
+    let matchesTanggal = true;
+    if (filterAktif && (tanggalMulai || tanggalAkhir)) {
+      const scanDate = item.scanned_at ? new Date(item.scanned_at) : null;
+      if (scanDate) {
+        if (tanggalMulai) {
+          const startDate = new Date(tanggalMulai);
+          startDate.setHours(0, 0, 0, 0);
+          if (scanDate < startDate) {
+            matchesTanggal = false;
+          }
+        }
+        if (tanggalAkhir) {
+          const endDate = new Date(tanggalAkhir);
+          endDate.setHours(23, 59, 59, 999);
+          if (scanDate > endDate) {
+            matchesTanggal = false;
+          }
+        }
+      } else {
+        // Jika tidak ada tanggal scan, exclude jika filter tanggal aktif
+        matchesTanggal = false;
+      }
+    }
+
+    return matchesSearch && matchesTanggal;
+  });
+
+  // Handler untuk menerapkan filter
+  const handleTerapkanFilter = () => {
+    if (!tanggalMulai && !tanggalAkhir) {
+      alert("Silakan pilih tanggal mulai atau tanggal akhir terlebih dahulu!");
+      return;
+    }
+    setFilterAktif(true);
+    setCurrentPage(1);
+  };
+
+  // Handler untuk reset filter
+  const handleResetFilter = () => {
+    setTanggalMulai("");
+    setTanggalAkhir("");
+    setFilterAktif(false);
+    setCurrentPage(1);
+  };
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -63,14 +112,6 @@ const ScanBahan = () => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
-  };
-
-  // === TOGGLE EXPAND DETAIL ===
-  const toggleExpand = (itemId) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId],
-    }));
   };
 
   // Handle scan barcode - auto trigger saat input berubah
@@ -180,6 +221,44 @@ const ScanBahan = () => {
           </div>
         </div>
 
+        {/* Filter Tanggal */}
+        <div className="scan-bahan-filter-tanggal">
+          <div className="scan-bahan-filter-tanggal-header">
+            <FaCalendarAlt className="scan-bahan-filter-icon" />
+            <h4>Filter Tanggal Scan</h4>
+          </div>
+          <div className="scan-bahan-filter-tanggal-inputs">
+            <div className="scan-bahan-form-group" style={{ marginBottom: 0 }}>
+              <label>Tanggal Mulai</label>
+              <input type="date" value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} className="scan-bahan-date-input" />
+            </div>
+            <div className="scan-bahan-form-group" style={{ marginBottom: 0 }}>
+              <label>Tanggal Akhir</label>
+              <input type="date" value={tanggalAkhir} onChange={(e) => setTanggalAkhir(e.target.value)} className="scan-bahan-date-input" />
+            </div>
+            <div className="scan-bahan-filter-tanggal-actions">
+              <button className="scan-bahan-btn scan-bahan-btn-primary" onClick={handleTerapkanFilter} disabled={stokLoading} style={{ marginTop: "20px" }}>
+                {stokLoading ? "Memproses..." : "Terapkan Filter"}
+              </button>
+              <button className="scan-bahan-btn scan-bahan-btn-secondary" onClick={handleResetFilter} disabled={stokLoading} style={{ marginTop: "20px" }}>
+                Reset Filter
+              </button>
+            </div>
+            {filterAktif && (tanggalMulai || tanggalAkhir) && (
+              <div className="scan-bahan-filter-info">
+                <strong>Filter Aktif:</strong>
+                <span>
+                  {tanggalMulai && tanggalAkhir
+                    ? `Tanggal ${new Date(tanggalMulai).toLocaleDateString("id-ID")} - ${new Date(tanggalAkhir).toLocaleDateString("id-ID")}`
+                    : tanggalMulai
+                    ? `Dari tanggal ${new Date(tanggalMulai).toLocaleDateString("id-ID")}`
+                    : `Sampai tanggal ${new Date(tanggalAkhir).toLocaleDateString("id-ID")}`}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {stokLoading ? (
           <p className="scan-bahan-loading">Memuat data stok...</p>
         ) : stokError ? (
@@ -197,106 +276,33 @@ const ScanBahan = () => {
                   <th>HARI DI GUDANG</th>
                   <th>TANGGAL SCAN</th>
                   <th>STATUS</th>
-                  <th style={{ textAlign: "center" }}>DETAIL</th>
                 </tr>
               </thead>
               <tbody>
                 {currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="empty-state">
+                    <td colSpan="8" className="empty-state">
                       <div className="empty-icon">📦</div>
                       Tidak ada data stok
                     </td>
                   </tr>
                 ) : (
-                  currentItems.map((item, index) => {
-                    const isExpanded = expandedItems[item.id];
-                    return (
-                      <React.Fragment key={item.id}>
-                        <tr>
-                          <td className="table-no">{indexOfFirstItem + index + 1}</td>
-                          <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
-                          <td>{item.warna || "-"}</td>
-                          <td className="table-barcode">{item.barcode}</td>
-                          <td className="table-berat">{item.berat || "-"}</td>
-                          <td>
-                            <span className={`badge badge-hari ${item.hari_di_gudang > 30 ? "danger" : item.hari_di_gudang > 15 ? "warning" : "fresh"}`}>{item.hari_di_gudang} hari</span>
-                          </td>
-                          <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
-                          <td>
-                            <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
-                          </td>
-                          <td className="detail-button-cell">
-                            <button onClick={() => toggleExpand(item.id)} className={`detail-button ${isExpanded ? "expanded" : ""}`} title="Lihat detail">
-                              {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
-                            </button>
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan="9" className="detail-expanded">
-                              <div className="detail-content">
-                                <div className="detail-title">
-                                  <div className="detail-title-bar" />
-                                  <h4>Detail Stok - {item.nama_bahan || item.barcode}</h4>
-                                </div>
-                                <div className="detail-grid">
-                                  <div className="detail-card barcode">
-                                    <strong>Barcode</strong>
-                                    <p>{item.barcode || "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Nama Bahan</strong>
-                                    <p>{item.nama_bahan || "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Warna</strong>
-                                    <p>{item.warna || "-"}</p>
-                                  </div>
-                                  <div className="detail-card berat">
-                                    <strong>Berat</strong>
-                                    <p>{item.berat ? `${item.berat} kg` : "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Nama Pabrik</strong>
-                                    <p>{item.nama_pabrik || "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Nama Gudang</strong>
-                                    <p>{item.nama_gudang || "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Hari di Gudang</strong>
-                                    <p>{item.hari_di_gudang !== undefined ? `${item.hari_di_gudang} hari` : "-"}</p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Tanggal Scan</strong>
-                                    <p>
-                                      {item.scanned_at
-                                        ? new Date(item.scanned_at).toLocaleString("id-ID", {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })
-                                        : "-"}
-                                    </p>
-                                  </div>
-                                  <div className="detail-card">
-                                    <strong>Status</strong>
-                                    <p>
-                                      <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })
+                  currentItems.map((item, index) => (
+                    <tr key={item.id}>
+                      <td className="table-no">{indexOfFirstItem + index + 1}</td>
+                      <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
+                      <td>{item.warna || "-"}</td>
+                      <td className="table-barcode">{item.barcode}</td>
+                      <td className="table-berat">{item.berat || "-"}</td>
+                      <td>
+                        <span className={`badge badge-hari ${item.hari_di_gudang > 30 ? "danger" : item.hari_di_gudang > 15 ? "warning" : "fresh"}`}>{item.hari_di_gudang} hari</span>
+                      </td>
+                      <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
+                      <td>
+                        <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
