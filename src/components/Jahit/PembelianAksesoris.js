@@ -98,13 +98,12 @@ const PembelianAksesoris = () => {
   useEffect(() => {
     const fetchAksesoris = async () => {
       try {
-        // Fetch semua data tanpa pagination, atau fetch dengan page besar
-        const response = await API.get("/aksesoris?page=1&per_page=1000"); // Ambil banyak data
-        // API mengembalikan pagination object dengan struktur: { data: [...], current_page, last_page, ... }
-        // Akses array aksesoris dari response.data.data
-        const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
+        // Fetch semua data tanpa pagination menggunakan parameter all=true
+        const response = await API.get("/aksesoris?all=true");
+        // Jika all=true, API mengembalikan array langsung, bukan pagination object
+        const data = Array.isArray(response.data) ? response.data : [];
         console.log("Aksesoris data fetched:", data.length, "items");
-        setAksesorisList(Array.isArray(data) ? data : []);
+        setAksesorisList(data);
       } catch (err) {
         console.error("Gagal mengambil data aksesoris:", err);
         // Set ke array kosong jika error
