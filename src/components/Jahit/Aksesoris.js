@@ -21,6 +21,8 @@ const [page, setPage] = useState(1);
     satuan: "",
     harga_jual: "",
     foto_aksesoris: null,
+    jumlah_per_satuan: "",
+
   });
 
   const SATUAN_AKSESORIS = {
@@ -99,6 +101,8 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
     formData.append("jenis_aksesoris", newAksesoris.jenis_aksesoris);
     formData.append("satuan", newAksesoris.satuan);
     formData.append("harga_jual", newAksesoris.harga_jual);
+    formData.append("jumlah_per_satuan", newAksesoris.jumlah_per_satuan);
+
 
     if (newAksesoris.foto_aksesoris) {
       formData.append("foto_aksesoris", newAksesoris.foto_aksesoris);
@@ -117,9 +121,11 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
       alert("Produk berhasil ditambahkan!");
 
       setAksesoris((prev) => ({
-        ...prev,
-        data: [...prev.data, response.data],
-      }));
+      ...prev,
+          data: [...prev.data, response.data], // ← untuk create, bukan map()
+        }));
+
+
 
       await fetchAksesoris();
       setShowForm(false); // Tutup modal
@@ -156,7 +162,8 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
       jenis_aksesoris: item.jenis_aksesoris,
       satuan: item.satuan,
       harga_jual: item.harga_jual,
-      foto: item.foto, // ⬅️ PENTING
+      jumlah_per_satuan: item.jumlah_per_satuan,
+      foto: item.foto, 
     });
 
     setShowEditForm(true);
@@ -170,6 +177,8 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
     formData.append("jenis_aksesoris", editAksesoris.jenis_aksesoris);
     formData.append("satuan", editAksesoris.satuan);
     formData.append("harga_jual", editAksesoris.harga_jual);
+    formData.append("jumlah_per_satuan", editAksesoris.jumlah_per_satuan);
+
 
     // Hanya jika ada gambar baru
     if (editAksesoris.foto_aksesoris instanceof File) {
@@ -183,7 +192,13 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
         },
       });
 
-      setAksesoris((prev) => prev.map((a) => (a.id === editAksesoris.id ? response.data : a)));
+     setAksesoris((prev) => ({
+      ...prev,
+      data: prev.data.map((a) =>
+        a.id === editAksesoris.id ? response.data : a
+      ),
+    }));
+
 
       alert("Aksesoris diperbarui!");
       setShowEditForm(false);
@@ -247,7 +262,9 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
                   <th>Nama Aksesoris</th>
                   <th>Jenis Aksesoris</th>
                   <th>Satuan</th>
+                  <th>Jumlah / Satuan</th>
                   <th>Harga Jual</th>
+                  <th>Harga per Biji</th>
                   <th>Jumlah Stok</th>
                   <th>Foto Aksesoris</th>
                   <th>Aksi</th>
@@ -261,6 +278,7 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
                     <td>{aksesoris.nama_aksesoris}</td>
                     <td>{aksesoris.jenis_aksesoris}</td>
                     <td>{aksesoris.satuan}</td>
+                    <td>{aksesoris.jumlah_per_satuan}</td>
                     <td>
                       <span className="aksesoris-price">
                         Rp{" "}
@@ -268,6 +286,11 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
                           minimumFractionDigits: 2,
                         })}
                       </span>
+                    </td>
+                    <td>
+                      Rp {Number(aksesoris.harga_per_biji).toLocaleString("id-ID", {
+                        minimumFractionDigits: 2
+                      })}
                     </td>
                     <td>
                       <span className={`aksesoris-stok-badge ${aksesoris.jumlah_stok === 0 ? "out" : aksesoris.jumlah_stok < 10 ? "low" : ""}`}>{aksesoris.jumlah_stok}</span>
@@ -349,6 +372,20 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
               </div>
 
               <div className="aksesoris-form-group">
+                <label>Jumlah per Satuan (biji per {newAksesoris.satuan || 'satuan'})</label>
+                <input
+                  type="number"
+                  name="jumlah_per_satuan"
+                  value={newAksesoris.jumlah_per_satuan}
+                  onChange={handleInputChange}
+                  placeholder="Contoh: 12"
+                  min="1"
+                  required
+                />
+              </div>
+
+
+              <div className="aksesoris-form-group">
                 <label>Harga Jual:</label>
                 <input type="number" name="harga_jual" value={newAksesoris.harga_jual} onChange={handleInputChange} placeholder="Masukkan harga jual" min="0" />
               </div>
@@ -420,6 +457,18 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
                   ))}
                 </select>
               </div>
+
+              <div className="aksesoris-form-group">
+                <label>Jumlah per Satuan</label>
+                <input
+                  type="number"
+                  name="jumlah_per_satuan"
+                  value={editAksesoris.jumlah_per_satuan}
+                  onChange={handleChangeEdit}
+                  min="1"
+                />
+              </div>
+
 
               <div className="aksesoris-form-group">
                 <label>Harga Satuan</label>
