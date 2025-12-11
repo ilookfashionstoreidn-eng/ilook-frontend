@@ -119,12 +119,12 @@
 }
 
 /* Adjust font size for large numbers */
-.stok-bahan-dashboard-card:nth-child(4) .stok-bahan-dashboard-value {
+.stok-bahan-dashboard-card:nth-child(5) .stok-bahan-dashboard-value {
   font-size: 28px;
 }
 
 @media (max-width: 768px) {
-  .stok-bahan-dashboard-card:nth-child(4) .stok-bahan-dashboard-value {
+  .stok-bahan-dashboard-card:nth-child(5) .stok-bahan-dashboard-value {
     font-size: 22px;
   }
 }

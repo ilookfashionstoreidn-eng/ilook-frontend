@@ -96,7 +96,8 @@ const StokPerBahan = () => {
         setDashboardStats({
           total_bahan: res.data.total_bahan || 0,
           total_roll: res.data.total_roll || 0,
-          total_berat: res.data.total_berat || 0,
+          total_berat_kg: res.data.total_berat_kg || 0,
+          total_berat_yard: res.data.total_berat_yard || 0,
           total_harga: res.data.total_harga || 0,
           total_roll_utuh: res.data.total_roll_utuh || 0,
           total_roll_sisa: res.data.total_roll_sisa || 0,
@@ -108,7 +109,8 @@ const StokPerBahan = () => {
       setDashboardStats({
         total_bahan: 0,
         total_roll: 0,
-        total_berat: 0,
+        total_berat_kg: 0,
+        total_berat_yard: 0,
         total_harga: 0,
         total_roll_utuh: 0,
         total_roll_sisa: 0,
@@ -193,7 +195,7 @@ const StokPerBahan = () => {
           </div>
           <div className="stok-bahan-dashboard-content">
             <div className="stok-bahan-dashboard-label">Total Roll</div>
-            <div className="stok-bahan-dashboard-value">{dashboardStats.total_roll.toLocaleString("id-ID")}</div>
+            <div className="stok-bahan-dashboard-value">{(dashboardStats.total_roll || 0).toLocaleString("id-ID")}</div>
             <div className="stok-bahan-dashboard-subtitle">
               Utuh: {dashboardStats.total_roll_utuh} | Sisa: {dashboardStats.total_roll_sisa}
             </div>
@@ -205,9 +207,20 @@ const StokPerBahan = () => {
             <FaRuler />
           </div>
           <div className="stok-bahan-dashboard-content">
-            <div className="stok-bahan-dashboard-label">Total Berat</div>
-            <div className="stok-bahan-dashboard-value">{dashboardStats.total_berat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="stok-bahan-dashboard-label">Total Berat (KG)</div>
+            <div className="stok-bahan-dashboard-value">{(dashboardStats.total_berat_kg || 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div className="stok-bahan-dashboard-subtitle">Kilogram</div>
+          </div>
+        </div>
+
+        <div className="stok-bahan-dashboard-card" style={{ background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)" }}>
+          <div className="stok-bahan-dashboard-icon">
+            <FaRuler />
+          </div>
+          <div className="stok-bahan-dashboard-content">
+            <div className="stok-bahan-dashboard-label">Total Yard</div>
+            <div className="stok-bahan-dashboard-value">{(dashboardStats.total_berat_yard || 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="stok-bahan-dashboard-subtitle">Panjang (Yard)</div>
           </div>
         </div>
 
@@ -217,7 +230,7 @@ const StokPerBahan = () => {
           </div>
           <div className="stok-bahan-dashboard-content">
             <div className="stok-bahan-dashboard-label">Total Nilai</div>
-            <div className="stok-bahan-dashboard-value">Rp {dashboardStats.total_harga.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+            <div className="stok-bahan-dashboard-value">Rp {(dashboardStats.total_harga || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
             <div className="stok-bahan-dashboard-subtitle">Total Harga Stok</div>
           </div>
         </div>
