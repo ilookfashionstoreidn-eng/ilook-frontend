@@ -198,8 +198,6 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
         a.id === editAksesoris.id ? response.data : a
       ),
     }));
-
-
       alert("Aksesoris diperbarui!");
       setShowEditForm(false);
     } catch (error) {
