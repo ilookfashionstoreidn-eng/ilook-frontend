@@ -289,19 +289,19 @@ const ScanBahan = () => {
                 ) : (
                   currentItems.map((item, index) => (
                     <tr key={item.id}>
-                      <td className="table-no">{indexOfFirstItem + index + 1}</td>
-                      <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
-                      <td>{item.warna || "-"}</td>
-                      <td className="table-barcode">{item.barcode}</td>
-                      <td className="table-berat">{item.berat || "-"}</td>
-                      <td>
-                        <span className={`badge badge-hari ${item.hari_di_gudang > 30 ? "danger" : item.hari_di_gudang > 15 ? "warning" : "fresh"}`}>{item.hari_di_gudang} hari</span>
-                      </td>
-                      <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
-                      <td>
-                        <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
-                      </td>
-                    </tr>
+                          <td className="table-no">{indexOfFirstItem + index + 1}</td>
+                          <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
+                          <td>{item.warna || "-"}</td>
+                          <td className="table-barcode">{item.barcode}</td>
+                          <td className="table-berat">{item.berat || "-"}</td>
+                          <td>
+                            <span className={`badge badge-hari ${item.hari_di_gudang > 30 ? "danger" : item.hari_di_gudang > 15 ? "warning" : "fresh"}`}>{item.hari_di_gudang} hari</span>
+                          </td>
+                          <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
+                          <td>
+                            <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
+                          </td>
+                        </tr>
                   ))
                 )}
               </tbody>

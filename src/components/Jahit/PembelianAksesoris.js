@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
 import "./PembelianAksesoris.css";
-import API from "../../api";
+import API from "../../api"; 
 import { FaPlus, FaShoppingCart, FaCheckCircle, FaDownload, FaImage, FaCalendarAlt, FaDollarSign, FaBox } from "react-icons/fa";
 
 const PembelianAksesoris = () => {
-  const [loading, setLoading] = useState(true);
+ const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedPembelianAId, setSelectedPembelianAId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [aksesorisList, setAksesorisList] = useState([]);
-  const [jumlahTerverifikasi, setJumlahTerverifikasi] = useState("");
-  const [newPembelian, setNewPembelian] = useState({
+ const [showForm, setShowForm] = useState(false);
+ const [selectedPembelianAId, setSelectedPembelianAId] = useState(null);
+const [showModal, setShowModal] = useState(false);
+ const [searchTerm, setSearchTerm] = useState("");
+ const [aksesorisList, setAksesorisList] = useState([]);
+ const [jumlahTerverifikasi, setJumlahTerverifikasi] = useState("");
+ const [newPembelian, setNewPembelian] = useState({
     aksesoris_id: "",
     jumlah: "",
     harga_satuan: "",
@@ -20,58 +20,58 @@ const PembelianAksesoris = () => {
     bukti_pembelian: null,
   });
   const [pembelianA, setPembelianA] = useState({
-    data: [],
-    current_page: 1,
-    last_page: 1,
-  });
+  data: [],
+  current_page: 1,
+  last_page: 1,
+});
 
-  const fetchPembelianA = async (page = 1) => {
-    try {
+const fetchPembelianA = async (page = 1) => {
+  try {
       setLoading(true);
-      const response = await API.get(`pembelian-aksesoris-a?page=${page}`);
-      setPembelianA(response.data);
+    const response = await API.get(`pembelian-aksesoris-a?page=${page}`);
+    setPembelianA(response.data);
       setError(null);
-    } catch (error) {
+  } catch (error) {
       setError("Gagal mengambil data");
     } finally {
       setLoading(false);
-    }
-  };
+  }
+};
 
-  useEffect(() => {
-    fetchPembelianA();
-  }, []);
+useEffect(() => {
+  fetchPembelianA();
+}, []);
 
-  const handleFormSubmit = async (e) => {
+const handleFormSubmit = async (e) => {
     e.preventDefault();
-
+  
     const userId = localStorage.getItem("userId");
 
     if (!userId) {
       alert("User tidak ditemukan. Silakan login ulang.");
       return;
     }
-
+  
     const formData = new FormData();
-    formData.append("user_id", userId);
+    formData.append("user_id", userId); 
     formData.append("aksesoris_id", newPembelian.aksesoris_id);
     formData.append("jumlah", newPembelian.jumlah);
     formData.append("harga_satuan", newPembelian.harga_satuan);
     formData.append("tanggal_pembelian", newPembelian.tanggal_pembelian);
-
+    
     if (newPembelian.bukti_pembelian) {
       formData.append("bukti_pembelian", newPembelian.bukti_pembelian);
     }
-
+  
     try {
       await API.post("/pembelian-aksesoris-a", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
+  
       alert("Pembelian berhasil disimpan!");
-      await fetchPembelianA();
+     await fetchPembelianA();
 
       setShowForm(false);
       setNewPembelian({
@@ -110,15 +110,15 @@ const PembelianAksesoris = () => {
         setAksesorisList([]);
       }
     };
-
+  
     fetchAksesoris();
   }, []);
 
   const handleVerifikasi = (pembelianA) => {
-    setSelectedPembelianAId(pembelianA.id);
-    setShowModal(true);
-  };
-
+  setSelectedPembelianAId(pembelianA.id);
+  setShowModal(true);
+};
+  
   const handleSubmitPembelianB = async (e) => {
     e.preventDefault();
     const userId = localStorage.getItem("userId");
@@ -127,7 +127,7 @@ const PembelianAksesoris = () => {
       alert("User tidak ditemukan. Silakan login ulang.");
       return;
     }
-
+  
     const payload = {
       pembelian_a_id: selectedPembelianAId,
       user_id: userId,
@@ -168,8 +168,8 @@ const PembelianAksesoris = () => {
   const fetchPage = async (page) => {
     try {
       setLoading(true);
-      const response = await API.get(`pembelian-aksesoris-a?page=${page}`);
-      setPembelianA(response.data);
+  const response = await API.get(`pembelian-aksesoris-a?page=${page}`);
+  setPembelianA(response.data);
       setError(null);
     } catch (error) {
       setError("Gagal mengambil data");
@@ -186,25 +186,25 @@ const PembelianAksesoris = () => {
 
   // Sort data berdasarkan ID descending (yang baru di atas)
   const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
-
-  return (
+  
+return (
     <div className="pembelian-aksesoris-page">
       <div className="pembelian-aksesoris-header">
         <div className="pembelian-aksesoris-header-icon">
           <FaShoppingCart />
         </div>
         <h1>Pembelian Aksesoris Toko</h1>
-      </div>
-
+       </div>
+  
       <div className="pembelian-aksesoris-table-container">
         <div className="pembelian-aksesoris-filter-header">
           <button className="pembelian-aksesoris-btn-add" onClick={() => setShowForm(true)}>
             <FaPlus /> Tambah Pembelian
-          </button>
+           </button>
           <div className="pembelian-aksesoris-search-bar">
             <input type="text" placeholder="Cari nama aksesoris atau ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-        </div>
+           </div>
 
         {loading ? (
           <div className="pembelian-aksesoris-loading">Memuat data...</div>
@@ -214,12 +214,12 @@ const PembelianAksesoris = () => {
           <div className="pembelian-aksesoris-empty-state">
             <div className="pembelian-aksesoris-empty-state-icon">📦</div>
             <p>Tidak ada data pembelian aksesoris</p>
-          </div>
+         </div>
         ) : (
           <div className="pembelian-aksesoris-table-wrapper">
             <table className="pembelian-aksesoris-table">
-              <thead>
-                <tr>
+             <thead>
+               <tr>
                   <th>No</th>
                   <th>Aksesoris</th>
                   <th>Jumlah</th>
@@ -260,25 +260,25 @@ const PembelianAksesoris = () => {
                         <span className="pembelian-aksesoris-status-badge verified">
                           <FaCheckCircle /> Sudah Diverifikasi
                         </span>
-                      ) : (
+                    ) : (
                         <button className="pembelian-aksesoris-btn-verify" onClick={() => handleVerifikasi(pembelianA)}>
                           <FaCheckCircle /> Verifikasi
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      {pembelianA.pembelian_b_id ? (
-                        pembelianA.barcode_downloaded === 1 ? (
+                      </button>
+                    )}
+                  </td>
+                <td>
+                  {pembelianA.pembelian_b_id ? (
+                    pembelianA.barcode_downloaded === 1 ? (
                           <span className="pembelian-aksesoris-status-badge disabled">Barcode Sudah Didownload</span>
-                        ) : (
+                    ) : (
                           <button onClick={() => handleDownloadBarcode(pembelianA.pembelian_b_id)} className="pembelian-aksesoris-btn-download">
                             <FaDownload /> Download Barcode
-                          </button>
-                        )
-                      ) : (
+                      </button>
+                    )
+                  ) : (
                         <span style={{ color: "#9ca3af", fontSize: "13px" }}>Belum diverifikasi</span>
-                      )}
-                    </td>
+                  )}
+                </td>
                   </tr>
                 ))}
               </tbody>
@@ -290,94 +290,94 @@ const PembelianAksesoris = () => {
           <div className="pembelian-aksesoris-pagination">
             <button disabled={pembelianA.current_page === 1} onClick={() => fetchPage(pembelianA.current_page - 1)}>
               ← Prev
-            </button>
+                </button>
             <span>
               Halaman {pembelianA.current_page} / {pembelianA.last_page}
             </span>
             <button disabled={pembelianA.current_page === pembelianA.last_page} onClick={() => fetchPage(pembelianA.current_page + 1)}>
               Next →
-            </button>
-          </div>
+                </button>
+                </div>
         )}
-      </div>
-      {showForm && (
+     </div>
+     {showForm && (
         <div className="pembelian-aksesoris-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <div className="pembelian-aksesoris-modal-content">
             <h2>
               <FaShoppingCart /> Tambah Pembelian Aksesoris
             </h2>
             <form onSubmit={handleFormSubmit} className="pembelian-aksesoris-form">
-              {/* AKSESORIS ID (Dropdown dari list aksesoris) */}
+        {/* AKSESORIS ID (Dropdown dari list aksesoris) */}
               <div className="pembelian-aksesoris-form-group">
                 <label>
                   <FaBox /> Pilih Aksesoris:
                 </label>
                 <select name="aksesoris_id" value={newPembelian.aksesoris_id} onChange={handleInputChange} required>
-                  <option value="">-- Pilih Aksesoris --</option>
+            <option value="">-- Pilih Aksesoris --</option>
                   {(Array.isArray(aksesorisList) ? aksesorisList : []).map((aksesoris) => (
-                    <option key={aksesoris.id} value={aksesoris.id}>
-                      {aksesoris.nama_aksesoris}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <option key={aksesoris.id} value={aksesoris.id}>
+                {aksesoris.nama_aksesoris}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              {/* JUMLAH */}
+        {/* JUMLAH */}
               <div className="pembelian-aksesoris-form-group">
                 <label>
                   <FaBox /> Jumlah:
                 </label>
                 <input type="number" name="jumlah" value={newPembelian.jumlah} onChange={handleInputChange} placeholder="Masukkan jumlah" min="1" required />
-              </div>
+        </div>
 
-              {/* HARGA SATUAN */}
+        {/* HARGA SATUAN */}
               <div className="pembelian-aksesoris-form-group">
                 <label>
                   <FaDollarSign /> Harga Satuan:
                 </label>
                 <input type="number" name="harga_satuan" value={newPembelian.harga_satuan} onChange={handleInputChange} placeholder="Contoh: 20000" min="0" required />
-              </div>
+        </div>
 
-              {/* TANGGAL PEMBELIAN */}
+        {/* TANGGAL PEMBELIAN */}
               <div className="pembelian-aksesoris-form-group">
                 <label>
                   <FaCalendarAlt /> Tanggal Pembelian:
                 </label>
                 <input type="date" name="tanggal_pembelian" value={newPembelian.tanggal_pembelian} onChange={handleInputChange} required />
-              </div>
+        </div>
 
-              {/* BUKTI PEMBELIAN */}
+        {/* BUKTI PEMBELIAN */}
               <div className="pembelian-aksesoris-form-group">
                 <label>
                   <FaImage /> Bukti Pembelian (Opsional):
                 </label>
-                <input
-                  type="file"
-                  name="bukti_pembelian"
-                  accept="image/*,application/pdf"
-                  onChange={(e) =>
-                    setNewPembelian({
-                      ...newPembelian,
-                      bukti_pembelian: e.target.files[0],
-                    })
-                  }
-                />
-              </div>
+          <input
+            type="file"
+            name="bukti_pembelian"
+            accept="image/*,application/pdf"
+            onChange={(e) =>
+              setNewPembelian({
+                ...newPembelian,
+                bukti_pembelian: e.target.files[0],
+              })
+            }
+          />
+        </div>
 
               <div className="pembelian-aksesoris-form-actions">
                 <button type="submit" className="pembelian-aksesoris-btn-submit">
                   <FaCheckCircle /> Simpan
-                </button>
+          </button>
                 <button type="button" className="pembelian-aksesoris-btn-cancel" onClick={() => setShowForm(false)}>
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
+            Batal
+          </button>
         </div>
-      )}
+      </form>
+    </div>
+  </div>
+)}
 
-      {showModal && (
+{showModal && (
         <div className="pembelian-aksesoris-modal" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="pembelian-aksesoris-modal-content">
             <h2>
@@ -385,28 +385,28 @@ const PembelianAksesoris = () => {
             </h2>
             <form onSubmit={handleSubmitPembelianB} className="pembelian-aksesoris-form">
               <div className="pembelian-aksesoris-form-group">
-                <label>ID Pembelian A</label>
-                <input type="text" value={selectedPembelianAId} readOnly />
+       <label>ID Pembelian A</label>
+      <input type="text" value={selectedPembelianAId} readOnly />
               </div>
-
+   
               <div className="pembelian-aksesoris-form-group">
-                <label>Jumlah Terverifikasi</label>
+      <label>Jumlah Terverifikasi</label>
                 <input type="number" value={jumlahTerverifikasi} onChange={(e) => setJumlahTerverifikasi(e.target.value)} placeholder="Masukkan jumlah yang terverifikasi" min="1" required />
               </div>
 
               <div className="pembelian-aksesoris-form-actions">
                 <button type="submit" className="pembelian-aksesoris-btn-submit">
                   <FaCheckCircle /> Verifikasi
-                </button>
+        </button>
                 <button type="button" className="pembelian-aksesoris-btn-cancel" onClick={() => setShowModal(false)}>
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                Batal
+              </button>
+      </div>
+    </form>
+  </div>
+  </div>
+)}
+ </div>   
   );
 };
 

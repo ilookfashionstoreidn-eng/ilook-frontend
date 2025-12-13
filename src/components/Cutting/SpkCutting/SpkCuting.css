@@ -1,603 +1,564 @@
 .penjahit-container {
-    display: flex;
-    justify-content: space-between; /* Pisahkan elemen ke kiri dan kanan */
-    align-items: center; /* Ratakan elemen secara vertikal */
-    padding: 10px 20px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    border-bottom: 1px solid #e9ecef;
-    margin-top: 10px;
-  }
-  
+  display: flex;
+  justify-content: space-between; /* Pisahkan elemen ke kiri dan kanan */
+  align-items: center; /* Ratakan elemen secara vertikal */
+  padding: 10px 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border-bottom: 1px solid #e9ecef;
+  margin-top: 10px;
+}
 
-  .search-bar {
-    display: flex;
-    width: 100%; 
-    max-width: 210px; 
-    min-width: 102px;
-    justify-content: flex-end; /* Letakkan konten di kanan */
-    align-items: center; /* Ratakan elemen secara vertikal */
-    gap: 10px; /* Tambahkan jarak antar elemen di dalam search-bar */
+.search-bar {
+  display: flex;
+  width: 100%;
+  max-width: 210px;
+  min-width: 102px;
+  justify-content: flex-end; /* Letakkan konten di kanan */
+  align-items: center; /* Ratakan elemen secara vertikal */
+  gap: 10px; /* Tambahkan jarak antar elemen di dalam search-bar */
+}
+
+.search-bar input {
+  width: 100%; /* Pastikan lebar mengikuti max-width */
+  max-width: 1000px; /* Sesuaikan lebar maksimum */
+  height: 35px;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #e9e9eb;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.search-bar input:focus {
+  border-color: #356191;
+}
+
+.table-container {
+  padding: 7px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  margin-top: 4px;
+  overflow-x: auto;
+}
+
+/* Styling untuk tombol dengan ikon */
+
+/* Card untuk tombol aksi */
+/* Card untuk tombol aksi */
+.action-card {
+  display: flex;
+  gap: 5px; /* Jarak antar tombol */
+  justify-content: center; /* Pusatkan tombol secara horizontal */
+  align-items: center; /* Pusatkan tombol secara vertikal */
+  margin-right: -5px;
+}
+
+.btn1-icon,
+.btn1-icon2 {
+  display: flex; /* Gunakan flexbox untuk tombol */
+  align-items: center; /* Vertikal tengah */
+  justify-content: center; /* Horizontal tengah */
+  background-color: green; /* Warna hijau untuk contoh */
+  border: none; /* Hilangkan border */
+  border-radius: 5px; /* Membulatkan sudut */
+  padding: 10; /* Hilangkan padding tambahan */
+  width: 30px; /* Lebar tombol */
+  height: 20px; /* Tinggi tombol */
+  cursor: pointer; /* Cursor pointer */
+  color: rgb(235, 230, 230); /* Warna teks atau ikon */
+}
+
+.btn1-icon:hover,
+.btn1-icon2:hover {
+  opacity: 0.8; /* Efek hover */
+}
+
+/* Gaya spesifik untuk tombol */
+.btn1-icon {
+  background-color: rgb(66, 130, 173);
+}
+
+.btn1-icon2 {
+  background-color: rgb(66, 130, 173); /* Warna merah untuk tombol "Detail" */
+}
+
+/* Gaya ikon di dalam tombol */
+.icon {
+  font-size: 15x; /* Ukuran ikon */
+  line-height: 1;
+  align-items: center;
+
+  margin: 0;
+  padding: 0;
+}
+
+/* Untuk tombol dengan hover efek */
+.btn1-icon:hover .icon {
+  color: #7cb7f7; /* Ganti warna ikon saat hover */
+}
+
+.btn1-icon2:hover {
+  background-color: #e0e0e0;
+}
+
+.icon2 {
+  width: 30px;
+  color: #fcfdff;
+}
+
+/* Untuk tombol dengan hover efek */
+.btn1-icon3:hover .icon {
+  color: #7cb7f7; /* Ganti warna ikon saat hover */
+}
+
+.btn1-icon3:hover {
+  background-color: #e0e0e0;
+}
+
+.icon3 {
+  width: 30px;
+  color: #fcfdff;
+}
+
+/* Untuk tombol dengan hover efek */
+.btn1-icon3:hover .icon {
+  color: #7cb7f7; /* Ganti warna ikon saat hover */
+}
+
+.modal {
+  position: fixed; /* Modal tetap di atas seluruh halaman */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Latar belakang semi-transparan */
+  z-index: 1050; /* Pastikan z-index lebih tinggi */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  padding: 30px 30px; /* Atas-bawah: 20px, Kiri-kanan: 15px */
+  border-radius: 20px;
+  width: 750px;
+  max-height: 80vh; /* Batas tinggi modal */
+  overflow-y: auto; /* Aktifkan scroll vertikal */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: slide-down 0.3s ease-out;
+}
+
+.modal-content h2 {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 40px;
+  font-weight: 700;
+  color: #3c4c53;
+}
+
+.modern-form .form-group {
+  margin-bottom: 2px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column; /* Mengatur elemen dalam kolom */
+  gap: 10px; /* Menambahkan jarak antar elemen */
+}
+
+.warna-item {
+  display: flex; /* Menyusun elemen dalam baris */
+  gap: 10px; /* Jarak antar elemen */
+  align-items: center; /* Menyusun elemen secara vertikal */
+}
+
+.warna-item input {
+  padding: 5px;
+  margin-right: 10px;
+}
+
+.warna-item button {
+  padding: 5px 10px;
+  cursor: pointer;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+button[type="button"] {
+  background-color: #b9b9b9;
+  border: 1px solid #ddd;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Mengatur jarak antara tombol "Tambah Warna" dan input */
+button[type="button"] .icon {
+  margin-right: 5px;
+}
+
+.modern-form label {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 550;
+  font-size: 13px;
+  color: #363636;
+}
+
+.modern-form input,
+.modern-form select,
+.modern-form textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f5f7f8;
+  color: #707274;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.3s ease;
+}
+
+.modern-form input:focus,
+.modern-form select:focus,
+.modern-form textarea:focus {
+  border-color: #c1c7cc;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.modern-form textarea {
+  resize: none;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-cancel {
+  background-color: #e0e0e0;
+  color: #555555;
+}
+
+.btn-cancel:hover {
+  background-color: #d6d6d6;
+}
+
+/* Antableasi */
+@keyframes slide-down {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
   }
-  
-  .search-bar input {
-    width: 100%; /* Pastikan lebar mengikuti max-width */
-    max-width: 1000px; /* Sesuaikan lebar maksimum */
-    height: 35px;
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #e9e9eb;
-    border-radius: 10px;
-    outline: none;
-    transition: border-color 0.3s ease;
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
-  
-  .search-bar input:focus {
-    border-color: #356191;
-  }
-  
-  
-  .table-container {
-    padding: 7px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    border: 1px solid #e9ecef;
-    margin-top: 4px;
-    overflow-x: auto;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  /* Styling untuk tombol dengan ikon */
-  
-  
-  
-  /* Card untuk tombol aksi */
-  /* Card untuk tombol aksi */
-  .action-card {
-    display: flex;
-    gap: 5px; /* Jarak antar tombol */
-    justify-content: center; /* Pusatkan tombol secara horizontal */
-    align-items: center; /* Pusatkan tombol secara vertikal */
-    margin-right: -5px;
-  }
-  
-  .btn1-icon,
-  .btn1-icon2 {
-    display: flex; /* Gunakan flexbox untuk tombol */
-    align-items: center; /* Vertikal tengah */
-    justify-content: center; /* Horizontal tengah */
-    background-color: green; /* Warna hijau untuk contoh */
-    border: none; /* Hilangkan border */
-    border-radius: 5px; /* Membulatkan sudut */
-    padding: 10; /* Hilangkan padding tambahan */
-    width: 30px; /* Lebar tombol */
-    height: 20px; /* Tinggi tombol */
-    cursor: pointer; /* Cursor pointer */
-    color: rgb(235, 230, 230); /* Warna teks atau ikon */
-  }
-  
-  .btn1-icon:hover,
-  .btn1-icon2:hover {
-    opacity: 0.8; /* Efek hover */
-  }
-  
-  /* Gaya spesifik untuk tombol */
-  .btn1-icon {
-    background-color: rgb(66, 130, 173);
-    
-  }
-  
-  .btn1-icon2 {
-    background-color: rgb(66, 130, 173); /* Warna merah untuk tombol "Detail" */
-  }
-  
-  /* Gaya ikon di dalam tombol */
-  .icon {
-    font-size: 15x; /* Ukuran ikon */
-    line-height: 1;
-    align-items: center;
-  
-    margin: 0; 
-    padding: 0;  
-  }
-  
-  
-  /* Untuk tombol dengan hover efek */
-  .btn1-icon:hover .icon {
-    color: #7cb7f7; /* Ganti warna ikon saat hover */
-  }
-  
-  
-  .btn1-icon2:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .icon2 {
-    width: 30px;
-    color: #fcfdff;
-  
-  }
-  
-  /* Untuk tombol dengan hover efek */
-  .btn1-icon3:hover .icon {
-    color: #7cb7f7; /* Ganti warna ikon saat hover */
-  }
-  
-  
-  .btn1-icon3:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .icon3 {
-    width: 30px;
-    color: #fcfdff;
-  
-  }
-  
-  /* Untuk tombol dengan hover efek */
-  .btn1-icon3:hover .icon {
-    color: #7cb7f7; /* Ganti warna ikon saat hover */
-  }
-  
-  
-  
-  
-  .modal {
-    position: fixed;  /* Modal tetap di atas seluruh halaman */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);  /* Latar belakang semi-transparan */
-    z-index: 1050;  /* Pastikan z-index lebih tinggi */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-    
-    .modal-content {
-      background-color: #ffffff;
-      padding: 30px 30px; /* Atas-bawah: 20px, Kiri-kanan: 15px */
-      border-radius:20px;
-      width: 750px;
-      max-height: 80vh; /* Batas tinggi modal */
-      overflow-y: auto; /* Aktifkan scroll vertikal */
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      animation: slide-down 0.3s ease-out;
-      
-    }
-    
-    .modal-content h2 {
-      text-align: center;
-      font-size: 16px;
-      margin-bottom: 40px;
-      font-weight: 700;
-      color: #3c4c53;
-    }
-    
-    .modern-form .form-group {
-      margin-bottom: 2px;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column; /* Mengatur elemen dalam kolom */
-      gap: 10px; /* Menambahkan jarak antar elemen */
-    }
-    
-    .warna-item {
-      display: flex; /* Menyusun elemen dalam baris */
-      gap: 10px; /* Jarak antar elemen */
-      align-items: center; /* Menyusun elemen secara vertikal */
-    }
-    
-    .warna-item input {
-      padding: 5px;
-      margin-right: 10px;
-    }
-    
-    .warna-item button {
-      padding: 5px 10px;
-      cursor: pointer;
-      background-color: #f4f4f4;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    
-    button[type="button"] {
-      background-color: #b9b9b9;
-      border: 1px solid #ddd;
-      padding: 5px 10px;
-      cursor: pointer;
-      border-radius: 5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    /* Mengatur jarak antara tombol "Tambah Warna" dan input */
-    button[type="button"] .icon {
-      margin-right: 5px;
-      
-    }
-    
-    .modern-form label {
-      display: block;
-      margin-bottom: 2px;
-      font-weight: 550;
-      font-size: 13px;
-      color: #363636;
-    }
-    
-    .modern-form input,
-    .modern-form select,
-    .modern-form textarea {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background-color: #f5f7f8;
-      color:#707274;
-      font-size: 14px;
-      outline: none;
-      margin-bottom: 10PX;
-      transition: border-color 0.3s ease;
-    }
-    
-    .modern-form input:focus,
-    .modern-form select:focus,
-    .modern-form textarea:focus {
-      border-color: #c1c7cc;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    }
-    
-    .modern-form textarea {
-      resize: none;
-      min-height: 100px;
-    }
-    
-    .form-actions {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    
-    
-    .btn-cancel {
-      background-color: #e0e0e0;
-      color: #555555;
-    }
-    
-    .btn-cancel:hover {
-      background-color: #d6d6d6;
-    }
-    
-    /* Antableasi */
-    @keyframes slide-down {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-    
-  
-    .spk-cmt-container {
-      margin: 20px;
-    }
-    
-    .spk-cmt-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    
-    .spk-cmt-table th,
-    .spk-cmt-table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    
-    .spk-cmt-table th {
-      background-color: #f4f4f4;
-      font-weight: bold;
-    }
-    .spk-form {
-      margin-top: 20px;
-      padding: 20px;
-      border: 1px solid #ddd;
-      background-color: #f9f9f9;
-    }
-    
-    .spk-form div {
-      margin-bottom: 15px;
-    }
-    
-    .spk-form label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    
-    .spk-form input,
-    .spk-form textarea,
-    .spk-form select {
-      width: 100%;                                             
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .add-button {
-      padding: 10px 15px;
-      background-color: #73c6df;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    
-    .add-button:hover {
-      background-color: #7fc1e0
-    }
-  
-    .detail-card {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5); /* Background semi-transparan */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    
-    .detail-card-content {
-      background-color: white;
-      padding: 20px;
-      width: 80%;
-      max-width: 600px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-   
-  /* Popup Overlay */
-  .popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    width: 100%;
-    height: 100%;
-  }
-  
-  /* Popup Card */
-  .popup-card {
-    background: #ffffff;
-    width: 400px;
-    max-width: 700px;
-   
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    animation: fadeIn 0.3s ease;
-    justify-content:center;
-    padding: 0;
-  }
-  
-  /* Popup Header */
-  .popup-header {
-    background: rgb(141, 206, 226);
-    color: #ffffff;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    }
-  
-  .popup-header h2 {
-    font-size: 1.5rem;
-    margin: 0;
-  }
-  .btn-close {
-    background: #d8dbdf;
-    color: #fff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  
-  .btn2-close:hover {
-    background: #919191;
-  }
-  
-  
-  
- /* Popup Content */
+}
+
+.spk-cmt-container {
+  margin: 20px;
+}
+
+.spk-cmt-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.spk-cmt-table th,
+.spk-cmt-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.spk-cmt-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+.spk-form {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.spk-form div {
+  margin-bottom: 15px;
+}
+
+.spk-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.spk-form input,
+.spk-form textarea,
+.spk-form select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-button {
+  padding: 10px 15px;
+  background-color: #73c6df;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.add-button:hover {
+  background-color: #7fc1e0;
+}
+
+.detail-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Background semi-transparan */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.detail-card-content {
+  background-color: white;
+  padding: 20px;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Popup Overlay */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+}
+
+/* Popup Card */
+.popup-card {
+  background: #ffffff;
+  width: 400px;
+  max-width: 700px;
+
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+  justify-content: center;
+  padding: 0;
+}
+
+/* Popup Header */
+.popup-header {
+  background: rgb(141, 206, 226);
+  color: #ffffff;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.popup-header h2 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.btn-close {
+  background: #d8dbdf;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn2-close:hover {
+  background: #919191;
+}
+
+/* Popup Content */
 .popup-content {
-    display: flex; /* Ubah dari grid ke flex */
-    justify-content: center; /* Pusatkan secara horizontal */
-    align-items: center; /* Pusatkan secara vertikal */
-    flex-direction: column; /* Susun konten secara vertikal */
-    gap: 0px; /* Jarak antar elemen */
-    padding: 0;
+  display: flex; /* Ubah dari grid ke flex */
+  justify-content: center; /* Pusatkan secara horizontal */
+  align-items: center; /* Pusatkan secara vertikal */
+  flex-direction: column; /* Susun konten secara vertikal */
+  gap: 0px; /* Jarak antar elemen */
+  padding: 0;
 }
 
 /* Popup Details */
 .popup-details {
-    width: 100%;
-    padding: 0;
-    max-width: 600px; /* Atur lebar maksimum tabel */
-    display: flex;
-    justify-content: center; /* Pusatkan secara horizontal */
-    align-items: center; /* Pusatkan secara vertikal */
+  width: 100%;
+  padding: 0;
+  max-width: 600px; /* Atur lebar maksimum tabel */
+  display: flex;
+  justify-content: center; /* Pusatkan secara horizontal */
+  align-items: center; /* Pusatkan secara vertikal */
 }
 
 /* Tabel */
 table {
-    
-    table-layout: fixed;
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0px 0;
-    background-color: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0px 0;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-  
-  table th, table td {
-      padding: 10px;
-      text-align: left;
-      font-size: 14px;
-      overflow: hidden; /* Menghindari teks meluber */
-      text-overflow: ellipsis; /* Memberikan efek ... jika teks terlalu panjang */
-      word-wrap: break-word; /* Memecah kata panjang */
-  }
-  
-  table th {
-      background-color: rgb(141, 206, 226);
-      color: white;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-align: center;
-      font-family: 520;
-  }
-  
-  
-  table tr:nth-child(even) {
-      background-color: #F7F9F9;
-      
-  }
-  
-  table tr:hover {
-      background-color: #E8F6F3;
-      transition: background-color 0.3s ease;
-  }
-  
-  
+table th,
+table td {
+  padding: 10px;
+  text-align: left;
+  font-size: 14px;
+  overflow: hidden; /* Menghindari teks meluber */
+  text-overflow: ellipsis; /* Memberikan efek ... jika teks terlalu panjang */
+  word-wrap: break-word; /* Memecah kata panjang */
+}
 
+table th {
+  background-color: rgb(141, 206, 226);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  font-family: 520;
+}
 
+table tr:nth-child(even) {
+  background-color: #f7f9f9;
+}
 
-    .modal-card-hasil {
-    background-color: #ffffff;
-    border-radius: 10px;
-    overflow: hidden;
-    width: 700px;
-    max-width: 800px;
-    height:620px;
-    max-height: 900px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Ini memastikan modal selalu di tengah */
-    transition: transform 0.3s ease;
-    }
-    @media (max-width: 768px) {
-      .modal-card {
-       width:380px;
-      }
-      .modal-card p {
-        font-size: 12px !important;
-      }
-      .modal-card p span{
-        font-size: 12px;
-      }
-      .modal-card p strong{
-        font-size: 12px;
-      }
-    }
-    
-    
-    .modal-header {
-      padding: 16px;
-      background: #7fc1db;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-header h3 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    .modal-card p {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px;
-      border-bottom: 1px solid #eeeeee;
-      font-size: 13px;
-      color: #333;
-     
-     
-    }
-    
-    .modal-card p strong {
-      min-width: 150px; /* Sesuaikan agar rata kiri */
-      display: inline-block;
-      font-weight: bold;
-      text-align: left;
-    }
-    
-    .modal-card p span {
-      flex-grow: 1;
-      text-align: right;
-      max-width: 200px;
-    }
-    
-    
-    .close-button {
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-    
-    .modal-body {
-      padding: 16px;
-      font-size: 0.95rem;
-      color: #333;
-    }
-    
-    .modal-body h4 {
-      margin-bottom: 8px;
-      font-size: 1.2rem;
-    }
-    .detail-group p {
-  
+table tr:hover {
+  background-color: #e8f6f3;
+  transition: background-color 0.3s ease;
+}
+
+.modal-card-hasil {
+  background-color: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 700px;
+  max-width: 800px;
+  height: 620px;
+  max-height: 900px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Ini memastikan modal selalu di tengah */
+  transition: transform 0.3s ease;
+}
+@media (max-width: 768px) {
+  .modal-card {
+    width: 380px;
+  }
+  .modal-card p {
+    font-size: 12px !important;
+  }
+  .modal-card p span {
+    font-size: 12px;
+  }
+  .modal-card p strong {
+    font-size: 12px;
+  }
+}
+
+.modal-header {
+  padding: 16px;
+  background: #7fc1db;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.modal-card p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 13px;
+  color: #333;
+}
+
+.modal-card p strong {
+  min-width: 150px; /* Sesuaikan agar rata kiri */
+  display: inline-block;
+  font-weight: bold;
+  text-align: left;
+}
+
+.modal-card p span {
+  flex-grow: 1;
+  text-align: right;
+  max-width: 200px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 16px;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.modal-body h4 {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+.detail-group p {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -606,7 +567,6 @@ table {
   font-size: 14px;
   color: #333;
   max-width: 270px;
- 
 }
 
 .detail-group p strong {
@@ -622,514 +582,485 @@ table {
   max-width: 200px;
 }
 
-    
-    .log-item {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 8px;
-      margin-bottom: 8px;
-    }
-    
-    .no-logs {
-      text-align: center;
-      color: #777;
-    }
-    
-    .modal-footer {
-      padding: 16px;
-      text-align: right;
-      border-top: 1px solid #ddd;
-    }
-    
-    
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-  
-  
-    /* Modal Form Pembayaran */
-  .modal-bayar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-  
-  .modal-bayar.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  
-  .modal-bayar .modal-content {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 30px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  @keyframes slideIn {
-    from {
-      transform: translateY(-50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  /* Header */
-  .modal-bayar h2 {
-    font-size: 14PXx;
-    color: #333;
-    text-align: center;
-  }
-  
-  /* Form Group */
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    font-size: 13px;
-    color: #363636;
-   
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    background-color: #ffffff;
-    transition: border 0.3s ease;
-  }
-  
-  .form-group input:focus,
-  .form-group textarea:focus {
-    border-color: #007bff;
-    background-color: #fff;
-    outline: none;
-  }
-  
-  /* Button Styles */
-  .form-actions {
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .btn {
-    padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .btn-submit {
-    background-color: #315a85;
-    color: #fff;
-  }
-  
-  .btn-submit:hover {
-    background-color: #0056b3;
-  }
-  
-  .btn-cancel {
-    background-color: #f44336;
-    color: #fff;
-  }
-  
-  .btn-cancel:hover {
-    background-color: #d32f2f;
-  }
-  
-  /* Responsiveness */
-  @media (max-width: 768px) {
-    .modal-bayar .modal-content {
-      padding: 20px;
-    }
-  
-    .modal-bayar h2 {
-      font-size: 1.2rem;
-    }
-  
-    .form-group input,
-    .form-group textarea {
-      font-size: 0.9rem;
-    }
-  
-    .btn {
-      font-size: 0.9rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .modal-bayar .modal-content {
-      width: 90%;
-    }
-  
-    .modal-bayar h2 {
-      font-size: 1rem;
-    }
-  
-    .form-group input,
-    .form-group textarea {
-      font-size: 0.85rem;
-    }
-  
-    .btn {
-      font-size: 0.85rem;
-    }
-  }
-  
-  
-  
-  
-  
-  /* Modal Pendapatan container */
-  .modal-pendapatan {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0s 0.3s;
- 
-  }
-  
-  /* Modal content for Pendapatan */
-  .modal-pendapatan-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 700px;
-    min-width: 360px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease-out;
-    animation: fadeIn 0.3s ease-in-out;
-    max-height: 95vh; /* Membatasi tinggi modal agar tidak melebihi layar */
-    overflow-y: auto; /* Mengaktifkan scroll jika kontennya terlalu panjang */
-    padding: 20px;
-  }
-  
-  /* Close button for Pendapatan Modal */
-  .modal-pendapatan-close {
-    background-color: transparent;
-    border: none;
-    font-size: 2rem;
-    color: #333;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    cursor: pointer;
-  }
-  
-  /* Title of the modal */
-  .modal-pendapatan h2 {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    color: #333;
-  }
-  
-  /* Table styling for Pendapatan */
-  .table-pendapatan {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .table-pendapatan th,
-  .table-pendapatan td {
-    padding: 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .table-pendapatan th {
-    background-color: #f4f4f4;
-    font-weight: bold;
-    font-size: 12px;
-    color: #333;
-  }
-  
-  .table-pendapatan td {
-    background-color: #fafafa;
-  }
-  
-  .table-pendapatan tbody tr:hover {
-    background-color: #f1f1f1;
-  }
-  
-  /* Modal visibility when active */
-  .modal-pendapatan.show {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.3s ease;
-  }
-  
-  /* Fade-in animation */
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-
-  @media (max-width: 768px) {
-
-  
-
-  
+.log-item {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
 }
 
-  
-  .success-message {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #c3e6cb;
-    border-radius: 5px;
+.no-logs {
+  text-align: center;
+  color: #777;
+}
+
+.modal-footer {
+  padding: 16px;
+  text-align: right;
+  border-top: 1px solid #ddd;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
   }
-  
-  
-  
-  
-  
-  
-  .modal-pengiriman {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
-  
-  .modal-content-pengiriman {
-    background: white;
+}
+
+/* Modal Form Pembayaran */
+.modal-bayar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-bayar.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-bayar .modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Header */
+.modal-bayar h2 {
+  font-size: 14PXx;
+  color: #333;
+  text-align: center;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #363636;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  background-color: #ffffff;
+  transition: border 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #007bff;
+  background-color: #fff;
+  outline: none;
+}
+
+/* Button Styles */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-submit {
+  background-color: #315a85;
+  color: #fff;
+}
+
+.btn-submit:hover {
+  background-color: #0056b3;
+}
+
+.btn-cancel {
+  background-color: #f44336;
+  color: #fff;
+}
+
+.btn-cancel:hover {
+  background-color: #d32f2f;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+  .modal-bayar .modal-content {
     padding: 20px;
-    border-radius: 15px;
-    width: 700px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
-  
-  .modal-content-pengiriman h3 {
-    margin-top: 0;
+
+  .modal-bayar h2 {
+    font-size: 1.2rem;
   }
-  
-  .modal-content-pengiriman button {
-    background-color: #cf7172;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-    font-size: 12px;
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.9rem;
   }
-  
-  .modal-content-pengiriman button:hover {
-    background-color: #b85250;
+
+  .btn {
+    font-size: 0.9rem;
   }
-  .modal-content-pengiriman table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+}
+
+@media (max-width: 480px) {
+  .modal-bayar .modal-content {
+    width: 90%;
   }
-  
+
+  .modal-bayar h2 {
+    font-size: 1rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.85rem;
+  }
+
+  .btn {
+    font-size: 0.85rem;
+  }
+}
+
+/* Modal Pendapatan container */
+.modal-pendapatan {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+/* Modal content for Pendapatan */
+.modal-pendapatan-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 700px;
+  min-width: 360px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-out;
+  animation: fadeIn 0.3s ease-in-out;
+  max-height: 95vh; /* Membatasi tinggi modal agar tidak melebihi layar */
+  overflow-y: auto; /* Mengaktifkan scroll jika kontennya terlalu panjang */
+  padding: 20px;
+}
+
+/* Close button for Pendapatan Modal */
+.modal-pendapatan-close {
+  background-color: transparent;
+  border: none;
+  font-size: 2rem;
+  color: #333;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+}
+
+/* Title of the modal */
+.modal-pendapatan h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Table styling for Pendapatan */
+.table-pendapatan {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.table-pendapatan th,
+.table-pendapatan td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-pendapatan th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+  font-size: 12px;
+  color: #333;
+}
+
+.table-pendapatan td {
+  background-color: #fafafa;
+}
+
+.table-pendapatan tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Modal visibility when active */
+.modal-pendapatan.show {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+}
+
+.modal-pengiriman {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content-pengiriman {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 700px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content-pengiriman h3 {
+  margin-top: 0;
+}
+
+.modal-content-pengiriman button {
+  background-color: #cf7172;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.modal-content-pengiriman button:hover {
+  background-color: #b85250;
+}
+.modal-content-pengiriman table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.modal-content-pengiriman table th,
+.modal-content-pengiriman table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.modal-content-pengiriman table th {
+  background-color: #3d546b;
+  color: white;
+  text-align: center;
+}
+
+.modal-content-pengiriman table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.modal-content-pengiriman table tr:hover {
+  background-color: #f1f1f1;
+}
+
+@media (max-width: 768px) {
   .modal-content-pengiriman table th,
   .modal-content-pengiriman table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-    font-size: 12px;
-    
+    font-size: 11px;
   }
-  
-  .modal-content-pengiriman table th {
-   
-    background-color: #3d546b;
-    color: white;
-    text-align: center;
-
-  }
-  
-  .modal-content-pengiriman table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .modal-content-pengiriman table tr:hover {
-    background-color: #f1f1f1;
-   
-  }
-  
-  @media (max-width: 768px) {
-    .modal-content-pengiriman table th,
-  .modal-content-pengiriman table td {
-      font-size:11px;
-    }
-    .modal-content-pengiriman button {
+  .modal-content-pengiriman button {
     font-size: 10;
-    }
   }
+}
 
-  
-  
-  
-  .modal-content-pengiriman table tr:nth-child(even) {
-    background-color: #bed1e4;
-  }
-  
-  .modal-content-pengiriman table tr:hover {
-    background-color: #dacfcf;
-  }
-  
-  .modal-content-pengiriman table td {
-    color: #555;
-  }
-  .btn-pengiriman-detail {
-    background-color: #e2e2e2; /* Warna biru */
-    color: rgb(31, 29, 29); /* Teks putih */
-    border: none; /* Hilangkan border */
-    padding: 5px 8px; /* Padding agar tombol terlihat proporsional */
-    font-size: 14px; /* Ukuran font */
-    font-weight: 520;
-    border-radius: 8px; /* Sudut tombol melengkung */
-    cursor: pointer; /* Pointer untuk menunjukkan tombol dapat diklik */
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Animasi halus */
-  }
-  
-  .btn-pengiriman-detail:hover {
-    background-color: #0056b3; /* Warna lebih gelap saat dihover */
-    transform: scale(1.05); /* Efek zoom saat hover */
-  }
-  
-  .btn-pengiriman-detail:active {
-    background-color: #003d80; /* Warna lebih gelap saat ditekan */
-    transform: scale(0.95); /* Efek klik */
-  }
-  
-  .btn-pengiriman-detail:focus {
-    outline: none; /* Hilangkan outline default */
-    box-shadow: 0 0 4px rgba(0, 123, 255, 0.8); /* Efek fokus */
-  }
-  
-  
-  /* Filter wrapper */
-  .filter-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-bottom: 30px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Filter header (top section) */
-  /* Filter header */
-  .filter-header {
-    display: flex;
-    justify-content: flex-start;  /* Posisi elemen ke kiri */
-    align-items: center;
-    margin-bottom: 15px;
-    margin-top: 10px;
-    padding-left: 15px;  /* Memberikan padding kiri */
-    gap: 8px;  /* Memberikan jarak antar elemen */
-  }
-  
-  /* Filter label */
-  
-  
-  /* Filter dropdown (select) */
-  .filter-select {
-    padding: 10px 20px;
-    font-size: 15px;
-    border: 1px solid #dcdcdc;
-    border-radius: 5px;
-    background-color: #d4dce4;
-    font-weight: 500;
-    outline: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    width: 125px;
-  
-  }
-  
-  /* Hover and focus states for select */
-  .filter-select:hover, .filter-select:focus {
-    background-color: #f1f1f1;
-    box-shadow: 0 0 5px rgba(217, 217, 224, 0.3);
-  }
-  
-  /* Button "Tambah" */
-  .filter-header button {
-    padding: 10px 20px;
-    background-color: #73c6df;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    display: inline-block;
-    margin-right: 5px;  /* Jarak ke elemen lainnya */
-    transition: background-color 0.3s ease;
-  }
-  
-  .filter-header button:hover {
-    background-color: #4586a0; /* Efek hover */
-  }
-  
-  /* Table container (for scroll) */
-  .table-container {
-     width: 100%; /* Atur lebar tabel, bisa disesuaikan */
-    margin: 0 auto; /* Menjaga tabel di tengah secara horizontal */
-  }
+.modal-content-pengiriman table tr:nth-child(even) {
+  background-color: #bed1e4;
+}
+
+.modal-content-pengiriman table tr:hover {
+  background-color: #dacfcf;
+}
+
+.modal-content-pengiriman table td {
+  color: #555;
+}
+.btn-pengiriman-detail {
+  background-color: #e2e2e2; /* Warna biru */
+  color: rgb(31, 29, 29); /* Teks putih */
+  border: none; /* Hilangkan border */
+  padding: 5px 8px; /* Padding agar tombol terlihat proporsional */
+  font-size: 14px; /* Ukuran font */
+  font-weight: 520;
+  border-radius: 8px; /* Sudut tombol melengkung */
+  cursor: pointer; /* Pointer untuk menunjukkan tombol dapat diklik */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Animasi halus */
+}
+
+.btn-pengiriman-detail:hover {
+  background-color: #0056b3; /* Warna lebih gelap saat dihover */
+  transform: scale(1.05); /* Efek zoom saat hover */
+}
+
+.btn-pengiriman-detail:active {
+  background-color: #003d80; /* Warna lebih gelap saat ditekan */
+  transform: scale(0.95); /* Efek klik */
+}
+
+.btn-pengiriman-detail:focus {
+  outline: none; /* Hilangkan outline default */
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.8); /* Efek fokus */
+}
+
+/* Filter wrapper */
+.filter-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Filter header (top section) */
+/* Filter header */
+.filter-header {
+  display: flex;
+  justify-content: flex-start; /* Posisi elemen ke kiri */
+  align-items: center;
+  margin-bottom: 15px;
+  margin-top: 10px;
+  padding-left: 15px; /* Memberikan padding kiri */
+  gap: 8px; /* Memberikan jarak antar elemen */
+}
+
+/* Filter label */
+
+/* Filter dropdown (select) */
+.filter-select {
+  padding: 10px 20px;
+  font-size: 15px;
+  border: 1px solid #dcdcdc;
+  border-radius: 5px;
+  background-color: #d4dce4;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  width: 125px;
+}
+
+/* Hover and focus states for select */
+.filter-select:hover,
+.filter-select:focus {
+  background-color: #f1f1f1;
+  box-shadow: 0 0 5px rgba(217, 217, 224, 0.3);
+}
+
+/* Button "Tambah" */
+.filter-header button {
+  padding: 10px 20px;
+  background-color: #73c6df;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-block;
+  margin-right: 5px; /* Jarak ke elemen lainnya */
+  transition: background-color 0.3s ease;
+}
+
+.filter-header button:hover {
+  background-color: #4586a0; /* Efek hover */
+}
+
+/* Table container (for scroll) */
+.table-container {
+  width: 100%; /* Atur lebar tabel, bisa disesuaikan */
+  margin: 0 auto; /* Menjaga tabel di tengah secara horizontal */
+}
 /* Container Pagination */
 .pagination-container {
   display: flex;
   justify-content: left;
-  align-items:center;
+  align-items: center;
   margin-top: 20px;
   margin-bottom: 10px;
   gap: 10px;
@@ -1139,7 +1070,7 @@ table {
 
 /* Tombol Pagination */
 .pagination-button {
-  background-color: rgb(141, 206, 226);/* Warna biru elegan */
+  background-color: rgb(141, 206, 226); /* Warna biru elegan */
   color: white;
   border: none;
   padding: 5px 10px;
@@ -1187,7 +1118,6 @@ table {
 }
 
 .modal-pendapatan-content p {
-  
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1196,7 +1126,6 @@ table {
   font-size: 13px;
   color: #333;
   max-width: 300px;
- 
 }
 
 .modal-pendapatan-content p strong {
@@ -1204,7 +1133,6 @@ table {
   display: inline-block;
   font-weight: bold;
   text-align: left;
-  
 }
 
 .modal-pendapatan-content p span {
@@ -1220,7 +1148,7 @@ table {
     font-size: 15px;
   }
   .table-pendapatan th {
-  font-size:10px;
+    font-size: 10px;
   }
 }
 
@@ -1308,7 +1236,6 @@ table {
   background-color: #c82333;
 }
 
-
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;
@@ -1316,7 +1243,7 @@ table {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1332,7 +1259,7 @@ table {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
@@ -1401,11 +1328,9 @@ table {
   text-align: left;
 }
 
-
-
 .table-markeran {
   width: 100%;
-   border-collapse: collapse;
+  border-collapse: collapse;
   border-spacing: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #fff;
@@ -1423,7 +1348,6 @@ table {
   padding: 14px;
   text-align: left;
   font-size: 13px;
-  
 }
 
 .table-markeran th:first-child {
@@ -1470,7 +1394,6 @@ tr.produk-3:hover td {
   transition: 0.3s ease;
 }
 
-
 @media (max-width: 768px) {
   .table-markeran th,
   .table-markeran td {
@@ -1479,4 +1402,156 @@ tr.produk-3:hover td {
   }
 }
 
+/* Modern UI Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Modern Table Styles */
+.penjahit-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.penjahit-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.penjahit-table th {
+  padding: 16px;
+  text-align: center;
+  font-weight: 600;
+  color: white;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+}
+
+.penjahit-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.penjahit-table tbody tr:hover {
+  background-color: #f8f9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.penjahit-table tbody tr:nth-child(even) {
+  background-color: #fafbff;
+}
+
+.penjahit-table tbody tr:nth-child(even):hover {
+  background-color: #f0f2ff;
+}
+
+.penjahit-table td {
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  border: none;
+}
+
+/* Modern Button Hover Effects */
+.modern-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.modern-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Loading Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  margin-top: 16px;
+}
+
+/* Modern Input Focus */
+.modern-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Card Hover Effect */
+.modern-card {
+  transition: all 0.3s ease;
+}
+
+.modern-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
