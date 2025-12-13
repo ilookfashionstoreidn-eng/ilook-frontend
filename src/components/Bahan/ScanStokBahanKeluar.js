@@ -209,7 +209,7 @@ const ScanStokBahanKeluar = () => {
 
         // Auto focus ke input barcode jika belum lengkap
         if (newProgress < requiredQty) {
-          document.getElementById("barcode-input")?.focus();
+        document.getElementById("barcode-input")?.focus();
         }
       } else {
         // Jika validasi gagal, clear barcode dari input dan tampilkan error
@@ -353,7 +353,7 @@ const ScanStokBahanKeluar = () => {
                     <td>
                       {selectedBahan?.spk_cutting_bahan_id === bahan.spk_cutting_bahan_id ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ color: "#28a745", fontWeight: "bold" }}>✓ Dipilih</span>
+                        <span style={{ color: "#28a745", fontWeight: "bold" }}>✓ Dipilih</span>
                           {(() => {
                             const progress = scanProgress[bahan.spk_cutting_bahan_id] || 0;
                             const qty = bahan.qty || 0;
@@ -397,16 +397,16 @@ const ScanStokBahanKeluar = () => {
                 const progressPercentage = requiredQty > 0 ? (currentProgress / requiredQty) * 100 : 0;
 
                 return (
-                  <div className="scan-stok-scan-section">
-                    <div className="scan-stok-detail-grid" style={{ marginBottom: "15px" }}>
-                      <div className="scan-stok-detail-item">
-                        <strong>Bahan yang dipilih</strong>
-                        <span>{selectedBahan.nama_bahan}</span>
-                      </div>
-                      <div className="scan-stok-detail-item">
-                        <strong>Warna</strong>
-                        <span>{selectedBahan.warna || "-"}</span>
-                      </div>
+              <div className="scan-stok-scan-section">
+                <div className="scan-stok-detail-grid" style={{ marginBottom: "15px" }}>
+                  <div className="scan-stok-detail-item">
+                    <strong>Bahan yang dipilih</strong>
+                    <span>{selectedBahan.nama_bahan}</span>
+                  </div>
+                  <div className="scan-stok-detail-item">
+                    <strong>Warna</strong>
+                    <span>{selectedBahan.warna || "-"}</span>
+                  </div>
                       <div className="scan-stok-detail-item">
                         <strong>Progress Scan</strong>
                         <span
@@ -476,23 +476,23 @@ const ScanStokBahanKeluar = () => {
                           ✓ Semua roll untuk bahan ini sudah di-scan
                         </p>
                       )}
-                    </div>
-                    <div className="scan-stok-form-group">
-                      <label>Scan Barcode Bahan</label>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          scanBarcode();
-                        }}
-                        style={{ display: "flex", gap: "10px" }}
-                      >
-                        <input
-                          id="barcode-input"
-                          type="text"
+                </div>
+                <div className="scan-stok-form-group">
+                  <label>Scan Barcode Bahan</label>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      scanBarcode();
+                    }}
+                    style={{ display: "flex", gap: "10px" }}
+                  >
+                    <input
+                      id="barcode-input"
+                      type="text"
                           placeholder={isComplete ? "QTY sudah terpenuhi, tidak bisa scan lagi" : "Scan barcode bahan - otomatis terdeteksi"}
-                          value={barcode}
-                          onChange={(e) => handleBarcodeChange(e.target.value)}
-                          onKeyDown={handleScanBarcode}
+                      value={barcode}
+                      onChange={(e) => handleBarcodeChange(e.target.value)}
+                      onKeyDown={handleScanBarcode}
                           autoFocus={!isComplete}
                           disabled={isComplete}
                           style={{
@@ -503,7 +503,7 @@ const ScanStokBahanKeluar = () => {
                             backgroundColor: isComplete ? "#f5f5f5" : "white",
                             cursor: isComplete ? "not-allowed" : "text",
                           }}
-                        />
+                    />
                         <button
                           type="submit"
                           className="scan-stok-btn-primary"
@@ -514,20 +514,20 @@ const ScanStokBahanKeluar = () => {
                           }}
                         >
                           {loading ? "Memvalidasi..." : isComplete ? "Lengkap" : "Scan"}
-                        </button>
-                      </form>
-                    </div>
+                    </button>
+                  </form>
+                </div>
 
-                    {/* Scan Result */}
-                    {scanResult && (
-                      <p
-                        className={scanResult.success ? "scan-stok-loading" : "scan-stok-error"}
-                        style={{ padding: "15px", marginTop: "15px", borderRadius: "8px", background: scanResult.success ? "#e3f2fd" : "#ffebee", color: scanResult.success ? "#17457c" : "#f44336" }}
-                      >
-                        <strong>{scanResult.success ? "✓ Berhasil" : "✗ Gagal"}</strong> - {scanResult.message}
-                      </p>
-                    )}
-                  </div>
+                {/* Scan Result */}
+                {scanResult && (
+                  <p
+                    className={scanResult.success ? "scan-stok-loading" : "scan-stok-error"}
+                    style={{ padding: "15px", marginTop: "15px", borderRadius: "8px", background: scanResult.success ? "#e3f2fd" : "#ffebee", color: scanResult.success ? "#17457c" : "#f44336" }}
+                  >
+                    <strong>{scanResult.success ? "✓ Berhasil" : "✗ Gagal"}</strong> - {scanResult.message}
+                  </p>
+                )}
+              </div>
                 );
               })()}
 
@@ -544,7 +544,7 @@ const ScanStokBahanKeluar = () => {
                   : scannedItems;
 
                 return (
-                  <div style={{ marginTop: "30px" }}>
+              <div style={{ marginTop: "30px" }}>
                     <h4 style={{ marginBottom: "15px", color: "#17457c" }}>
                       Barcode yang Berhasil Di-scan
                       {selectedBahan && (
@@ -554,34 +554,34 @@ const ScanStokBahanKeluar = () => {
                       )}
                     </h4>
                     {filteredScannedItems.length > 0 ? (
-                      <table className="scan-stok-table">
-                        <thead>
-                          <tr>
-                            <th>No</th>
-                            <th>Barcode</th>
-                            <th>Bahan</th>
-                            <th>Warna</th>
-                            <th>Berat</th>
-                            <th>Waktu Scan</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                <table className="scan-stok-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Barcode</th>
+                      <th>Bahan</th>
+                      <th>Warna</th>
+                      <th>Berat</th>
+                      <th>Waktu Scan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                           {filteredScannedItems.map((item, index) => (
                             <tr key={item.id || index}>
-                              <td>{index + 1}</td>
-                              <td>{item.barcode}</td>
-                              <td>{item.stok_bahan?.pembelian_bahan?.bahan?.nama_bahan || "-"}</td>
-                              <td>{item.stok_bahan?.warna?.warna || "-"}</td>
-                              <td>{item.berat ? `${item.berat} kg` : "-"}</td>
-                              <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleString("id-ID") : "-"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                        <td>{index + 1}</td>
+                        <td>{item.barcode}</td>
+                        <td>{item.stok_bahan?.pembelian_bahan?.bahan?.nama_bahan || "-"}</td>
+                        <td>{item.stok_bahan?.warna?.warna || "-"}</td>
+                        <td>{item.berat ? `${item.berat} kg` : "-"}</td>
+                        <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleString("id-ID") : "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
                     ) : (
                       <p style={{ color: "#666", fontStyle: "italic" }}>Belum ada barcode yang di-scan untuk bahan ini.</p>
                     )}
-                  </div>
+              </div>
                 );
               })()}
           </div>
