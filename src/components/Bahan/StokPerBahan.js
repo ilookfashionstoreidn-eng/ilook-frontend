@@ -393,137 +393,137 @@ const StokPerBahan = () => {
                             const filteredWarna = [...new Set(filteredDetails.map((d) => d.warna).filter(Boolean))];
 
                             return (
-                              <tr>
+                          <tr>
                                 <td colSpan="10" style={{ padding: "0", backgroundColor: "#f8f9fa" }}>
-                                  <div style={{ padding: "20px" }}>
-                                    <h4 style={{ marginBottom: "15px", color: "#495057", fontSize: "18px" }}>Detail Stok - {item.nama_bahan}</h4>
+                              <div style={{ padding: "20px" }}>
+                                <h4 style={{ marginBottom: "15px", color: "#495057", fontSize: "18px" }}>Detail Stok - {item.nama_bahan}</h4>
 
-                                    {/* Summary Info */}
-                                    <div
-                                      style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                                        gap: "15px",
-                                        marginBottom: "20px",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          padding: "15px",
-                                          backgroundColor: "white",
-                                          borderRadius: "8px",
-                                          border: "1px solid #dee2e6",
-                                        }}
-                                      >
-                                        <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
+                                {/* Summary Info */}
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                                    gap: "15px",
+                                    marginBottom: "20px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
                                         <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#007bff" }}>{filteredTotalRol}</p>
-                                      </div>
-                                      <div
-                                        style={{
-                                          padding: "15px",
-                                          backgroundColor: "white",
-                                          borderRadius: "8px",
-                                          border: "1px solid #dee2e6",
-                                        }}
-                                      >
-                                        <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Warna</strong>
-                                        <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{filteredWarna.length}</p>
-                                      </div>
-                                      <div
-                                        style={{
-                                          padding: "15px",
-                                          backgroundColor: "white",
-                                          borderRadius: "8px",
-                                          border: "1px solid #dee2e6",
-                                        }}
-                                      >
-                                        <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
-                                        <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{filteredTotalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</p>
-                                      </div>
-                                    </div>
-
-                                    {/* Breakdown per Warna */}
-                                    <h5 style={{ marginBottom: "15px", color: "#495057", fontSize: "16px" }}>Rincian Per Warna</h5>
-                                    <div
-                                      style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                                        gap: "15px",
-                                      }}
-                                    >
-                                      {(() => {
-                                        // Group by warna dari filteredDetails
-                                        const warnaGroups = {};
-                                        filteredDetails.forEach((detail) => {
-                                          const warna = detail.warna || "Tidak Diketahui";
-                                          if (!warnaGroups[warna]) {
-                                            warnaGroups[warna] = {
-                                              count: 0,
-                                              berat: 0,
-                                              utuh: 0,
-                                              sisa: 0,
-                                            };
-                                          }
-                                          warnaGroups[warna].count += 1;
-                                          warnaGroups[warna].berat += parseFloat(detail.berat) || 0;
-
-                                          // Hitung utuh dan sisa berdasarkan keterangan
-                                          const keterangan = detail.keterangan || "";
-                                          if (keterangan.toLowerCase() === "utuh") {
-                                            warnaGroups[warna].utuh += 1;
-                                          } else if (keterangan.toLowerCase() === "sisa") {
-                                            warnaGroups[warna].sisa += 1;
-                                          }
-                                        });
-
-                                        return Object.entries(warnaGroups).map(([warna, data], idx) => (
-                                          <div
-                                            key={idx}
-                                            style={{
-                                              padding: "15px",
-                                              backgroundColor: "white",
-                                              borderRadius: "8px",
-                                              border: "1px solid #dee2e6",
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                padding: "4px 12px",
-                                                borderRadius: "12px",
-                                                backgroundColor: "#007bff",
-                                                color: "white",
-                                                fontSize: "13px",
-                                                fontWeight: "bold",
-                                                marginBottom: "10px",
-                                                display: "inline-block",
-                                                textTransform: "capitalize",
-                                              }}
-                                            >
-                                              {warna}
-                                            </div>
-                                            <div style={{ marginBottom: "10px" }}>
-                                              <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
-                                              <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{data.count}</p>
-                                            </div>
-                                            <div style={{ marginBottom: "10px" }}>
-                                              <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Utuh</strong>
-                                              <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#28a745" }}>{data.utuh}</p>
-                                            </div>
-                                            <div style={{ marginBottom: "10px" }}>
-                                              <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Sisa</strong>
-                                              <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#ffc107" }}>{data.sisa}</p>
-                                            </div>
-                                            <div>
-                                              <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
-                                              <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{data.berat.toFixed(2)} kg</p>
-                                            </div>
-                                          </div>
-                                        ));
-                                      })()}
-                                    </div>
                                   </div>
-                                </td>
-                              </tr>
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Warna</strong>
+                                        <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{filteredWarna.length}</p>
+                                  </div>
+                                  <div
+                                    style={{
+                                      padding: "15px",
+                                      backgroundColor: "white",
+                                      borderRadius: "8px",
+                                      border: "1px solid #dee2e6",
+                                    }}
+                                  >
+                                    <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
+                                        <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{filteredTotalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</p>
+                                  </div>
+                                </div>
+
+                                {/* Breakdown per Warna */}
+                                <h5 style={{ marginBottom: "15px", color: "#495057", fontSize: "16px" }}>Rincian Per Warna</h5>
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                                    gap: "15px",
+                                  }}
+                                >
+                                  {(() => {
+                                        // Group by warna dari filteredDetails
+                                    const warnaGroups = {};
+                                        filteredDetails.forEach((detail) => {
+                                      const warna = detail.warna || "Tidak Diketahui";
+                                      if (!warnaGroups[warna]) {
+                                        warnaGroups[warna] = {
+                                          count: 0,
+                                          berat: 0,
+                                          utuh: 0,
+                                          sisa: 0,
+                                        };
+                                      }
+                                      warnaGroups[warna].count += 1;
+                                      warnaGroups[warna].berat += parseFloat(detail.berat) || 0;
+                                      
+                                      // Hitung utuh dan sisa berdasarkan keterangan
+                                      const keterangan = detail.keterangan || "";
+                                      if (keterangan.toLowerCase() === "utuh") {
+                                        warnaGroups[warna].utuh += 1;
+                                      } else if (keterangan.toLowerCase() === "sisa") {
+                                        warnaGroups[warna].sisa += 1;
+                                      }
+                                    });
+
+                                    return Object.entries(warnaGroups).map(([warna, data], idx) => (
+                                      <div
+                                        key={idx}
+                                        style={{
+                                          padding: "15px",
+                                          backgroundColor: "white",
+                                          borderRadius: "8px",
+                                          border: "1px solid #dee2e6",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            padding: "4px 12px",
+                                            borderRadius: "12px",
+                                            backgroundColor: "#007bff",
+                                            color: "white",
+                                            fontSize: "13px",
+                                            fontWeight: "bold",
+                                            marginBottom: "10px",
+                                            display: "inline-block",
+                                            textTransform: "capitalize",
+                                          }}
+                                        >
+                                          {warna}
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Roll</strong>
+                                          <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#28a745" }}>{data.count}</p>
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Utuh</strong>
+                                          <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#28a745" }}>{data.utuh}</p>
+                                        </div>
+                                        <div style={{ marginBottom: "10px" }}>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Sisa</strong>
+                                          <p style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#ffc107" }}>{data.sisa}</p>
+                                        </div>
+                                        <div>
+                                          <strong style={{ color: "#6c757d", fontSize: "13px", display: "block", marginBottom: "5px" }}>Total Berat</strong>
+                                          <p style={{ margin: "0", fontSize: "24px", fontWeight: "bold", color: "#dc3545" }}>{data.berat.toFixed(2)} kg</p>
+                                        </div>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
                             );
                           })()}
                       </React.Fragment>
@@ -589,8 +589,8 @@ const StokPerBahan = () => {
                     pages.push(
                       <button key={totalPages} className={currentPage === totalPages ? "active" : ""} onClick={() => goToPage(totalPages)}>
                         {totalPages}
-                      </button>
-                    );
+                    </button>
+                  );
                   }
 
                   return pages;
