@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import "./Penjahit.css";
+import "../Jahit/Penjahit.css";
 import API from "../../api"; 
 import {FaInfoCircle,FaEye, FaPlus, FaEdit, FaClock } from 'react-icons/fa';
+
 
 const Produk = () => {
   const [produks, setProduks] = useState([]);
@@ -10,7 +11,7 @@ const Produk = () => {
   const [showForm, setShowForm] = useState(false); 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKategori, setSelectedKategori] = useState("");
-   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [showCustomJenis, setShowCustomJenis] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedProduk, setSelectedProduk] = useState(null);
@@ -349,7 +350,7 @@ const removeEditKomponen = (index) => {
               <th>ID Produk</th>
               <th>Nama Produk</th>
               <th>Gambar Produk </th>
-              <th>Kategori Produk</th> 
+              <th>Jenis Produk</th> 
               <th>Status Produk</th>
               <th>Status HPP</th>
               <th>HPP</th>
@@ -577,11 +578,11 @@ const removeEditKomponen = (index) => {
             <input
               type="text"
               placeholder="Nama Bahan"
-              value={komp.nama_bahan}
+              value={komp.nama_bahan} 
               onChange={(e) => handleKomponenChange(index, "nama_bahan", e.target.value)}
             />
             <input
-              type="number"
+              type="number" 
               placeholder="Harga Bahan"
               value={komp.harga_bahan}
               onChange={(e) => handleKomponenChange(index, "harga_bahan", e.target.value)}
@@ -597,9 +598,9 @@ const removeEditKomponen = (index) => {
               onChange={(e) => handleKomponenChange(index, "satuan_bahan", e.target.value)}
             >
               <option value="">Pilih Satuan</option>
-              <option value="atasan">Kg</option>
-              <option value="bawahan">Yard</option>
-              <option value="fullbody">Gross</option>
+              <option value="kg">Kg</option>
+              <option value="yard">Yard</option>
+              <option value="gross">Gross</option>
             </select>
             <button type="button" onClick={() => removeKomponen(index)}>Hapus</button>
           </div>
@@ -748,12 +749,16 @@ const removeEditKomponen = (index) => {
               onChange={(e) => handleEditKomponenChange(index, "jumlah_bahan", e.target.value)}
               placeholder="Jumlah"
             />
-            <input
-              type="text"
+           <select
               value={komp.satuan_bahan}
               onChange={(e) => handleEditKomponenChange(index, "satuan_bahan", e.target.value)}
-              placeholder="Satuan"
-            />
+            >
+              <option value="">Pilih Satuan</option>
+              <option value="Kg">Kg</option>
+              <option value="Yard">Yard</option>
+              <option value="Gross">Gross</option>
+            </select>
+
             <button type="button" onClick={() => removeEditKomponen(index)}>Hapus</button>
           </div>
         ))}
@@ -855,6 +860,5 @@ const removeEditKomponen = (index) => {
        
   )
 }
-
 
 export default Produk

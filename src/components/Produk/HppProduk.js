@@ -17,6 +17,8 @@ const HppProduk = () => {
   const [selectedProduk, setSelectedProduk] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editKomponenList, setEditKomponenList] = useState([]);
+  const [bahanList, setBahanList] = useState([]);
+  const [aksesorisList, setAksesorisList] = useState([]);
   const [newProduk, setNewProduk] = useState({
     nama_produk: "",
     kategori_produk: "",
@@ -40,148 +42,263 @@ const HppProduk = () => {
     harga_jasa_aksesoris: "",
     harga_overhead: "",
   });
-  const [komponenList, setKomponenList] = useState([
-  { jenis_komponen: "", 
-    nama_bahan: "", 
-    harga_bahan: "", 
-    jumlah_bahan: "", 
-    satuan_bahan: "" }
+ const [komponenList, setKomponenList] = useState([
+  {
+  jenis_komponen: "",
+  sumber_komponen: "bahan", // default
+  bahan_id: "",
+  aksesoris_id: "",
+  harga_bahan: "",
+  jumlah_bahan: ""
+}
+
+
 ]);
+const addKomponen = () => {
+  setKomponenList([
+    ...komponenList,
+    {
+      jenis_komponen: "",
+      sumber_komponen: "bahan", // WAJIB
+      bahan_id: "",
+      aksesoris_id: "",
+      harga_bahan: "",
+      jumlah_bahan: "",
+      satuan_bahan: ""
+    }
+  ]);
+};
+
+
+const fetchAksesoris = async () => {
+  try {
+    const res = await API.get("/aksesoris");
+    setAksesorisList(res.data.data || res.data);
+  } catch (err) {
+    console.error("Gagal fetch aksesoris", err);
+  }
+};
+
+useEffect(() => {
+  fetchAksesoris();
+}, []);
 
 
 
-  useEffect(() => {
-    const fetchProduks = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get(`/produk`, {
-          params: { 
-            kategori_produk: selectedKategori || "",
-            status_produk: selectedStatus || "" 
-          }, 
-            
-        });
-        setProduks(response.data.data);
-      } catch (error) {
-        setError("Gagal mengambil data produk.");
-      } finally {
-        setLoading(false);
-      }
-    };
+ useEffect(() => {
+  const fetchProduks = async () => {
+    try {
+      setLoading(true);
+      const response = await API.get(`/produk`, {
+        params: { 
+          kategori_produk: selectedKategori || "",
+          status_produk: selectedStatus || "" 
+        }, 
+      });
+      setProduks(response.data.data); // index mengembalikan { data: [...] }
+    } catch (error) {
+      setError("Gagal mengambil data produk.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProduks();
-  }, [selectedKategori, selectedStatus]);
+  const fetchBahans = async () => {
+    try {
+      const res = await API.get('/bahan');
+      setBahanList(res.data.data || res.data); // sesuaikan response bahan
+    } catch (err) {
+      console.error("Gagal fetch bahan:", err);
+    }
+  };
 
+  fetchBahans();
+  fetchProduks();
+}, [selectedKategori, selectedStatus]);
 
   const filteredProduk = (produks || []).filter((produk) =>
     !searchTerm || produk?.nama_produk?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
 
-
 const handleFormSubmit = async (e) => {
-  e.preventDefault(); // Mencegah refresh halaman
+  e.preventDefault();
 
-  // Buat FormData untuk mengirim data dengan file
   const formData = new FormData();
+
+  // ===== DATA PRODUK =====
   formData.append("nama_produk", newProduk.nama_produk);
   formData.append("kategori_produk", newProduk.kategori_produk);
   formData.append("jenis_produk", newProduk.jenis_produk);
-  formData.append("harga_jasa_cutting", newProduk.harga_jasa_cutting);
-  formData.append("harga_jasa_cmt", newProduk.harga_jasa_cmt);
-  formData.append("harga_jasa_aksesoris", newProduk.harga_jasa_aksesoris);
-  formData.append("harga_overhead", newProduk.harga_overhead);
-
-  formData.append("status_produk", "sementara");
+  formData.append("harga_jasa_cutting", newProduk.harga_jasa_cutting || 0);
+  formData.append("harga_jasa_cmt", newProduk.harga_jasa_cmt || 0);
+  formData.append("harga_jasa_aksesoris", newProduk.harga_jasa_aksesoris || 0);
+  formData.append("harga_overhead", newProduk.harga_overhead || 0);
 
   if (newProduk.gambar_produk) {
-      formData.append("gambar_produk", newProduk.gambar_produk);
+    formData.append("gambar_produk", newProduk.gambar_produk);
   }
+
+  // ===== KOMponen =====
   komponenList.forEach((komp, index) => {
-    formData.append(`komponen[${index}][jenis_komponen]`, komp.jenis_komponen);
-    formData.append(`komponen[${index}][nama_bahan]`, komp.nama_bahan);
-    formData.append(`komponen[${index}][harga_bahan]`, komp.harga_bahan);
-    formData.append(`komponen[${index}][jumlah_bahan]`, komp.jumlah_bahan);
-    formData.append(`komponen[${index}][satuan_bahan]`, komp.satuan_bahan);
+    formData.append(
+      `komponen[${index}][jenis_komponen]`,
+      komp.jenis_komponen
+    );
+
+    formData.append(
+      `komponen[${index}][sumber_komponen]`,
+      komp.sumber_komponen
+    );
+
+    formData.append(
+      `komponen[${index}][jumlah_bahan]`,
+      komp.jumlah_bahan
+    );
+
+    if (komp.sumber_komponen === "bahan") {
+      formData.append(
+        `komponen[${index}][bahan_id]`,
+        komp.bahan_id
+      );
+    }
+
+    if (komp.sumber_komponen === "aksesoris") {
+      formData.append(
+        `komponen[${index}][aksesoris_id]`,
+        komp.aksesoris_id
+      );
+    }
   });
+
   try {
-      const response = await API.post("/produk", formData, {
-          headers: {
-              "Content-Type": "multipart/form-data",
-          },
-      });
+    const response = await API.post("/produk", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-      console.log("Response API:", response);
-      console.log("Response Data:", response.data); // Debugging
+    alert("Produk berhasil ditambahkan!");
+    setProduks((prev) => [...prev, response.data]);
 
-      alert("Produk berhasil ditambahkan!");
-      setProduks((prevProduks) => [...prevProduks, response.data]); 
-      setShowForm(false); // Tutup modal
+    // ===== RESET FORM =====
+    setNewProduk({
+      nama_produk: "",
+      kategori_produk: "",
+      jenis_produk: "",
+      gambar_produk: null,
+      harga_jasa_cutting: "",
+      harga_jasa_cmt: "",
+      harga_jasa_aksesoris: "",
+      harga_overhead: "",
+    });
 
-      // Reset form input
-      setNewProduk({
-          nama_produk: "",
-          kategori_produk: "",
-          jenis_produk: "",
-          gambar_produk: null,
-          status_produk: "Sementara",
-          harga_jasa_cutting: "",
-          harga_jasa_cmt: "",
-          harga_jasa_aksesoris: "",
-          harga_overhead: "",
-        });
-        setKomponenList([{ jenis_komponen: "", nama_bahan: "", harga_bahan: "", jumlah_bahan: "", satuan_bahan: "" }]);
-        setShowForm(false);
-
-      } catch (error) {
-        console.error("Error:", error.response?.data || error.message);
-        alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan produk.");
+    setKomponenList([
+      {
+        jenis_komponen: "",
+        sumber_komponen: "bahan",
+        bahan_id: "",
+        aksesoris_id: "",
+        harga_bahan: "",
+        jumlah_bahan: "",
+        satuan_bahan: ""
       }
-  };
+    ]);
+
+    setShowForm(false);
+
+  } catch (error) {
+    console.error("Error:", error.response?.data || error.message);
+    alert(
+      error.response?.data?.message ||
+      "Terjadi kesalahan saat menyimpan produk."
+    );
+  }
+};
+
 
 const handleFormUpdate = async (e) => {
   e.preventDefault();
 
   const formData = new FormData();
+
   formData.append("nama_produk", editProduk.nama_produk);
   formData.append("kategori_produk", editProduk.kategori_produk);
   formData.append("jenis_produk", editProduk.jenis_produk);
+
   formData.append("harga_jasa_cutting", editProduk.harga_jasa_cutting || 0);
   formData.append("harga_jasa_cmt", editProduk.harga_jasa_cmt || 0);
   formData.append("harga_jasa_aksesoris", editProduk.harga_jasa_aksesoris || 0);
   formData.append("harga_overhead", editProduk.harga_overhead || 0);
 
+  formData.append("status_produk", editProduk.status_produk || "Sementara");
 
-  formData.append("status_produk", editProduk.status_produk);
-  // gambar (kalau ada yang baru dipilih)
+  // gambar (jika diganti)
   if (editProduk.gambar_produk instanceof File) {
     formData.append("gambar_produk", editProduk.gambar_produk);
   }
 
-  // komponen (serialisasi array)
+  // komponen
   editKomponenList.forEach((komp, index) => {
-    formData.append(`komponen[${index}][jenis_komponen]`, komp.jenis_komponen);
-    formData.append(`komponen[${index}][nama_bahan]`, komp.nama_bahan);
-    formData.append(`komponen[${index}][harga_bahan]`, komp.harga_bahan);
-    formData.append(`komponen[${index}][jumlah_bahan]`, komp.jumlah_bahan);
-    formData.append(`komponen[${index}][satuan_bahan]`, komp.satuan_bahan);
+    formData.append(
+      `komponen[${index}][jenis_komponen]`,
+      komp.jenis_komponen
+    );
+
+    formData.append(
+      `komponen[${index}][sumber_komponen]`,
+      komp.sumber_komponen
+    );
+
+    if (komp.sumber_komponen === "bahan") {
+      formData.append(
+        `komponen[${index}][bahan_id]`,
+        komp.bahan_id
+      );
+    }
+
+    if (komp.sumber_komponen === "aksesoris") {
+      formData.append(
+        `komponen[${index}][aksesoris_id]`,
+        komp.aksesoris_id
+      );
+    }
+
+    formData.append(
+      `komponen[${index}][jumlah_bahan]`,
+      komp.jumlah_bahan
+    );
   });
 
+  // method spoofing Laravel
   formData.append("_method", "PUT");
 
   try {
-    const response = await API.post(`/produk/${editProduk.id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await API.post(
+      `/produk/${editProduk.id}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
 
     alert("Produk berhasil diperbarui!");
-    setProduks(prev =>
-      prev.map(p => (p.id === editProduk.id ? response.data : p))
+
+    setProduks((prev) =>
+      prev.map((p) =>
+        p.id === editProduk.id ? response.data : p
+      )
     );
+
     setShowEditForm(false);
   } catch (error) {
     console.error("Update error:", error.response?.data || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat update produk.");
+    alert(
+      error.response?.data?.message ||
+        "Terjadi kesalahan saat update produk."
+    );
   }
 };
 
@@ -192,9 +309,8 @@ const handleKomponenChange = (index, field, value) => {
   setKomponenList(updatedKomponen);
 };
 
-const addKomponen = () => {
-  setKomponenList([...komponenList, { jenis_komponen: "", nama_bahan: "", harga_bahan: "", jumlah_bahan: "", satuan_bahan: "" }]);
-};
+
+
 
 const removeKomponen = (index) => {
   const updatedKomponen = [...komponenList];
@@ -251,7 +367,18 @@ const handleFileChange = (e) => {
         harga_jasa_aksesoris: produk.harga_jasa_aksesoris || "",
         harga_overhead: produk.harga_overhead || "",
       });
-  setEditKomponenList(produk.komponen || []);
+    setEditKomponenList(
+      (produk.komponen || []).map(k => ({
+        jenis_komponen: k.jenis_komponen,
+        sumber_komponen: k.sumber_komponen,
+        bahan_id: k.bahan_id || "",
+        aksesoris_id: k.aksesoris_id || "",
+        harga_bahan: k.harga_bahan,
+        jumlah_bahan: k.jumlah_bahan,
+        satuan_bahan: k.satuan_bahan,
+      }))
+    );
+
   setShowEditForm(true);
 };
 
@@ -283,9 +410,16 @@ const handleEditKomponenChange = (index, field, value) => {
 const addEditKomponen = () => {
   setEditKomponenList(prev => [
     ...prev,
-    { jenis_komponen: "", nama_bahan: "", harga_bahan: "", jumlah_bahan: "", satuan_bahan: "" }
+    {
+      jenis_komponen: "",
+      sumber_komponen: "bahan",
+      bahan_id: "",
+      aksesoris_id: "",
+      jumlah_bahan: ""
+    }
   ]);
 };
+
 
 const removeEditKomponen = (index) => {
   setEditKomponenList(prev => prev.filter((_, i) => i !== index));
@@ -433,7 +567,6 @@ const removeEditKomponen = (index) => {
         </div>
 
 
-         {/* Modal Form */}
      {/* Modal Form */}
 {showForm && (
   <div className="modal">
@@ -559,54 +692,147 @@ const removeEditKomponen = (index) => {
           <option value="Urgent">Urgent</option>
         </select>
       </div>
+{/* ===== KOMponen PRODUK ===== */}
+<h3>Komponen Produk</h3>
 
-        {/* Komponen Dinamis */}
-        <h3>Komponen Produk</h3>
-        {komponenList.map((komp, index) => (
-          <div key={index} className="komponen-row">
-            <select
-              value={komp.jenis_komponen}
-              onChange={(e) => handleKomponenChange(index, "jenis_komponen", e.target.value)}
-            >
-              <option value="">Pilih Jenis Komponen</option>
-              <option value="atasan">Atasan</option>
-              <option value="bawahan">Bawahan</option>
-              <option value="fullbody">Fullbody</option>
-              <option value="aksesoris">Aksesoris</option>
-            </select>
+{komponenList.map((komp, index) => (
+  <div key={index} className="komponen-row">
 
-            <input
-              type="text"
-              placeholder="Nama Bahan"
-              value={komp.nama_bahan} 
-              onChange={(e) => handleKomponenChange(index, "nama_bahan", e.target.value)}
-            />
-            <input
-              type="number" 
-              placeholder="Harga Bahan"
-              value={komp.harga_bahan}
-              onChange={(e) => handleKomponenChange(index, "harga_bahan", e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Jumlah"
-              value={komp.jumlah_bahan}
-              onChange={(e) => handleKomponenChange(index, "jumlah_bahan", e.target.value)}
-            />
-            <select
-              value={komp.satuan_bahan}
-              onChange={(e) => handleKomponenChange(index, "satuan_bahan", e.target.value)}
-            >
-              <option value="">Pilih Satuan</option>
-              <option value="kg">Kg</option>
-              <option value="yard">Yard</option>
-              <option value="gross">Gross</option>
-            </select>
-            <button type="button" onClick={() => removeKomponen(index)}>Hapus</button>
-          </div>
+    {/* Jenis Komponen */}
+    <select
+      value={komp.jenis_komponen}
+      onChange={(e) =>
+        handleKomponenChange(index, "jenis_komponen", e.target.value)
+      }
+      required
+    >
+      <option value="">Pilih Jenis Komponen</option>
+      <option value="atasan">Atasan</option>
+      <option value="bawahan">Bawahan</option>
+      <option value="fullbody">Fullbody</option>
+    </select>
+
+    {/* Sumber Komponen */}
+    <select
+      value={komp.sumber_komponen}
+      onChange={(e) => {
+        const value = e.target.value;
+
+        handleKomponenChange(index, "sumber_komponen", value);
+        handleKomponenChange(index, "bahan_id", "");
+        handleKomponenChange(index, "aksesoris_id", "");
+        handleKomponenChange(index, "harga_bahan", "");
+        handleKomponenChange(index, "jumlah_bahan", "");
+        handleKomponenChange(
+          index,
+          "satuan_bahan",
+          value === "aksesoris" ? "pcs" : ""
+        );
+      }}
+    >
+      <option value="bahan">Bahan</option>
+      <option value="aksesoris">Aksesoris</option>
+    </select>
+
+    {/* ===== PILIH BAHAN ===== */}
+    {komp.sumber_komponen === "bahan" && (
+      <select
+        value={komp.bahan_id}
+        onChange={(e) => {
+          const bahanId = e.target.value;
+          const bahan = bahanList.find(
+            b => String(b.id) === String(bahanId)
+          );
+
+          handleKomponenChange(index, "bahan_id", bahanId);
+          handleKomponenChange(index, "harga_bahan", bahan?.harga || "");
+          handleKomponenChange(index, "satuan_bahan", bahan?.satuan || "");
+        }}
+        required
+      >
+        <option value="">Pilih Bahan</option>
+        {bahanList.map(b => (
+          <option key={b.id} value={b.id}>
+            {b.nama_bahan} — Rp {b.harga} ({b.satuan})
+          </option>
         ))}
-        <button type="button" onClick={addKomponen}>Tambah Komponen</button>
+      </select>
+    )}
 
+    {/* ===== PILIH AKSESORIS ===== */}
+    {komp.sumber_komponen === "aksesoris" && (
+      <select
+        value={komp.aksesoris_id}
+        onChange={(e) => {
+          const aksId = e.target.value;
+          const aks = aksesorisList.find(
+            a => String(a.id) === String(aksId)
+          );
+
+          handleKomponenChange(index, "aksesoris_id", aksId);
+          handleKomponenChange(index, "harga_bahan", aks?.harga_per_biji || "");
+          handleKomponenChange(index, "satuan_bahan", "pcs");
+        }}
+        required
+      >
+        <option value="">Pilih Aksesoris</option>
+        {aksesorisList.map(a => (
+          <option key={a.id} value={a.id}>
+            {a.nama_aksesoris} — Rp {a.harga_per_biji}/pcs
+          </option>
+        ))}
+      </select>
+    )}
+
+    {/* Harga (Auto) */}
+    <input
+      type="number"
+      placeholder="Harga"
+      value={komp.harga_bahan}
+      readOnly
+    />
+
+    {/* Jumlah */}
+    <input
+      type="number"
+      min="0.0001"
+      step="0.0001"
+      placeholder="Jumlah"
+      value={komp.jumlah_bahan}
+      onChange={(e) =>
+        handleKomponenChange(index, "jumlah_bahan", e.target.value)
+      }
+      required
+    />
+
+    {/* Satuan */}
+    <select
+      value={komp.satuan_bahan}
+      disabled={komp.sumber_komponen === "aksesoris"}
+      onChange={(e) =>
+        handleKomponenChange(index, "satuan_bahan", e.target.value)
+      }
+    >
+      <option value="">Pilih Satuan</option>
+      <option value="kg">Kg</option>
+      <option value="yard">Yard</option>
+      <option value="gross">Gross</option>
+      <option value="pcs">Pcs</option>
+    </select>
+
+    {/* Hapus */}
+    <button
+      type="button"
+      onClick={() => removeKomponen(index)}
+    >
+      Hapus
+    </button>
+  </div>
+))}
+
+<button type="button" onClick={addKomponen}>
+  Tambah Komponen
+</button>
         {/* Action Buttons */}
         <div className="form-actions">
           <button type="submit" className="btn btn-submit">
@@ -717,52 +943,109 @@ const removeEditKomponen = (index) => {
         </div>
 
         {/* Komponen */}
-        <h3>Edit Komponen Produk</h3>
-        {editKomponenList.map((komp, index) => (
-          <div key={index} className="komponen-row">
-            <select
-              value={komp.jenis_komponen}
-              onChange={(e) => handleEditKomponenChange(index, "jenis_komponen", e.target.value)}
-            >
-              <option value="">Pilih Jenis Komponen</option>
-              <option value="atasan">Atasan</option>
-              <option value="bawahan">Bawahan</option>
-              <option value="fullbody">Fullbody</option>
-              <option value="aksesoris">Aksesoris</option>
-            </select>
+       <h3>Edit Komponen Produk</h3>
 
-            <input
-              type="text"
-              value={komp.nama_bahan}
-              onChange={(e) => handleEditKomponenChange(index, "nama_bahan", e.target.value)}
-              placeholder="Nama Bahan"
-            />
-            <input
-              type="number"
-              value={komp.harga_bahan}
-              onChange={(e) => handleEditKomponenChange(index, "harga_bahan", e.target.value)}
-              placeholder="Harga Bahan"
-            />
-            <input
-              type="number"
-              value={komp.jumlah_bahan}
-              onChange={(e) => handleEditKomponenChange(index, "jumlah_bahan", e.target.value)}
-              placeholder="Jumlah"
-            />
-           <select
-              value={komp.satuan_bahan}
-              onChange={(e) => handleEditKomponenChange(index, "satuan_bahan", e.target.value)}
-            >
-              <option value="">Pilih Satuan</option>
-              <option value="Kg">Kg</option>
-              <option value="Yard">Yard</option>
-              <option value="Gross">Gross</option>
-            </select>
+{editKomponenList.map((komp, index) => (
+  <div key={index} className="komponen-row">
 
-            <button type="button" onClick={() => removeEditKomponen(index)}>Hapus</button>
-          </div>
+    {/* Jenis Komponen */}
+    <select
+      value={komp.jenis_komponen}
+      onChange={(e) =>
+        handleEditKomponenChange(index, "jenis_komponen", e.target.value)
+      }
+    >
+      <option value="">Pilih Jenis Komponen</option>
+      <option value="atasan">Atasan</option>
+      <option value="bawahan">Bawahan</option>
+      <option value="fullbody">Fullbody</option>
+    </select>
+
+    {/* Sumber */}
+    <select
+      value={komp.sumber_komponen}
+      onChange={(e) => {
+        const value = e.target.value;
+        handleEditKomponenChange(index, "sumber_komponen", value);
+        handleEditKomponenChange(index, "bahan_id", "");
+        handleEditKomponenChange(index, "aksesoris_id", "");
+        handleEditKomponenChange(index, "harga_bahan", "");
+        handleEditKomponenChange(index, "satuan_bahan", "");
+      }}
+    >
+      <option value="bahan">Bahan</option>
+      <option value="aksesoris">Aksesoris</option>
+    </select>
+
+    {/* PILIH BAHAN */}
+    {komp.sumber_komponen === "bahan" && (
+      <select
+        value={komp.bahan_id}
+        onChange={(e) => {
+          const bahan = bahanList.find(
+            b => String(b.id) === String(e.target.value)
+          );
+          handleEditKomponenChange(index, "bahan_id", e.target.value);
+          handleEditKomponenChange(index, "harga_bahan", bahan?.harga || "");
+          handleEditKomponenChange(index, "satuan_bahan", bahan?.satuan || "");
+        }}
+      >
+        <option value="">Pilih Bahan</option>
+        {bahanList.map(b => (
+          <option key={b.id} value={b.id}>
+            {b.nama_bahan}
+          </option>
         ))}
-        <button type="button" onClick={addEditKomponen}>Tambah Komponen</button>
+      </select>
+    )}
+
+    {/* PILIH AKSESORIS */}
+    {komp.sumber_komponen === "aksesoris" && (
+      <select
+        value={komp.aksesoris_id}
+        onChange={(e) => {
+          const aks = aksesorisList.find(
+            a => String(a.id) === String(e.target.value)
+          );
+          handleEditKomponenChange(index, "aksesoris_id", e.target.value);
+          handleEditKomponenChange(index, "harga_bahan", aks?.harga_per_biji || "");
+          handleEditKomponenChange(index, "satuan_bahan", "pcs");
+        }}
+      >
+        <option value="">Pilih Aksesoris</option>
+        {aksesorisList.map(a => (
+          <option key={a.id} value={a.id}>
+            {a.nama_aksesoris}
+          </option>
+        ))}
+      </select>
+    )}
+
+    {/* Harga */}
+    <input type="number" value={komp.harga_bahan} readOnly />
+
+    {/* Jumlah */}
+    <input
+      type="number"
+      value={komp.jumlah_bahan}
+      onChange={(e) =>
+        handleEditKomponenChange(index, "jumlah_bahan", e.target.value)
+      }
+    />
+
+    {/* Satuan */}
+    <input type="text" value={komp.satuan_bahan} readOnly />
+
+    <button type="button" onClick={() => removeEditKomponen(index)}>
+      Hapus
+    </button>
+  </div>
+))}
+
+<button type="button" onClick={addEditKomponen}>
+  Tambah Komponen
+</button>
+
 
         {/* Tombol */}
         <div className="form-group">
