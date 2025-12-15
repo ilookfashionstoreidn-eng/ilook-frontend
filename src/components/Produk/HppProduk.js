@@ -47,7 +47,7 @@ const HppProduk = () => {
   const [komponenList, setKomponenList] = useState([
     {
       jenis_komponen: "",
-      sumber_komponen: "bahan", // default
+      sumber_komponen: "bahan", // akan otomatis jadi "aksesoris" jika jenis_komponen = aksesoris
       bahan_id: "",
       aksesoris_id: "",
       harga_bahan: "",
@@ -59,7 +59,7 @@ const HppProduk = () => {
       ...komponenList,
       {
         jenis_komponen: "",
-        sumber_komponen: "bahan", // WAJIB
+        sumber_komponen: "bahan", // diset otomatis sesuai jenis_komponen
         bahan_id: "",
         aksesoris_id: "",
         harga_bahan: "",
@@ -293,7 +293,23 @@ const HppProduk = () => {
 
   const handleKomponenChange = (index, field, value) => {
     const updatedKomponen = [...komponenList];
-    updatedKomponen[index][field] = value;
+
+    if (field === "jenis_komponen") {
+      const isAks = value === "aksesoris";
+      updatedKomponen[index] = {
+        ...updatedKomponen[index],
+        jenis_komponen: value,
+        sumber_komponen: isAks ? "aksesoris" : "bahan",
+        bahan_id: isAks ? "" : updatedKomponen[index].bahan_id,
+        aksesoris_id: isAks ? updatedKomponen[index].aksesoris_id : "",
+        harga_bahan: "",
+        jumlah_bahan: "",
+        satuan_bahan: isAks ? "pcs" : "",
+      };
+    } else {
+      updatedKomponen[index][field] = value;
+    }
+
     setKomponenList(updatedKomponen);
   };
 
@@ -386,7 +402,23 @@ const HppProduk = () => {
   const handleEditKomponenChange = (index, field, value) => {
     setEditKomponenList((prev) => {
       const updated = [...prev];
-      updated[index][field] = value;
+
+      if (field === "jenis_komponen") {
+        const isAks = value === "aksesoris";
+        updated[index] = {
+          ...updated[index],
+          jenis_komponen: value,
+          sumber_komponen: isAks ? "aksesoris" : "bahan",
+          bahan_id: isAks ? "" : updated[index].bahan_id,
+          aksesoris_id: isAks ? updated[index].aksesoris_id : "",
+          harga_bahan: "",
+          jumlah_bahan: "",
+          satuan_bahan: isAks ? "pcs" : "",
+        };
+      } else {
+        updated[index][field] = value;
+      }
+
       return updated;
     });
   };
@@ -451,41 +483,144 @@ const HppProduk = () => {
     }
   };
 
+  // Hitung statistik
+  const totalUrgent = produks.filter((p) => p.kategori_produk === "Urgent").length;
+  const totalFix = produks.filter((p) => p.status_produk === "Fix").length;
+  const avgHpp = produks.length > 0 ? produks.reduce((sum, p) => sum + (parseFloat(p.hpp) || 0), 0) / produks.length : 0;
+
   return (
     <div className="hpp-container">
       <div className="hpp-header">
-        <h1>📦 Data Produk</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+          <div>
+            <h1>📦 Data Produk</h1>
+            <p style={{ margin: "8px 0 0 0", color: "#666", fontSize: "14px" }}>Kelola data produk dan HPP dengan mudah</p>
+          </div>
+          {!loading && produks.length > 0 && (
+            <div className="hpp-stats">
+              <div className="hpp-stat-item">
+                <div className="hpp-stat-value">{total}</div>
+                <div className="hpp-stat-label">Total Produk</div>
+              </div>
+              <div className="hpp-stat-item">
+                <div className="hpp-stat-value" style={{ color: "#f5576c" }}>
+                  {totalUrgent}
+                </div>
+                <div className="hpp-stat-label">Urgent</div>
+              </div>
+              <div className="hpp-stat-item">
+                <div className="hpp-stat-value" style={{ color: "#28a745" }}>
+                  {totalFix}
+                </div>
+                <div className="hpp-stat-label">Fix</div>
+              </div>
+              <div className="hpp-stat-item">
+                <div className="hpp-stat-value" style={{ color: "#667eea" }}>
+                  Rp. {avgHpp.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                </div>
+                <div className="hpp-stat-label">Rata-rata HPP</div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="hpp-filter-section">
         <button className="hpp-btn-primary" onClick={() => setShowForm(true)}>
           <FaPlus /> Tambah Produk
         </button>
-        <input type="text" className="hpp-search-input" placeholder="🔍 Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="hpp-filter-select">
-          <option value="">All Status Produk</option>
-          <option value="Urgent">Urgent</option>
-          <option value="Normal">Normal</option>
-        </select>
-        <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="hpp-filter-select">
-          <option value="">All Status HPP</option>
-          <option value="sementara">Sementara</option>
-          <option value="fix">Fix</option>
-          <option value="bermasalah">Bermasalah</option>
-        </select>
+        <div style={{ flex: 1, minWidth: "250px", position: "relative" }}>
+          <input type="text" className="hpp-search-input" placeholder="🔍 Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#999",
+                fontSize: "18px",
+                padding: "4px",
+              }}
+              title="Hapus pencarian"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div style={{ position: "relative" }}>
+          <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="hpp-filter-select">
+            <option value="">📊 Semua Status Produk</option>
+            <option value="Urgent">🔴 Urgent</option>
+            <option value="Normal">🔵 Normal</option>
+          </select>
+          {selectedKategori && (
+            <span className="hpp-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
+              {selectedKategori} ×
+            </span>
+          )}
+        </div>
+        <div style={{ position: "relative" }}>
+          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="hpp-filter-select">
+            <option value="">📋 Semua Status HPP</option>
+            <option value="sementara">⏳ Sementara</option>
+            <option value="fix">✅ Fix</option>
+            <option value="bermasalah">⚠️ Bermasalah</option>
+          </select>
+          {selectedStatus && (
+            <span className="hpp-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
+              {selectedStatus === "sementara" ? "Sementara" : selectedStatus === "fix" ? "Fix" : "Bermasalah"} ×
+            </span>
+          )}
+        </div>
       </div>
 
       {loading ? (
         <div className="hpp-loading">
-          <div>⏳ Memuat data...</div>
+          <div className="hpp-spinner"></div>
+          <div style={{ marginTop: "16px", fontSize: "16px", color: "#667eea", fontWeight: "600" }}>Memuat data produk...</div>
+          <div style={{ marginTop: "8px", fontSize: "14px", color: "#999" }}>Mohon tunggu sebentar</div>
         </div>
       ) : error ? (
         <div className="hpp-empty-state">
-          <p>❌ {error}</p>
+          <div className="hpp-empty-icon" style={{ fontSize: "64px", marginBottom: "16px" }}>
+            ⚠️
+          </div>
+          <h3 style={{ margin: "0 0 8px 0", color: "#dc3545", fontSize: "20px" }}>Terjadi Kesalahan</h3>
+          <p style={{ margin: "0 0 20px 0", color: "#666" }}>{error}</p>
+          <button className="hpp-btn-primary" onClick={() => window.location.reload()}>
+            Muat Ulang Halaman
+          </button>
         </div>
       ) : produks.length === 0 ? (
         <div className="hpp-empty-state">
-          <p>📭 Tidak ada data produk</p>
+          <div className="hpp-empty-icon" style={{ fontSize: "64px", marginBottom: "16px" }}>
+            📭
+          </div>
+          <h3 style={{ margin: "0 0 8px 0", color: "#667eea", fontSize: "20px" }}>Belum Ada Data Produk</h3>
+          <p style={{ margin: "0 0 8px 0", color: "#666" }}>{searchTerm || selectedKategori || selectedStatus ? "Tidak ada produk yang sesuai dengan filter yang Anda pilih" : "Mulai dengan menambahkan produk pertama Anda"}</p>
+          {(searchTerm || selectedKategori || selectedStatus) && (
+            <button
+              className="hpp-btn-secondary"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedKategori("");
+                setSelectedStatus("");
+              }}
+              style={{ marginTop: "16px" }}
+            >
+              Hapus Filter
+            </button>
+          )}
+          {!searchTerm && !selectedKategori && !selectedStatus && (
+            <button className="hpp-btn-primary" onClick={() => setShowForm(true)} style={{ marginTop: "16px" }}>
+              <FaPlus /> Tambah Produk Pertama
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -666,27 +801,11 @@ const HppProduk = () => {
                         <option value="atasan">Atasan</option>
                         <option value="bawahan">Bawahan</option>
                         <option value="fullbody">Fullbody</option>
-                      </select>
-
-                      {/* Sumber Komponen */}
-                      <select
-                        value={komp.sumber_komponen}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          handleKomponenChange(index, "sumber_komponen", value);
-                          handleKomponenChange(index, "bahan_id", "");
-                          handleKomponenChange(index, "aksesoris_id", "");
-                          handleKomponenChange(index, "harga_bahan", "");
-                          handleKomponenChange(index, "jumlah_bahan", "");
-                          handleKomponenChange(index, "satuan_bahan", value === "aksesoris" ? "pcs" : "");
-                        }}
-                      >
-                        <option value="bahan">Bahan</option>
                         <option value="aksesoris">Aksesoris</option>
                       </select>
 
                       {/* PILIH BAHAN */}
-                      {komp.sumber_komponen === "bahan" && (
+                      {komp.sumber_komponen !== "aksesoris" && (
                         <select
                           value={komp.bahan_id}
                           onChange={(e) => {
@@ -848,26 +967,11 @@ const HppProduk = () => {
                         <option value="atasan">Atasan</option>
                         <option value="bawahan">Bawahan</option>
                         <option value="fullbody">Fullbody</option>
-                      </select>
-
-                      {/* Sumber */}
-                      <select
-                        value={komp.sumber_komponen}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          handleEditKomponenChange(index, "sumber_komponen", value);
-                          handleEditKomponenChange(index, "bahan_id", "");
-                          handleEditKomponenChange(index, "aksesoris_id", "");
-                          handleEditKomponenChange(index, "harga_bahan", "");
-                          handleEditKomponenChange(index, "satuan_bahan", "");
-                        }}
-                      >
-                        <option value="bahan">Bahan</option>
                         <option value="aksesoris">Aksesoris</option>
                       </select>
 
                       {/* PILIH BAHAN */}
-                      {komp.sumber_komponen === "bahan" && (
+                      {komp.sumber_komponen !== "aksesoris" && (
                         <select
                           value={komp.bahan_id}
                           onChange={(e) => {
@@ -956,31 +1060,71 @@ const HppProduk = () => {
         <div className="hpp-modal-overlay" onClick={handleCloseModal}>
           <div className="hpp-modal-content hpp-detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="hpp-modal-header">
-              <h3>📋 Detail Produk: {selectedProduk.nama_produk}</h3>
+              <h3>📋 Detail Produk</h3>
               <button className="hpp-modal-close" onClick={handleCloseModal} type="button">
                 <FaTimes />
               </button>
             </div>
             <div className="hpp-detail-body">
-              <div className="hpp-detail-item">
-                <strong>Harga Jasa CMT</strong>
-                <span>Rp. {selectedProduk.harga_jasa_cmt?.toLocaleString("id-ID") || "0"}</span>
+              {/* Header info ringkas */}
+              <div className="hpp-detail-top">
+                <div className="hpp-detail-hero">
+                  <div className="hpp-detail-name">{selectedProduk.nama_produk}</div>
+                  <div className="hpp-detail-badges">
+                    <span className="hpp-badge hpp-badge-primary">{selectedProduk.kategori_produk || "Normal"}</span>
+                    <span
+                      className={`hpp-badge ${
+                        selectedProduk.status_produk === "fix"
+                          ? "hpp-badge-success"
+                          : selectedProduk.status_produk === "sementara"
+                          ? "hpp-badge-warning"
+                          : selectedProduk.status_produk === "bermasalah"
+                          ? "hpp-badge-danger"
+                          : "hpp-badge-muted"
+                      }`}
+                    >
+                      {selectedProduk.status_produk || "Status HPP?"}
+                    </span>
+                  </div>
+                </div>
+                <div className="hpp-detail-summary">
+                  <div className="hpp-detail-summary-item">
+                    <div className="label">ID Produk</div>
+                    <div className="value">#{selectedProduk.id}</div>
+                  </div>
+                  <div className="hpp-detail-summary-item">
+                    <div className="label">Jenis Produk</div>
+                    <div className="value">{selectedProduk.jenis_produk || "-"}</div>
+                  </div>
+                  <div className="hpp-detail-summary-item highlight">
+                    <div className="label">HPP</div>
+                    <div className="value big">Rp. {selectedProduk.hpp?.toLocaleString("id-ID") || "0"}</div>
+                  </div>
+                </div>
               </div>
-              <div className="hpp-detail-item">
-                <strong>Harga Jasa Cutting</strong>
-                <span>Rp. {selectedProduk.harga_jasa_cutting?.toLocaleString("id-ID") || "0"}</span>
-              </div>
-              <div className="hpp-detail-item">
-                <strong>Harga Jasa Aksesoris</strong>
-                <span>Rp. {selectedProduk.harga_jasa_aksesoris?.toLocaleString("id-ID") || "0"}</span>
-              </div>
-              <div className="hpp-detail-item">
-                <strong>Harga Overhead</strong>
-                <span>Rp. {selectedProduk.harga_overhead?.toLocaleString("id-ID") || "0"}</span>
-              </div>
-              <div className="hpp-detail-item" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white", borderLeft: "none" }}>
-                <strong style={{ color: "white" }}>Total Harga Komponen</strong>
-                <span style={{ color: "white", fontWeight: "700", fontSize: "18px" }}>Rp. {selectedProduk.total_komponen?.toLocaleString("id-ID") || "0"}</span>
+
+              {/* Ringkasan biaya */}
+              <div className="hpp-detail-grid">
+                <div className="hpp-detail-card">
+                  <div className="label">Harga Jasa CMT</div>
+                  <div className="value">Rp. {selectedProduk.harga_jasa_cmt?.toLocaleString("id-ID") || "0"}</div>
+                </div>
+                <div className="hpp-detail-card">
+                  <div className="label">Harga Jasa Cutting</div>
+                  <div className="value">Rp. {selectedProduk.harga_jasa_cutting?.toLocaleString("id-ID") || "0"}</div>
+                </div>
+                <div className="hpp-detail-card">
+                  <div className="label">Harga Jasa Aksesoris</div>
+                  <div className="value">Rp. {selectedProduk.harga_jasa_aksesoris?.toLocaleString("id-ID") || "0"}</div>
+                </div>
+                <div className="hpp-detail-card">
+                  <div className="label">Harga Overhead</div>
+                  <div className="value">Rp. {selectedProduk.harga_overhead?.toLocaleString("id-ID") || "0"}</div>
+                </div>
+                <div className="hpp-detail-card full highlight">
+                  <div className="label">Total Harga Komponen</div>
+                  <div className="value big">Rp. {selectedProduk.total_komponen?.toLocaleString("id-ID") || "0"}</div>
+                </div>
               </div>
 
               <div className="hpp-detail-section">
@@ -990,7 +1134,7 @@ const HppProduk = () => {
                     <thead>
                       <tr>
                         <th>Jenis Komponen</th>
-                        <th>Nama Bahan</th>
+                        <th>Nama Bahan/Aksesoris</th>
                         <th>Harga Bahan</th>
                         <th>Jumlah</th>
                         <th>Satuan</th>
@@ -998,20 +1142,25 @@ const HppProduk = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedProduk.komponen.map((k, idx) => (
-                        <tr key={idx}>
-                          <td>
-                            <strong>{k.jenis_komponen}</strong>
-                          </td>
-                          <td>{k.nama_bahan || "-"}</td>
-                          <td>Rp. {k.harga_bahan?.toLocaleString("id-ID") || "0"}</td>
-                          <td>{k.jumlah_bahan || "0"}</td>
-                          <td>{k.satuan_bahan || "-"}</td>
-                          <td>
-                            <strong>Rp. {k.total_harga_bahan?.toLocaleString("id-ID") || "0"}</strong>
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedProduk.komponen.map((k, idx) => {
+                        const nama = k.nama_bahan || k.nama_aksesoris || k.bahan?.nama_bahan || k.aksesoris?.nama_aksesoris || "-";
+                        const satuan = k.satuan_bahan || (k.sumber_komponen === "aksesoris" ? "pcs" : k.bahan?.satuan) || "-";
+                        const jumlahFormatted = k.jumlah_bahan !== undefined && k.jumlah_bahan !== null ? Number(k.jumlah_bahan).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 }) : "0";
+                        return (
+                          <tr key={idx}>
+                            <td>
+                              <strong>{k.jenis_komponen}</strong>
+                            </td>
+                            <td>{nama}</td>
+                            <td>Rp. {k.harga_bahan?.toLocaleString("id-ID") || "0"}</td>
+                            <td>{jumlahFormatted}</td>
+                            <td>{satuan}</td>
+                            <td>
+                              <strong>Rp. {k.total_harga_bahan?.toLocaleString("id-ID") || "0"}</strong>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (
