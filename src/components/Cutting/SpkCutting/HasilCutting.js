@@ -113,6 +113,7 @@ const HasilCutting = () => {
   const [showForm, setShowForm] = useState(false); // Default false agar langsung tampil index
   const [editingId, setEditingId] = useState(null);
   const [detailData, setDetailData] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // snapshot data lama saat edit
   // State untuk menyimpan jumlah lembar dan jumlah produk per item (per warna)
   const [inputData, setInputData] = useState({});
   // State untuk menyimpan data acuan
@@ -178,8 +179,11 @@ const HasilCutting = () => {
           // Set spkDetail meskipun detail kosong, agar kita bisa menampilkan pesan yang lebih informatif
           setSpkDetail(response.data);
           // Reset input data saat SPK Cutting berubah
-          setInputData({});
-          setDataAcuan([]);
+          // tetapi jangan hapus data ketika sedang edit (supaya nilai lama tetap terisi)
+          if (!editingId) {
+            setInputData({});
+            setDataAcuan([]);
+          }
           setShowSpkDropdown(false);
         } else {
           console.warn("Response data kosong atau tidak valid:", response.data);
@@ -210,7 +214,7 @@ const HasilCutting = () => {
     };
 
     fetchSpkDetail();
-  }, [selectedSpkId]);
+  }, [selectedSpkId, editingId]);
 
   // Handler untuk update input data per item
   const handleInputChange = (bahanId, field, value) => {
@@ -520,24 +524,43 @@ const HasilCutting = () => {
       setEditingId(id);
       setSelectedSpkId(data.spk_cutting_id);
 
-      // Set input data dari bahan
-      const inputDataObj = {};
-      data.bahan.forEach((bahan) => {
-        inputDataObj[bahan.spk_cutting_bahan_id] = {
-          jumlahLembar: bahan.jumlah_lembar || "",
-          jumlahProduk: bahan.jumlah_produk || "",
-        };
+      // Debug: Log data yang diterima dari backend
+      console.log("Data untuk edit:", data);
+      console.log("Data bahan:", data.bahan);
+      console.log("Data acuan:", data.data_acuan);
+
+      // Snapshot data lama untuk ditampilkan saat edit
+      const totalProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.total_produk || bahan.hasil) || 0), 0);
+      const totalBeratPerProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.berat_per_produk) || 0), 0);
+      const totalBeratLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.berat) || 0), 0);
+      setOriginalData({
+        spk_cutting_id: data.spk_cutting_id,
+        catatan: data.catatan || "",
+        totalProduk: totalProdukLama,
+        totalBeratPerProduk: totalBeratPerProdukLama,
+        totalBerat: totalBeratLama,
       });
+
+      // Set input data dari bahan - pastikan semua data terisi
+      const inputDataObj = {};
+      if (data.bahan && Array.isArray(data.bahan)) {
+        data.bahan.forEach((bahan) => {
+          inputDataObj[bahan.spk_cutting_bahan_id] = {
+            jumlahLembar: bahan.jumlah_lembar !== null && bahan.jumlah_lembar !== undefined ? bahan.jumlah_lembar : "",
+            jumlahProduk: bahan.jumlah_produk !== null && bahan.jumlah_produk !== undefined ? bahan.jumlah_produk : "",
+          };
+        });
+      }
       setInputData(inputDataObj);
 
-      // Set data acuan jika ada
+      // Set data acuan jika ada - pastikan semua data terisi
       if (data.data_acuan && Array.isArray(data.data_acuan) && data.data_acuan.length > 0) {
         setDataAcuan(
           data.data_acuan.map((acuan, idx) => ({
             id: Date.now() + idx,
-            warna: acuan.warna || "",
-            berat_acuan: acuan.berat_acuan || "",
-            banyak_produk: acuan.banyak_produk || "",
+            warna: acuan.warna !== null && acuan.warna !== undefined ? acuan.warna : "",
+            berat_acuan: acuan.berat_acuan !== null && acuan.berat_acuan !== undefined ? acuan.berat_acuan : "",
+            banyak_produk: acuan.banyak_produk !== null && acuan.banyak_produk !== undefined ? acuan.banyak_produk : "",
           }))
         );
       } else {
@@ -609,6 +632,7 @@ const HasilCutting = () => {
     setDetailData(null);
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
+    setOriginalData(null);
   };
 
   // Handler untuk batal
@@ -622,6 +646,7 @@ const HasilCutting = () => {
     setDetailData(null);
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
+    setOriginalData(null);
   };
 
   // Filter SPK Cutting berdasarkan search query
@@ -957,6 +982,59 @@ const HasilCutting = () => {
 
               {/* Content Modal */}
               <div style={{ padding: "20px" }}>
+                {/* Data sebelum diedit (hanya tampil saat mode edit) */}
+                {editingId && originalData && (
+                  <div
+                    style={{
+                      marginBottom: "20px",
+                      padding: "16px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%)",
+                      border: "1px solid #dce2ff",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <span style={{ fontSize: "18px" }}>📋</span>
+                      <div>
+                        <div style={{ fontWeight: "700", color: "#3b4783" }}>Data sebelum diedit</div>
+                        <div style={{ fontSize: "12px", color: "#6c7187" }}>Referensi nilai asli sebelum Anda melakukan perubahan</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                        gap: "12px",
+                        marginTop: "8px",
+                      }}
+                    >
+                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>SPK Cutting</div>
+                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.spk_cutting_id || "-"}</div>
+                      </div>
+                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Produk</div>
+                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalProduk?.toLocaleString("id-ID") || "0"}</div>
+                      </div>
+                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Berat</div>
+                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalBerat?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
+                      </div>
+                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Berat per Produk</div>
+                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalBeratPerProduk?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
+                      </div>
+                      {originalData.catatan && (
+                        <div style={{ gridColumn: "1 / -1", background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>Catatan</div>
+                          <div style={{ fontWeight: "600", color: "#374151" }}>{originalData.catatan}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="filter-header1">
                   <div className="form-group" style={{ marginBottom: "20px" }}>
                     <label
@@ -2028,6 +2106,30 @@ const HasilCutting = () => {
                           );
                         })}
                       </tbody>
+                      {/* Baris Total */}
+                      {detailData.bahan && detailData.bahan.length > 0 && (
+                        <tfoot>
+                          <tr
+                            style={{
+                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              color: "white",
+                              fontWeight: "700",
+                            }}
+                          >
+                            <td colSpan="3" style={{ padding: "16px", textAlign: "right", fontSize: "14px" }}>
+                              <strong>TOTAL:</strong>
+                            </td>
+                            <td colSpan="4" style={{ padding: "16px" }}></td>
+                            <td style={{ padding: "16px", fontSize: "14px" }}>
+                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.total_produk || bahan.hasil) || 0), 0).toLocaleString("id-ID")}</strong>
+                            </td>
+                            <td style={{ padding: "16px", fontSize: "14px" }}>
+                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.berat_per_produk) || 0), 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</strong>
+                            </td>
+                            <td style={{ padding: "16px" }}></td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 </div>
