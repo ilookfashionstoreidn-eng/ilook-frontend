@@ -3,7 +3,7 @@
 /* Container & Layout */
 .hpp-container {
   min-height: 100vh;
-  background:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        #f5f5f7;
+  background: #f5f5f7;
   padding: 24px;
   animation: fadeIn 0.5s ease-in;
 }
@@ -25,6 +25,42 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Stats Section */
+.hpp-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hpp-stat-item {
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  min-width: 120px;
+  transition: all 0.3s ease;
+}
+
+.hpp-stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.hpp-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+  
+.hpp-stat-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Filter & Search Section */
@@ -152,6 +188,12 @@
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.hpp-table img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* Status Badges */
@@ -488,6 +530,150 @@
   padding: 32px;
 }
 
+.hpp-detail-top {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.hpp-detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hpp-detail-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2d2f39;
+}
+
+.hpp-detail-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hpp-badge {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.hpp-badge-primary {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.hpp-badge-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.hpp-badge-warning {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  color: #8b4513;
+}
+
+.hpp-badge-danger {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.hpp-badge-muted {
+  background: #e0e0e0;
+  color: #555;
+}
+
+.hpp-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.hpp-detail-summary-item {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.hpp-detail-summary-item.highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.hpp-detail-summary-item .label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.hpp-detail-summary-item .value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d2f39;
+}
+
+.hpp-detail-summary-item.highlight .label,
+.hpp-detail-summary-item.highlight .value {
+  color: white;
+}
+
+.hpp-detail-summary-item .value.big {
+  font-size: 18px;
+}
+
+.hpp-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hpp-detail-card {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.hpp-detail-card.full {
+  grid-column: 1 / -1;
+}
+
+.hpp-detail-card.highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.hpp-detail-card .label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.hpp-detail-card .value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d2f39;
+}
+
+.hpp-detail-card.highlight .label,
+.hpp-detail-card.highlight .value {
+  color: white;
+}
+
+.hpp-detail-card .value.big {
+  font-size: 18px;
+}
+
 .hpp-detail-item {
   display: flex;
   justify-content: space-between;
@@ -581,9 +767,13 @@
 /* Loading State */
 .hpp-loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 60px;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   color: #667eea;
   font-size: 16px;
 }
@@ -591,7 +781,10 @@
 /* Empty State */
 .hpp-empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   color: #999;
 }
 
