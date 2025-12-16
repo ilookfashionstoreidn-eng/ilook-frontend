@@ -6,11 +6,11 @@ import API from "../../../api";
 const modernStyles = {
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+    background: "#f5f5f7",
     padding: "20px",
   },
   headerCard: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    background: "linear-gradient(135deg, #0487d8 0%, #17457c 100%)",
     borderRadius: "16px",
     padding: "24px 32px",
     boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
@@ -743,9 +743,8 @@ const HasilCutting = () => {
           style={{
             padding: "16px 18px",
             borderRadius: "14px",
-            background: "linear-gradient(135deg, #fef9c3 0%, #fde68a 50%, #facc15 100%)",
-            boxShadow: "0 4px 14px rgba(234, 179, 8, 0.35)",
-            border: "1px solid rgba(234, 179, 8, 0.5)",
+            background: "#ffffffff",
+            border: "1px solid rgba(212, 212, 211, 0.5)",
             display: "flex",
             alignItems: "center",
             gap: "14px",
@@ -756,7 +755,7 @@ const HasilCutting = () => {
               width: "42px",
               height: "42px",
               borderRadius: "999px",
-              background: "rgba(250, 204, 21, 0.2)",
+             background: "#ffffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -766,12 +765,12 @@ const HasilCutting = () => {
             🎯
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "12px", fontWeight: "600", color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Mingguan</div>
+            <div style={{ fontSize: "14px", fontWeight: "600", color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Mingguan</div>
             <div style={{ fontSize: "18px", fontWeight: "800", color: "#854d0e", marginTop: "4px" }}>{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
-            <div style={{ fontSize: "12px", color: "#854d0e", marginTop: "4px" }}>
+            <div style={{ fontSize: "16px", color: "#854d0e", marginTop: "4px" }}>
               Minggu ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
-            <div style={{ fontSize: "12px", color: "#854d0e", marginTop: "2px" }}>
+            <div style={{ fontSize: "16px", color: "#854d0e", marginTop: "2px" }}>
               {targetStats.weekly_remaining > 0 ? (
                 <>
                   Kurang <strong>{Number(targetStats.weekly_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 50.000
@@ -781,7 +780,7 @@ const HasilCutting = () => {
               )}
             </div>
             {targetStats.week_start && targetStats.week_end && (
-              <div style={{ fontSize: "11px", color: "#a16207", marginTop: "4px" }}>
+              <div style={{ fontSize: "14px", color: "#a16207", marginTop: "4px" }}>
                 Periode: {targetStats.week_start} s/d {targetStats.week_end}
               </div>
             )}
@@ -791,11 +790,10 @@ const HasilCutting = () => {
         {/* Target Harian */}
         <div
           style={{
-            padding: "16px 18px",
+           padding: "16px 18px",
             borderRadius: "14px",
-            background: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #4ade80 100%)",
-            boxShadow: "0 4px 14px rgba(34, 197, 94, 0.35)",
-            border: "1px solid rgba(34, 197, 94, 0.5)",
+            background: "#ffffffff",
+            border: "1px solid rgba(212, 212, 211, 0.5)",
             display: "flex",
             alignItems: "center",
             gap: "14px",
@@ -816,12 +814,12 @@ const HasilCutting = () => {
             📈
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "12px", fontWeight: "600", color: "#14532d", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Harian</div>
+            <div style={{ fontSize: "16px", fontWeight: "600", color: "#14532d", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Harian</div>
             <div style={{ fontSize: "18px", fontWeight: "800", color: "#14532d", marginTop: "4px" }}>{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
-            <div style={{ fontSize: "12px", color: "#14532d", marginTop: "4px" }}>
+            <div style={{ fontSize: "16px", color: "#14532d", marginTop: "4px" }}>
               Hari ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
-            <div style={{ fontSize: "12px", color: "#14532d", marginTop: "2px" }}>
+            <div style={{ fontSize: "16px", color: "#14532d", marginTop: "2px" }}>
               {targetStats.daily_remaining > 0 ? (
                 <>
                   Kurang <strong>{Number(targetStats.daily_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 7.143
