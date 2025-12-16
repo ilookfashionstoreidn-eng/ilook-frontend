@@ -118,6 +118,18 @@ const HasilCutting = () => {
   const [inputData, setInputData] = useState({});
   // State untuk menyimpan data acuan
   const [dataAcuan, setDataAcuan] = useState([]);
+  // Stat target mingguan & harian
+  const [targetStats, setTargetStats] = useState({
+    weekly_target: 50000,
+    weekly_total: 0,
+    weekly_remaining: 50000,
+    daily_target: 7143,
+    daily_total: 0,
+    daily_remaining: 7143,
+    week_start: "",
+    week_end: "",
+    today: "",
+  });
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
@@ -127,9 +139,12 @@ const HasilCutting = () => {
     const fetchSpkCutting = async () => {
       try {
         const response = await API.get("/spk_cutting");
-        setSpkCuttingList(response.data || []);
+        const data = response.data?.data || response.data || [];
+        // Pastikan selalu array
+        setSpkCuttingList(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Gagal mengambil SPK Cutting:", error);
+        setSpkCuttingList([]);
       }
     };
     fetchSpkCutting();
@@ -145,10 +160,21 @@ const HasilCutting = () => {
         const response = await API.get("/hasil_cutting", {
           params: { page: currentPage },
         });
-        if (response.data.data) {
-          setDataHasilCutting(response.data.data || []);
-          setCurrentPage(response.data.current_page || 1);
-          setLastPage(response.data.last_page || 1);
+        if (response.data) {
+          if (response.data.data) {
+            setDataHasilCutting(response.data.data || []);
+            setCurrentPage(response.data.current_page || 1);
+            setLastPage(response.data.last_page || 1);
+          }
+
+          if (response.data.stats) {
+            setTargetStats((prev) => ({
+              ...prev,
+              ...response.data.stats,
+            }));
+          }
+        } else {
+          setDataHasilCutting([]);
         }
       } catch (error) {
         console.error("Gagal mengambil data hasil cutting:", error);
@@ -701,6 +727,112 @@ const HasilCutting = () => {
           <i className="fas fa-plus-circle" style={{ fontSize: "16px" }}></i>
           Tambah Hasil Cutting
         </button>
+      </div>
+
+      {/* Kartu Target Mingguan & Harian */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        {/* Target Mingguan */}
+        <div
+          style={{
+            padding: "16px 18px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, #fef9c3 0%, #fde68a 50%, #facc15 100%)",
+            boxShadow: "0 4px 14px rgba(234, 179, 8, 0.35)",
+            border: "1px solid rgba(234, 179, 8, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+          }}
+        >
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "999px",
+              background: "rgba(250, 204, 21, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "22px",
+            }}
+          >
+            🎯
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: "12px", fontWeight: "600", color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Mingguan</div>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: "#854d0e", marginTop: "4px" }}>{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
+            <div style={{ fontSize: "12px", color: "#854d0e", marginTop: "4px" }}>
+              Minggu ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
+            </div>
+            <div style={{ fontSize: "12px", color: "#854d0e", marginTop: "2px" }}>
+              {targetStats.weekly_remaining > 0 ? (
+                <>
+                  Kurang <strong>{Number(targetStats.weekly_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 50.000
+                </>
+              ) : (
+                <span style={{ fontWeight: "600" }}>Target mingguan tercapai 🎉</span>
+              )}
+            </div>
+            {targetStats.week_start && targetStats.week_end && (
+              <div style={{ fontSize: "11px", color: "#a16207", marginTop: "4px" }}>
+                Periode: {targetStats.week_start} s/d {targetStats.week_end}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Target Harian */}
+        <div
+          style={{
+            padding: "16px 18px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #4ade80 100%)",
+            boxShadow: "0 4px 14px rgba(34, 197, 94, 0.35)",
+            border: "1px solid rgba(34, 197, 94, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+          }}
+        >
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "999px",
+              background: "rgba(22, 163, 74, 0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "22px",
+            }}
+          >
+            📈
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: "12px", fontWeight: "600", color: "#14532d", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Harian</div>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: "#14532d", marginTop: "4px" }}>{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
+            <div style={{ fontSize: "12px", color: "#14532d", marginTop: "4px" }}>
+              Hari ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
+            </div>
+            <div style={{ fontSize: "12px", color: "#14532d", marginTop: "2px" }}>
+              {targetStats.daily_remaining > 0 ? (
+                <>
+                  Kurang <strong>{Number(targetStats.daily_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 7.143
+                </>
+              ) : (
+                <span style={{ fontWeight: "600" }}>Target harian tercapai 💪</span>
+              )}
+            </div>
+            {targetStats.today && <div style={{ fontSize: "11px", color: "#166534", marginTop: "4px" }}>Tanggal: {targetStats.today}</div>}
+          </div>
+        </div>
       </div>
 
       <div style={modernStyles.tableCard}>
