@@ -515,7 +515,7 @@ const HppProduk = () => {
                 <div className="hpp-stat-label">Fix</div>
               </div>
               <div className="hpp-stat-item">
-                <div className="hpp-stat-value" style={{ color: "#667eea" }}>
+                <div className="hpp-stat-value" style={{ color: "#6685eaff" }}>
                   Rp. {avgHpp.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                 </div>
                 <div className="hpp-stat-label">Rata-rata HPP</div>
