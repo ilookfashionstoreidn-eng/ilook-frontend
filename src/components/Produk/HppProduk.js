@@ -1069,6 +1069,23 @@ const HppProduk = () => {
               {/* Header info ringkas */}
               <div className="hpp-detail-top">
                 <div className="hpp-detail-hero">
+                  {selectedProduk.gambar_produk && (
+                    <div style={{ marginBottom: "20px", textAlign: "center" }}>
+                      <img
+                        src={selectedProduk.gambar_produk}
+                        alt={selectedProduk.nama_produk}
+                        style={{
+                          maxWidth: "300px",
+                          maxHeight: "300px",
+                          width: "auto",
+                          height: "auto",
+                          borderRadius: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="hpp-detail-name">{selectedProduk.nama_produk}</div>
                   <div className="hpp-detail-badges">
                     <span className="hpp-badge hpp-badge-primary">{selectedProduk.kategori_produk || "Normal"}</span>
