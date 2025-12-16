@@ -254,11 +254,11 @@ const fetchWarnaBySpk = async (id_spk) => {
       </div>
             <div className="table-container">
             <div className="filter-header1">
-            {userRole && userRole === "staff_bawah" && (
+           
     <button onClick={() => setShowForm(true)}>
         Tambah
     </button>
-)}
+
 
                 <div className="search-bar1">
                 <input
@@ -345,17 +345,17 @@ const fetchWarnaBySpk = async (id_spk) => {
                                 <td data-label="Tanggal Kirim : ">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
                                 
                              
-                                <td data-label="Total Kirim : ">
-                                {userRole === "staff_bawah" || pengiriman.status_verifikasi === "valid"
-                                    ? pengiriman.total_barang_dikirim
-                                    : "-"}
-                            </td>
+                               <td data-label="Total Kirim : ">
+    {pengiriman.total_barang_dikirim}
+</td>
 
-                            <td data-label="Sisa Barang" style={{ color: pengiriman.sisa_barang > 0 ? "red" : "black" }}>
-                                {userRole === "staff_bawah" || pengiriman.status_verifikasi === "valid"
-                                    ? pengiriman.sisa_barang
-                                    : "-"}
-                            </td>
+<td
+    data-label="Sisa Barang"
+    style={{ color: pengiriman.sisa_barang > 0 ? "red" : "black" }}
+>
+    {pengiriman.sisa_barang}
+</td>
+
 
 
                             <td data-label="Status Verifikasi:">
