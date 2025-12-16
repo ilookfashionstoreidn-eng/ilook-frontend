@@ -291,7 +291,7 @@ const HasilCutting = () => {
     return null;
   };
 
-  // Fungsi untuk mendapatkan status perbandingan
+  // Fungsi untuk mendapatkan status perbandingan dengan selisih
   const getStatusPerbandingan = (warna, beratPerProduk) => {
     if (!warna || !beratPerProduk || beratPerProduk <= 0) return null;
 
@@ -301,13 +301,24 @@ const HasilCutting = () => {
     const selisih = Math.abs(beratPerProduk - beratAcuanPerProduk);
     const toleransi = 0.01; // Toleransi 0.01 kg untuk dianggap sama
 
+    let status, selisihBerat;
     if (selisih <= toleransi) {
-      return "sama dengan acuan";
+      status = "sama dengan acuan";
+      selisihBerat = 0;
     } else if (beratPerProduk > beratAcuanPerProduk) {
-      return "lebih berat dari acuan";
+      status = "lebih berat dari acuan";
+      selisihBerat = selisih;
     } else {
-      return "lebih ringan dari acuan";
+      status = "lebih ringan dari acuan";
+      selisihBerat = selisih;
     }
+
+    return {
+      status,
+      selisih: selisihBerat,
+      berat_per_produk: beratPerProduk,
+      berat_acuan_per_produk: beratAcuanPerProduk,
+    };
   };
 
   // Handler untuk menambah data acuan
@@ -395,7 +406,8 @@ const HasilCutting = () => {
 
           statusPerbandinganArray.push({
             warna: item.warna,
-            status: statusPerbandingan,
+            status: statusPerbandingan.status || statusPerbandingan,
+            selisih: statusPerbandingan.selisih || 0,
             berat_per_produk: beratPerProduk,
             berat_acuan_per_produk: beratAcuanPerProduk,
             menggunakan_fallback: menggunakanFallback, // Flag untuk menandai apakah menggunakan fallback
@@ -414,7 +426,8 @@ const HasilCutting = () => {
           total_produk: totalProduk,
           berat_total: parseFloat(item.berat_scanned || 0), // Berat total dari stok_bahan_keluar
           berat_per_produk: beratPerProduk,
-          status_perbandingan: statusPerbandingan,
+          status_perbandingan: statusPerbandingan?.status || statusPerbandingan,
+          selisih_perbandingan: statusPerbandingan?.selisih || 0,
         };
       });
 
@@ -707,6 +720,7 @@ const HasilCutting = () => {
                     <th>SPK CUTTING</th>
                     <th>PRODUK</th>
                     <th>TOTAL PRODUK</th>
+                    <th>TOTAL BAYAR</th>
                     <th>TANGGAL</th>
                     <th>AKSI</th>
                   </tr>
@@ -745,6 +759,27 @@ const HasilCutting = () => {
                           }}
                         >
                           {item.total_produk?.toLocaleString("id-ID") || 0}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            padding: "6px 12px",
+                            background: item.total_bayar > 0 ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
+                            color: "white",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            display: "inline-block",
+                            boxShadow: item.total_bayar > 0 ? "0 2px 8px rgba(102, 126, 234, 0.3)" : "none",
+                          }}
+                        >
+                          {item.total_bayar
+                            ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}`
+                            : "Rp 0"}
                         </span>
                       </td>
                       <td style={{ color: "#666", fontSize: "13px" }}>
@@ -1569,10 +1604,18 @@ const HasilCutting = () => {
                                       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                                     }}
                                   >
-                                    {statusPerbandingan === "lebih berat dari acuan" && "⚠️ "}
-                                    {statusPerbandingan === "lebih ringan dari acuan" && "📉 "}
-                                    {statusPerbandingan === "sama dengan acuan" && "✅ "}
-                                    {statusPerbandingan}
+                                    {(() => {
+                                      const status = typeof statusPerbandingan === "object" ? statusPerbandingan.status : statusPerbandingan;
+                                      const selisih = typeof statusPerbandingan === "object" ? statusPerbandingan.selisih : 0;
+
+                                      if (status === "lebih berat dari acuan") {
+                                        return `⚠️ ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                      } else if (status === "lebih ringan dari acuan") {
+                                        return `📉 ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                      } else {
+                                        return `✅ ${status}`;
+                                      }
+                                    })()}
                                   </span>
                                 ) : (
                                   <span
@@ -1866,6 +1909,36 @@ const HasilCutting = () => {
                         })}
                       </p>
                     </div>
+                    <div
+                      style={{
+                        padding: "20px",
+                        background: "white",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                        <i className="fas fa-money-bill-wave" style={{ color: "#667eea", fontSize: "18px" }}></i>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#666", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Bayar</p>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#667eea" }}>
+                        {detailData.total_bayar
+                          ? `Rp ${Number(detailData.total_bayar).toLocaleString("id-ID", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}`
+                          : "Rp 0"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -2084,10 +2157,19 @@ const HasilCutting = () => {
                                       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                                     }}
                                   >
-                                    {statusPerbandingan === "lebih berat dari acuan" && "⚠️ "}
-                                    {statusPerbandingan === "lebih ringan dari acuan" && "📉 "}
-                                    {statusPerbandingan === "sama dengan acuan" && "✅ "}
-                                    {statusPerbandingan}
+                                    {(() => {
+                                      const statusInfo = statusPerbandinganAgregat.find((s) => s.warna === bahan.warna);
+                                      const status = statusInfo?.status || statusPerbandingan;
+                                      const selisih = statusInfo?.selisih || 0;
+
+                                      if (status === "lebih berat dari acuan") {
+                                        return `⚠️ ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                      } else if (status === "lebih ringan dari acuan") {
+                                        return `📉 ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                      } else {
+                                        return `✅ ${status}`;
+                                      }
+                                    })()}
                                   </span>
                                 ) : (
                                   <span
