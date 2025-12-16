@@ -1,30 +1,62 @@
 import React, { useEffect, useState } from "react";
+
 import "./SpkCutting.css";
+
 import API from "../../../api";
-import { FaPlus, FaInfoCircle, FaEdit, FaDownload } from "react-icons/fa";
+
+import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel } from "react-icons/fa";
 
 const SpkCutting = () => {
   const [spkCutting, setSpkCutting] = useState([]);
+
   const [error, setError] = useState(null);
+
   const [loading, setLoading] = useState(true);
+
   const [showForm, setShowForm] = useState(false);
+
   const [showEditForm, setShowEditForm] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [startDate, setStartDate] = useState("");
+
+  const [endDate, setEndDate] = useState("");
+
+  const [summary, setSummary] = useState({
+    all: 0,
+
+    "In Progress": 0,
+
+    Completed: 0,
+  });
+
   const [produkList, setProdukList] = useState([]);
+
   const [tukangList, setTukangList] = useState([]);
+
   const [bahanList, setBahanList] = useState([]);
+
   const [selectedDetailSpk, setSelectedDetailSpk] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const itemsPerPage = 5;
 
   // List nama bagian untuk dropdown
+
   const namaBagianList = ["fullbody", "atasan", "bawahan", "combinasi"];
 
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
+
   const fetchSpkNumber = async (tukangCuttingId) => {
     if (!tukangCuttingId) {
       setNewSpkCutting((prev) => ({ ...prev, id_spk_cutting: "" }));
+
       return;
     }
 
@@ -32,61 +64,108 @@ const SpkCutting = () => {
       const response = await API.post("/spk_cutting/generate-number", {
         tukang_cutting_id: tukangCuttingId,
       });
+
       setNewSpkCutting((prev) => ({
         ...prev,
+
         id_spk_cutting: response.data.id_spk_cutting,
       }));
     } catch (error) {
       console.error("Error generating SPK number:", error);
+
       alert("Gagal generate nomor seri SPK. Silakan coba lagi.");
     }
   };
 
   const [newSpkCutting, setNewSpkCutting] = useState({
     id_spk_cutting: "",
+
     produk_id: "",
+
     tanggal_batas_kirim: "",
+
     harga_jasa: "",
+
     satuan_harga: "Pcs",
+
     keterangan: "",
+
     tukang_cutting_id: "",
+
     bagian: [],
   });
 
   const [editSpkCutting, setEditSpkCutting] = useState({
     id: null,
+
     id_spk_cutting: "",
+
     produk_id: "",
+
     tanggal_batas_kirim: "",
+
     harga_jasa: "",
+
     satuan_harga: "Pcs",
+
     keterangan: "",
+
     tukang_cutting_id: "",
+
     bagian: [],
   });
 
-  useEffect(() => {
-    const fetchSpkCutting = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/spk_cutting");
-        // Urutkan data berdasarkan ID descending (terbaru di atas)
-        const sortedData = Array.isArray(response.data) ? response.data.sort((a, b) => b.id - a.id) : [];
-        setSpkCutting(sortedData);
-      } catch (error) {
-        setError("Gagal mengambil data");
-      } finally {
-        setLoading(false);
+  const fetchSpkCutting = async () => {
+    try {
+      setLoading(true);
+
+      const params = {};
+
+      if (statusFilter && statusFilter !== "all") {
+        params.status = statusFilter;
       }
-    };
+
+      if (startDate) {
+        params.start_date = startDate;
+      }
+
+      if (endDate) {
+        params.end_date = endDate;
+      }
+
+      const response = await API.get("/spk_cutting", { params });
+
+      // Urutkan data berdasarkan ID descending (terbaru di atas)
+
+      const data = response.data.data || response.data;
+
+      const sortedData = Array.isArray(data) ? data.sort((a, b) => b.id - a.id) : [];
+
+      setSpkCutting(sortedData);
+
+      // Set summary jika ada
+
+      if (response.data.summary) {
+        setSummary(response.data.summary);
+      }
+    } catch (error) {
+      setError("Gagal mengambil data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSpkCutting();
-  }, []);
+  }, [statusFilter, startDate, endDate]);
 
   useEffect(() => {
     const fetchProduk = async () => {
       try {
         setLoading(true);
+
         const response = await API.get("/produk");
+
         setProdukList(response.data.data);
       } catch (error) {
         setError("Gagal mengambil data produk.");
@@ -102,7 +181,9 @@ const SpkCutting = () => {
     const fetchTukang = async () => {
       try {
         setLoading(true);
+
         const response = await API.get("/tukang_cutting");
+
         setTukangList(response.data);
       } catch (error) {
         setError("Gagal mengambil data produk.");
@@ -118,7 +199,9 @@ const SpkCutting = () => {
     const fetchBahan = async () => {
       try {
         setLoading(true);
+
         const response = await API.get("/bahan");
+
         setBahanList(response.data);
       } catch (error) {
         setError("Gagal mengambil data bahan.");
@@ -131,43 +214,68 @@ const SpkCutting = () => {
   }, []);
 
   // Fungsi untuk fetch warna berdasarkan bahan_id
+
   const fetchWarnaByBahan = async (bahanId) => {
     if (!bahanId) {
       return [];
     }
+
     try {
       const response = await API.get("/stok-bahan/warna-dengan-stok", {
         params: { bahan_id: bahanId },
       });
+
       const warnaData = response.data || [];
+
       // Pastikan "Lainnya" selalu ada di list dengan stok 999 (selalu bisa dipilih)
+
       const hasLainnya = warnaData.some((item) => {
         const warna = typeof item === "string" ? item : item.warna;
+
         return warna === "Lainnya";
       });
+
       if (!hasLainnya) {
         warnaData.push({ warna: "Lainnya", stok: 999 });
       }
+
       return warnaData;
     } catch (error) {
       console.error("Gagal mengambil data warna:", error);
+
       // Fallback ke list warna default jika API error
+
       return [
         { warna: "Putih", stok: 0 },
+
         { warna: "Hitam", stok: 0 },
+
         { warna: "Merah", stok: 0 },
+
         { warna: "Biru", stok: 0 },
+
         { warna: "Hijau", stok: 0 },
+
         { warna: "Kuning", stok: 0 },
+
         { warna: "Abu-abu", stok: 0 },
+
         { warna: "Coklat", stok: 0 },
+
         { warna: "Pink", stok: 0 },
+
         { warna: "Ungu", stok: 0 },
+
         { warna: "Orange", stok: 0 },
+
         { warna: "Navy", stok: 0 },
+
         { warna: "Maroon", stok: 0 },
+
         { warna: "Beige", stok: 0 },
+
         { warna: "Khaki", stok: 0 },
+
         { warna: "Lainnya", stok: 999 }, // "Lainnya" selalu bisa dipilih
       ];
     }
@@ -175,9 +283,10 @@ const SpkCutting = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter, startDate, endDate]);
 
   // === PAGINATION ===
+
   const filteredSpkCutting = spkCutting.filter(
     (item) =>
       item.id.toString().includes(searchTerm.toLowerCase()) ||
@@ -185,9 +294,13 @@ const SpkCutting = () => {
       (item.tukang_cutting?.nama_tukang_cutting || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.produk?.nama_produk || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   const indexOfLastItem = currentPage * itemsPerPage;
+
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
   const currentItems = filteredSpkCutting.slice(indexOfFirstItem, indexOfLastItem);
+
   const totalPages = Math.ceil(filteredSpkCutting.length / itemsPerPage);
 
   const goToPage = (page) => {
@@ -198,9 +311,12 @@ const SpkCutting = () => {
 
   const formatRupiah = (angka) => {
     if (!angka && angka !== 0) return "-";
+
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
+
       currency: "IDR",
+
       minimumFractionDigits: 0,
     }).format(angka);
   };
@@ -209,56 +325,80 @@ const SpkCutting = () => {
     e.preventDefault();
 
     // Validasi nomor seri SPK harus ada (akan di-generate otomatis oleh backend jika kosong)
+
     if (!newSpkCutting.tukang_cutting_id) {
       alert("Pilih tukang cutting terlebih dahulu!");
+
       return;
     }
 
     // Validasi frontend sebelum submit
+
     if (!newSpkCutting.bagian || newSpkCutting.bagian.length === 0) {
       alert("Minimal harus ada 1 bagian!");
+
       return;
     }
 
     // Validasi setiap bagian dan bahan
+
     for (let i = 0; i < newSpkCutting.bagian.length; i++) {
       const bagian = newSpkCutting.bagian[i];
+
       if (!bagian.nama_bagian || bagian.nama_bagian.trim() === "") {
         alert(`Bagian ${i + 1}: Nama bagian harus diisi!`);
+
         return;
       }
+
       if (!bagian.bahan || bagian.bahan.length === 0) {
         alert(`Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
+
         return;
       }
+
       for (let j = 0; j < bagian.bahan.length; j++) {
         const bahan = bagian.bahan[j];
+
         if (!bahan.bahan_id || bahan.bahan_id === "") {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
+
           return;
         }
+
         if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Masukkan warna custom terlebih dahulu!`);
+
           return;
         }
+
         if (!bahan.qty || bahan.qty <= 0) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
+
           return;
         }
       }
     }
 
     // Konversi bahan_id menjadi integer
+
     // Hapus id_spk_cutting karena akan di-generate otomatis oleh backend
+
     const { id_spk_cutting, ...dataWithoutSpkNumber } = newSpkCutting;
+
     const dataToSend = {
       ...dataWithoutSpkNumber,
+
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
+
         bahan: bagian.bahan.map((bahan) => ({
           bahan_id: parseInt(bahan.bahan_id),
+
           // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
+
           warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
+
           qty: parseFloat(bahan.qty),
         })),
       })),
@@ -270,23 +410,30 @@ const SpkCutting = () => {
       const response = await API.post("/spk_cutting", dataToSend);
 
       console.log("Response:", response.data);
+
       alert("SPK Cutting berhasil ditambahkan!");
 
-      // Update list SPK Cutting dengan data terbaru, urutkan descending
-      setSpkCutting((prev) => {
-        const updated = [response.data.data, ...prev];
-        return updated.sort((a, b) => b.id - a.id);
-      });
+      // Refresh data dan summary
+
+      await fetchSpkCutting();
 
       // Reset form
+
       setNewSpkCutting({
         id_spk_cutting: "",
+
         produk_id: "",
+
         tanggal_batas_kirim: "",
+
         harga_jasa: "",
+
         satuan_harga: "Pcs",
+
         keterangan: "",
+
         tukang_cutting_id: "",
+
         bagian: [],
       });
 
@@ -295,13 +442,18 @@ const SpkCutting = () => {
       console.error("Error:", error.response?.data || error.message);
 
       // Tampilkan error detail dari backend
+
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors;
+
         const errorMessages = Object.keys(errors)
+
           .map((key) => {
             return `${key}: ${errors[key].join(", ")}`;
           })
+
           .join("\n");
+
         alert(`Validasi gagal:\n${errorMessages}`);
       } else {
         alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan SPK Cutting.");
@@ -311,9 +463,11 @@ const SpkCutting = () => {
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
+
     setNewSpkCutting((prev) => ({ ...prev, [name]: value }));
 
     // Jika tukang cutting berubah, generate nomor seri baru
+
     if (name === "tukang_cutting_id") {
       await fetchSpkNumber(value);
     }
@@ -321,24 +475,33 @@ const SpkCutting = () => {
 
   const handleBagianChange = (index, key, value) => {
     const updated = [...newSpkCutting.bagian];
+
     updated[index][key] = value;
+
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const handleBahanChange = async (bagianIndex, bahanIndex, key, value) => {
     const updated = [...newSpkCutting.bagian];
+
     updated[bagianIndex].bahan[bahanIndex][key] = value;
 
     // Jika bahan_id berubah, fetch warna untuk bahan tersebut dan reset warna
+
     if (key === "bahan_id" && value) {
       const warnaData = await fetchWarnaByBahan(value);
+
       updated[bagianIndex].bahan[bahanIndex].warna = "";
+
       updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
+
       // Simpan warna list untuk bahan ini
+
       updated[bagianIndex].bahan[bahanIndex].warnaList = warnaData;
     }
 
     // Jika warna diubah ke "Lainnya", reset warna_custom
+
     if (key === "warna" && value !== "Lainnya") {
       updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
     }
@@ -348,26 +511,33 @@ const SpkCutting = () => {
 
   const handleWarnaCustomChange = (bagianIndex, bahanIndex, value) => {
     const updated = [...newSpkCutting.bagian];
+
     updated[bagianIndex].bahan[bahanIndex].warna_custom = value;
+
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const addBagian = () => {
     setNewSpkCutting((prev) => ({
       ...prev,
+
       bagian: [...prev.bagian, { nama_bagian: "", bahan: [] }],
     }));
   };
 
   const addBahan = (bagianIndex) => {
     const updated = [...newSpkCutting.bagian];
+
     updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
+
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const removeBahan = (bagianIndex, bahanIndex) => {
     const updated = [...newSpkCutting.bagian];
+
     updated[bagianIndex].bahan.splice(bahanIndex, 1);
+
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
@@ -382,49 +552,118 @@ const SpkCutting = () => {
       });
 
       // Buat URL untuk blob
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
+
       const link = document.createElement("a");
+
       link.href = url;
+
       link.setAttribute("download", `qr-code-spk-cutting-${spkId}.pdf`);
+
       document.body.appendChild(link);
+
       link.click();
+
       link.remove();
+
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading QR code:", error);
+
       alert(error.response?.data?.message || "Gagal mengunduh QR code.");
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const params = {};
+
+      if (statusFilter && statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+
+      if (startDate) {
+        params.start_date = startDate;
+      }
+
+      if (endDate) {
+        params.end_date = endDate;
+      }
+
+      const response = await API.get("/spk_cutting/export/excel", {
+        params,
+
+        responseType: "blob", // Penting untuk download file
+      });
+
+      // Buat URL untuk blob
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      const link = document.createElement("a");
+
+      link.href = url;
+
+      const fileName = `spk-cutting-${new Date().toISOString().split("T")[0]}.xlsx`;
+
+      link.setAttribute("download", fileName);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+
+      alert(error.response?.data?.message || "Gagal export data ke Excel.");
     }
   };
 
   const handleEditClick = async (spk) => {
     try {
       const response = await API.get(`/spk_cutting/${spk.id}`);
+
       const data = response.data.data || response.data;
 
       // Transform data untuk form edit
+
       const bagianData = await Promise.all(
         (data.bagian || []).map(async (bagian) => {
           const bahanData = await Promise.all(
             (bagian.bahan || []).map(async (bahan) => {
               const bahanId = bahan.bahan_id?.toString() || "";
+
               // Fetch warna untuk bahan ini
+
               const warnaData = bahanId ? await fetchWarnaByBahan(bahanId) : [];
+
               return {
                 bahan_id: bahanId,
+
                 warna: bahan.warna || "",
+
                 warna_custom: warnaData.some((item) => {
                   const warnaItem = typeof item === "string" ? item : item.warna;
+
                   return warnaItem === bahan.warna;
                 })
                   ? ""
                   : bahan.warna || "",
+
                 qty: bahan.qty?.toString() || "",
+
                 warnaList: warnaData,
               };
             })
           );
+
           return {
             nama_bagian: bagian.nama_bagian || "",
+
             bahan: bahanData,
           };
         })
@@ -432,77 +671,83 @@ const SpkCutting = () => {
 
       setEditSpkCutting({
         id: data.id,
+
         id_spk_cutting: data.id_spk_cutting || "",
+
         produk_id: data.produk_id?.toString() || "",
+
         tanggal_batas_kirim: data.tanggal_batas_kirim || "",
+
         harga_jasa: data.harga_jasa?.toString() || "",
+
         satuan_harga: data.satuan_harga || "Pcs",
+
         keterangan: data.keterangan || "",
+
         tukang_cutting_id: data.tukang_cutting_id?.toString() || "",
+
         bagian: bagianData.length > 0 ? bagianData : [{ nama_bagian: "", bahan: [] }],
       });
 
       setShowEditForm(true);
     } catch (error) {
       console.error("Error loading SPK for edit:", error);
+
       alert("Gagal memuat data untuk edit.");
     }
   };
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
+
     setEditSpkCutting((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditBagianChange = (index, key, value) => {
     const updated = [...editSpkCutting.bagian];
+
     updated[index][key] = value;
+
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
-  const handleEditBahanChange = async (bagianIndex, bahanIndex, key, value) => {
+  const handleEditBahanChange = (bagianIndex, bahanIndex, key, value) => {
     const updated = [...editSpkCutting.bagian];
+
     updated[bagianIndex].bahan[bahanIndex][key] = value;
-
-    // Jika bahan_id berubah, fetch warna untuk bahan tersebut dan reset warna
-    if (key === "bahan_id" && value) {
-      const warnaData = await fetchWarnaByBahan(value);
-      updated[bagianIndex].bahan[bahanIndex].warna = "";
-      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
-      // Simpan warna list untuk bahan ini
-      updated[bagianIndex].bahan[bahanIndex].warnaList = warnaData;
-    }
-
-    // Jika warna diubah ke "Lainnya", reset warna_custom
-    if (key === "warna" && value !== "Lainnya") {
-      updated[bagianIndex].bahan[bahanIndex].warna_custom = "";
-    }
 
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const handleEditWarnaCustomChange = (bagianIndex, bahanIndex, value) => {
     const updated = [...editSpkCutting.bagian];
+
     updated[bagianIndex].bahan[bahanIndex].warna_custom = value;
+
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const addEditBagian = () => {
     setEditSpkCutting((prev) => ({
       ...prev,
+
       bagian: [...prev.bagian, { nama_bagian: "", bahan: [] }],
     }));
   };
 
   const addEditBahan = (bagianIndex) => {
     const updated = [...editSpkCutting.bagian];
+
     updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
+
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
   const removeEditBahan = (bagianIndex, bahanIndex) => {
     const updated = [...editSpkCutting.bagian];
+
     updated[bagianIndex].bahan.splice(bahanIndex, 1);
+
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
@@ -510,52 +755,76 @@ const SpkCutting = () => {
     e.preventDefault();
 
     // Validasi
+
     if (editSpkCutting.bagian.length === 0) {
       alert("Minimal harus ada 1 bagian!");
+
       return;
     }
 
     for (let i = 0; i < editSpkCutting.bagian.length; i++) {
       const bagian = editSpkCutting.bagian[i];
+
       if (!bagian.nama_bagian || bagian.nama_bagian.trim() === "") {
         alert(`Bagian ${i + 1}: Nama bagian harus diisi!`);
+
         return;
       }
+
       if (bagian.bahan.length === 0) {
         alert(`Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
+
         return;
       }
+
       for (let j = 0; j < bagian.bahan.length; j++) {
         const bahan = bagian.bahan[j];
+
         if (!bahan.bahan_id) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
+
           return;
         }
+
         if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Warna custom harus diisi jika memilih "Lainnya"!`);
+
           return;
         }
+
         if (!bahan.qty || bahan.qty <= 0) {
           alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
+
           return;
         }
       }
     }
 
     // Konversi bahan_id menjadi integer
+
     const dataToSend = {
       produk_id: parseInt(editSpkCutting.produk_id),
+
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
+
       harga_jasa: parseFloat(editSpkCutting.harga_jasa),
+
       satuan_harga: editSpkCutting.satuan_harga,
+
       keterangan: editSpkCutting.keterangan || "",
+
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
+
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
+
         bahan: bagian.bahan.map((bahan) => ({
           bahan_id: parseInt(bahan.bahan_id),
+
           // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
+
           warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
+
           qty: parseFloat(bahan.qty),
         })),
       })),
@@ -567,24 +836,32 @@ const SpkCutting = () => {
       const response = await API.put(`/spk_cutting/${editSpkCutting.id}`, dataToSend);
 
       console.log("Response:", response.data);
+
       alert("SPK Cutting berhasil diperbarui!");
 
-      // Update list SPK Cutting dengan data terbaru, urutkan descending
-      setSpkCutting((prev) => {
-        const updated = prev.map((item) => (item.id === editSpkCutting.id ? response.data.data : item));
-        return updated.sort((a, b) => b.id - a.id);
-      });
+      // Refresh data dan summary
+
+      await fetchSpkCutting();
 
       // Reset form
+
       setEditSpkCutting({
         id: null,
+
         id_spk_cutting: "",
+
         produk_id: "",
+
         tanggal_batas_kirim: "",
+
         harga_jasa: "",
+
         satuan_harga: "Pcs",
+
         keterangan: "",
+
         tukang_cutting_id: "",
+
         bagian: [],
       });
 
@@ -593,13 +870,18 @@ const SpkCutting = () => {
       console.error("Error:", error.response?.data || error.message);
 
       // Tampilkan error detail dari backend
+
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors;
+
         const errorMessages = Object.keys(errors)
+
           .map((key) => {
             return `${key}: ${errors[key].join(", ")}`;
           })
+
           .join("\n");
+
         alert(`Validasi gagal:\n${errorMessages}`);
       } else {
         alert(error.response?.data?.message || "Terjadi kesalahan saat memperbarui SPK Cutting.");
@@ -613,32 +895,97 @@ const SpkCutting = () => {
         <div className="spk-cutting-header-icon">
           <FaInfoCircle />
         </div>
+
         <h1>Data SPK Cutting</h1>
+      </div>
+
+      {/* Summary Cards */}
+
+      <div className="spk-cutting-summary-cards">
+        <div className={`spk-cutting-summary-card ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>
+          <div className="spk-cutting-summary-card-icon">📊</div>
+
+          <div className="spk-cutting-summary-card-content">
+            <div className="spk-cutting-summary-card-label">Semua</div>
+
+            <div className="spk-cutting-summary-card-value">{summary.all}</div>
+          </div>
+        </div>
+
+        <div className={`spk-cutting-summary-card ${statusFilter === "In Progress" ? "active" : ""}`} onClick={() => setStatusFilter("In Progress")}>
+          <div className="spk-cutting-summary-card-icon">⚙️</div>
+
+          <div className="spk-cutting-summary-card-content">
+            <div className="spk-cutting-summary-card-label">In Progress</div>
+
+            <div className="spk-cutting-summary-card-value">{summary["In Progress"]}</div>
+          </div>
+        </div>
+
+        <div className={`spk-cutting-summary-card ${statusFilter === "Completed" ? "active" : ""}`} onClick={() => setStatusFilter("Completed")}>
+          <div className="spk-cutting-summary-card-icon">✅</div>
+
+          <div className="spk-cutting-summary-card-content">
+            <div className="spk-cutting-summary-card-label">Completed</div>
+
+            <div className="spk-cutting-summary-card-value">{summary.Completed}</div>
+          </div>
+        </div>
       </div>
 
       <div className="spk-cutting-table-container">
         <div className="spk-cutting-filter-header">
-          <button
-            className="spk-cutting-btn-add"
-            onClick={() => {
-              // Reset form saat membuka
-              setNewSpkCutting({
-                id_spk_cutting: "",
-                produk_id: "",
-                tanggal_batas_kirim: "",
-                harga_jasa: "",
-                satuan_harga: "Pcs",
-                keterangan: "",
-                tukang_cutting_id: "",
-                bagian: [],
-              });
-              setShowForm(true);
-            }}
-          >
-            <FaPlus /> Tambah SPK Cutting
-          </button>
-          <div className="spk-cutting-search-bar">
-            <input type="text" placeholder="Cari ID, Nomor SPK, Tukang, atau Produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <div className="spk-cutting-action-buttons">
+            <button
+              className="spk-cutting-btn-add"
+              onClick={() => {
+                // Reset form saat membuka
+
+                setNewSpkCutting({
+                  id_spk_cutting: "",
+
+                  produk_id: "",
+
+                  tanggal_batas_kirim: "",
+
+                  harga_jasa: "",
+
+                  satuan_harga: "Pcs",
+
+                  keterangan: "",
+
+                  tukang_cutting_id: "",
+
+                  bagian: [],
+                });
+
+                setShowForm(true);
+              }}
+            >
+              <FaPlus /> Tambah SPK Cutting
+            </button>
+
+            <button className="spk-cutting-btn-export" onClick={handleExportExcel}>
+              <FaFileExcel /> Export Excel
+            </button>
+          </div>
+
+          <div className="spk-cutting-filter-group">
+            <select className="spk-cutting-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">Semua Status</option>
+
+              <option value="In Progress">In Progress</option>
+
+              <option value="Completed">Completed</option>
+            </select>
+
+            <input type="date" className="spk-cutting-date-filter" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+
+            <input type="date" className="spk-cutting-date-filter" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+
+            <div className="spk-cutting-search-bar">
+              <input type="text" placeholder="Cari ID, Nomor SPK, Tukang, atau Produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
           </div>
         </div>
 
@@ -652,42 +999,65 @@ const SpkCutting = () => {
               <thead>
                 <tr>
                   <th>No</th>
+
                   <th>SPK Cutting ID</th>
+
                   <th>Tukang Cutting</th>
+
                   <th>Nama Produk</th>
+
                   <th>Deadline</th>
+
                   <th>Sisa Hari</th>
+
                   <th>Harga Jasa</th>
+
                   <th>Harga Per Pcs</th>
+
                   <th>Status</th>
+
                   <th>Tanggal Dibuat</th>
+
                   <th>Aksi</th>
                 </tr>
               </thead>
+
               <tbody>
                 {currentItems.map((spk, index) => (
                   <tr key={spk.id}>
                     <td>{indexOfFirstItem + index + 1}</td>
+
                     <td>{spk.id_spk_cutting}</td>
+
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
+
                     <td>{spk.produk?.nama_produk || "-"}</td>
+
                     <td>{spk.tanggal_batas_kirim || "-"}</td>
+
                     <td>{spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}</td>
+
                     <td className="spk-cutting-price">
                       {formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}
                     </td>
+
                     <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
+
                     <td>
                       <span className={`spk-cutting-badge ${spk.status_cutting?.toLowerCase().replace(" ", "-") || "in-progress"}`}>{spk.status_cutting || "In Progress"}</span>
                     </td>
+
                     <td>{new Date(spk.created_at).toLocaleDateString("id-ID")}</td>
+
                     <td>
                       <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail" style={{ marginRight: "8px" }}>
                         <FaInfoCircle />
                       </button>
+
                       <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ marginRight: "8px" }}>
                         <FaEdit />
                       </button>
+
                       <button className="spk-cutting-btn-icon download" onClick={() => handleDownloadQr(spk.id)} title="Download QR Code" disabled={!spk.barcode}>
                         <FaDownload />
                       </button>
@@ -698,6 +1068,7 @@ const SpkCutting = () => {
             </table>
 
             {/* Pagination */}
+
             {totalPages > 1 && (
               <div className="spk-cutting-pagination">
                 <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
@@ -706,6 +1077,7 @@ const SpkCutting = () => {
 
                 {[...Array(totalPages)].map((_, i) => {
                   const page = i + 1;
+
                   return (
                     <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
                       {page}
@@ -722,6 +1094,7 @@ const SpkCutting = () => {
         )}
       </div>
 
+      {/* Modal Tambah SPK Cutting */}
       {showForm && (
         <div className="spk-cutting-modal">
           <div className="spk-cutting-modal-content">
@@ -743,9 +1116,7 @@ const SpkCutting = () => {
                 <div className="spk-cutting-form-group">
                   <label>Nomor Seri SPK:</label>
                   <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || "Pilih tukang cutting terlebih dahulu"} readOnly disabled />
-                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                    Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih. Format: [Inisial]-[Nomor Urut] (contoh: NR-01, NR-02). Nomor seri tidak dapat diubah.
-                  </small>
+                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih.</small>
                 </div>
               </div>
 
@@ -859,6 +1230,7 @@ const SpkCutting = () => {
         </div>
       )}
 
+      {/* Modal Detail SPK Cutting */}
       {selectedDetailSpk && (
         <div className="spk-cutting-modal">
           <div className="spk-cutting-modal-content">
@@ -869,12 +1241,8 @@ const SpkCutting = () => {
                 <span>{selectedDetailSpk.id}</span>
               </div>
               <div className="spk-cutting-detail-item">
-                <strong>Nomor SPK</strong>
+                <strong>Nomor Seri</strong>
                 <span>{selectedDetailSpk.id_spk_cutting}</span>
-              </div>
-              <div className="spk-cutting-detail-item">
-                <strong>Barcode</strong>
-                <span>{selectedDetailSpk.barcode || "-"}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Tukang Cutting</strong>
@@ -890,7 +1258,7 @@ const SpkCutting = () => {
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Sisa Hari</strong>
-                <span>{selectedDetailSpk.sisa_hari !== null ? selectedDetailSpk.sisa_hari + " hari" : "Belum ada deadline"}</span>
+                <span>{selectedDetailSpk.sisa_hari !== null ? `${selectedDetailSpk.sisa_hari} hari` : "Belum ada deadline"}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Harga Jasa</strong>
@@ -910,7 +1278,7 @@ const SpkCutting = () => {
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Tanggal Dibuat</strong>
-                <span>{new Date(selectedDetailSpk.created_at).toLocaleDateString("id-ID")}</span>
+                <span>{selectedDetailSpk.created_at ? new Date(selectedDetailSpk.created_at).toLocaleDateString("id-ID") : "-"}</span>
               </div>
               {selectedDetailSpk.keterangan && (
                 <div className="spk-cutting-detail-item">
@@ -920,8 +1288,8 @@ const SpkCutting = () => {
               )}
             </div>
 
-            <h3>Detail Bagian & Bahan:</h3>
-
+            {/* Detail Bagian & Bahan */}
+            <h3>Detail Bagian & Bahan</h3>
             {selectedDetailSpk.bagian?.length > 0 ? (
               <div className="spk-cutting-scrollable-table">
                 <table className="spk-cutting-log-table">
@@ -929,7 +1297,7 @@ const SpkCutting = () => {
                     <tr>
                       {selectedDetailSpk.bagian.map((bagian, i) => (
                         <th key={i} colSpan="3" style={{ textAlign: "center" }}>
-                          {bagian.nama_bagian.toUpperCase()}
+                          {bagian.nama_bagian?.toUpperCase()}
                         </th>
                       ))}
                     </tr>
@@ -945,46 +1313,21 @@ const SpkCutting = () => {
                   </thead>
                   <tbody>
                     {Array.from({
-                      length: Math.max(...selectedDetailSpk.bagian.map((b) => b.bahan.length)),
+                      length: Math.max(...selectedDetailSpk.bagian.map((b) => (b.bahan || []).length)),
                     }).map((_, rowIndex) => (
                       <tr key={rowIndex}>
                         {selectedDetailSpk.bagian.map((bagian, bagianIndex) => {
                           const bahan = bagian.bahan[rowIndex];
                           return (
-                            <>
-                              <td key={`nama-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.bahan?.nama_bahan || bahan.nama_bahan : ""}</td>
-                              <td key={`warna-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.warna || "-" : ""}</td>
-                              <td key={`qty-${bagianIndex}-${rowIndex}`}>{bahan ? bahan.qty : ""}</td>
-                            </>
+                            <React.Fragment key={`${bagianIndex}-${rowIndex}`}>
+                              <td>{bahan ? bahan.bahan?.nama_bahan || "-" : ""}</td>
+                              <td>{bahan ? bahan.warna || "-" : ""}</td>
+                              <td>{bahan ? bahan.qty || "" : ""}</td>
+                            </React.Fragment>
                           );
                         })}
                       </tr>
                     ))}
-
-                    {/* total per bagian */}
-                    <tr>
-                      {selectedDetailSpk.bagian.map((bagian, i) => {
-                        const total = bagian.bahan.reduce((sum, b) => sum + (parseFloat(b.qty) || 0), 0);
-                        return (
-                          <>
-                            <td key={`label-total-${i}`}>
-                              <strong>JUMLAH</strong>
-                            </td>
-                            <td key={`warna-total-${i}`}>-</td>
-                            <td key={`value-total-${i}`}>
-                              <strong>{total}</strong>
-                            </td>
-                          </>
-                        );
-                      })}
-                    </tr>
-
-                    {/* total keseluruhan */}
-                    <tr>
-                      <td colSpan={selectedDetailSpk.bagian.length * 3} style={{ textAlign: "right" }}>
-                        <strong>JUMLAH TOTAL: {selectedDetailSpk.bagian.reduce((sum, bagian) => sum + bagian.bahan.reduce((s, b) => s + (parseFloat(b.qty) || 0), 0), 0)}</strong>
-                      </td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1001,6 +1344,7 @@ const SpkCutting = () => {
         </div>
       )}
 
+      {/* Modal Edit SPK Cutting */}
       {showEditForm && (
         <div className="spk-cutting-modal">
           <div className="spk-cutting-modal-content">
