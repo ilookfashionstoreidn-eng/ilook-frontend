@@ -4,6 +4,7 @@ import API from "../../../api";
 
 const HistoryHasilCutting = () => {
   const [historyData, setHistoryData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedProduk, setSelectedProduk] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -54,6 +55,13 @@ const HistoryHasilCutting = () => {
     return "hasil-cutting-status-badge-same";
   };
 
+  // Filter data berdasarkan search nama produk
+  const filteredHistoryData = historyData.filter((produk) => {
+    const nama = (produk.nama_produk || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return nama.includes(query);
+  });
+
   return (
     <div className="hasil-cutting-container">
       <div className="hasil-cutting-header-card">
@@ -64,25 +72,65 @@ const HistoryHasilCutting = () => {
       </div>
 
       <div className="hasil-cutting-table-card">
+        {/* Search Produk */}
+        <div className="hasil-cutting-form-group" style={{ marginBottom: "16px" }}>
+          <label className="hasil-cutting-form-label">🔍 Cari Produk</label>
+          <div className="hasil-cutting-form-input-wrapper">
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Ketik nama produk untuk mencari history..." className="hasil-cutting-form-input" />
+            <i className="fas fa-search hasil-cutting-form-search-icon"></i>
+          </div>
+        </div>
+
         {loading ? (
           <div className="hasil-cutting-loading-container">
             <div className="hasil-cutting-loading-spinner"></div>
             <p className="hasil-cutting-loading-text">Memuat data...</p>
           </div>
-        ) : historyData.length > 0 ? (
+        ) : filteredHistoryData.length > 0 ? (
           <table className="penjahit-table">
             <thead>
               <tr>
                 <th>NO</th>
+                <th>GAMBAR</th>
                 <th>NAMA PRODUK</th>
                 <th>TOTAL HISTORY</th>
                 <th>AKSI</th>
               </tr>
             </thead>
             <tbody>
-              {historyData.map((produk, index) => (
+              {filteredHistoryData.map((produk, index) => (
                 <tr key={produk.produk_id} className="hasil-cutting-table-row">
                   <td className="hasil-cutting-table-no">{index + 1}</td>
+                  <td>
+                    {produk.gambar_produk ? (
+                      <img
+                        src={produk.gambar_produk}
+                        alt={produk.nama_produk || `Produk ${produk.produk_id}`}
+                        style={{
+                          width: "60px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/60?text=No+Image";
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="https://via.placeholder.com/60?text=No+Image"
+                        alt="No Image"
+                        style={{
+                          width: "60px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      />
+                    )}
+                  </td>
                   <td className="hasil-cutting-table-product">
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <i className="fas fa-box" style={{ color: "#667eea", fontSize: "16px" }}></i>
