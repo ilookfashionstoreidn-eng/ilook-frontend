@@ -28,6 +28,7 @@ import PesananPetugasD from "./components/Jahit/PesananPetugasD";
 import TukangCutting from "./components/Cutting/TukangCutting/TukangCutting";
 import SpkCutting from "./components/Cutting/SpkCutting/SpkCutting";
 import HasilCutting from "./components/Cutting/SpkCutting/HasilCutting";
+import HistoryHasilCutting from "./components/Cutting/SpkCutting/HistoryHasilCutting";
 import HutangCutting from "./components/Cutting/Hutang/HutangCutting";
 import CashboanCutting from "./components/Cutting/Hutang/CashboanCutting";
 import PendapatanCutting from "./components/Cutting/Hutang/PendapatanCutting";
@@ -86,6 +87,7 @@ const App = () => {
           <Route path="tukangCutting" element={<TukangCutting />} />
           <Route path="spkcutting" element={<SpkCutting />} />
           <Route path="hasilcutting" element={<HasilCutting />} />
+          <Route path="historyhasilcutting" element={<HistoryHasilCutting />} />
           <Route path="hutangc" element={<HutangCutting />} />
           <Route path="cashboanc" element={<CashboanCutting />} />
           <Route path="pendapatancutting" element={<PendapatanCutting />} />

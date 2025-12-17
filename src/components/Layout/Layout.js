@@ -208,30 +208,30 @@ const Layout = () => {
                 </ul>
               )}
             </li>
-                <li>
-                  <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
+            <li>
+              <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
                 <FaBox className="icon" /> Aksesoris
-                    <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-                  </div>
-                  {isAksesorisOpen && (
+                <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isAksesorisOpen && (
                 <ul className="dropdown-menu show">
-                      <li>
-                        <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
+                  <li>
+                    <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
                       <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Data Aksesoris
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="pembelianA" className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianA")}>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pembelianA" className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianA")}>
                       <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris Toko
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="petugas-c" className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`} onClick={() => handleMenuClick("petugas-c")}>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="petugas-c" className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`} onClick={() => handleMenuClick("petugas-c")}>
                       <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris CMT
-                        </Link>
-                      </li>
-                    </ul>
-                  )}
+                    </Link>
+                  </li>
+                </ul>
+              )}
             </li>
             <li>
               <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cutting" ? "active" : ""}`}>
@@ -258,6 +258,11 @@ const Layout = () => {
                   <li>
                     <Link to="hasilcutting" className={`dropdown-link ${activeMenu === "hasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("hasilcutting")}>
                       <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="historyhasilcutting" className={`dropdown-link ${activeMenu === "historyhasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("historyhasilcutting")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hasil Cutting
                     </Link>
                   </li>
                   <li>
