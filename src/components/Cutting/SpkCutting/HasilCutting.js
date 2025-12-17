@@ -33,6 +33,10 @@ const HasilCutting = () => {
     week_end: "",
     today: "",
   });
+  // Filter periode untuk card target
+  const [weeklyStart, setWeeklyStart] = useState("");
+  const [weeklyEnd, setWeeklyEnd] = useState("");
+  const [dailyDate, setDailyDate] = useState("");
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
@@ -61,7 +65,12 @@ const HasilCutting = () => {
       setLoadingData(true);
       try {
         const response = await API.get("/hasil_cutting", {
-          params: { page: currentPage },
+          params: {
+            page: currentPage,
+            weekly_start: weeklyStart || undefined,
+            weekly_end: weeklyEnd || undefined,
+            daily_date: dailyDate || undefined,
+          },
         });
         if (response.data) {
           if (response.data.data) {
@@ -86,7 +95,7 @@ const HasilCutting = () => {
       }
     };
     fetchDataHasilCutting();
-  }, [currentPage, showForm]);
+  }, [currentPage, showForm, weeklyStart, weeklyEnd, dailyDate]);
 
   // Fetch detail SPK Cutting dengan berat dari stok_bahan_keluar
   useEffect(() => {
@@ -626,9 +635,15 @@ const HasilCutting = () => {
           <div className="hasil-cutting-target-card-icon">🎯</div>
           <div className="hasil-cutting-target-card-content">
             <div className="hasil-cutting-target-card-label">Target Mingguan</div>
+            {/* Filter periode mingguan (custom) */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px" }}>
+              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+              <span style={{ fontSize: "12px", alignSelf: "center", color: "#854d0e" }}>s/d</span>
+              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+            </div>
             <div className="hasil-cutting-target-card-value">{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
             <div className="hasil-cutting-target-card-info">
-              Minggu ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
+              Periode ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
             <div className="hasil-cutting-target-card-status">
               {targetStats.weekly_remaining > 0 ? (
@@ -652,9 +667,13 @@ const HasilCutting = () => {
           <div className="hasil-cutting-target-card-icon daily">📈</div>
           <div className="hasil-cutting-target-card-content">
             <div className="hasil-cutting-target-card-label daily">Target Harian</div>
+            {/* Filter tanggal harian (custom) */}
+            <div style={{ marginBottom: "8px", marginTop: "4px" }}>
+              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+            </div>
             <div className="hasil-cutting-target-card-value daily">{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
             <div className="hasil-cutting-target-card-info daily">
-              Hari ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
+              Tanggal ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
             <div className="hasil-cutting-target-card-status daily">
               {targetStats.daily_remaining > 0 ? (
