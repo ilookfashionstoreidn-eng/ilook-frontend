@@ -1,0 +1,977 @@
+/* HasilCutting Component Styles */
+
+/* Container & Layout */
+.hasil-cutting-container {
+  min-height: 100vh;
+  background: #f5f5f7;
+  padding: 20px;
+}
+
+.hasil-cutting-header-card {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  border-radius: 16px;
+  padding: 24px 32px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  margin-bottom: 24px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hasil-cutting-header-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+}
+
+.hasil-cutting-header-subtitle {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hasil-cutting-primary-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hasil-cutting-primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.hasil-cutting-primary-button-icon {
+  font-size: 16px;
+}
+
+/* Target Cards */
+.hasil-cutting-target-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hasil-cutting-target-card {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #ffffffff;
+  border: 1px solid rgba(212, 212, 211, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hasil-cutting-target-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #ffffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.hasil-cutting-target-card-icon.daily {
+  background: rgba(22, 163, 74, 0.18);
+}
+
+.hasil-cutting-target-card-content {
+  flex: 1;
+}
+
+.hasil-cutting-target-card-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #854d0e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hasil-cutting-target-card-label.daily {
+  font-size: 16px;
+  color: #14532d;
+}
+
+.hasil-cutting-target-card-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #854d0e;
+  margin-top: 4px;
+}
+
+.hasil-cutting-target-card-value.daily {
+  color: #14532d;
+}
+
+.hasil-cutting-target-card-info {
+  font-size: 16px;
+  color: #854d0e;
+  margin-top: 4px;
+}
+
+.hasil-cutting-target-card-info.daily {
+  color: #14532d;
+}
+
+.hasil-cutting-target-card-status {
+  font-size: 16px;
+  color: #854d0e;
+  margin-top: 2px;
+}
+
+.hasil-cutting-target-card-status.daily {
+  color: #14532d;
+}
+
+.hasil-cutting-target-card-status-achieved {
+  font-weight: 600;
+}
+
+.hasil-cutting-target-card-period {
+  font-size: 14px;
+  color: #a16207;
+  margin-top: 4px;
+}
+
+.hasil-cutting-target-card-period.daily {
+  font-size: 11px;
+  color: #166534;
+}
+
+/* Table Card */
+.hasil-cutting-table-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.hasil-cutting-loading-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.hasil-cutting-loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+.hasil-cutting-loading-text {
+  margin-top: 16px;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Table Styles */
+.hasil-cutting-table-row {
+  transition: all 0.2s ease;
+}
+
+.hasil-cutting-table-no {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.hasil-cutting-badge {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.hasil-cutting-badge-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.hasil-cutting-badge-muted {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+}
+
+.hasil-cutting-table-product {
+  font-weight: 500;
+  color: #333;
+}
+
+.hasil-cutting-table-date {
+  color: #666;
+  font-size: 13px;
+}
+
+.hasil-cutting-table-date-icon {
+  margin-right: 6px;
+  color: #667eea;
+}
+
+.hasil-cutting-action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.hasil-cutting-action-button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hasil-cutting-action-button-info {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.hasil-cutting-action-button-info:hover {
+  background-color: #138496;
+  transform: scale(1.1);
+}
+
+.hasil-cutting-action-button-edit {
+  background-color: #ffc107;
+  color: white;
+}
+
+.hasil-cutting-action-button-edit:hover {
+  background-color: #e0a800;
+  transform: scale(1.1);
+}
+
+.hasil-cutting-action-button-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.hasil-cutting-action-button-delete:hover {
+  background-color: #c82333;
+  transform: scale(1.1);
+}
+
+/* Pagination */
+.hasil-cutting-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+}
+
+.hasil-cutting-pagination-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hasil-cutting-pagination-button:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.hasil-cutting-pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hasil-cutting-pagination-info {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* Empty State */
+.hasil-cutting-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 16px;
+  border: 2px dashed #667eea;
+}
+
+.hasil-cutting-empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.hasil-cutting-empty-state-title {
+  color: #667eea;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.hasil-cutting-empty-state-text {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Modal */
+.hasil-cutting-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+
+.hasil-cutting-modal-content {
+  background-color: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.hasil-cutting-modal-content.detail {
+  max-width: 90%;
+  width: 1000px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.hasil-cutting-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.hasil-cutting-modal-header.detail {
+  padding: 24px 32px;
+}
+
+.hasil-cutting-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.hasil-cutting-modal-close-button {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hasil-cutting-modal-close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.hasil-cutting-modal-body {
+  padding: 20px;
+}
+
+.hasil-cutting-modal-body.detail {
+  padding: 32px;
+}
+
+/* Original Data Card */
+.hasil-cutting-original-data-card {
+  padding: 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
+  border: 1px solid #dce2ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.hasil-cutting-original-data-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hasil-cutting-original-data-icon {
+  font-size: 18px;
+}
+
+.hasil-cutting-original-data-title {
+  font-weight: 700;
+  color: #3b4783;
+}
+
+.hasil-cutting-original-data-subtitle {
+  font-size: 12px;
+  color: #6c7187;
+}
+
+.hasil-cutting-original-data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.hasil-cutting-original-data-item {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.hasil-cutting-original-data-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.hasil-cutting-original-data-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.hasil-cutting-original-data-value {
+  font-weight: 700;
+  color: #111827;
+}
+
+.hasil-cutting-original-data-value.catatan {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Form Styles */
+.hasil-cutting-form-group {
+  margin-bottom: 20px;
+}
+
+.hasil-cutting-form-label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.hasil-cutting-form-input-wrapper {
+  position: relative;
+}
+
+.hasil-cutting-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.hasil-cutting-form-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.hasil-cutting-form-input-search {
+  padding-right: 40px;
+}
+
+.hasil-cutting-form-search-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #667eea;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.hasil-cutting-form-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  border: 1px solid #e0e0e0;
+}
+
+.hasil-cutting-form-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hasil-cutting-form-dropdown-item:hover {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.hasil-cutting-form-dropdown-item-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hasil-cutting-form-dropdown-item-icon {
+  color: #667eea;
+  font-size: 14px;
+}
+
+.hasil-cutting-form-dropdown-item-id {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.hasil-cutting-form-dropdown-item-name {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.hasil-cutting-form-dropdown-empty {
+  padding: 20px;
+  text-align: center;
+}
+
+.hasil-cutting-form-dropdown-empty-icon {
+  font-size: 24px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.hasil-cutting-form-dropdown-empty-text {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Section Headers */
+.hasil-cutting-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+}
+
+.hasil-cutting-section-header-gray {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.hasil-cutting-section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.hasil-cutting-section-title-gray {
+  color: #333;
+}
+
+.hasil-cutting-section-button {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hasil-cutting-section-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.hasil-cutting-section-button-gray {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 12px 32px;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+.hasil-cutting-section-button-gray:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+}
+
+.hasil-cutting-section-button-gray:disabled {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.hasil-cutting-section-button-gray:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Input Table Styles */
+.hasil-cutting-input-table-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.hasil-cutting-input-table-input:focus {
+  border-color: #667eea;
+  outline: none;
+}
+
+.hasil-cutting-input-table-display {
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  border-radius: 8px;
+  color: #495057;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hasil-cutting-input-table-display-weight {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+}
+
+.hasil-cutting-status-badge {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hasil-cutting-status-badge-heavier {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color: #721c24;
+}
+
+.hasil-cutting-status-badge-lighter {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+}
+
+.hasil-cutting-status-badge-same {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  color: #0c5460;
+}
+
+.hasil-cutting-status-badge-empty {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
+/* Delete Button */
+.hasil-cutting-delete-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hasil-cutting-delete-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Empty State for Data Acuan */
+.hasil-cutting-empty-acuan {
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  border: 2px dashed #667eea;
+}
+
+.hasil-cutting-empty-acuan-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.hasil-cutting-empty-acuan-title {
+  margin: 0;
+  color: #667eea;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hasil-cutting-empty-acuan-text {
+  margin: 8px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Error Messages */
+.hasil-cutting-error-message {
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border-radius: 12px;
+  border: 2px solid #fcc;
+  margin: 20px 0;
+}
+
+.hasil-cutting-error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.hasil-cutting-error-title {
+  margin: 0;
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.hasil-cutting-error-text {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.hasil-cutting-warning-message {
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-radius: 12px;
+  border: 2px solid #ffc107;
+  margin: 20px 0;
+}
+
+.hasil-cutting-warning-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.hasil-cutting-warning-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #856404;
+  margin-bottom: 8px;
+}
+
+.hasil-cutting-warning-text {
+  margin: 0;
+  font-size: 14px;
+  color: #856404;
+}
+
+/* Detail Modal Cards */
+.hasil-cutting-detail-info-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hasil-cutting-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.hasil-cutting-detail-info-card {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.hasil-cutting-detail-info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.hasil-cutting-detail-info-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hasil-cutting-detail-info-icon {
+  color: #667eea;
+  font-size: 18px;
+}
+
+.hasil-cutting-detail-info-label {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hasil-cutting-detail-info-value {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.hasil-cutting-detail-info-value.money {
+  color: #667eea;
+}
+
+.hasil-cutting-detail-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+}
+
+.hasil-cutting-detail-section-icon {
+  color: white;
+  font-size: 20px;
+}
+
+.hasil-cutting-detail-section-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+/* Footer Total */
+.hasil-cutting-footer-total {
+  text-align: right;
+  padding: 16px;
+  font-size: 16px;
+}
+
+.hasil-cutting-footer-total-value {
+  text-align: center;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+
+/* Spinner for Save Button */
+.hasil-cutting-save-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

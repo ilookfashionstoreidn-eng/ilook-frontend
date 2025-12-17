@@ -1,104 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./SpkCuting.css";
+import "./HasilCutting.css";
 import API from "../../../api";
-
-// Styles untuk komponen modern
-const modernStyles = {
-  container: {
-    minHeight: "100vh",
-    background: "#f5f5f7",
-    padding: "20px",
-  },
-  headerCard: {
-    background: "linear-gradient(135deg, #0487d8 0%, #17457c 100%)",
-    borderRadius: "16px",
-    padding: "24px 32px",
-    boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
-    marginBottom: "24px",
-    color: "white",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-  },
-  primaryButton: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    padding: "12px 24px",
-    fontSize: "14px",
-    fontWeight: "600",
-    cursor: "pointer",
-    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
-    transition: "all 0.3s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  tableCard: {
-    background: "white",
-    borderRadius: "16px",
-    padding: "24px",
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-    overflow: "hidden",
-  },
-  actionButton: {
-    padding: "8px 12px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500",
-    transition: "all 0.2s ease",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-    padding: "20px",
-    backdropFilter: "blur(4px)",
-    animation: "fadeIn 0.3s ease",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: "20px",
-    width: "100%",
-    maxWidth: "1200px",
-    maxHeight: "90vh",
-    overflow: "auto",
-    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-    animation: "slideUp 0.3s ease",
-  },
-  inputField: {
-    width: "100%",
-    padding: "12px 16px",
-    fontSize: "14px",
-    border: "2px solid #e0e0e0",
-    borderRadius: "10px",
-    transition: "all 0.3s ease",
-    outline: "none",
-  },
-  loadingSpinner: {
-    border: "4px solid #f3f3f3",
-    borderTop: "4px solid #667eea",
-    borderRadius: "50%",
-    width: "40px",
-    height: "40px",
-    animation: "spin 1s linear infinite",
-    margin: "20px auto",
-  },
-};
 
 const HasilCutting = () => {
   const [spkCuttingList, setSpkCuttingList] = useState([]);
@@ -704,83 +607,40 @@ const HasilCutting = () => {
   };
 
   return (
-    <div style={modernStyles.container}>
-      <div style={modernStyles.headerCard}>
+    <div className="hasil-cutting-container">
+      <div className="hasil-cutting-header-card">
         <div>
-          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "white" }}>📊 Data Hasil Cutting</h1>
-          <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "rgba(255,255,255,0.9)" }}>Kelola hasil cutting dengan mudah dan efisien</p>
+          <h1 className="hasil-cutting-header-title">📊 Data Hasil Cutting</h1>
+          <p className="hasil-cutting-header-subtitle">Kelola hasil cutting dengan mudah dan efisien</p>
         </div>
-        <button
-          onClick={handleTambahBaru}
-          style={{
-            ...modernStyles.primaryButton,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.5)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
-          }}
-        >
-          <i className="fas fa-plus-circle" style={{ fontSize: "16px" }}></i>
+        <button onClick={handleTambahBaru} className="hasil-cutting-primary-button">
+          <i className="fas fa-plus-circle hasil-cutting-primary-button-icon"></i>
           Tambah Hasil Cutting
         </button>
       </div>
 
       {/* Kartu Target Mingguan & Harian */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px",
-        }}
-      >
+      <div className="hasil-cutting-target-cards">
         {/* Target Mingguan */}
-        <div
-          style={{
-            padding: "16px 18px",
-            borderRadius: "14px",
-            background: "#ffffffff",
-            border: "1px solid rgba(212, 212, 211, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-          }}
-        >
-          <div
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "999px",
-             background: "#ffffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "22px",
-            }}
-          >
-            🎯
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Mingguan</div>
-            <div style={{ fontSize: "18px", fontWeight: "800", color: "#854d0e", marginTop: "4px" }}>{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
-            <div style={{ fontSize: "16px", color: "#854d0e", marginTop: "4px" }}>
+        <div className="hasil-cutting-target-card">
+          <div className="hasil-cutting-target-card-icon">🎯</div>
+          <div className="hasil-cutting-target-card-content">
+            <div className="hasil-cutting-target-card-label">Target Mingguan</div>
+            <div className="hasil-cutting-target-card-value">{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
+            <div className="hasil-cutting-target-card-info">
               Minggu ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
-            <div style={{ fontSize: "16px", color: "#854d0e", marginTop: "2px" }}>
+            <div className="hasil-cutting-target-card-status">
               {targetStats.weekly_remaining > 0 ? (
                 <>
                   Kurang <strong>{Number(targetStats.weekly_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 50.000
                 </>
               ) : (
-                <span style={{ fontWeight: "600" }}>Target mingguan tercapai 🎉</span>
+                <span className="hasil-cutting-target-card-status-achieved">Target mingguan tercapai 🎉</span>
               )}
             </div>
             {targetStats.week_start && targetStats.week_end && (
-              <div style={{ fontSize: "14px", color: "#a16207", marginTop: "4px" }}>
+              <div className="hasil-cutting-target-card-period">
                 Periode: {targetStats.week_start} s/d {targetStats.week_end}
               </div>
             )}
@@ -788,58 +648,35 @@ const HasilCutting = () => {
         </div>
 
         {/* Target Harian */}
-        <div
-          style={{
-           padding: "16px 18px",
-            borderRadius: "14px",
-            background: "#ffffffff",
-            border: "1px solid rgba(212, 212, 211, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-          }}
-        >
-          <div
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "999px",
-              background: "rgba(22, 163, 74, 0.18)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "22px",
-            }}
-          >
-            📈
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "16px", fontWeight: "600", color: "#14532d", textTransform: "uppercase", letterSpacing: "0.04em" }}>Target Harian</div>
-            <div style={{ fontSize: "18px", fontWeight: "800", color: "#14532d", marginTop: "4px" }}>{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
-            <div style={{ fontSize: "16px", color: "#14532d", marginTop: "4px" }}>
+        <div className="hasil-cutting-target-card">
+          <div className="hasil-cutting-target-card-icon daily">📈</div>
+          <div className="hasil-cutting-target-card-content">
+            <div className="hasil-cutting-target-card-label daily">Target Harian</div>
+            <div className="hasil-cutting-target-card-value daily">{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
+            <div className="hasil-cutting-target-card-info daily">
               Hari ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
             </div>
-            <div style={{ fontSize: "16px", color: "#14532d", marginTop: "2px" }}>
+            <div className="hasil-cutting-target-card-status daily">
               {targetStats.daily_remaining > 0 ? (
                 <>
                   Kurang <strong>{Number(targetStats.daily_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 7.143
                 </>
               ) : (
-                <span style={{ fontWeight: "600" }}>Target harian tercapai 💪</span>
+                <span className="hasil-cutting-target-card-status-achieved">Target harian tercapai 💪</span>
               )}
             </div>
-            {targetStats.today && <div style={{ fontSize: "11px", color: "#166534", marginTop: "4px" }}>Tanggal: {targetStats.today}</div>}
+            {targetStats.today && <div className="hasil-cutting-target-card-period daily">Tanggal: {targetStats.today}</div>}
           </div>
         </div>
       </div>
 
-      <div style={modernStyles.tableCard}>
+      <div className="hasil-cutting-table-card">
         {/* Tabel Index */}
         <div>
           {loadingData ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              <div style={modernStyles.loadingSpinner}></div>
-              <p style={{ marginTop: "16px", color: "#667eea", fontSize: "14px", fontWeight: "500" }}>Memuat data...</p>
+            <div className="hasil-cutting-loading-container">
+              <div className="hasil-cutting-loading-spinner"></div>
+              <p className="hasil-cutting-loading-text">Memuat data...</p>
             </div>
           ) : dataHasilCutting.length > 0 ? (
             <>
@@ -857,53 +694,17 @@ const HasilCutting = () => {
                 </thead>
                 <tbody>
                   {dataHasilCutting.map((item, index) => (
-                    <tr key={item.id} style={{ transition: "all 0.2s ease" }}>
-                      <td style={{ fontWeight: "600", color: "#667eea" }}>{(currentPage - 1) * 7 + index + 1}</td>
+                    <tr key={item.id} className="hasil-cutting-table-row">
+                      <td className="hasil-cutting-table-no">{(currentPage - 1) * 7 + index + 1}</td>
                       <td>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                            color: "white",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            display: "inline-block",
-                          }}
-                        >
-                          {item.id_spk_cutting || "-"}
-                        </span>
+                        <span className="hasil-cutting-badge">{item.id_spk_cutting || "-"}</span>
                       </td>
-                      <td style={{ fontWeight: "500", color: "#333" }}>{item.nama_produk || "-"}</td>
+                      <td className="hasil-cutting-table-product">{item.nama_produk || "-"}</td>
                       <td>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            background: item.total_produk > 0 ? "linear-gradient(135deg, #28a745 0%, #20c997 100%)" : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
-                            color: "white",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            display: "inline-block",
-                            boxShadow: item.total_produk > 0 ? "0 2px 8px rgba(40, 167, 69, 0.3)" : "none",
-                          }}
-                        >
-                          {item.total_produk?.toLocaleString("id-ID") || 0}
-                        </span>
+                        <span className={`hasil-cutting-badge ${item.total_produk > 0 ? "hasil-cutting-badge-success" : "hasil-cutting-badge-muted"}`}>{item.total_produk?.toLocaleString("id-ID") || 0}</span>
                       </td>
                       <td>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            background: item.total_bayar > 0 ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
-                            color: "white",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            display: "inline-block",
-                            boxShadow: item.total_bayar > 0 ? "0 2px 8px rgba(102, 126, 234, 0.3)" : "none",
-                          }}
-                        >
+                        <span className={`hasil-cutting-badge ${item.total_bayar > 0 ? "" : "hasil-cutting-badge-muted"}`}>
                           {item.total_bayar
                             ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
                                 minimumFractionDigits: 0,
@@ -912,8 +713,8 @@ const HasilCutting = () => {
                             : "Rp 0"}
                         </span>
                       </td>
-                      <td style={{ color: "#666", fontSize: "13px" }}>
-                        <i className="far fa-calendar" style={{ marginRight: "6px", color: "#667eea" }}></i>
+                      <td className="hasil-cutting-table-date">
+                        <i className="far fa-calendar hasil-cutting-table-date-icon"></i>
                         {new Date(item.created_at).toLocaleDateString("id-ID", {
                           day: "2-digit",
                           month: "2-digit",
@@ -921,62 +722,14 @@ const HasilCutting = () => {
                         })}
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                          <button
-                            onClick={() => handleDetail(item.id)}
-                            style={{
-                              ...modernStyles.actionButton,
-                              backgroundColor: "#17a2b8",
-                              color: "white",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#138496";
-                              e.currentTarget.style.transform = "scale(1.1)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#17a2b8";
-                              e.currentTarget.style.transform = "scale(1)";
-                            }}
-                            title="Detail"
-                          >
+                        <div className="hasil-cutting-action-buttons">
+                          <button onClick={() => handleDetail(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-info" title="Detail">
                             <i className="fas fa-info-circle"></i>
                           </button>
-                          <button
-                            onClick={() => handleEdit(item.id)}
-                            style={{
-                              ...modernStyles.actionButton,
-                              backgroundColor: "#ffc107",
-                              color: "white",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#e0a800";
-                              e.currentTarget.style.transform = "scale(1.1)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#ffc107";
-                              e.currentTarget.style.transform = "scale(1)";
-                            }}
-                            title="Edit"
-                          >
+                          <button onClick={() => handleEdit(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-edit" title="Edit">
                             <i className="fas fa-edit"></i>
                           </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            style={{
-                              ...modernStyles.actionButton,
-                              backgroundColor: "#dc3545",
-                              color: "white",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#c82333";
-                              e.currentTarget.style.transform = "scale(1.1)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#dc3545";
-                              e.currentTarget.style.transform = "scale(1)";
-                            }}
-                            title="Hapus"
-                          >
+                          <button onClick={() => handleDelete(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-delete" title="Hapus">
                             <i className="fas fa-trash"></i>
                           </button>
                         </div>
@@ -987,96 +740,15 @@ const HasilCutting = () => {
               </table>
               {/* Pagination */}
               {lastPage > 1 && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "12px",
-                    marginTop: "24px",
-                    padding: "16px",
-                    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                    borderRadius: "12px",
-                  }}
-                >
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    style={{
-                      padding: "10px 20px",
-                      background: currentPage === 1 ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "10px",
-                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      transition: "all 0.3s ease",
-                      boxShadow: currentPage === 1 ? "none" : "0 4px 15px rgba(102, 126, 234, 0.4)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentPage !== 1) {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.5)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentPage !== 1) {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
-                      }
-                    }}
-                  >
+                <div className="hasil-cutting-pagination">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1} className="hasil-cutting-pagination-button">
                     <i className="fas fa-chevron-left"></i>
                     Sebelumnya
                   </button>
-                  <span
-                    style={{
-                      padding: "10px 20px",
-                      background: "white",
-                      borderRadius: "10px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#667eea",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
+                  <span className="hasil-cutting-pagination-info">
                     Halaman {currentPage} dari {lastPage}
                   </span>
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))}
-                    disabled={currentPage === lastPage}
-                    style={{
-                      padding: "10px 20px",
-                      background: currentPage === lastPage ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "10px",
-                      cursor: currentPage === lastPage ? "not-allowed" : "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      transition: "all 0.3s ease",
-                      boxShadow: currentPage === lastPage ? "none" : "0 4px 15px rgba(102, 126, 234, 0.4)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentPage !== lastPage) {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.5)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentPage !== lastPage) {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
-                      }
-                    }}
-                  >
+                  <button onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))} disabled={currentPage === lastPage} className="hasil-cutting-pagination-button">
                     Selanjutnya
                     <i className="fas fa-chevron-right"></i>
                   </button>
@@ -1084,10 +756,10 @@ const HasilCutting = () => {
               )}
             </>
           ) : (
-            <div className="empty-state">
-              <div className="empty-state-icon">📋</div>
-              <h3 style={{ color: "#667eea", fontSize: "20px", fontWeight: "600", margin: "0 0 8px 0" }}>Belum Ada Data</h3>
-              <p className="empty-state-text">Mulai dengan menambahkan hasil cutting pertama Anda</p>
+            <div className="hasil-cutting-empty-state">
+              <div className="hasil-cutting-empty-state-icon">📋</div>
+              <h3 className="hasil-cutting-empty-state-title">Belum Ada Data</h3>
+              <p className="hasil-cutting-empty-state-text">Mulai dengan menambahkan hasil cutting pertama Anda</p>
             </div>
           )}
         </div>
@@ -1095,43 +767,21 @@ const HasilCutting = () => {
         {/* Modal Form Inputan */}
         {showForm && (
           <div
-            style={modernStyles.modalOverlay}
+            className="hasil-cutting-modal-overlay"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleBatal();
               }
             }}
           >
-            <div style={modernStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className="hasil-cutting-modal-content" onClick={(e) => e.stopPropagation()}>
               {/* Header Modal */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "24px 32px",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 10,
-                  borderRadius: "20px 20px 0 0",
-                }}
-              >
-                <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "700" }}>{editingId ? "✏️ Edit Hasil Cutting" : "➕ Tambah Hasil Cutting"}</h2>
+              <div className="hasil-cutting-modal-header" style={{ position: "sticky", top: 0, zIndex: 10 }}>
+                <h2 className="hasil-cutting-modal-title">{editingId ? "✏️ Edit Hasil Cutting" : "➕ Tambah Hasil Cutting"}</h2>
                 <button
                   onClick={handleBatal}
-                  style={{
-                    padding: "8px 14px",
-                    background: "rgba(255, 255, 255, 0.2)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    transition: "all 0.2s ease",
-                  }}
+                  className="hasil-cutting-modal-close-button"
+                  style={{ fontSize: "20px", fontWeight: "bold" }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
                     e.currentTarget.style.transform = "rotate(90deg)";
@@ -1146,7 +796,7 @@ const HasilCutting = () => {
               </div>
 
               {/* Content Modal */}
-              <div style={{ padding: "20px" }}>
+              <div className="hasil-cutting-modal-body">
                 {/* Data sebelum diedit (hanya tampil saat mode edit) */}
                 {editingId && originalData && (
                   <div
@@ -1235,11 +885,7 @@ const HasilCutting = () => {
                           setTimeout(() => setShowSpkDropdown(false), 200);
                         }}
                         placeholder="Ketik untuk mencari SPK Cutting (contoh: SK24, Gamis Karinaa)"
-                        className="modern-input"
-                        style={{
-                          ...modernStyles.inputField,
-                          paddingRight: "40px",
-                        }}
+                        className="modern-input hasil-cutting-form-input hasil-cutting-form-input-search"
                       />
                       <i
                         className="fas fa-search"
@@ -1530,9 +1176,9 @@ const HasilCutting = () => {
 
                 {/* Loading State */}
                 {loading && (
-                  <div style={{ textAlign: "center", padding: "40px" }}>
-                    <div style={modernStyles.loadingSpinner}></div>
-                    <p style={{ marginTop: "16px", color: "#667eea", fontSize: "14px", fontWeight: "500" }}>Memuat data...</p>
+                  <div className="hasil-cutting-loading-container">
+                    <div className="hasil-cutting-loading-spinner"></div>
+                    <p className="hasil-cutting-loading-text">Memuat data...</p>
                   </div>
                 )}
 
@@ -1774,7 +1420,7 @@ const HasilCutting = () => {
                               </div>
                             ) : loading ? (
                               <div>
-                                <div style={modernStyles.loadingSpinner}></div>
+                                <div className="hasil-cutting-loading-spinner"></div>
                                 <p style={{ marginTop: "16px", color: "#667eea", fontSize: "14px", fontWeight: "500" }}>Memuat data...</p>
                               </div>
                             ) : (
@@ -1893,15 +1539,8 @@ const HasilCutting = () => {
 
         {/* Modal Detail */}
         {detailData && (
-          <div style={modernStyles.modalOverlay} onClick={() => setDetailData(null)}>
-            <div
-              style={{
-                ...modernStyles.modalContent,
-                maxWidth: "90%",
-                width: "1000px",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
+          <div className="hasil-cutting-modal-overlay" onClick={() => setDetailData(null)}>
+            <div className="hasil-cutting-modal-content detail" onClick={(e) => e.stopPropagation()}>
               <div
                 style={{
                   display: "flex",
