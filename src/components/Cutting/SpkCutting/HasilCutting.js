@@ -40,6 +40,8 @@ const HasilCutting = () => {
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
+  // State untuk distribusi seri
+  const [distribusiSeri, setDistribusiSeri] = useState([{ jumlah_produk: "" }]);
 
   // Fetch list SPK Cutting
   useEffect(() => {
@@ -121,6 +123,7 @@ const HasilCutting = () => {
           if (!editingId) {
             setInputData({});
             setDataAcuan([]);
+            setDistribusiSeri([{ jumlah_produk: "" }]);
           }
           setShowSpkDropdown(false);
         } else {
@@ -311,6 +314,22 @@ const HasilCutting = () => {
       return;
     }
 
+    // Validasi distribusi seri
+    const totalProduk = getTotalKeseluruhan();
+    const totalDistribusi = getTotalDistribusiSeri();
+
+    if (totalDistribusi !== totalProduk) {
+      alert(`Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")})`);
+      return;
+    }
+
+    // Validasi: pastikan semua distribusi seri sudah diisi
+    const hasEmptyDistribusi = distribusiSeri.some((item) => !item.jumlah_produk || parseInt(item.jumlah_produk) <= 0);
+    if (hasEmptyDistribusi) {
+      alert("Mohon lengkapi semua data distribusi seri");
+      return;
+    }
+
     setSaving(true);
     try {
       // Format data hasil dengan status perbandingan
@@ -394,9 +413,15 @@ const HasilCutting = () => {
 
       const statusPerbandinganAgregatArray = Object.values(statusPerbandinganAgregat);
 
+      // Format distribusi seri
+      const formattedDistribusiSeri = distribusiSeri.map((item) => ({
+        jumlah_produk: parseInt(item.jumlah_produk) || 0,
+      }));
+
       // Debug: Log data yang akan dikirim
       console.log("Status Perbandingan Agregat yang akan dikirim:", statusPerbandinganAgregatArray);
       console.log("Data Acuan yang akan dikirim:", formattedDataAcuan);
+      console.log("Distribusi Seri yang akan dikirim:", formattedDistribusiSeri);
 
       // Kirim data ke backend
       let response;
@@ -405,6 +430,7 @@ const HasilCutting = () => {
         data_hasil: dataHasil,
         data_acuan: formattedDataAcuan,
         status_perbandingan_agregat: statusPerbandinganAgregatArray,
+        distribusi_seri: formattedDistribusiSeri,
       };
 
       console.log("Payload lengkap yang dikirim:", payload);
@@ -423,6 +449,7 @@ const HasilCutting = () => {
       setSpkDetail(null);
       setInputData({});
       setDataAcuan([]);
+      setDistribusiSeri([{ jumlah_produk: "" }]);
       setShowForm(false);
       setEditingId(null);
 
@@ -518,6 +545,10 @@ const HasilCutting = () => {
         setDataAcuan([]);
       }
 
+      // Reset distribusi seri saat edit (default 1 item kosong)
+      // TODO: Load distribusi seri yang sudah ada dari backend jika diperlukan
+      setDistribusiSeri([{ jumlah_produk: "" }]);
+
       // Fetch detail SPK untuk form
       const spkResponse = await API.get(`/hasil_cutting/detail-spk`, {
         params: { spk_cutting_id: data.spk_cutting_id },
@@ -580,6 +611,7 @@ const HasilCutting = () => {
     setSpkDetail(null);
     setInputData({});
     setDataAcuan([]);
+    setDistribusiSeri([{ jumlah_produk: "" }]);
     setDetailData(null);
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
@@ -594,10 +626,38 @@ const HasilCutting = () => {
     setSpkDetail(null);
     setInputData({});
     setDataAcuan([]);
+    setDistribusiSeri([{ jumlah_produk: "" }]);
     setDetailData(null);
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
     setOriginalData(null);
+  };
+
+  // Handler untuk tambah distribusi seri
+  const handleTambahDistribusiSeri = () => {
+    setDistribusiSeri([...distribusiSeri, { jumlah_produk: "" }]);
+  };
+
+  // Handler untuk hapus distribusi seri
+  const handleHapusDistribusiSeri = (index) => {
+    if (distribusiSeri.length > 1) {
+      const newDistribusi = distribusiSeri.filter((_, i) => i !== index);
+      setDistribusiSeri(newDistribusi);
+    }
+  };
+
+  // Handler untuk update distribusi seri
+  const handleUpdateDistribusiSeri = (index, field, value) => {
+    const newDistribusi = [...distribusiSeri];
+    newDistribusi[index] = { ...newDistribusi[index], [field]: value };
+    setDistribusiSeri(newDistribusi);
+  };
+
+  // Hitung total distribusi seri
+  const getTotalDistribusiSeri = () => {
+    return distribusiSeri.reduce((total, item) => {
+      return total + (parseInt(item.jumlah_produk) || 0);
+    }, 0);
   };
 
   // Filter SPK Cutting berdasarkan search query
@@ -1482,6 +1542,222 @@ const HasilCutting = () => {
                   </table>
                 </div>
 
+                {/* Section Distribusi Seri */}
+                {!loading && spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
+                  <div style={{ marginTop: "32px", marginBottom: "24px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "16px",
+                        padding: "16px",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "18px",
+                          fontWeight: "600",
+                          color: "white",
+                        }}
+                      >
+                        📦 Distribusi Seri
+                      </h3>
+                      <button
+                        onClick={handleTambahDistribusiSeri}
+                        style={{
+                          padding: "8px 16px",
+                          background: "rgba(255, 255, 255, 0.2)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                          e.currentTarget.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <i className="fas fa-plus"></i>
+                        Tambah Seri
+                      </button>
+                    </div>
+
+                    <div style={{ background: "white", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                      <table className="penjahit-table" style={{ margin: 0 }}>
+                        <thead>
+                          <tr>
+                            <th>NO</th>
+                            <th>KODE SERI</th>
+                            <th>JUMLAH PRODUK</th>
+                            <th>AKSI</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {distribusiSeri.map((seri, index) => {
+                            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                            const kodeSeri = spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting}${alphabet[index]}` : `-${alphabet[index]}`;
+
+                            return (
+                              <tr key={index}>
+                                <td style={{ fontWeight: "600", color: "#667eea" }}>{index + 1}</td>
+                                <td>
+                                  <span
+                                    style={{
+                                      padding: "6px 12px",
+                                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                      color: "white",
+                                      borderRadius: "8px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      display: "inline-block",
+                                    }}
+                                  >
+                                    {kodeSeri}
+                                  </span>
+                                </td>
+                                <td>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={seri.jumlah_produk}
+                                    onChange={(e) => handleUpdateDistribusiSeri(index, "jumlah_produk", e.target.value)}
+                                    placeholder="0"
+                                    className="hasil-cutting-form-input"
+                                    style={{
+                                      maxWidth: "150px",
+                                      padding: "8px 12px",
+                                      fontSize: "14px",
+                                      textAlign: "center",
+                                    }}
+                                  />
+                                </td>
+                                <td>
+                                  <button
+                                    onClick={() => handleHapusDistribusiSeri(index)}
+                                    disabled={distribusiSeri.length === 1}
+                                    style={{
+                                      padding: "6px 12px",
+                                      background: distribusiSeri.length === 1 ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "8px",
+                                      cursor: distribusiSeri.length === 1 ? "not-allowed" : "pointer",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      transition: "all 0.3s ease",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (distribusiSeri.length > 1) {
+                                        e.currentTarget.style.transform = "scale(1.05)";
+                                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (distribusiSeri.length > 1) {
+                                        e.currentTarget.style.transform = "scale(1)";
+                                        e.currentTarget.style.boxShadow = "none";
+                                      }
+                                    }}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                    Hapus
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr
+                            style={{
+                              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
+                              Total Distribusi:
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px",
+                                fontSize: "16px",
+                                fontWeight: "700",
+                                color: getTotalDistribusiSeri() === getTotalKeseluruhan() ? "#28a745" : "#dc3545",
+                              }}
+                            >
+                              {getTotalDistribusiSeri().toLocaleString("id-ID")}
+                            </td>
+                            <td></td>
+                          </tr>
+                          <tr
+                            style={{
+                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              fontWeight: "bold",
+                              color: "white",
+                            }}
+                          >
+                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
+                              Total Produk:
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px",
+                                fontSize: "16px",
+                                fontWeight: "700",
+                                color: "white",
+                              }}
+                            >
+                              {getTotalKeseluruhan().toLocaleString("id-ID")}
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+
+                      {getTotalDistribusiSeri() !== getTotalKeseluruhan() && (
+                        <div
+                          style={{
+                            marginTop: "12px",
+                            padding: "12px",
+                            background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
+                            borderRadius: "8px",
+                            border: "1px solid #ffc107",
+                            fontSize: "13px",
+                            color: "#856404",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <i className="fas fa-exclamation-triangle"></i>
+                          <span>
+                            Total distribusi ({getTotalDistribusiSeri().toLocaleString("id-ID")}) harus sama dengan total produk ({getTotalKeseluruhan().toLocaleString("id-ID")})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Error Messages */}
                 {!loading && !spkDetail && selectedSpkId && (
                   <div
@@ -1808,6 +2084,120 @@ const HasilCutting = () => {
                             </tr>
                           ))}
                         </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {detailData.distribusi_seri && Array.isArray(detailData.distribusi_seri) && detailData.distribusi_seri.length > 0 && (
+                  <div style={{ marginBottom: "32px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        marginBottom: "20px",
+                        padding: "16px",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <i className="fas fa-boxes" style={{ color: "white", fontSize: "20px" }}></i>
+                      <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "white" }}>📦 Distribusi Seri</h3>
+                    </div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table className="penjahit-table">
+                        <thead>
+                          <tr>
+                            <th>NO</th>
+                            <th>KODE SERI</th>
+                            <th>JUMLAH PRODUK</th>
+                            <th>STATUS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailData.distribusi_seri.map((distribusi, idx) => (
+                            <tr key={distribusi.id || idx}>
+                              <td style={{ fontWeight: "600", color: "#667eea" }}>{idx + 1}</td>
+                              <td>
+                                <span
+                                  style={{
+                                    padding: "6px 12px",
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    color: "white",
+                                    borderRadius: "8px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {distribusi.kode_seri}
+                                </span>
+                              </td>
+                              <td>
+                                <span
+                                  style={{
+                                    padding: "6px 12px",
+                                    background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                                    color: "white",
+                                    borderRadius: "8px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {distribusi.jumlah_produk?.toLocaleString("id-ID")}
+                                </span>
+                              </td>
+                              <td>
+                                <span
+                                  style={{
+                                    padding: "6px 12px",
+                                    background:
+                                      distribusi.status === "draft"
+                                        ? "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)"
+                                        : distribusi.status === "completed"
+                                        ? "linear-gradient(135deg, #28a745 0%, #20c997 100%)"
+                                        : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
+                                    color: "white",
+                                    borderRadius: "8px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    display: "inline-block",
+                                    textTransform: "uppercase",
+                                  }}
+                                >
+                                  {distribusi.status || "draft"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr
+                            style={{
+                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              fontWeight: "bold",
+                              color: "white",
+                            }}
+                          >
+                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
+                              Total Distribusi:
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px",
+                                fontSize: "16px",
+                                fontWeight: "700",
+                                color: "white",
+                              }}
+                            >
+                              {detailData.distribusi_seri.reduce((sum, d) => sum + (parseInt(d.jumlah_produk) || 0), 0).toLocaleString("id-ID")}
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
                   </div>
