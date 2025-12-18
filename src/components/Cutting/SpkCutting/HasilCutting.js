@@ -436,7 +436,7 @@ const HasilCutting = () => {
       console.log("Data Acuan yang akan dikirim:", formattedDataAcuan);
       console.log("Distribusi Seri yang akan dikirim:", formattedDistribusiSeri);
 
-      // Kirim data ke backend
+      // Kirim data ke backendd
       let response;
       const payload = {
         spk_cutting_id: selectedSpkId,
