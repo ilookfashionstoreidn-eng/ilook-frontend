@@ -314,21 +314,27 @@ const HasilCutting = () => {
       return;
     }
 
-    // Validasi distribusi seri
+    // Validasi distribusi seri (hanya jika user mengisi distribusi seri)
     const totalProduk = getTotalKeseluruhan();
     const totalDistribusi = getTotalDistribusiSeri();
 
-    if (totalDistribusi !== totalProduk) {
-      alert(`Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")})`);
-      return;
-    }
+    // Cek apakah user mengisi distribusi seri (ada yang diisi)
+    const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
 
-    // Validasi: pastikan semua distribusi seri sudah diisi
-    const hasEmptyDistribusi = distribusiSeri.some((item) => !item.jumlah_produk || parseInt(item.jumlah_produk) <= 0);
-    if (hasEmptyDistribusi) {
-      alert("Mohon lengkapi semua data distribusi seri");
-      return;
+    if (hasDistribusiData) {
+      // Jika user mengisi distribusi seri, validasi harus lengkap dan total harus sama
+      const hasEmptyDistribusi = distribusiSeri.some((item) => !item.jumlah_produk || parseInt(item.jumlah_produk) <= 0);
+      if (hasEmptyDistribusi) {
+        alert("Mohon lengkapi semua data distribusi seri yang sudah diisi");
+        return;
+      }
+
+      if (totalDistribusi !== totalProduk) {
+        alert(`Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")})`);
+        return;
+      }
     }
+    // Jika tidak ada distribusi seri yang diisi, skip validasi (opsional)
 
     setSaving(true);
     try {
@@ -413,10 +419,17 @@ const HasilCutting = () => {
 
       const statusPerbandinganAgregatArray = Object.values(statusPerbandinganAgregat);
 
-      // Format distribusi seri
-      const formattedDistribusiSeri = distribusiSeri.map((item) => ({
-        jumlah_produk: parseInt(item.jumlah_produk) || 0,
-      }));
+      // Format distribusi seri sesuai dengan logika backend:
+      // - Jika user mengisi distribusi seri, kirim array dengan data
+      // - Jika tidak diisi, kirim null (backend akan membuat implicit single series)
+      const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
+      const formattedDistribusiSeri = hasDistribusiData
+        ? distribusiSeri
+            .filter((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0)
+            .map((item) => ({
+              jumlah_produk: parseInt(item.jumlah_produk) || 0,
+            }))
+        : null; // Kirim null jika tidak ada distribusi seri (backend akan membuat implicit single series)
 
       // Debug: Log data yang akan dikirim
       console.log("Status Perbandingan Agregat yang akan dikirim:", statusPerbandinganAgregatArray);
@@ -1733,27 +1746,59 @@ const HasilCutting = () => {
                         </tfoot>
                       </table>
 
-                      {getTotalDistribusiSeri() !== getTotalKeseluruhan() && (
-                        <div
-                          style={{
-                            marginTop: "12px",
-                            padding: "12px",
-                            background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-                            borderRadius: "8px",
-                            border: "1px solid #ffc107",
-                            fontSize: "13px",
-                            color: "#856404",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <i className="fas fa-exclamation-triangle"></i>
-                          <span>
-                            Total distribusi ({getTotalDistribusiSeri().toLocaleString("id-ID")}) harus sama dengan total produk ({getTotalKeseluruhan().toLocaleString("id-ID")})
-                          </span>
-                        </div>
-                      )}
+                      {(() => {
+                        const totalDistribusi = getTotalDistribusiSeri();
+                        const totalProduk = getTotalKeseluruhan();
+                        const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
+
+                        // Hanya tampilkan warning jika user mengisi distribusi seri dan total tidak sama
+                        if (hasDistribusiData && totalDistribusi !== totalProduk) {
+                          return (
+                            <div
+                              style={{
+                                marginTop: "12px",
+                                padding: "12px",
+                                background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
+                                borderRadius: "8px",
+                                border: "1px solid #ffc107",
+                                fontSize: "13px",
+                                color: "#856404",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                            >
+                              <i className="fas fa-exclamation-triangle"></i>
+                              <span>
+                                Total distribusi ({totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk ({totalProduk.toLocaleString("id-ID")})
+                              </span>
+                            </div>
+                          );
+                        }
+                        // Jika tidak ada distribusi seri yang diisi, tampilkan info bahwa distribusi seri opsional
+                        if (!hasDistribusiData) {
+                          return (
+                            <div
+                              style={{
+                                marginTop: "12px",
+                                padding: "12px",
+                                background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                                borderRadius: "8px",
+                                border: "1px solid #2196f3",
+                                fontSize: "13px",
+                                color: "#1565c0",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                            >
+                              <i className="fas fa-info-circle"></i>
+                              <span>Distribusi seri bersifat opsional. Jika tidak diisi, sistem akan otomatis membuat 1 seri dengan total produk ({getTotalKeseluruhan().toLocaleString("id-ID")}).</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 )}
