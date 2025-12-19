@@ -4,7 +4,7 @@ import "./SpkCutting.css";
 
 import API from "../../../api";
 
-import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel } from "react-icons/fa";
+import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel, FaTimes } from "react-icons/fa";
 
 const SpkCutting = () => {
   const [spkCutting, setSpkCutting] = useState([]);
@@ -23,11 +23,7 @@ const SpkCutting = () => {
 
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const [startDate, setStartDate] = useState("");
-
-  const [endDate, setEndDate] = useState("");
-
-  // Filter periode untuk card In Progress
+  // Filter periode untuk card In Progress (juga digunakan untuk filter tabel)
   const [weeklyStart, setWeeklyStart] = useState("");
   const [weeklyEnd, setWeeklyEnd] = useState("");
   const [dailyDate, setDailyDate] = useState("");
@@ -58,6 +54,8 @@ const SpkCutting = () => {
   const [produkList, setProdukList] = useState([]);
 
   const [tukangList, setTukangList] = useState([]);
+
+  const [tukangPolaList, setTukangPolaList] = useState([]);
 
   const [bahanList, setBahanList] = useState([]);
 
@@ -107,6 +105,7 @@ const SpkCutting = () => {
     jenis_spk: "",
     keterangan: "",
     tukang_cutting_id: "",
+    tukang_pola_id: "",
     bagian: [],
   });
 
@@ -121,6 +120,7 @@ const SpkCutting = () => {
     jenis_spk: "",
     keterangan: "",
     tukang_cutting_id: "",
+    tukang_pola_id: "",
     bagian: [],
   });
 
@@ -134,24 +134,21 @@ const SpkCutting = () => {
         params.status = statusFilter;
       }
 
-      if (startDate) {
-        params.start_date = startDate;
-      }
-
-      if (endDate) {
-        params.end_date = endDate;
-      }
-
-      // Tambahkan parameter filter untuk card In Progress
-      if (weeklyStart) {
+      // Gunakan filter tanggal dari card progress untuk filter tabel
+      // Prioritas: jika dailyDate ada, gunakan dailyDate; jika tidak, gunakan weeklyStart/weeklyEnd
+      if (dailyDate) {
+        // Filter tabel berdasarkan dailyDate
+        params.start_date = dailyDate;
+        params.end_date = dailyDate;
+        params.daily_date = dailyDate;
+      } else if (weeklyStart && weeklyEnd) {
+        // Filter tabel berdasarkan weeklyStart dan weeklyEnd
+        params.start_date = weeklyStart;
+        params.end_date = weeklyEnd;
         params.weekly_start = weeklyStart;
-      }
-      if (weeklyEnd) {
         params.weekly_end = weeklyEnd;
       }
-      if (dailyDate) {
-        params.daily_date = dailyDate;
-      }
+      // Jika tidak ada filter tanggal yang dipilih, tabel menampilkan semua data (tidak ada start_date/end_date)
 
       // Tambahkan parameter status filter untuk progress cards
       if (statusFilter && statusFilter !== "all") {
@@ -184,7 +181,7 @@ const SpkCutting = () => {
 
   useEffect(() => {
     fetchSpkCutting();
-  }, [statusFilter, startDate, endDate, weeklyStart, weeklyEnd, dailyDate]);
+  }, [statusFilter, weeklyStart, weeklyEnd, dailyDate]);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -220,6 +217,21 @@ const SpkCutting = () => {
     };
 
     fetchTukang();
+  }, []);
+
+  useEffect(() => {
+    const fetchTukangPola = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get("/tukang_pola");
+        setTukangPolaList(response.data);
+      } catch (error) {
+        setError("Gagal mengambil data tukang pola.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTukangPola();
   }, []);
 
   useEffect(() => {
@@ -310,7 +322,7 @@ const SpkCutting = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, startDate, endDate]);
+  }, [searchTerm, statusFilter, weeklyStart, weeklyEnd, dailyDate]);
 
   // === PAGINATION ===
 
@@ -346,6 +358,17 @@ const SpkCutting = () => {
 
       minimumFractionDigits: 0,
     }).format(angka);
+  };
+
+  // Handler untuk reset filter tanggal mingguan
+  const handleResetWeekly = () => {
+    setWeeklyStart("");
+    setWeeklyEnd("");
+  };
+
+  // Handler untuk reset filter tanggal harian
+  const handleResetDaily = () => {
+    setDailyDate("");
   };
 
   const handleFormSubmit = async (e) => {
@@ -417,6 +440,7 @@ const SpkCutting = () => {
       ...dataWithoutSpkNumber,
       jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
       jenis_spk: newSpkCutting.jenis_spk || null,
+      tukang_pola_id: newSpkCutting.tukang_pola_id ? parseInt(newSpkCutting.tukang_pola_id) : null,
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
@@ -457,6 +481,7 @@ const SpkCutting = () => {
         jenis_spk: "",
         keterangan: "",
         tukang_cutting_id: "",
+        tukang_pola_id: "",
         bagian: [],
       });
 
@@ -606,12 +631,13 @@ const SpkCutting = () => {
         params.status = statusFilter;
       }
 
-      if (startDate) {
-        params.start_date = startDate;
-      }
-
-      if (endDate) {
-        params.end_date = endDate;
+      // Gunakan filter tanggal dari card progress untuk export
+      if (dailyDate) {
+        params.start_date = dailyDate;
+        params.end_date = dailyDate;
+      } else if (weeklyStart && weeklyEnd) {
+        params.start_date = weeklyStart;
+        params.end_date = weeklyEnd;
       }
 
       const response = await API.get("/spk_cutting/export/excel", {
@@ -838,6 +864,7 @@ const SpkCutting = () => {
       jenis_spk: editSpkCutting.jenis_spk || null,
       keterangan: editSpkCutting.keterangan || "",
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
+      tukang_pola_id: editSpkCutting.tukang_pola_id ? parseInt(editSpkCutting.tukang_pola_id) : null,
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 
@@ -879,6 +906,7 @@ const SpkCutting = () => {
         jenis_spk: "",
         keterangan: "",
         tukang_cutting_id: "",
+        tukang_pola_id: "",
         bagian: [],
       });
 
@@ -937,10 +965,40 @@ const SpkCutting = () => {
           <div className="spk-cutting-in-progress-card-content">
             <div className="spk-cutting-in-progress-card-label">{statusFilter === "Completed" ? "Completed Mingguan" : statusFilter === "In Progress" ? "In Progress Mingguan" : "In Progress Mingguan"}</div>
             {/* Filter periode mingguan */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
               <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
               <span style={{ fontSize: "12px", alignSelf: "center", color: "#667eea" }}>s/d</span>
               <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+              {(weeklyStart || weeklyEnd) && (
+                <button
+                  onClick={handleResetWeekly}
+                  style={{
+                    background: "#f5576c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#e63946";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f5576c";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                  title="Reset tanggal"
+                >
+                  <FaTimes style={{ fontSize: "10px" }} /> Reset
+                </button>
+              )}
             </div>
             {statusFilter === "Completed" ? (
               <>
@@ -953,17 +1011,17 @@ const SpkCutting = () => {
               </>
             ) : (
               <>
-                <div className="spk-cutting-in-progress-card-value">Target: {(summary.in_progress_weekly?.target || 50000).toLocaleString("id-ID")} Pcs</div>
+                <div className="spk-cutting-in-progress-card-value">Target: {Number(summary.in_progress_weekly?.target || 50000).toLocaleString("id-ID")} Pcs</div>
                 <div className="spk-cutting-in-progress-card-info">
                   Produk: <strong>{summary.in_progress_weekly?.count || 0} SPK</strong>
                 </div>
                 <div className="spk-cutting-in-progress-card-info">
-                  Periode ini: <strong>{(summary.in_progress_weekly?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                  Periode ini: <strong>{parseInt(summary.in_progress_weekly?.total_asumsi_produk || 0, 10).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Pcs</strong>
                 </div>
                 <div className="spk-cutting-in-progress-card-status">
                   {summary.in_progress_weekly?.remaining > 0 ? (
                     <>
-                      Kurang <strong>{(summary.in_progress_weekly?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai 50.000
+                      Kurang <strong>{Number(summary.in_progress_weekly?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai {Number(summary.in_progress_weekly?.target || 50000).toLocaleString("id-ID")}
                     </>
                   ) : (
                     <span style={{ fontWeight: "600", color: "#16a34a" }}>Target mingguan tercapai 🎉</span>
@@ -980,13 +1038,43 @@ const SpkCutting = () => {
           <div className="spk-cutting-in-progress-card-content">
             <div className="spk-cutting-in-progress-card-label daily">{statusFilter === "Completed" ? "Completed Harian" : statusFilter === "In Progress" ? "In Progress Harian" : "In Progress Harian"}</div>
             {/* Filter tanggal harian */}
-            <div style={{ marginBottom: "8px", marginTop: "4px" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
               <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+              {dailyDate && (
+                <button
+                  onClick={handleResetDaily}
+                  style={{
+                    background: "#f5576c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#e63946";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f5576c";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                  title="Reset tanggal"
+                >
+                  <FaTimes style={{ fontSize: "10px" }} /> Reset
+                </button>
+              )}
             </div>
             {statusFilter === "Completed" ? (
               <>
                 <div className="spk-cutting-in-progress-card-value daily">
-                  Total: <strong>{(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                  Total: <strong>{Number(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
                 </div>
                 <div className="spk-cutting-in-progress-card-info daily">
                   Tanggal ini: <strong>{summary.in_progress_daily?.count || 0} SPK</strong>
@@ -999,12 +1087,12 @@ const SpkCutting = () => {
                   Produk: <strong>{summary.in_progress_daily?.count || 0} SPK</strong>
                 </div>
                 <div className="spk-cutting-in-progress-card-info daily">
-                  Tanggal ini: <strong>{(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                  Tanggal ini: <strong>{parseInt(summary.in_progress_daily?.total_asumsi_produk || 0, 10).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Pcs</strong>
                 </div>
                 <div className="spk-cutting-in-progress-card-status daily">
                   {summary.in_progress_daily?.remaining > 0 ? (
                     <>
-                      Kurang <strong>{(summary.in_progress_daily?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai 7.143
+                      Kurang <strong>{Number(summary.in_progress_daily?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai {Number(summary.in_progress_daily?.target || 7143).toLocaleString("id-ID")}
                     </>
                   ) : (
                     <span style={{ fontWeight: "600", color: "#16a34a" }}>Target harian tercapai 💪</span>
@@ -1061,10 +1149,6 @@ const SpkCutting = () => {
 
               <option value="Completed">Completed</option>
             </select>
-
-            <input type="date" className="spk-cutting-date-filter" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-
-            <input type="date" className="spk-cutting-date-filter" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
 
             <div className="spk-cutting-search-bar">
               <input type="text" placeholder="Cari ID, Nomor SPK, Tukang, atau Produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -1182,6 +1266,20 @@ const SpkCutting = () => {
                   <label>Nomor Seri SPK:</label>
                   <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || "Pilih tukang cutting terlebih dahulu"} readOnly disabled />
                   <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih.</small>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Tukang Pola:</label>
+                  <select name="tukang_pola_id" value={newSpkCutting.tukang_pola_id} onChange={handleInputChange}>
+                    <option value="">Pilih Tukang Pola (Opsional)</option>
+                    {tukangPolaList.map((tukangPola) => (
+                      <option key={tukangPola.id} value={tukangPola.id}>
+                        {tukangPola.nama}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1331,6 +1429,10 @@ const SpkCutting = () => {
                 <span>{selectedDetailSpk.tukang_cutting?.nama_tukang_cutting || "-"}</span>
               </div>
               <div className="spk-cutting-detail-item">
+                <strong>Tukang Pola</strong>
+                <span>{selectedDetailSpk.tukang_pola?.nama || "-"}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
                 <strong>Produk</strong>
                 <span>{selectedDetailSpk.produk?.nama_produk || "-"}</span>
               </div>
@@ -1448,6 +1550,18 @@ const SpkCutting = () => {
                     {tukangList.map((tukang) => (
                       <option key={tukang.id} value={tukang.id}>
                         {tukang.nama_tukang_cutting}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Tukang Pola:</label>
+                  <select name="tukang_pola_id" value={editSpkCutting.tukang_pola_id} onChange={handleEditInputChange}>
+                    <option value="">Pilih Tukang Pola (Opsional)</option>
+                    {tukangPolaList.map((tukangPola) => (
+                      <option key={tukangPola.id} value={tukangPola.id}>
+                        {tukangPola.nama}
                       </option>
                     ))}
                   </select>

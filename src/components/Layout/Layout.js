@@ -246,6 +246,11 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link to="tukangPola" className={`dropdown-link ${activeMenu === "tukangPola" ? "active" : ""}`} onClick={() => handleMenuClick("tukangPola")}>
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Pola
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="markeran" className={`dropdown-link ${activeMenu === "markeran" ? "active" : ""}`} onClick={() => handleMenuClick("markeran")}>
                       <FaRuler className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Markeran Produk
                     </Link>
