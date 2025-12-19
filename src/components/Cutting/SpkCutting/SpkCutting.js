@@ -27,12 +27,32 @@ const SpkCutting = () => {
 
   const [endDate, setEndDate] = useState("");
 
+  // Filter periode untuk card In Progress
+  const [weeklyStart, setWeeklyStart] = useState("");
+  const [weeklyEnd, setWeeklyEnd] = useState("");
+  const [dailyDate, setDailyDate] = useState("");
+
   const [summary, setSummary] = useState({
     all: 0,
 
-    "In Progress": 0,
+    "In Progress": {
+      count: 0,
+      total_asumsi_produk: 0,
+    },
 
     Completed: 0,
+    in_progress_weekly: {
+      count: 0,
+      total_asumsi_produk: 0,
+      target: 50000,
+      remaining: 50000,
+    },
+    in_progress_daily: {
+      count: 0,
+      total_asumsi_produk: 0,
+      target: 7143,
+      remaining: 7143,
+    },
   });
 
   const [produkList, setProdukList] = useState([]);
@@ -79,39 +99,28 @@ const SpkCutting = () => {
 
   const [newSpkCutting, setNewSpkCutting] = useState({
     id_spk_cutting: "",
-
     produk_id: "",
-
     tanggal_batas_kirim: "",
-
     harga_jasa: "",
-
     satuan_harga: "Pcs",
-
+    jumlah_asumsi_produk: "",
+    jenis_spk: "",
     keterangan: "",
-
     tukang_cutting_id: "",
-
     bagian: [],
   });
 
   const [editSpkCutting, setEditSpkCutting] = useState({
     id: null,
-
     id_spk_cutting: "",
-
     produk_id: "",
-
     tanggal_batas_kirim: "",
-
     harga_jasa: "",
-
     satuan_harga: "Pcs",
-
+    jumlah_asumsi_produk: "",
+    jenis_spk: "",
     keterangan: "",
-
     tukang_cutting_id: "",
-
     bagian: [],
   });
 
@@ -131,6 +140,24 @@ const SpkCutting = () => {
 
       if (endDate) {
         params.end_date = endDate;
+      }
+
+      // Tambahkan parameter filter untuk card In Progress
+      if (weeklyStart) {
+        params.weekly_start = weeklyStart;
+      }
+      if (weeklyEnd) {
+        params.weekly_end = weeklyEnd;
+      }
+      if (dailyDate) {
+        params.daily_date = dailyDate;
+      }
+
+      // Tambahkan parameter status filter untuk progress cards
+      if (statusFilter && statusFilter !== "all") {
+        params.progress_status = statusFilter;
+      } else {
+        params.progress_status = "In Progress"; // Default ke In Progress jika all
       }
 
       const response = await API.get("/spk_cutting", { params });
@@ -157,7 +184,7 @@ const SpkCutting = () => {
 
   useEffect(() => {
     fetchSpkCutting();
-  }, [statusFilter, startDate, endDate]);
+  }, [statusFilter, startDate, endDate, weeklyStart, weeklyEnd, dailyDate]);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -388,7 +415,8 @@ const SpkCutting = () => {
 
     const dataToSend = {
       ...dataWithoutSpkNumber,
-
+      jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
+      jenis_spk: newSpkCutting.jenis_spk || null,
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
@@ -421,19 +449,14 @@ const SpkCutting = () => {
 
       setNewSpkCutting({
         id_spk_cutting: "",
-
         produk_id: "",
-
         tanggal_batas_kirim: "",
-
         harga_jasa: "",
-
         satuan_harga: "Pcs",
-
+        jumlah_asumsi_produk: "",
+        jenis_spk: "",
         keterangan: "",
-
         tukang_cutting_id: "",
-
         bagian: [],
       });
 
@@ -682,6 +705,10 @@ const SpkCutting = () => {
 
         satuan_harga: data.satuan_harga || "Pcs",
 
+        jumlah_asumsi_produk: data.jumlah_asumsi_produk?.toString() || "",
+
+        jenis_spk: data.jenis_spk || "",
+
         keterangan: data.keterangan || "",
 
         tukang_cutting_id: data.tukang_cutting_id?.toString() || "",
@@ -804,17 +831,13 @@ const SpkCutting = () => {
 
     const dataToSend = {
       produk_id: parseInt(editSpkCutting.produk_id),
-
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
-
       harga_jasa: parseFloat(editSpkCutting.harga_jasa),
-
       satuan_harga: editSpkCutting.satuan_harga,
-
+      jumlah_asumsi_produk: editSpkCutting.jumlah_asumsi_produk ? parseInt(editSpkCutting.jumlah_asumsi_produk, 10) : null,
+      jenis_spk: editSpkCutting.jenis_spk || null,
       keterangan: editSpkCutting.keterangan || "",
-
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
-
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 
@@ -847,21 +870,15 @@ const SpkCutting = () => {
 
       setEditSpkCutting({
         id: null,
-
         id_spk_cutting: "",
-
         produk_id: "",
-
         tanggal_batas_kirim: "",
-
         harga_jasa: "",
-
         satuan_harga: "Pcs",
-
+        jumlah_asumsi_produk: "",
+        jenis_spk: "",
         keterangan: "",
-
         tukang_cutting_id: "",
-
         bagian: [],
       });
 
@@ -899,36 +916,102 @@ const SpkCutting = () => {
         <h1>Data SPK Cutting</h1>
       </div>
 
-      {/* Summary Cards */}
-
+      {/* Summary Card - Dinamis berdasarkan filter */}
       <div className="spk-cutting-summary-cards">
-        <div className={`spk-cutting-summary-card ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>
-          <div className="spk-cutting-summary-card-icon">📊</div>
+        <div className="spk-cutting-summary-card active">
+          <div className="spk-cutting-summary-card-icon">{statusFilter === "all" ? "📊" : statusFilter === "In Progress" ? "⚙️" : "✅"}</div>
 
           <div className="spk-cutting-summary-card-content">
-            <div className="spk-cutting-summary-card-label">Semua</div>
+            <div className="spk-cutting-summary-card-label">{statusFilter === "all" ? "Semua" : statusFilter === "In Progress" ? "In Progress" : "Completed"}</div>
 
-            <div className="spk-cutting-summary-card-value">{summary.all}</div>
+            <div className="spk-cutting-summary-card-value">{statusFilter === "all" ? summary.all : statusFilter === "In Progress" ? summary["In Progress"]?.count || 0 : summary.Completed}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Card In Progress Mingguan & Harian */}
+      <div className="spk-cutting-in-progress-cards">
+        {/* Card In Progress Mingguan */}
+        <div className="spk-cutting-in-progress-card weekly">
+          <div className="spk-cutting-in-progress-card-icon">⚙️</div>
+          <div className="spk-cutting-in-progress-card-content">
+            <div className="spk-cutting-in-progress-card-label">{statusFilter === "Completed" ? "Completed Mingguan" : statusFilter === "In Progress" ? "In Progress Mingguan" : "In Progress Mingguan"}</div>
+            {/* Filter periode mingguan */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px" }}>
+              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+              <span style={{ fontSize: "12px", alignSelf: "center", color: "#667eea" }}>s/d</span>
+              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+            </div>
+            {statusFilter === "Completed" ? (
+              <>
+                <div className="spk-cutting-in-progress-card-value">
+                  Total: <strong>{(summary.in_progress_weekly?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-info">
+                  Periode ini: <strong>{summary.in_progress_weekly?.count || 0} SPK</strong>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="spk-cutting-in-progress-card-value">Target: {(summary.in_progress_weekly?.target || 50000).toLocaleString("id-ID")} Pcs</div>
+                <div className="spk-cutting-in-progress-card-info">
+                  Produk: <strong>{summary.in_progress_weekly?.count || 0} SPK</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-info">
+                  Periode ini: <strong>{(summary.in_progress_weekly?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-status">
+                  {summary.in_progress_weekly?.remaining > 0 ? (
+                    <>
+                      Kurang <strong>{(summary.in_progress_weekly?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai 50.000
+                    </>
+                  ) : (
+                    <span style={{ fontWeight: "600", color: "#16a34a" }}>Target mingguan tercapai 🎉</span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className={`spk-cutting-summary-card ${statusFilter === "In Progress" ? "active" : ""}`} onClick={() => setStatusFilter("In Progress")}>
-          <div className="spk-cutting-summary-card-icon">⚙️</div>
-
-          <div className="spk-cutting-summary-card-content">
-            <div className="spk-cutting-summary-card-label">In Progress</div>
-
-            <div className="spk-cutting-summary-card-value">{summary["In Progress"]}</div>
-          </div>
-        </div>
-
-        <div className={`spk-cutting-summary-card ${statusFilter === "Completed" ? "active" : ""}`} onClick={() => setStatusFilter("Completed")}>
-          <div className="spk-cutting-summary-card-icon">✅</div>
-
-          <div className="spk-cutting-summary-card-content">
-            <div className="spk-cutting-summary-card-label">Completed</div>
-
-            <div className="spk-cutting-summary-card-value">{summary.Completed}</div>
+        {/* Card In Progress Harian */}
+        <div className="spk-cutting-in-progress-card daily">
+          <div className="spk-cutting-in-progress-card-icon daily">📅</div>
+          <div className="spk-cutting-in-progress-card-content">
+            <div className="spk-cutting-in-progress-card-label daily">{statusFilter === "Completed" ? "Completed Harian" : statusFilter === "In Progress" ? "In Progress Harian" : "In Progress Harian"}</div>
+            {/* Filter tanggal harian */}
+            <div style={{ marginBottom: "8px", marginTop: "4px" }}>
+              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+            </div>
+            {statusFilter === "Completed" ? (
+              <>
+                <div className="spk-cutting-in-progress-card-value daily">
+                  Total: <strong>{(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-info daily">
+                  Tanggal ini: <strong>{summary.in_progress_daily?.count || 0} SPK</strong>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="spk-cutting-in-progress-card-value daily">Target: {(summary.in_progress_daily?.target || 7143).toLocaleString("id-ID")} Pcs</div>
+                <div className="spk-cutting-in-progress-card-info daily">
+                  Produk: <strong>{summary.in_progress_daily?.count || 0} SPK</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-info daily">
+                  Tanggal ini: <strong>{(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
+                </div>
+                <div className="spk-cutting-in-progress-card-status daily">
+                  {summary.in_progress_daily?.remaining > 0 ? (
+                    <>
+                      Kurang <strong>{(summary.in_progress_daily?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai 7.143
+                    </>
+                  ) : (
+                    <span style={{ fontWeight: "600", color: "#16a34a" }}>Target harian tercapai 💪</span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -999,25 +1082,17 @@ const SpkCutting = () => {
               <thead>
                 <tr>
                   <th>No</th>
-
                   <th>SPK Cutting ID</th>
-
                   <th>Tukang Cutting</th>
-
                   <th>Nama Produk</th>
-
                   <th>Deadline</th>
-
                   <th>Sisa Hari</th>
-
                   <th>Harga Jasa</th>
-
                   <th>Harga Per Pcs</th>
-
+                  <th>Jumlah Asumsi Produk</th>
+                  <th>Jenis SPK</th>
                   <th>Status</th>
-
                   <th>Tanggal Dibuat</th>
-
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -1026,38 +1101,28 @@ const SpkCutting = () => {
                 {currentItems.map((spk, index) => (
                   <tr key={spk.id}>
                     <td>{indexOfFirstItem + index + 1}</td>
-
                     <td>{spk.id_spk_cutting}</td>
-
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
-
                     <td>{spk.produk?.nama_produk || "-"}</td>
-
                     <td>{spk.tanggal_batas_kirim || "-"}</td>
-
                     <td>{spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}</td>
-
                     <td className="spk-cutting-price">
                       {formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}
                     </td>
-
                     <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
-
+                    <td>{spk.jumlah_asumsi_produk !== null && spk.jumlah_asumsi_produk !== undefined ? spk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</td>
+                    <td>{spk.jenis_spk || "-"}</td>
                     <td>
                       <span className={`spk-cutting-badge ${spk.status_cutting?.toLowerCase().replace(" ", "-") || "in-progress"}`}>{spk.status_cutting || "In Progress"}</span>
                     </td>
-
                     <td>{new Date(spk.created_at).toLocaleDateString("id-ID")}</td>
-
                     <td>
                       <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail" style={{ marginRight: "8px" }}>
                         <FaInfoCircle />
                       </button>
-
                       <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ marginRight: "8px" }}>
                         <FaEdit />
                       </button>
-
                       <button className="spk-cutting-btn-icon download" onClick={() => handleDownloadQr(spk.id)} title="Download QR Code" disabled={!spk.barcode}>
                         <FaDownload />
                       </button>
@@ -1150,6 +1215,23 @@ const SpkCutting = () => {
                   <select name="satuan_harga" value={newSpkCutting.satuan_harga} onChange={handleInputChange} required>
                     <option value="Pcs">Pcs</option>
                     <option value="Lusin">Lusin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Jumlah Asumsi Produk:</label>
+                  <input type="number" name="jumlah_asumsi_produk" value={newSpkCutting.jumlah_asumsi_produk} onChange={handleInputChange} min="0" placeholder="Contoh: 1000" />
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Jenis SPK:</label>
+                  <select name="jenis_spk" value={newSpkCutting.jenis_spk} onChange={handleInputChange}>
+                    <option value="">Pilih Jenis SPK</option>
+                    <option value="Terjual">Terjual</option>
+                    <option value="Fittingan">Fittingan</option>
+                    <option value="Habisin Bahan">Habisin Bahan</option>
                   </select>
                 </div>
               </div>
@@ -1269,6 +1351,14 @@ const SpkCutting = () => {
               <div className="spk-cutting-detail-item">
                 <strong>Harga Per Pcs</strong>
                 <span className="spk-cutting-price">{formatRupiah(selectedDetailSpk.harga_per_pcs)}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
+                <strong>Jumlah Asumsi Produk</strong>
+                <span>{selectedDetailSpk.jumlah_asumsi_produk !== null && selectedDetailSpk.jumlah_asumsi_produk !== undefined ? selectedDetailSpk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
+                <strong>Jenis SPK</strong>
+                <span>{selectedDetailSpk.jenis_spk || "-"}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Status</strong>
@@ -1400,6 +1490,23 @@ const SpkCutting = () => {
                   <select name="satuan_harga" value={editSpkCutting.satuan_harga} onChange={handleEditInputChange} required>
                     <option value="Pcs">Pcs</option>
                     <option value="Lusin">Lusin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group">
+                  <label>Jumlah Asumsi Produk:</label>
+                  <input type="number" name="jumlah_asumsi_produk" value={editSpkCutting.jumlah_asumsi_produk} onChange={handleEditInputChange} min="0" placeholder="Contoh: 1000" />
+                </div>
+
+                <div className="spk-cutting-form-group">
+                  <label>Jenis SPK:</label>
+                  <select name="jenis_spk" value={editSpkCutting.jenis_spk} onChange={handleEditInputChange}>
+                    <option value="">Pilih Jenis SPK</option>
+                    <option value="Terjual">Terjual</option>
+                    <option value="Fittingan">Fittingan</option>
+                    <option value="Habisin Bahan">Habisin Bahan</option>
                   </select>
                 </div>
               </div>
