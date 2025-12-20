@@ -456,7 +456,7 @@ const SpkCutting = () => {
 
           return;
         }
-      }
+      } 
     }
 
     // Konversi bahan_id menjadi integer
