@@ -371,6 +371,35 @@ const SpkCutting = () => {
     setDailyDate("");
   };
 
+  // Handler untuk perubahan filter tanggal mingguan
+  const handleWeeklyStartChange = (e) => {
+    const newValue = e.target.value;
+    if (newValue && dailyDate) {
+      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
+      return;
+    }
+    setWeeklyStart(newValue);
+  };
+
+  const handleWeeklyEndChange = (e) => {
+    const newValue = e.target.value;
+    if (newValue && dailyDate) {
+      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
+      return;
+    }
+    setWeeklyEnd(newValue);
+  };
+
+  // Handler untuk perubahan filter tanggal harian
+  const handleDailyDateChange = (e) => {
+    const newValue = e.target.value;
+    if (newValue && (weeklyStart || weeklyEnd)) {
+      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter mingguan terlebih dahulu.");
+      return;
+    }
+    setDailyDate(newValue);
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -966,9 +995,9 @@ const SpkCutting = () => {
             <div className="spk-cutting-in-progress-card-label">{statusFilter === "Completed" ? "Completed Mingguan" : statusFilter === "In Progress" ? "In Progress Mingguan" : "In Progress Mingguan"}</div>
             {/* Filter periode mingguan */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
-              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+              <input type="date" value={weeklyStart} onChange={handleWeeklyStartChange} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
               <span style={{ fontSize: "12px", alignSelf: "center", color: "#667eea" }}>s/d</span>
-              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+              <input type="date" value={weeklyEnd} onChange={handleWeeklyEndChange} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
               {(weeklyStart || weeklyEnd) && (
                 <button
                   onClick={handleResetWeekly}
@@ -1039,7 +1068,7 @@ const SpkCutting = () => {
             <div className="spk-cutting-in-progress-card-label daily">{statusFilter === "Completed" ? "Completed Harian" : statusFilter === "In Progress" ? "In Progress Harian" : "In Progress Harian"}</div>
             {/* Filter tanggal harian */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
-              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+              <input type="date" value={dailyDate} onChange={handleDailyDateChange} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
               {dailyDate && (
                 <button
                   onClick={handleResetDaily}
