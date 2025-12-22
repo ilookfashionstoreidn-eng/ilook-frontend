@@ -243,7 +243,9 @@ const SpkJasa = () => {
       setShowForm(false);
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan SPK Jasa.");
+      // Tampilkan pesan error yang lebih user-friendly
+      const errorMessage = error.response?.data?.message || "Terjadi kesalahan saat menyimpan SPK Jasa.";
+      alert(errorMessage);
     }
   };
 
