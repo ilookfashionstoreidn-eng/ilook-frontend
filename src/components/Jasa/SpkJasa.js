@@ -8,6 +8,7 @@ const SpkJasa = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [tukangList, setTukangList] = useState([]);
   const [distribusiList, setDistribusiList] = useState([]);
@@ -15,6 +16,7 @@ const SpkJasa = () => {
   const [selectedDistribusiId, setSelectedDistribusiId] = useState("");
   const [searchDistribusi, setSearchDistribusi] = useState("");
   const [showDistribusiDropdown, setShowDistribusiDropdown] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all"); // all, belum_diambil, sudah_diambil
   const [newSpkJasa, setNewSpkJasa] = useState({
     tukang_jasa_id: "",
     spk_cutting_distribusi_id: "",
@@ -152,6 +154,8 @@ const SpkJasa = () => {
       if (selectedDistribusiId) {
         try {
           const response = await API.get(`/preview/${selectedDistribusiId}`);
+          console.log("Preview data received:", response.data);
+          console.log("Jumlah per warna:", response.data.jumlah_per_warna);
           setPreviewData(response.data);
         } catch (error) {
           console.error("Gagal mengambil preview:", error);
@@ -164,14 +168,25 @@ const SpkJasa = () => {
     fetchPreview();
   }, [selectedDistribusiId]);
 
+  // Hitung statistik status
+  const statusStats = {
+    belum_diambil: spkJasa.filter((item) => item.status_pengambilan === "belum_diambil").length,
+    sudah_diambil: spkJasa.filter((item) => item.status_pengambilan === "sudah_diambil").length,
+    total: spkJasa.length,
+  };
+
   const filteredSpkJasa = spkJasa.filter((item) => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
       item.id.toString().includes(searchLower) ||
       item.tukangJasa?.nama?.toLowerCase().includes(searchLower) ||
       item.spkCuttingDistribusi?.spkCutting?.produk?.nama_produk?.toLowerCase().includes(searchLower) ||
-      item.spkCuttingDistribusi?.kode_seri?.toLowerCase().includes(searchLower)
-    );
+      item.spkCuttingDistribusi?.kode_seri?.toLowerCase().includes(searchLower);
+
+    // Filter berdasarkan status
+    const matchesStatus = statusFilter === "all" || item.status_pengambilan === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
   const handleFormSubmit = async (e) => {
@@ -183,16 +198,31 @@ const SpkJasa = () => {
     }
 
     try {
-      await API.post("/SpkJasa", {
-        tukang_jasa_id: newSpkJasa.tukang_jasa_id,
-        spk_cutting_distribusi_id: newSpkJasa.spk_cutting_distribusi_id,
-        deadline: newSpkJasa.deadline,
-        harga: newSpkJasa.harga || null,
-        opsi_harga: newSpkJasa.opsi_harga || null,
-        tanggal_ambil: newSpkJasa.tanggal_ambil || null,
-      });
+      if (editingId) {
+        // Update mode
+        await API.put(`/SpkJasa/${editingId}`, {
+          tukang_jasa_id: newSpkJasa.tukang_jasa_id,
+          spk_cutting_distribusi_id: newSpkJasa.spk_cutting_distribusi_id,
+          deadline: newSpkJasa.deadline,
+          harga: newSpkJasa.harga || null,
+          opsi_harga: newSpkJasa.opsi_harga || null,
+          tanggal_ambil: newSpkJasa.tanggal_ambil || null,
+        });
 
-      alert("SPK Jasa berhasil ditambahkan!");
+        alert("SPK Jasa berhasil diperbarui!");
+      } else {
+        // Create mode
+        await API.post("/SpkJasa", {
+          tukang_jasa_id: newSpkJasa.tukang_jasa_id,
+          spk_cutting_distribusi_id: newSpkJasa.spk_cutting_distribusi_id,
+          deadline: newSpkJasa.deadline,
+          harga: newSpkJasa.harga || null,
+          opsi_harga: newSpkJasa.opsi_harga || null,
+          tanggal_ambil: newSpkJasa.tanggal_ambil || null,
+        });
+
+        alert("SPK Jasa berhasil ditambahkan!");
+      }
 
       const refreshResponse = await API.get("/SpkJasa");
       setSpkJasa(refreshResponse.data);
@@ -209,6 +239,7 @@ const SpkJasa = () => {
       setPreviewData(null);
       setSearchDistribusi("");
       setShowDistribusiDropdown(false);
+      setEditingId(null);
       setShowForm(false);
     } catch (error) {
       console.error("Error:", error);
@@ -275,6 +306,7 @@ const SpkJasa = () => {
 
   const handleCloseModal = () => {
     setShowForm(false);
+    setEditingId(null);
     setNewSpkJasa({
       tukang_jasa_id: "",
       spk_cutting_distribusi_id: "",
@@ -287,6 +319,44 @@ const SpkJasa = () => {
     setPreviewData(null);
     setSearchDistribusi("");
     setShowDistribusiDropdown(false);
+  };
+
+  const handleEditClick = async (id) => {
+    try {
+      const response = await API.get(`/SpkJasa/${id}`);
+      const data = response.data;
+
+      const distribusiId = data.spk_cutting_distribusi_id || "";
+
+      setNewSpkJasa({
+        tukang_jasa_id: data.tukang_jasa_id || "",
+        spk_cutting_distribusi_id: distribusiId,
+        deadline: data.deadline ? data.deadline.split("T")[0] : "",
+        harga: data.harga || "",
+        opsi_harga: data.opsi_harga || "pcs",
+        tanggal_ambil: data.tanggal_ambil ? data.tanggal_ambil.split("T")[0] : "",
+      });
+
+      setSelectedDistribusiId(distribusiId);
+      setEditingId(id);
+      setShowForm(true);
+
+      // Load preview jika distribusi ada
+      if (distribusiId) {
+        try {
+          const previewResponse = await API.get(`/preview/${distribusiId}`);
+          console.log("Preview data received (edit mode):", previewResponse.data);
+          console.log("Jumlah per warna (edit):", previewResponse.data.jumlah_per_warna);
+          setPreviewData(previewResponse.data);
+        } catch (previewError) {
+          console.error("Error fetching preview:", previewError);
+          setPreviewData(null);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching SPK Jasa:", error);
+      alert("Gagal mengambil data untuk diedit");
+    }
   };
 
   // Close dropdown when clicking outside
@@ -318,6 +388,31 @@ const SpkJasa = () => {
         </button>
         <div className="search-wrapper">
           <input type="text" placeholder="Cari ID, Tukang Jasa, Produk, atau Kode Seri..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+      </div>
+
+      {/* Status Cards */}
+      <div className="status-cards-container">
+        <div className={`status-card ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>
+          <div className="status-card-icon">📊</div>
+          <div className="status-card-content">
+            <div className="status-card-label">Total SPK Jasa</div>
+            <div className="status-card-value">{statusStats.total}</div>
+          </div>
+        </div>
+        <div className={`status-card ${statusFilter === "belum_diambil" ? "active" : ""}`} onClick={() => setStatusFilter("belum_diambil")}>
+          <div className="status-card-icon">⏳</div>
+          <div className="status-card-content">
+            <div className="status-card-label">Belum Diambil</div>
+            <div className="status-card-value">{statusStats.belum_diambil}</div>
+          </div>
+        </div>
+        <div className={`status-card ${statusFilter === "sudah_diambil" ? "active" : ""}`} onClick={() => setStatusFilter("sudah_diambil")}>
+          <div className="status-card-icon">✅</div>
+          <div className="status-card-content">
+            <div className="status-card-label">Sudah Diambil</div>
+            <div className="status-card-value">{statusStats.sudah_diambil}</div>
+          </div>
         </div>
       </div>
 
@@ -389,12 +484,37 @@ const SpkJasa = () => {
                       <td>{getStatusBadge(spk.status_pengambilan)}</td>
                       <td>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
                       <td>
-                        <select className="status-select" value={spk.status_pengambilan} onChange={(e) => handleStatusUpdate(spk.id, e.target.value)}>
-                          <option value="belum_diambil">Belum Diambil</option>
-                          <option value="sudah_diambil">Sudah Diambil</option>
-                          <option value="batal_diambil">Batal Diambil</option>
-                          <option value="selesai">Selesai</option>
-                        </select>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEditClick(spk.id)}
+                            style={{
+                              padding: "6px 12px",
+                              background: "#10b981",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = "#059669";
+                              e.target.style.transform = "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = "#10b981";
+                              e.target.style.transform = "translateY(0)";
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <select className="status-select" value={spk.status_pengambilan} onChange={(e) => handleStatusUpdate(spk.id, e.target.value)}>
+                            <option value="belum_diambil">Belum Diambil</option>
+                            <option value="sudah_diambil">Sudah Diambil</option>
+                          </select>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -409,7 +529,7 @@ const SpkJasa = () => {
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content-wrapper" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Tambah SPK Jasa</h2>
+              <h2>{editingId ? "Edit SPK Jasa" : "Tambah SPK Jasa"}</h2>
               <button className="modal-close" onClick={handleCloseModal}>
                 <FaTimes />
               </button>
@@ -469,6 +589,24 @@ const SpkJasa = () => {
                       <div>Jumlah: {previewData.jumlah} pcs</div>
                       <div>Produk: {previewData.produk}</div>
                       <div>Tukang Cutting: {previewData.tukang_cutting}</div>
+                      {previewData.jumlah_per_warna && Array.isArray(previewData.jumlah_per_warna) && previewData.jumlah_per_warna.length > 0 ? (
+                        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(3, 105, 161, 0.2)" }}>
+                          <strong style={{ display: "block", marginBottom: "8px" }}>Jumlah per Warna:</strong>
+                          {previewData.jumlah_per_warna.map((item, index) => (
+                            <div key={index} style={{ margin: "4px 0", padding: "4px 0" }}>
+                              <span style={{ fontWeight: "600" }}>{item.warna}:</span> {item.jumlah} pcs
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        previewData.debug && (
+                          <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(3, 105, 161, 0.2)", fontSize: "12px", color: "#666" }}>
+                            <div>Debug: Has HasilCutting: {previewData.debug.has_hasil_cutting ? "Yes" : "No"}</div>
+                            <div>Debug: Bahan Count: {previewData.debug.bahan_count}</div>
+                            <div style={{ marginTop: "4px", color: "#999" }}>Data warna tidak tersedia</div>
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -488,7 +626,7 @@ const SpkJasa = () => {
 
                 <div className="form-group">
                   <label>Deadline:</label>
-                  <input type="date" name="deadline" value={newSpkJasa.deadline} onChange={handleInputChange} required min={new Date().toISOString().split("T")[0]} />
+                  <input type="date" name="deadline" value={newSpkJasa.deadline} onChange={handleInputChange} required min={editingId ? undefined : new Date().toISOString().split("T")[0]} />
                 </div>
 
                 <div className="form-group">
@@ -511,7 +649,7 @@ const SpkJasa = () => {
 
                 <div className="form-actions">
                   <button type="submit" className="btn-submit">
-                    Simpan
+                    {editingId ? "Update" : "Simpan"}
                   </button>
                   <button type="button" className="btn-cancel" onClick={handleCloseModal}>
                     Batal
