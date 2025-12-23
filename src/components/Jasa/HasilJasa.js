@@ -9,13 +9,14 @@ const HasilJasa = () => {
  const [loading, setLoading]= useState(true);
  const [error, setError]= useState(true);
  const [searchTerm, setSearchTerm] = useState("");
- const[showForm, setShowForm]= useState(false);
+ const [showForm, setShowForm]= useState(false);
  const [listHasilJasa, setListHasilJasa] = useState([]);
  const [spkJasaList, setSpkJasaList] = useState([]);
  const [newHasilJasa, setNewHasilJasa] = useState({
       spk_jasa_id: "",
       tanggal: "",
       jumlah_hasil: "",
+      jumlah_rusak: 0,
  });
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const handleFormSubmit = async (e) => {
       spk_jasa_id: newHasilJasa.spk_jasa_id,     
       tanggal: newHasilJasa.tanggal,            
       jumlah_hasil: newHasilJasa.jumlah_hasil,   
+      jumlah_rusak: newHasilJasa.jumlah_rusak,
     });
 
     console.log("Response:", response.data);
@@ -59,6 +61,7 @@ const handleFormSubmit = async (e) => {
       spk_jasa_id: "",
       tanggal: "",
       jumlah_hasil: "",
+      jumlah_rusak: 0,
     });
 
     setShowForm(false);
@@ -119,7 +122,8 @@ useEffect(() => {
                  <th>Spk Jasa ID</th>
                  <th>Tukang Jasa</th>
                  <th>Nama Produk</th>
-                 <th>Jumlah</th>
+                 <th>Jumlah </th>
+                <th>Jumlah Rusak</th>
                  <th>Total Bayar </th>
                  <th>Tanggal Input</th>
                
@@ -132,7 +136,8 @@ useEffect(() => {
                   <td data-label="spk cuttinh id : ">{hasil.spk_jasa.id}</td>
                    <td data-label="tukang : ">{hasil.spk_jasa.tukang_jasa?.nama}</td>
                    <td data-label="nama produk : ">{hasil.spk_jasa.produk?.nama_produk}</td>
-                     <td data-label="spk cutting id : ">{hasil.jumlah_hasil}</td>
+                    <td data-label="spk cutting id : ">{hasil.jumlah_hasil}</td>
+                     <td data-label="spk cutting id : ">{hasil.jumlah_rusak}</td>
                    <td data-label="harga jasa : ">Rp. {hasil.total_pendapatan}</td>
                      <td data-label="htanggal : ">
                       {new Date(hasil.tanggal).toLocaleDateString("id-ID")}
@@ -158,12 +163,16 @@ useEffect(() => {
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">Pilih SPK Jasa</option>
-                  {spkJasaList.map((spk) => (
-                    <option key={spk.id} value={spk.id}>
-                      {`ID: ${spk.id} - ${spk.produk?.nama_produk  || 'Tanpa Nama'}`}
-                    </option>
-                  ))}
+                <option value="">Pilih SPK Jasa</option>
+{spkJasaList
+  .filter(spk => spk.status_pengambilan === 'sudah_diambil')
+  .map(spk => (
+    <option key={spk.id} value={spk.id}>
+      {`SPK Jasa #${spk.id} | Distribusi #${spk.spk_cutting_distribusi_id} | ${spk.produk?.nama_produk ?? '-'}`}
+    </option>
+))}
+
+
                 </select>
               </div>
 
@@ -192,7 +201,17 @@ useEffect(() => {
               />
             </div>
 
-            
+          <div className="form-group">
+            <label>Jumlah Rusak:</label>
+            <input
+              type="number"
+              name="jumlah_rusak"
+              value={newHasilJasa.jumlah_rusak}
+              onChange={handleInputChange}
+              min="0"
+            />
+          </div>
+
             <div className="form-actions">
               <button type="submit" className="btn btn-submit">
                 Simpan
