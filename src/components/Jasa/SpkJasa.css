@@ -212,8 +212,8 @@
 
 .table-wrapper {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -224,56 +224,67 @@
 }
 
 .spk-jasa-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #f8f9fa;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .spk-jasa-table th {
-  padding: 16px 12px;
+  padding: 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  font-size: 14px;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .spk-jasa-table tbody tr {
-  border-bottom: 1px solid #f0f0f0;
-  transition: all 0.2s ease;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .spk-jasa-table tbody tr:hover {
-  background-color: #f8f9ff;
+  background-color: #f8f9fa;
 }
 
 .spk-jasa-table td {
-  padding: 14px 12px;
+  padding: 12px;
   font-size: 14px;
-  color: #333;
+  color: #495057;
   vertical-align: middle;
-  white-space: nowrap;
 }
 
-/* Kolom khusus yang boleh wrap */
+/* Kolom No - center */
+.spk-jasa-table th:nth-child(1),
+.spk-jasa-table td:nth-child(1) {
+  text-align: center;
+  width: 50px;
+}
+
+/* Kolom Tukang Jasa */
+.spk-jasa-table th:nth-child(2),
+.spk-jasa-table td:nth-child(2) {
+  text-align: left;
+}
+
+/* Kolom Kode Seri */
+.spk-jasa-table th:nth-child(3),
+.spk-jasa-table td:nth-child(3) {
+  text-align: left;
+}
+
+/* Kolom Nama Produk - boleh wrap */
+.spk-jasa-table th:nth-child(4),
 .spk-jasa-table td:nth-child(4) {
+  text-align: left;
   white-space: normal;
   max-width: 200px;
   word-wrap: break-word;
 }
 
-/* Kolom ID - center dan narrow */
-.spk-jasa-table th:nth-child(1),
-.spk-jasa-table td:nth-child(1) {
-  text-align: center;
-  width: 60px;
-}
-
-/* Kolom Jumlah - center dan narrow */
+/* Kolom Jumlah - center */
 .spk-jasa-table th:nth-child(5),
 .spk-jasa-table td:nth-child(5) {
   text-align: center;
-  width: 80px;
 }
 
 /* Kolom Harga - right align */
@@ -281,42 +292,122 @@
 .spk-jasa-table td:nth-child(6) {
   text-align: right;
   white-space: nowrap;
-  width: 140px;
 }
 
 /* Kolom Deadline - center */
 .spk-jasa-table th:nth-child(7),
 .spk-jasa-table td:nth-child(7) {
   text-align: center;
-  width: 120px;
 }
 
 /* Kolom Sisa Hari - center */
 .spk-jasa-table th:nth-child(8),
 .spk-jasa-table td:nth-child(8) {
   text-align: center;
-  width: 110px;
 }
 
 /* Kolom Status - center */
 .spk-jasa-table th:nth-child(9),
 .spk-jasa-table td:nth-child(9) {
   text-align: center;
-  width: 140px;
 }
 
 /* Kolom Tanggal Ambil - center */
 .spk-jasa-table th:nth-child(10),
 .spk-jasa-table td:nth-child(10) {
   text-align: center;
-  width: 130px;
 }
 
 /* Kolom Aksi - center */
 .spk-jasa-table th:nth-child(11),
 .spk-jasa-table td:nth-child(11) {
   text-align: center;
-  width: 160px;
+  width: 180px;
+  min-width: 160px;
+}
+
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pagination-info {
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #495057;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8f9fa;
+  color: #adb5bd;
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pagination-page-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #495057;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-page-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.pagination-page-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
 }
 
 .status-badge {
@@ -509,6 +600,17 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Input dengan prefix Rupiah */
+.form-group input[type="text"][name="harga"] {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.form-group input[type="text"][name="harga"]::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
 /* Searchable Select Styles */
 .searchable-select-wrapper {
   position: relative;
@@ -690,6 +792,27 @@
   color: #0c4a6e;
 }
 
+.preview-image-container {
+  margin-bottom: 16px;
+  text-align: center;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-product-image {
+  max-width: 100%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
@@ -799,6 +922,22 @@
   .btn-submit,
   .btn-cancel {
     width: 100%;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pagination-pages {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 

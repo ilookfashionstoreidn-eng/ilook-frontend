@@ -100,8 +100,10 @@ const SpkCutting = () => {
     produk_id: "",
     tanggal_batas_kirim: "",
     harga_jasa: "",
+    harga_jasaDisplay: "", // Untuk format rupiah di input
     satuan_harga: "Pcs",
     jumlah_asumsi_produk: "",
+    jumlah_asumsi_produkDisplay: "", // Untuk format ribuan di input
     jenis_spk: "",
     keterangan: "",
     tukang_cutting_id: "",
@@ -360,6 +362,34 @@ const SpkCutting = () => {
     }).format(angka);
   };
 
+  // Helper function untuk format rupiah untuk input (tanpa Rp, hanya angka dengan titik)
+  const formatRupiahInput = (value) => {
+    // Hapus semua karakter non-numeric
+    const numericValue = value.replace(/\D/g, "");
+    if (!numericValue) return "";
+    // Format dengan titik sebagai pemisah ribuan
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  // Helper function untuk parse rupiah ke angka
+  const parseRupiah = (value) => {
+    return value.replace(/\D/g, "");
+  };
+
+  // Helper function untuk format ribuan (tanpa titik, hanya angka dengan titik)
+  const formatRibuan = (value) => {
+    // Hapus semua karakter non-numeric
+    const numericValue = value.replace(/\D/g, "");
+    if (!numericValue) return "";
+    // Format dengan titik sebagai pemisah ribuan
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  // Helper function untuk parse ribuan ke angka
+  const parseRibuan = (value) => {
+    return value.replace(/\D/g, "");
+  };
+
   // Handler untuk reset filter tanggal mingguan
   const handleResetWeekly = () => {
     setWeeklyStart("");
@@ -456,7 +486,7 @@ const SpkCutting = () => {
 
           return;
         }
-      } 
+      }
     }
 
     // Konversi bahan_id menjadi integer
@@ -467,6 +497,7 @@ const SpkCutting = () => {
 
     const dataToSend = {
       ...dataWithoutSpkNumber,
+      harga_jasa: newSpkCutting.harga_jasa ? parseFloat(newSpkCutting.harga_jasa) : null,
       jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
       jenis_spk: newSpkCutting.jenis_spk || null,
       tukang_pola_id: newSpkCutting.tukang_pola_id ? parseInt(newSpkCutting.tukang_pola_id) : null,
@@ -505,8 +536,10 @@ const SpkCutting = () => {
         produk_id: "",
         tanggal_batas_kirim: "",
         harga_jasa: "",
+        harga_jasaDisplay: "",
         satuan_harga: "Pcs",
         jumlah_asumsi_produk: "",
+        jumlah_asumsi_produkDisplay: "",
         jenis_spk: "",
         keterangan: "",
         tukang_cutting_id: "",
@@ -540,6 +573,30 @@ const SpkCutting = () => {
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
+
+    // Handle format untuk harga_jasa
+    if (name === "harga_jasa") {
+      const formatted = formatRupiahInput(value);
+      const numeric = parseRupiah(value);
+      setNewSpkCutting((prev) => ({
+        ...prev,
+        harga_jasa: numeric,
+        harga_jasaDisplay: formatted,
+      }));
+      return;
+    }
+
+    // Handle format untuk jumlah_asumsi_produk
+    if (name === "jumlah_asumsi_produk") {
+      const formatted = formatRibuan(value);
+      const numeric = parseRibuan(value);
+      setNewSpkCutting((prev) => ({
+        ...prev,
+        jumlah_asumsi_produk: numeric,
+        jumlah_asumsi_produkDisplay: formatted,
+      }));
+      return;
+    }
 
     setNewSpkCutting((prev) => ({ ...prev, [name]: value }));
 
@@ -757,10 +814,12 @@ const SpkCutting = () => {
         tanggal_batas_kirim: data.tanggal_batas_kirim || "",
 
         harga_jasa: data.harga_jasa?.toString() || "",
+        harga_jasaDisplay: data.harga_jasa ? formatRupiahInput(data.harga_jasa.toString()) : "",
 
         satuan_harga: data.satuan_harga || "Pcs",
 
         jumlah_asumsi_produk: data.jumlah_asumsi_produk?.toString() || "",
+        jumlah_asumsi_produkDisplay: data.jumlah_asumsi_produk ? formatRibuan(data.jumlah_asumsi_produk.toString()) : "",
 
         jenis_spk: data.jenis_spk || "",
 
@@ -781,6 +840,30 @@ const SpkCutting = () => {
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Handle format untuk harga_jasa
+    if (name === "harga_jasa") {
+      const formatted = formatRupiahInput(value);
+      const numeric = parseRupiah(value);
+      setEditSpkCutting((prev) => ({
+        ...prev,
+        harga_jasa: numeric,
+        harga_jasaDisplay: formatted,
+      }));
+      return;
+    }
+
+    // Handle format untuk jumlah_asumsi_produk
+    if (name === "jumlah_asumsi_produk") {
+      const formatted = formatRibuan(value);
+      const numeric = parseRibuan(value);
+      setEditSpkCutting((prev) => ({
+        ...prev,
+        jumlah_asumsi_produk: numeric,
+        jumlah_asumsi_produkDisplay: formatted,
+      }));
+      return;
+    }
 
     setEditSpkCutting((prev) => ({ ...prev, [name]: value }));
   };
@@ -930,8 +1013,10 @@ const SpkCutting = () => {
         produk_id: "",
         tanggal_batas_kirim: "",
         harga_jasa: "",
+        harga_jasaDisplay: "",
         satuan_harga: "Pcs",
         jumlah_asumsi_produk: "",
+        jumlah_asumsi_produkDisplay: "",
         jenis_spk: "",
         keterangan: "",
         tukang_cutting_id: "",
@@ -1149,8 +1234,12 @@ const SpkCutting = () => {
                   tanggal_batas_kirim: "",
 
                   harga_jasa: "",
+                  harga_jasaDisplay: "",
 
                   satuan_harga: "Pcs",
+
+                  jumlah_asumsi_produk: "",
+                  jumlah_asumsi_produkDisplay: "",
 
                   keterangan: "",
 
@@ -1334,7 +1423,10 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Harga Jasa:</label>
-                  <input type="number" name="harga_jasa" value={newSpkCutting.harga_jasa} onChange={handleInputChange} required />
+                  <div style={{ position: "relative" }}>
+                    <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#666", fontWeight: "500" }}>Rp</span>
+                    <input type="text" name="harga_jasa" value={newSpkCutting.harga_jasaDisplay} onChange={handleInputChange} placeholder="0" style={{ paddingLeft: "40px" }} required />
+                  </div>
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -1349,7 +1441,7 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Jumlah Asumsi Produk:</label>
-                  <input type="number" name="jumlah_asumsi_produk" value={newSpkCutting.jumlah_asumsi_produk} onChange={handleInputChange} min="0" placeholder="Contoh: 1000" />
+                  <input type="text" name="jumlah_asumsi_produk" value={newSpkCutting.jumlah_asumsi_produkDisplay} onChange={handleInputChange} placeholder="Contoh: 1.000" />
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -1625,7 +1717,10 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Harga Jasa:</label>
-                  <input type="number" name="harga_jasa" value={editSpkCutting.harga_jasa} onChange={handleEditInputChange} required />
+                  <div style={{ position: "relative" }}>
+                    <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#666", fontWeight: "500" }}>Rp</span>
+                    <input type="text" name="harga_jasa" value={editSpkCutting.harga_jasaDisplay} onChange={handleEditInputChange} placeholder="0" style={{ paddingLeft: "40px" }} required />
+                  </div>
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -1640,7 +1735,7 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Jumlah Asumsi Produk:</label>
-                  <input type="number" name="jumlah_asumsi_produk" value={editSpkCutting.jumlah_asumsi_produk} onChange={handleEditInputChange} min="0" placeholder="Contoh: 1000" />
+                  <input type="text" name="jumlah_asumsi_produk" value={editSpkCutting.jumlah_asumsi_produkDisplay} onChange={handleEditInputChange} placeholder="Contoh: 1.000" />
                 </div>
 
                 <div className="spk-cutting-form-group">

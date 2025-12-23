@@ -313,6 +313,48 @@
   font-weight: 600;
 }
 
+.pembelian-bahan-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid #0487d8;
+}
+
+.pembelian-bahan-modal-header h2 {
+  margin: 0;
+  color: #17457c;
+  font-size: 26px;
+  font-weight: 700;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pembelian-bahan-modal-close {
+  background: #fee2e2;
+  border: none;
+  color: #dc2626;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.pembelian-bahan-modal-close:hover {
+  background: #fecaca;
+  transform: rotate(90deg);
+}
+
+.pembelian-bahan-modal-body {
+  padding: 0;
+}
+
 /* Form */
 .pembelian-bahan-form {
   display: grid;
