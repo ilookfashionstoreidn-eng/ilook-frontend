@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "./PembelianBahan.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes } from "react-icons/fa";
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
@@ -21,6 +21,13 @@ const PembelianBahan = () => {
   const [noSuratJalanError, setNoSuratJalanError] = useState("");
   const [usePPN, setUsePPN] = useState(false);
   const [usePPNEdit, setUsePPNEdit] = useState(false);
+  const [showScanBarcode, setShowScanBarcode] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState("");
+  const [scannedRoll, setScannedRoll] = useState(null);
+  const [beratInput, setBeratInput] = useState("");
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError, setScanError] = useState("");
+  const beratInputRef = useRef(null);
 
   const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
@@ -85,6 +92,44 @@ const PembelianBahan = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // Auto-scan barcode ketika scannedBarcode berubah (dengan debounce)
+  // Hanya scan sekali - jika sudah ada scannedRoll, tidak scan lagi
+  useEffect(() => {
+    if (!showScanBarcode) return; // Hanya aktif ketika modal terbuka
+
+    // Reset jika barcode dikosongkan
+    if (!scannedBarcode.trim()) {
+      setScannedRoll(null);
+      setScanError("");
+      return;
+    }
+
+    // JIKA SUDAH ADA INFORMASI ROLL, JANGAN SCAN LAGI
+    if (scannedRoll) {
+      return;
+    }
+
+    // Debounce: tunggu 300ms setelah user berhenti mengetik/scan
+    const timeoutId = setTimeout(() => {
+      if (scannedBarcode.trim() && !scanLoading && !scannedRoll) {
+        handleScanBarcode();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scannedBarcode, showScanBarcode, scanLoading]);
+
+  // Auto-focus pada input berat setelah scan berhasil
+  useEffect(() => {
+    if (scannedRoll && beratInputRef.current) {
+      // Delay sedikit untuk memastikan DOM sudah ter-render
+      setTimeout(() => {
+        beratInputRef.current?.focus();
+      }, 100);
+    }
+  }, [scannedRoll]);
 
   // === PAGINATION ===
   const filtered = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase()));
@@ -156,7 +201,6 @@ const PembelianBahan = () => {
   // Fungsi untuk menghitung total harga berdasarkan harga bahan, satuan, dan total berat roll
   const calculateTotalHarga = (bahanId, warnaArray) => {
     const hargaBahan = getHargaBahan(bahanId);
-    const satuanBahan = getSatuanBahan(bahanId);
     const totalBerat = calculateTotalBerat(warnaArray);
 
     // Jika satuan adalah kg atau yard, kalikan harga dengan total berat
@@ -596,6 +640,91 @@ const PembelianBahan = () => {
     alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
   };
 
+  // Handler untuk scan barcode
+  const handleScanBarcode = async () => {
+    if (!scannedBarcode.trim()) {
+      setScanError("Silakan masukkan barcode");
+      return;
+    }
+
+    try {
+      setScanLoading(true);
+      setScanError("");
+      const response = await API.get(`/pembelian-bahan/scan-barcode/${scannedBarcode.trim()}`);
+
+      if (response.data.data) {
+        setScannedRoll(response.data.data);
+        const beratValue = response.data.data.berat || "";
+        setBeratInput(beratValue);
+        // Auto-focus pada input berat setelah scan berhasil
+        setTimeout(() => {
+          beratInputRef.current?.focus();
+          // Jika berat sudah ada, select semua teks agar mudah diganti
+          if (beratInputRef.current && beratValue) {
+            beratInputRef.current.select();
+          }
+        }, 100);
+      } else {
+        setScanError("Barcode tidak ditemukan");
+        setScannedRoll(null);
+      }
+    } catch (error) {
+      console.error("Error scanning barcode:", error);
+      setScanError(error.response?.data?.message || "Barcode tidak ditemukan");
+      setScannedRoll(null);
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
+  // Handler untuk update berat
+  const handleUpdateBerat = async () => {
+    if (!scannedRoll) {
+      setScanError("Silakan scan barcode terlebih dahulu");
+      return;
+    }
+
+    if (!beratInput || parseFloat(beratInput) <= 0) {
+      setScanError("Berat harus lebih dari 0");
+      return;
+    }
+
+    try {
+      setScanLoading(true);
+      setScanError("");
+      await API.put(`/pembelian-bahan/scan-barcode/${scannedRoll.barcode}/update-berat`, {
+        berat: parseFloat(beratInput),
+      });
+
+      alert("Berat roll berhasil diperbarui!");
+
+      // Reset form
+      setScannedBarcode("");
+      setScannedRoll(null);
+      setBeratInput("");
+
+      // Refresh data
+      const resData = await API.get("/pembelian-bahan");
+      let dataBahan = Array.isArray(resData.data) ? resData.data : resData.data?.data || [];
+      dataBahan = dataBahan.sort((a, b) => b.id - a.id);
+      setItems(dataBahan);
+    } catch (error) {
+      console.error("Error updating berat:", error);
+      setScanError(error.response?.data?.message || "Gagal memperbarui berat roll");
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
+  // Handler untuk close modal scan
+  const handleCloseScanModal = () => {
+    setShowScanBarcode(false);
+    setScannedBarcode("");
+    setScannedRoll(null);
+    setBeratInput("");
+    setScanError("");
+  };
+
   return (
     <div className="pembelian-bahan-page">
       <div className="pembelian-bahan-header">
@@ -607,9 +736,14 @@ const PembelianBahan = () => {
 
       <div className="pembelian-bahan-table-container">
         <div className="pembelian-bahan-filter-header">
-          <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah Pembelian
-          </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
+              <FaPlus /> Tambah Pembelian
+            </button>
+            <button className="pembelian-bahan-btn-add" onClick={() => setShowScanBarcode(true)} style={{ background: "#10b981" }}>
+              <FaBarcode /> Update Berat Roll
+            </button>
+          </div>
           <div className="pembelian-bahan-search-bar">
             <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
@@ -1207,6 +1341,125 @@ const PembelianBahan = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Scan Barcode */}
+      {showScanBarcode && (
+        <div className="pembelian-bahan-modal" onClick={handleCloseScanModal}>
+          <div className="pembelian-bahan-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <div className="pembelian-bahan-modal-header">
+              <h2>Scan Barcode - Update Berat Roll</h2>
+              <button className="pembelian-bahan-modal-close" onClick={handleCloseScanModal}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pembelian-bahan-modal-body">
+              <div className="pembelian-bahan-form-group">
+                <label>Scan atau Masukkan Barcode:</label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    value={scannedBarcode}
+                    onChange={(e) => {
+                      setScannedBarcode(e.target.value);
+                      setScanError("");
+                    }}
+                    placeholder="Masukkan barcode atau scan (otomatis mencari)..."
+                    style={{ flex: 1 }}
+                    autoFocus
+                  />
+                  <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={handleScanBarcode} disabled={scanLoading || !scannedBarcode.trim()}>
+                    {scanLoading ? "Memproses..." : "Scan"}
+                  </button>
+                </div>
+              </div>
+
+              {scanError && <div style={{ padding: "12px", background: "#fee2e2", color: "#dc2626", borderRadius: "8px", marginBottom: "16px" }}>{scanError}</div>}
+
+              {scannedRoll && (
+                <div style={{ marginTop: "24px", padding: "20px", background: "#f0f9ff", borderRadius: "12px", border: "2px solid #0ea5e9" }}>
+                  <h3 style={{ marginTop: 0, marginBottom: "16px", color: "#0369a1" }}>Informasi Roll</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                    <div>
+                      <strong>Barcode:</strong>
+                      <div style={{ fontSize: "18px", fontWeight: "600", color: "#17457c" }}>{scannedRoll.barcode}</div>
+                    </div>
+                    <div>
+                      <strong>Warna:</strong>
+                      <div>{scannedRoll.warna || "-"}</div>
+                    </div>
+                    <div>
+                      <strong>Bahan:</strong>
+                      <div>{scannedRoll.bahan || "-"}</div>
+                    </div>
+                    <div>
+                      <strong>Pabrik:</strong>
+                      <div>{scannedRoll.pabrik || "-"}</div>
+                    </div>
+                    <div>
+                      <strong>Gudang:</strong>
+                      <div>{scannedRoll.gudang || "-"}</div>
+                    </div>
+                    <div>
+                      <strong>Berat Saat Ini:</strong>
+                      <div style={{ fontSize: "16px", fontWeight: "600", color: scannedRoll.berat === 0 || !scannedRoll.berat ? "#dc2626" : "#059669" }}>
+                        {scannedRoll.berat === 0 || !scannedRoll.berat ? "0 (Belum diisi)" : `${scannedRoll.berat} kg`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pembelian-bahan-form-group" style={{ marginTop: "20px" }}>
+                    <label>Masukkan Berat Baru (kg):</label>
+                    <input
+                      ref={beratInputRef}
+                      type="number"
+                      value={beratInput}
+                      onChange={(e) => {
+                        setBeratInput(e.target.value);
+                        setScanError("");
+                      }}
+                      onKeyPress={(e) => {
+                        // Auto-submit ketika Enter ditekan di input berat
+                        if (e.key === "Enter" && beratInput && parseFloat(beratInput) > 0 && !scanLoading) {
+                          handleUpdateBerat();
+                        }
+                      }}
+                      placeholder="Contoh: 25.5"
+                      min="0"
+                      step="0.01"
+                      style={{ fontSize: "16px", padding: "12px" }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: "20px", display: "flex", gap: "12px" }}>
+                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={handleUpdateBerat} disabled={scanLoading || !beratInput || parseFloat(beratInput) <= 0} style={{ flex: 1 }}>
+                      {scanLoading ? "Menyimpan..." : "Simpan Berat"}
+                    </button>
+                    <button
+                      type="button"
+                      className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
+                      onClick={() => {
+                        setScannedBarcode("");
+                        setScannedRoll(null);
+                        setBeratInput("");
+                        setScanError("");
+                        // Fokus kembali ke input barcode setelah reset
+                        setTimeout(() => {
+                          const barcodeInput = document.querySelector('input[placeholder*="barcode"]');
+                          if (barcodeInput) {
+                            barcodeInput.focus();
+                          }
+                        }, 100);
+                      }}
+                    >
+                      Scan Lagi
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
