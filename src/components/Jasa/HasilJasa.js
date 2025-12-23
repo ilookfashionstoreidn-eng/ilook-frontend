@@ -80,14 +80,16 @@ const handleInputChange = (e) => {
 useEffect(() => {
   const fetchSpkJasa = async () => {
     try {
-      const res = await API.get('/SpkJasa'); // ganti sesuai endpoint kamu
-      setSpkJasaList(res.data);
+      const res = await API.get('/SpkJasa');
+      setSpkJasaList(res.data.data || []);
     } catch (err) {
       console.error('Gagal fetch SPK Jasa:', err);
+      setSpkJasaList([]);
     }
   };
   fetchSpkJasa();
 }, []);
+
 
   return (
     <div>
