@@ -1294,7 +1294,7 @@ const SpkCutting = () => {
                   <th>Jumlah Asumsi Produk</th>
                   <th>Jenis SPK</th>
                   <th>Status</th>
-                  <th>Tanggal Dibuat</th>
+                
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -1317,7 +1317,7 @@ const SpkCutting = () => {
                     <td>
                       <span className={`spk-cutting-badge ${spk.status_cutting?.toLowerCase().replace(" ", "-") || "in-progress"}`}>{spk.status_cutting || "In Progress"}</span>
                     </td>
-                    <td>{new Date(spk.created_at).toLocaleDateString("id-ID")}</td>
+              
                     <td>
                       <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail" style={{ marginRight: "8px" }}>
                         <FaInfoCircle />

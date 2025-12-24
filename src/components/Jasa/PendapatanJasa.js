@@ -13,6 +13,9 @@ const PendapatanJasa = () => {
   const [kurangiCashbon, setKurangiCashbon] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [buktiTransfer, setBuktiTransfer] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   
   const [simulasi, setSimulasi] = useState({
       total_pendapatan: 0,
@@ -22,15 +25,31 @@ const PendapatanJasa = () => {
     });
     ;
   
+    useEffect(() => {
+    const today = new Date();
+
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    setStartDate(startOfWeek.toISOString().split('T')[0]);
+    setEndDate(endOfWeek.toISOString().split('T')[0]);
+
+    fetchPendapatans();
+  }, []);
+
    const fetchSimulasi = async (tukang_jasa_id, kurangiHutang, kurangiCashbon) => {
   
     console.log('Memanggil fetchSimulasi', { tukang_jasa_id, kurangiHutang, kurangiCashbon });  try {
       const response = await API.post('/pendapatan/simulasi/jasa', {
-        tukang_jasa_id,
-        kurangi_hutang: kurangiHutang,
-        kurangi_cashbon: kurangiCashbon,
-      
-      });
+      tukang_jasa_id,
+      tanggal_awal: startDate,
+      tanggal_akhir: endDate,
+      kurangi_hutang: kurangiHutang,
+      kurangi_cashbon: kurangiCashbon,
+    });
   
       if (response.data) {
         setSimulasi({
@@ -58,30 +77,52 @@ const PendapatanJasa = () => {
       if (selectedCutting) {
         fetchSimulasi(selectedCutting.tukang_jasa_id, kurangiHutang, kurangiCashbon);
       }
-    }, [selectedCutting, kurangiHutang, kurangiCashbon]);
+    }, [selectedCutting, kurangiHutang, kurangiCashbon, startDate, endDate]
+);
      
-  useEffect(() => {
-    const fetchPendapatans = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get(`/pendapatan/mingguan/jasa`, {
-        });
-        setPendapatans(response.data); // Set data pendapatan
-      } catch (error) {
-        setError(error.response?.message || "Gagal mengambil data pendapatan.");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchPendapatans();
-  }, []); 
-    
+const fetchPendapatans = async () => {
+  try {
+    console.log("FILTER DIKIRIM:", startDate, endDate);
+
+    const response = await API.get('/pendapatan/jasa', {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      },
+    });
+
+    console.log("HASIL DARI BE:", response.data);
+
+    setPendapatans(response.data);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const handleFilter = () => {
+  setSelectedCutting(null);
+  setKurangiHutang(false);
+  setKurangiCashbon(false);
+  setSimulasi({
+    total_pendapatan: 0,
+    potongan_hutang: 0,
+    potongan_cashbon: 0,
+    total_transfer: 0,
+  });
+
+  fetchPendapatans();
+};
+
+
 const handleOpenForm = (cutting) => {
+  if (!startDate || !endDate) {
+    alert("Pilih periode tanggal terlebih dahulu");
+    return;
+  }
   setSelectedCutting(cutting);
   setShowForm(true);
- 
 };
+
 
 const handleTambahPendapatan = async (e) => {
   e.preventDefault();
@@ -89,8 +130,11 @@ const handleTambahPendapatan = async (e) => {
   try {
     const formData = new FormData();
     formData.append('tukang_jasa_id', selectedCutting.tukang_jasa_id);
-    formData.append('kurangi_hutang', kurangiHutang ? '1' : '0');
-    formData.append('kurangi_cashbon', kurangiCashbon ? '1' : '0');
+    formData.append('tanggal_awal', startDate);
+    formData.append('tanggal_akhir', endDate);
+    formData.append('kurangi_hutang', kurangiHutang ? 1 : 0);
+    formData.append('kurangi_cashbon', kurangiCashbon ? 1 : 0);
+
 
     if (buktiTransfer) {
       formData.append('bukti_transfer', buktiTransfer);
@@ -104,12 +148,12 @@ const handleTambahPendapatan = async (e) => {
       },
     });
 
-    if (response.data.success) {
-      alert('Pendapatan berhasil ditambahkan!');
-      setShowForm(false);
-    } else {
-      alert(`Gagal: ${response.data.message}`);
-    }
+   if (response.status === 201) {
+  alert(response.data.message);
+  setShowForm(false);
+  fetchPendapatans();
+}
+
   } catch (error) {
     console.error('Error saat tambah pendapatan:', error);
     if (error.response?.data?.message) {
@@ -128,10 +172,33 @@ const handleTambahPendapatan = async (e) => {
       </div>
 
       <div className="table-container">
-      <div className="filter-header1">
+  <div className="filter-header1">
      
+  <div>
+    <label>Dari Tanggal</label>
+    <input
+      type="date"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+    />
+  </div>
 
-        </div>
+  <div>
+    <label>Sampai Tanggal</label>
+    <input
+      type="date"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+    />
+  </div>
+<button onClick={handleFilter}>
+  Terapkan Filter
+</button>
+
+</div>
+
+
+       
       <div className="table-container">
       <table className="penjahit-table">
           <thead>
@@ -152,8 +219,10 @@ const handleTambahPendapatan = async (e) => {
           <tbody>
             {pendapatans
               .filter((pendapatan) =>
-                pendapatan.tukang_jasa_id?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-              )
+              pendapatan.nama_tukang_jasa
+                ?.toLowerCase()
+                .includes(searchTerm.toLowerCase())
+            )
               .map((pendapatan) => (
                 <tr key={pendapatan.tukang_jasa_id}>
                 
@@ -175,13 +244,18 @@ const handleTambahPendapatan = async (e) => {
 
                 <td  data-label=" ">
                     <div className="action-card">
-                      {pendapatan.status_pembayaran === 'belum dibayar' ? (
-                        <button onClick={() => handleOpenForm(pendapatan)} className="btn-bayar">
-                         Belum Bayar
-                        </button>
-                      ) : (
-                        <span className="btn-bayar2">Sudah dibayar</span>
-                      )}
+                      {pendapatan.total_pendapatan > 0 ? (
+    <button
+      onClick={() => handleOpenForm(pendapatan)}
+      className="btn-bayar"
+    >
+      Bayar
+    </button>
+  ) : (
+    <span className="btn-bayar2">
+      Tidak ada pendapatan
+    </span>
+  )}
                     </div>
                   </td>
                   
