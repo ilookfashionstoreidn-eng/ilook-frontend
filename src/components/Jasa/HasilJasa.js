@@ -92,7 +92,7 @@ const HasilJasa = () => {
     } catch (error) {
       console.error("Full error:", error);
       console.error("Error response:", error.response?.data);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan Hasil Jasa.");
+      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan Hasil Jasaa.");
     } finally {
       setLoading(false);
     }
