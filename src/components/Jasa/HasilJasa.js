@@ -161,6 +161,7 @@ const HasilJasa = () => {
                 <tr>
                   <th>No</th>
                   <th>Tukang Jasa</th>
+                  <th>Distribusi Seri</th>
                   <th>Nama Produk</th>
                   <th>Jumlah Hasil</th>
                   <th>Jumlah Rusak</th>
@@ -170,16 +171,18 @@ const HasilJasa = () => {
               </thead>
               <tbody>
                 {filteredHasilJasa.map((hasil, index) => {
-                  // Ambil nama produk dari relasi yang benar
+                  // Ambil distribusi dan nama produk dari relasi yang benar
                   const distribusi = hasil.spk_jasa?.spkCuttingDistribusi || hasil.spk_jasa?.spk_cutting_distribusi;
                   const spkCutting = distribusi?.spkCutting || distribusi?.spk_cutting;
                   const produk = spkCutting?.produk || hasil.spk_jasa?.produk;
                   const namaProduk = produk?.nama_produk || "-";
+                  const kodeSeri = distribusi?.kode_seri || "-";
 
                   return (
                     <tr key={hasil.id}>
                       <td>{index + 1}</td>
                       <td>{hasil.spk_jasa?.tukang_jasa?.nama || "-"}</td>
+                      <td>{kodeSeri}</td>
                       <td>{namaProduk}</td>
                       <td>{hasil.jumlah_hasil || 0}</td>
                       <td>{hasil.jumlah_rusak || 0}</td>
@@ -193,7 +196,7 @@ const HasilJasa = () => {
                               month: "2-digit",
                               year: "numeric",
                             })
-                          : "-"}
+                          : "-"}  
                       </td>
                     </tr>
                   );
