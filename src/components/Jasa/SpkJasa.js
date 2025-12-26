@@ -273,13 +273,14 @@ const SpkJasa = () => {
       if (newSpkJasa.tanggal_ambil) formData.append("tanggal_ambil", newSpkJasa.tanggal_ambil);
       if (newSpkJasa.foto) formData.append("foto", newSpkJasa.foto);
 
-      if (editingId) {
-        // Update mode - Gunakan PUT dengan FormData
-        await API.put(`/SpkJasa/${editingId}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+if (editingId) {
+  formData.append("_method", "PUT");
+
+  await API.post(`/SpkJasa/${editingId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
         alert("SPK Jasa berhasil diperbarui!");
       } else {
