@@ -1,0 +1,617 @@
+/* CashboanJasa Modern Styling */
+
+.cashboan-jasa-container {
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+}
+
+.cashboan-jasa-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+  color: white;
+}
+
+.cashboan-jasa-header-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.cashboan-jasa-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cashboan-jasa-filter-container {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.cashboan-jasa-search-wrapper {
+  position: relative;
+  max-width: 400px;
+}
+
+.cashboan-jasa-search-wrapper input {
+  width: 100%;
+  padding: 14px 20px 14px 48px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.cashboan-jasa-search-wrapper input:focus {
+  outline: none;
+  border-color: #10b981;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.cashboan-jasa-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.cashboan-jasa-table-wrapper {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.cashboan-jasa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cashboan-jasa-table thead {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.cashboan-jasa-table thead th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cashboan-jasa-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.cashboan-jasa-table tbody tr:hover {
+  background: #f8fafc;
+  transform: translateX(4px);
+}
+
+.cashboan-jasa-table tbody td {
+  padding: 18px 20px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.cashboan-jasa-table tbody td:first-child {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cashboan-jasa-price {
+  font-weight: 600;
+  color: #059669;
+  font-size: 15px;
+}
+
+.cashboan-jasa-price.negative {
+  color: #dc2626;
+}
+
+.cashboan-jasa-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cashboan-jasa-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  color: white;
+}
+
+.cashboan-jasa-btn-add {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.cashboan-jasa-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cashboan-jasa-btn-info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.cashboan-jasa-btn-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.cashboan-jasa-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cashboan-jasa-status.belum {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.cashboan-jasa-status.lunas {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Modal Styling */
+.cashboan-jasa-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cashboan-jasa-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cashboan-jasa-modal-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 20px 20px 0 0;
+  color: white;
+}
+
+.cashboan-jasa-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.cashboan-jasa-modal-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 18px;
+}
+
+.cashboan-jasa-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.cashboan-jasa-form {
+  padding: 28px;
+}
+
+.cashboan-jasa-form-group {
+  margin-bottom: 24px;
+}
+
+.cashboan-jasa-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #334155;
+  font-size: 14px;
+}
+
+.cashboan-jasa-form-group input[type="text"],
+.cashboan-jasa-form-group input[type="number"],
+.cashboan-jasa-form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+
+.cashboan-jasa-form-group input[type="text"]:focus,
+.cashboan-jasa-form-group input[type="number"]:focus,
+.cashboan-jasa-form-group select:focus {
+  outline: none;
+  border-color: #10b981;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.cashboan-jasa-form-group input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cashboan-jasa-form-group input[type="file"]:hover {
+  border-color: #10b981;
+  background: #f1f5f9;
+}
+
+.cashboan-jasa-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cashboan-jasa-btn-submit,
+.cashboan-jasa-btn-cancel {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.cashboan-jasa-btn-submit {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.cashboan-jasa-btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cashboan-jasa-btn-submit:active {
+  transform: translateY(0);
+}
+
+.cashboan-jasa-btn-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.cashboan-jasa-btn-cancel:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* Detail Modal */
+.cashboan-jasa-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.cashboan-jasa-detail-card {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.cashboan-jasa-detail-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 20px 20px 0 0;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cashboan-jasa-detail-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.cashboan-jasa-detail-body {
+  padding: 28px;
+}
+
+.cashboan-jasa-detail-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.cashboan-jasa-detail-item {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #10b981;
+}
+
+.cashboan-jasa-detail-item strong {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.cashboan-jasa-detail-item span {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cashboan-jasa-history-section {
+  margin-top: 32px;
+}
+
+.cashboan-jasa-history-section h4 {
+  margin-bottom: 16px;
+  color: #1e293b;
+  font-size: 18px;
+}
+
+.cashboan-jasa-filter-select {
+  width: 100%;
+  max-width: 200px;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  font-size: 14px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.cashboan-jasa-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.cashboan-jasa-history-table thead {
+  background: #f8fafc;
+}
+
+.cashboan-jasa-history-table thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cashboan-jasa-history-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cashboan-jasa-history-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.cashboan-jasa-history-table tbody td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.cashboan-jasa-history-table tbody td a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.cashboan-jasa-history-table tbody td a:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.cashboan-jasa-detail-footer {
+  padding: 20px 28px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cashboan-jasa-btn-close {
+  padding: 12px 24px;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cashboan-jasa-btn-close:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.cashboan-jasa-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.cashboan-jasa-error {
+  text-align: center;
+  padding: 60px 20px;
+  color: #dc2626;
+  font-size: 16px;
+  background: #fef2f2;
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.cashboan-jasa-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #94a3b8;
+}
+
+.cashboan-jasa-empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Input dengan format rupiah */
+.cashboan-jasa-input-rupiah {
+  position: relative;
+}
+
+.cashboan-jasa-input-rupiah::before {
+  content: "Rp";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.cashboan-jasa-input-rupiah input {
+  padding-left: 48px !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cashboan-jasa-container {
+    padding: 16px;
+  }
+
+  .cashboan-jasa-header h1 {
+    font-size: 24px;
+  }
+
+  .cashboan-jasa-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .cashboan-jasa-modal-content {
+    max-width: 95%;
+  }
+
+  .cashboan-jasa-detail-info {
+    grid-template-columns: 1fr;
+  }
+}

@@ -25,13 +25,11 @@ const PendapatanJasa = () => {
 
   useEffect(() => {
     const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    const startDateStr = startOfWeek.toISOString().split("T")[0];
-    const endDateStr = endOfWeek.toISOString().split("T")[0];
+    const startDateStr = startOfMonth.toISOString().split("T")[0];
+    const endDateStr = endOfMonth.toISOString().split("T")[0];
 
     setStartDate(startDateStr);
     setEndDate(endDateStr);
@@ -52,6 +50,14 @@ const PendapatanJasa = () => {
 
   const fetchSimulasi = async (tukang_jasa_id, kurangiHutang, kurangiCashbon) => {
     try {
+      console.log("Fetching simulasi:", {
+        tukang_jasa_id,
+        tanggal_awal: startDate,
+        tanggal_akhir: endDate,
+        kurangi_hutang: kurangiHutang,
+        kurangi_cashbon: kurangiCashbon,
+      });
+
       const response = await API.post("/pendapatan/simulasi/jasa", {
         tukang_jasa_id,
         tanggal_awal: startDate,
@@ -59,6 +65,8 @@ const PendapatanJasa = () => {
         kurangi_hutang: kurangiHutang,
         kurangi_cashbon: kurangiCashbon,
       });
+
+      console.log("Simulasi response:", response.data);
 
       if (response.data) {
         setSimulasi({
@@ -68,6 +76,7 @@ const PendapatanJasa = () => {
           total_transfer: response.data.total_transfer || 0,
         });
       } else {
+        console.warn("Response data is empty");
         setSimulasi({
           total_pendapatan: 0,
           potongan_hutang: 0,
@@ -76,7 +85,8 @@ const PendapatanJasa = () => {
         });
       }
     } catch (err) {
-      console.error("Gagal fetch simulasi pendapatan", err);
+      console.error("Gagal fetch simulasi pendapatan:", err);
+      console.error("Error details:", err.response?.data || err.message);
       setSimulasi({
         total_pendapatan: 0,
         potongan_hutang: 0,
@@ -417,13 +427,8 @@ const PendapatanJasa = () => {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                        {pendapatan.pendapatan_id ? (
-                          // Sudah dibayar - tidak perlu tombol invoice
-                          <span className="pendapatan-jasa-btn-disabled" style={{ color: "#059669", fontWeight: "500" }}>
-                            Sudah Dibayar
-                          </span>
-                        ) : pendapatan.total_pendapatan > 0 ? (
-                          // Belum dibayar - tampilkan preview dan bayar
+                        {pendapatan.total_pendapatan > 0 ? (
+                          // Bisa dibayar kapan saja - tampilkan preview dan bayar
                           <>
                             <button className="pendapatan-jasa-btn-download-preview" onClick={() => handleDownloadInvoicePreview(pendapatan)} title="Download Preview Invoice" disabled={downloadingPreview}>
                               <FaDownload /> {downloadingPreview ? "Loading..." : "Preview"}
