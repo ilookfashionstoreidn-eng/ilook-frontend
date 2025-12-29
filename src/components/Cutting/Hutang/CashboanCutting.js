@@ -1,289 +1,339 @@
-import React, { useEffect, useState } from "react";
-import "../../Jahit/Penjahit.css";
-import API from "../../../api"; 
-import { FaPlus,FaInfoCircle,} from 'react-icons/fa';
+import React, { useEffect, useState, useRef } from "react";
+import "./CashboanCutting.css";
+import API from "../../../api";
+import { FaPlus, FaInfoCircle, FaSearch, FaTimes } from "react-icons/fa";
 
 const CashboanCutting = () => {
   const [cashbons, setCashbons] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [cuttingList, setCuttingList] = useState([]); 
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedCashbon, setSelectedCashbon] = useState(null); 
-  const [selectedJenisPerubahan, setSelectedJenisPerubahan] = useState(""); 
-  const [logHistory, setLogHistory] = useState([]); // Untuk menyimpan log pembayaran
+  const [selectedCashbon, setSelectedCashbon] = useState(null);
+  const [selectedJenisPerubahan, setSelectedJenisPerubahan] = useState("");
+  const [logHistory, setLogHistory] = useState([]);
   const [selectedDetailCashbon, setSelectedDetailCashbon] = useState(null);
   const [newCashbon, setNewCashbon] = useState({
     tukang_cutting_id: "",
     jumlah_cashboan: "",
     tanggal_cashboan: "",
-     bukti_transfer: null,
-
+    bukti_transfer: null,
   });
 
-   
+  // Refs untuk mencegah multiple simultaneous API calls
+  const isFetchingCashbons = useRef(false);
+
   useEffect(() => {
-    const fetchCashbons= async () => {
+    // Mencegah multiple calls
+    if (isFetchingCashbons.current) return;
+
+    const fetchCashbons = async () => {
+      if (isFetchingCashbons.current) return;
+      isFetchingCashbons.current = true;
+
       try {
         setLoading(true);
-        const response = await API.get(`/cashboan_cutting`, {
-        });
-  
+        setError(null);
+        const response = await API.get(`/cashboan_cutting`, {});
+
         setCashbons(response.data.data);
-       
       } catch (error) {
-        setError(error.response?.data?.message || "Failed to fetch data");
+        // Handle 429 (Too Many Requests) dengan pesan yang lebih jelas
+        if (error.response?.status === 429) {
+          setError("Terlalu banyak permintaan. Silakan tunggu beberapa saat dan refresh halaman.");
+        } else {
+          setError(error.response?.data?.message || "Failed to fetch data");
+        }
         console.error("Error fetching Cashboans:", error);
       } finally {
         setLoading(false);
+        isFetchingCashbons.current = false;
       }
     };
-  
-    fetchCashbons();
-  }, []); 
 
-  useEffect(() => {
-  const fetchCutting = async () => {
+    fetchCashbons();
+
+    // Cleanup function
+    return () => {
+      isFetchingCashbons.current = false;
+    };
+  }, []);
+
+  // Fungsi helper untuk refresh data cashbon dengan protection
+  const refreshCashbons = async () => {
+    if (isFetchingCashbons.current) return;
+
     try {
-      setLoading(true);
-      const response = await API.get("/tukang_cutting"); 
-      setCuttingList(response.data);
+      isFetchingCashbons.current = true;
+      const response = await API.get(`/cashboan_cutting`);
+      setCashbons(response.data.data);
+      setError(null);
     } catch (error) {
-      setError("Gagal mengambil data tukang cutting .");
+      if (error.response?.status === 429) {
+        setError("Terlalu banyak permintaan. Silakan tunggu beberapa saat.");
+      } else {
+        console.error("Error refreshing cashbons:", error);
+      }
     } finally {
-      setLoading(false);
+      isFetchingCashbons.current = false;
     }
   };
 
-  fetchCutting();
-}, []);
+  // Fungsi untuk format rupiah (input formatting dengan titik)
+  const formatRupiah = (value) => {
+    if (!value && value !== 0) return "";
+    // Konversi ke string dan hapus semua karakter non-digit
+    const number = value.toString().replace(/\D/g, "");
+    if (!number) return "";
+    // Format dengan pemisah ribuan menggunakan titik
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
-const handleFormSubmit = async (e) => {
-  e.preventDefault();
+  // Fungsi untuk parse dari format rupiah ke angka (untuk disimpan)
+  const parseRupiah = (value) => {
+    if (!value && value !== 0) return "";
+    // Hapus semua karakter non-digit (termasuk titik, spasi, dll)
+    const cleaned = value.toString().replace(/\D/g, "");
+    return cleaned;
+  };
 
-  const formData = new FormData();
-  formData.append("tukang_cutting_id", newCashbon.tukang_cutting_id);
-  formData.append("jumlah_cashboan", newCashbon.jumlah_cashboan);
+  // Fungsi untuk format rupiah untuk display (dengan "Rp" prefix)
+  const formatRupiahDisplay = (value) => {
+    if (!value && value !== 0) return "Rp 0";
+    const numValue = typeof value === "string" ? parseFloat(value.replace(/\D/g, "")) : value;
+    return `Rp ${numValue.toLocaleString("id-ID")}`;
+  };
 
-  if (newCashbon.bukti_transfer) {
-    formData.append("bukti_transfer", newCashbon.bukti_transfer);
-  }
+  const fetchHistory = async (id, jenis_perubahan = "") => {
+    try {
+      console.log("Fetching history for cashbon ID:", id, "with filter:", jenis_perubahan);
 
-  try {
-    const response = await API.post("/cashboan/tambah_cutting", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+      const response = await API.get(`history_cashboan_cutting/${id}`, {
+        params: jenis_perubahan ? { jenis_perubahan } : {},
+      });
 
-    alert(response.data.message);
+      console.log("Response from API:", response.data);
+      setLogHistory(response.data || []);
+    } catch (error) {
+      console.error("Error fetching history:", error.response?.data || error);
 
-    // Update list cashboan
-    setCashbons([...cashbons, response.data.data]);
-    setShowForm(false); 
+      if (error.response?.status === 404) {
+        setLogHistory([]);
+      } else if (error.response?.status === 429) {
+        console.warn("Too many requests for history. Skipping...");
+      } else {
+        setLogHistory([]);
+      }
+    }
+  };
 
-    // Reset form input
-    setNewCashbon({
-      tukang_cutting_id: "",
-      jumlah_cashboan: "",
-      bukti_transfer: null,
-    });
-  } catch (error) {
-    console.error("Error:", error.response?.data?.message || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan cashboan.");
-  }
-};
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
 
+    // Validasi
+    if (!newCashbon.jumlah_cashboan || parseRupiah(newCashbon.jumlah_cashboan) === "") {
+      alert("Jumlah cashbon harus diisi");
+      return;
+    }
+
+    // Membuat FormData untuk mengirimkan data dan file
+    const formData = new FormData();
+
+    // Pastikan kita menggunakan nilai yang sudah di-parse
+    let jumlahCashbonString = "";
+    if (typeof newCashbon.jumlah_cashboan === "string") {
+      jumlahCashbonString = parseRupiah(newCashbon.jumlah_cashboan);
+    } else {
+      jumlahCashbonString = newCashbon.jumlah_cashboan.toString();
+    }
+
+    const jumlahCashbon = parseInt(jumlahCashbonString, 10);
+
+    // Debug logging
+    console.log("=== SUBMIT DEBUG ===");
+    console.log("State jumlah_cashboan:", newCashbon.jumlah_cashboan);
+    console.log("Type:", typeof newCashbon.jumlah_cashboan);
+    console.log("After parseRupiah:", jumlahCashbonString);
+    console.log("After parseInt:", jumlahCashbon);
+    console.log("Will send to backend:", jumlahCashbon);
+
+    if (isNaN(jumlahCashbon) || jumlahCashbon <= 0) {
+      alert("Jumlah cashbon tidak valid. Pastikan Anda memasukkan angka yang benar.");
+      return;
+    }
+
+    // Pastikan kita mengirim sebagai number, bukan string
+    formData.append("perubahan_cashboan", jumlahCashbon.toString());
+
+    // Jika ada bukti transfer, tambahkan ke FormData
+    if (newCashbon.bukti_transfer) {
+      formData.append("bukti_transfer", newCashbon.bukti_transfer);
+    }
+
+    try {
+      // Gunakan tukang_cutting_id bukan cashbon.id
+      const tukangCuttingId = selectedCashbon.tukang_cutting_id || selectedCashbon.id;
+      const response = await API.post(`/cashboan_cutting/tambah/${tukangCuttingId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      alert(response.data.message);
+
+      // Refresh data dari server untuk mendapatkan data terbaru
+      await refreshCashbons();
+
+      setSelectedCashbon(null);
+
+      // Reset form input
+      setNewCashbon({
+        tukang_cutting_id: "",
+        jumlah_cashboan: "",
+        tanggal_cashboan: "",
+        bukti_transfer: null,
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data?.message || error.message);
+      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data cashboan.");
+    }
+  };
 
   const handleTambahClick = (cashbon) => {
-      setSelectedCashbon(cashbon); // Set hutang yang dipilih untuk pembayaran
-    };
-  
-    const handlePaymentSubmit = async (e) => {
-  e.preventDefault(); // Mencegah refresh halaman
+    setSelectedCashbon(cashbon);
+  };
 
-  // Membuat FormData untuk mengirimkan data dan file
-  const formData = new FormData();
-  formData.append('perubahan_cashboan', newCashbon.jumlah_cashboan);
+  const handleDetailClick = (cashbon) => {
+    setSelectedDetailCashbon(cashbon);
+    // Hanya fetch history jika cashbon sudah ada (id tidak null)
+    if (cashbon.id) {
+      fetchHistory(cashbon.id, selectedJenisPerubahan);
+    } else {
+      setLogHistory([]);
+    }
+  };
 
-  // Jika ada bukti transfer, tambahkan ke FormData
-  if (newCashbon.bukti_transfer) {
-    formData.append('bukti_transfer', newCashbon.bukti_transfer);
-  }
+  const filteredCashbons = cashbons.filter((c) => {
+    const searchLower = searchTerm.toLowerCase();
+    return c.tukang_cutting?.nama_tukang_cutting?.toLowerCase().includes(searchLower) || (c.nama_tukang_cutting && c.nama_tukang_cutting.toLowerCase().includes(searchLower));
+  });
 
-  try {
-    const response = await API.post(`/cashboan_cutting/tambah/${selectedCashbon.id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data", // Wajib untuk FormData dengan file
-      },
-    });
-
-    alert(response.data.message); // Tampilkan pesan sukses
-
-    // Perbarui daftar cashbon
-    const updatedCashbons = cashbons.map(cashbon =>
-      cashbon.id === selectedCashbon.id
-        ? {
-            ...cashbon,
-            jumlah_cashboan: cashbon.jumlah_cashboan + parseFloat(newCashbon.jumlah_cashboan),
-          }
-        : cashbon
-    );
-
-    setCashbons(updatedCashbons);
-    setShowForm(false); // Tutup form modal
-
-    // Reset form input
-    setNewCashbon({
-      id_penjahit: "",
-      jumlah_cashboan: "",
-      potongan_per_minggu: "",
-      bukti_transfer: null,
-    });
-
-  } catch (error) {
-    console.error("Error:", error.response?.data?.message || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data cashboan.");
-  }
-};
-
- const fetchHistory = async (id, jenis_perubahan = "") => {
-      try {
-        console.log("Fetching history for cashbon ID:", id, "with filter:", jenis_perubahan);
-        
-        const response = await API.get(`history_cashboan_cutting/${id}`, {
-          params: jenis_perubahan ? { jenis_perubahan } : {}, // Hanya kirim params jika ada filter
-        });
-    
-        console.log("Response from API:", response.data);
-        setLogHistory(response.data || []); // Pastikan tetap array kosong kalau tidak ada data
-      } catch (error) {
-        console.error("Error fetching history:", error.response?.data || error);
-    
-        setLogHistory([]); // Tetap set array kosong jika error
-      }
-    };
-    
-
-const handleDetailClick = (cashbon) => {
-        setSelectedDetailCashbon(cashbon); // Simpan data hutang yang dipilih
-        fetchHistory(cashbon.id, selectedJenisPerubahan); // Ambil log history sesuai filter
-      };
-      
- useEffect(() => {
-      if (selectedDetailCashbon) {
-        fetchHistory(selectedDetailCashbon.id, selectedJenisPerubahan);
-      }
-    }, [selectedDetailCashbon, selectedJenisPerubahan]); 
-    
-
-return (
-    <div>
-      <div className="penjahit-container">
-        <h1>Daftar Cashbon</h1>   
+  return (
+    <div className="cashboan-cutting-container">
+      <div className="cashboan-cutting-header">
+        <div className="cashboan-cutting-header-icon">💵</div>
+        <h1>Daftar Cashbon Cutting</h1>
       </div>
-      <div className="table-container">
-      <div className="filter-header1">
-      <button 
-        onClick={() => setShowForm(true)}>
-          Tambah
-        </button>
-         <div className="search-bar1">
-             <input
-               type="text"
-               placeholder="Cari nama aksesoris..."
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-             />
-           </div>
-        
 
+      <div className="cashboan-cutting-filter-container">
+        <div className="cashboan-cutting-search-wrapper">
+          <FaSearch className="cashboan-cutting-search-icon" />
+          <input type="text" placeholder="Cari nama tukang cutting..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
       </div>
-      <div className="table-container">
-        <table className="penjahit-table">
-          <thead>
-            <tr>
-              <th>NAMA tukang cutting</th>
-              <th>JUMLAH HUTANG</th>
-              <th>STATUS PEMBAYARAN</th>
-              <th>Aksi</th>
-           
-            </tr>
-          </thead>
-          <tbody>
-          {cashbons
-              .map((c) => (
-                <tr key={c.id}>
-                  <td data-label="tukang cutting : ">{c.tukang_cutting?.nama_tukang_cutting}</td>
-                  <td data-label="Jumlah Hutang: ">
-                    Rp.{new Intl.NumberFormat("id-ID").format(c.jumlah_cashboan)}
+
+      {loading ? (
+        <div className="cashboan-cutting-loading">Memuat data...</div>
+      ) : error ? (
+        <div className="cashboan-cutting-error">{error}</div>
+      ) : filteredCashbons.length === 0 ? (
+        <div className="cashboan-cutting-empty-state">
+          <div className="cashboan-cutting-empty-state-icon">📋</div>
+          <p>Tidak ada data cashbon</p>
+        </div>
+      ) : (
+        <div className="cashboan-cutting-table-wrapper">
+          <table className="cashboan-cutting-table">
+            <thead>
+              <tr>
+                <th>NAMA TUKANG CUTTING</th>
+                <th>JUMLAH CASHBON</th>
+                <th>STATUS PEMBAYARAN</th>
+                <th>AKSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCashbons.map((c) => (
+                <tr key={c.tukang_cutting_id || c.id}>
+                  <td>{c.tukang_cutting?.nama_tukang_cutting || c.nama_tukang_cutting}</td>
+                  <td>
+                    <span className="cashboan-cutting-price">{formatRupiahDisplay(c.jumlah_cashboan || 0)}</span>
                   </td>
-                  <td data-label="id spk cutting : ">{c.status_pembayaran}</td>
-                  <td  data-label=" ">
-              
-              <div className="action-card">
-                  <button 
-                    className="btn1-icon"
-                    onClick={() =>handleTambahClick(c)}
-                    >
-                         <FaPlus className="icon" />
-                   </button>
-                    <button 
-                      className="btn1-icon"
-                      onClick={() => handleDetailClick(c)}
-                     >
-                      <FaInfoCircle className="icon" />
+                  <td>
+                    <span className={`cashboan-cutting-status ${c.status_pembayaran || "belum lunas"}`}>{c.status_pembayaran || "belum lunas"}</span>
+                  </td>
+                  <td>
+                    <div className="cashboan-cutting-actions">
+                      <button className="cashboan-cutting-btn cashboan-cutting-btn-add" onClick={() => handleTambahClick(c)} title="Tambah Cashbon">
+                        <FaPlus />
                       </button>
-              </div>
-              </td>
-           
+                      {c.id && (
+                        <button className="cashboan-cutting-btn cashboan-cutting-btn-info" onClick={() => handleDetailClick(c)} title="Detail">
+                          <FaInfoCircle />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
-             </tbody>
-           </table>
+            </tbody>
+          </table>
         </div>
+      )}
 
-         {/* Modal Form */}
-        {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Tambah Data Casbon</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
-              <label>ID Penjahit:</label>
-                <select
-                  value={newCashbon.tukang_cutting_id}
-                  onChange={(e) =>
-                    setNewCashbon({ ...newCashbon,tukang_cutting_id: e.target.value })
-                  }
-                  required
-                >
-                  <option value="" disabled>
-                    Pilih Tukang Cutting
-                  </option>
-                  {cuttingList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nama_tukang_cutting}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
+      {selectedCashbon && (
+        <div
+          className="cashboan-cutting-modal"
+          onClick={() => {
+            setSelectedCashbon(null);
+            setNewCashbon({
+              tukang_cutting_id: "",
+              jumlah_cashboan: "",
+              tanggal_cashboan: "",
+              bukti_transfer: null,
+            });
+          }}
+        >
+          <div className="cashboan-cutting-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="cashboan-cutting-modal-header">
+              <h2>Tambah Cashbon - {selectedCashbon.tukang_cutting?.nama_tukang_cutting || selectedCashbon.nama_tukang_cutting}</h2>
+              <button
+                className="cashboan-cutting-modal-close"
+                onClick={() => {
+                  setSelectedCashbon(null);
+                  setNewCashbon({
+                    tukang_cutting_id: "",
+                    jumlah_cashboan: "",
+                    tanggal_cashboan: "",
+                    bukti_transfer: null,
+                  });
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={handlePaymentSubmit} className="cashboan-cutting-form">
+              <div className="cashboan-cutting-form-group">
                 <label>Jumlah Cashbon</label>
-                <input
-                  type="number"
-                  value={newCashbon.jumlah_cashboan}
-                  onChange={(e) =>
-                    setNewCashbon({ ...newCashbon, jumlah_cashboan: e.target.value })
-                  }
-                  placeholder="Masukkan jumlah cashbon"
-                  required
-                />
+                <div className="cashboan-cutting-input-rupiah">
+                  <input
+                    type="text"
+                    value={formatRupiah(newCashbon.jumlah_cashboan)}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      const numericValue = parseRupiah(inputValue);
+
+                      setNewCashbon({
+                        ...newCashbon,
+                        jumlah_cashboan: numericValue !== "" ? numericValue : "",
+                      });
+                    }}
+                    placeholder="Masukkan jumlah cashbon"
+                    required
+                  />
+                </div>
               </div>
 
-               <div className="form-group-hutang">
+              <div className="cashboan-cutting-form-group">
                 <label>Upload Bukti Transfer (Opsional)</label>
                 <input
                   type="file"
@@ -297,63 +347,24 @@ return (
                 />
               </div>
 
-           
-             
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+              <div className="cashboan-cutting-form-actions">
+                <button
+                  type="button"
+                  className="cashboan-cutting-btn-cancel"
+                  onClick={() => {
+                    setSelectedCashbon(null);
+                    setNewCashbon({
+                      tukang_cutting_id: "",
+                      jumlah_cashboan: "",
+                      tanggal_cashboan: "",
+                      bukti_transfer: null,
+                    });
+                  }}
+                >
+                  Batal
+                </button>
+                <button type="submit" className="cashboan-cutting-btn-submit">
                   Simpan
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-cancel"
-                  onClick={() => setShowForm(false)}
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {selectedCashbon && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Penambahan Cashboan (ID: {selectedCashbon.id})</h2>
-            <form onSubmit={handlePaymentSubmit} className="modern-form">
-            <div className="form-group">
-              <label>Jumlah Tambah Casbon</label>
-              <input
-                type="number"
-                value={newCashbon.jumlah_cashboan || ""}
-                onChange={(e) =>
-                  setNewCashbon({ ...newCashbon, jumlah_cashboan: e.target.value })
-                }
-                required
-              />
-            </div>
-             
-             <div className="form-group">
-              <label>Bukti Transfer</label>
-              <input
-                type="file"
-                onChange={(e) =>
-                  setNewCashbon({ ...newCashbon, bukti_transfer: e.target.files[0] })
-                }
-                accept="image/*, .pdf"
-              />
-            </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
-                  Simpan Pembayaran
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-submit"
-                  onClick={() => setSelectedCashbon(null)}
-                >
-                  Batal
                 </button>
               </div>
             </form>
@@ -362,65 +373,81 @@ return (
       )}
 
       {selectedDetailCashbon && (
-        <div className="modal">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>Detail Cashbon</h3>
+        <div
+          className="cashboan-cutting-modal"
+          onClick={() => {
+            setSelectedDetailCashbon(null);
+            setLogHistory([]);
+          }}
+        >
+          <div className="cashboan-cutting-modal-content cashboan-cutting-modal-content-large" onClick={(e) => e.stopPropagation()}>
+            <div className="cashboan-cutting-modal-header">
+              <h2>Detail Cashbon - {selectedDetailCashbon.tukang_cutting?.nama_tukang_cutting || selectedDetailCashbon.nama_tukang_cutting}</h2>
+              <button
+                className="cashboan-cutting-modal-close"
+                onClick={() => {
+                  setSelectedDetailCashbon(null);
+                  setLogHistory([]);
+                }}
+              >
+                <FaTimes />
+              </button>
             </div>
-            <div className="modal-body">
-              <h4>ID Hutang: {selectedDetailCashbon.id}</h4>
-              <p><strong>ID Penjahit :</strong><span>  {selectedDetailCashbon.tukang_cutting_id}</span></p>
-              <p><strong>Jumlah Hutang :</strong> <span> Rp {selectedDetailCashbon.jumlah_cashboan}</span></p>
-              <p><strong>Status Pembayaran :</strong> <span> {selectedDetailCashbon.status_pembayaran}</span></p>
-          
-              
-              <br></br><h4>Log History:</h4>
+            <div className="cashboan-cutting-modal-body">
+              <div className="cashboan-cutting-detail-info">
+                <p>
+                  <strong>ID Cashbon:</strong> {selectedDetailCashbon.id}
+                </p>
+                <p>
+                  <strong>Jumlah Cashbon:</strong> {formatRupiahDisplay(selectedDetailCashbon.jumlah_cashboan || 0)}
+                </p>
+                <p>
+                  <strong>Status Pembayaran:</strong> <span className={`cashboan-cutting-status ${selectedDetailCashbon.status_pembayaran || "belum lunas"}`}>{selectedDetailCashbon.status_pembayaran || "belum lunas"}</span>
+                </p>
+              </div>
 
-          
-              {logHistory.length > 0 ? (
-                <table className="log-table">
-                  <thead>
-                    <tr>
-                      <th>Tanggal Perubahan</th>
-                      <th>Jenis Perubahan</th>
-                      <th>Nominal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logHistory.length > 0 ? (
-                      logHistory.map((history, index) => (
-                        <tr key={index}>
-                          <td>{history.tanggal_perubahan}</td>
-                          <td>{history.jenis_perubahan}</td>
-                          <td>Rp {history.perubahan_cashboan || 0}</td>
-                        </tr>
-                      ))
-                    ) : (
+              <div className="cashboan-cutting-history-section">
+                <h3>Log History</h3>
+                {logHistory.length > 0 ? (
+                  <table className="cashboan-cutting-history-table">
+                    <thead>
                       <tr>
-                        <td colSpan="3" style={{ textAlign: "center" }}>Tidak ada log pembayaran.</td>
+                        <th>Tanggal Perubahan</th>
+                        <th>Jenis Perubahan</th>
+                        <th>Nominal</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="no-logs">Tidak ada log pembayaran.</p>
-              )}
+                    </thead>
+                    <tbody>
+                      {logHistory.map((history, index) => (
+                        <tr key={index}>
+                          <td>{new Date(history.tanggal_perubahan).toLocaleDateString("id-ID")}</td>
+                          <td>{history.jenis_perubahan}</td>
+                          <td>{formatRupiahDisplay(history.perubahan_cashboan || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="cashboan-cutting-no-history">Tidak ada log history.</p>
+                )}
+              </div>
             </div>
-
-            <div className="modal-footer">
-              <button className="btn-close" onClick={() => setSelectedDetailCashbon(null)}>
+            <div className="cashboan-cutting-modal-footer">
+              <button
+                className="cashboan-cutting-btn-close"
+                onClick={() => {
+                  setSelectedDetailCashbon(null);
+                  setLogHistory([]);
+                }}
+              >
                 Tutup
               </button>
             </div>
           </div>
         </div>
       )}
-
-
-
     </div>
-</div>
-  )
-}
+  );
+};
 
-export default CashboanCutting
+export default CashboanCutting;
