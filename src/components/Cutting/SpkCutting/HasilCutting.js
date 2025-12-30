@@ -40,8 +40,8 @@ const HasilCutting = () => {
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
-  // State untuk distribusi seri
-  const [distribusiSeri, setDistribusiSeri] = useState([{ jumlah_produk: "" }]);
+  // State untuk distribusi seri (dengan detail warna)
+  const [distribusiSeri, setDistribusiSeri] = useState([{ jumlah_produk: "", detail: [] }]);
 
   // Fetch list SPK Cutting
   useEffect(() => {
@@ -123,7 +123,7 @@ const HasilCutting = () => {
           if (!editingId) {
             setInputData({});
             setDataAcuan([]);
-            setDistribusiSeri([{ jumlah_produk: "" }]);
+            setDistribusiSeri([{ jumlah_produk: "", detail: [] }]);
           }
           setShowSpkDropdown(false);
         } else {
@@ -333,6 +333,32 @@ const HasilCutting = () => {
         alert(`Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")})`);
         return;
       }
+
+      // Validasi detail distribusi: total detail harus sama dengan jumlah_produk distribusi
+      for (let i = 0; i < distribusiSeri.length; i++) {
+        const distribusi = distribusiSeri[i];
+        if (distribusi.jumlah_produk && parseInt(distribusi.jumlah_produk) > 0) {
+          const totalDetail = getTotalDetailDistribusi(i);
+          const jumlahProdukDistribusi = parseInt(distribusi.jumlah_produk);
+
+          // Jika ada detail yang diisi, validasi total harus sama
+          const hasDetailData = distribusi.detail && distribusi.detail.length > 0 && distribusi.detail.some((d) => d.warna && d.jumlah_produk && parseInt(d.jumlah_produk) > 0);
+
+          if (hasDetailData) {
+            // Validasi semua detail harus lengkap
+            const hasEmptyDetail = distribusi.detail.some((d) => !d.warna || !d.jumlah_produk || parseInt(d.jumlah_produk) <= 0);
+            if (hasEmptyDetail) {
+              alert(`Mohon lengkapi semua data detail distribusi seri ke-${i + 1}`);
+              return;
+            }
+
+            if (totalDetail !== jumlahProdukDistribusi) {
+              alert(`Total detail distribusi seri ke-${i + 1} (${totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk (${jumlahProdukDistribusi.toLocaleString("id-ID")})`);
+              return;
+            }
+          }
+        }
+      }
     }
     // Jika tidak ada distribusi seri yang diisi, skip validasi (opsional)
 
@@ -420,15 +446,30 @@ const HasilCutting = () => {
       const statusPerbandinganAgregatArray = Object.values(statusPerbandinganAgregat);
 
       // Format distribusi seri sesuai dengan logika backend:
-      // - Jika user mengisi distribusi seri, kirim array dengan data
+      // - Jika user mengisi distribusi seri, kirim array dengan data dan detail
       // - Jika tidak diisi, kirim null (backend akan membuat implicit single series)
       const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
       const formattedDistribusiSeri = hasDistribusiData
         ? distribusiSeri
             .filter((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0)
-            .map((item) => ({
-              jumlah_produk: parseInt(item.jumlah_produk) || 0,
-            }))
+            .map((item) => {
+              const distribusiItem = {
+                jumlah_produk: parseInt(item.jumlah_produk) || 0,
+              };
+
+              // Jika ada detail yang diisi, tambahkan ke distribusi
+              if (item.detail && item.detail.length > 0) {
+                const detailData = item.detail.filter((d) => d.warna && d.jumlah_produk && parseInt(d.jumlah_produk) > 0);
+                if (detailData.length > 0) {
+                  distribusiItem.detail = detailData.map((d) => ({
+                    warna: d.warna,
+                    jumlah_produk: parseInt(d.jumlah_produk) || 0,
+                  }));
+                }
+              }
+
+              return distribusiItem;
+            })
         : null; // Kirim null jika tidak ada distribusi seri (backend akan membuat implicit single series)
 
       // Debug: Log data yang akan dikirim
@@ -558,9 +599,20 @@ const HasilCutting = () => {
         setDataAcuan([]);
       }
 
-      // Reset distribusi seri saat edit (default 1 item kosong)
-      // TODO: Load distribusi seri yang sudah ada dari backend jika diperlukan
-      setDistribusiSeri([{ jumlah_produk: "" }]);
+      // Load distribusi seri yang sudah ada dari backend jika ada
+      if (data.distribusi_seri && Array.isArray(data.distribusi_seri) && data.distribusi_seri.length > 0) {
+        setDistribusiSeri(
+          data.distribusi_seri.map((dist) => ({
+            jumlah_produk: dist.jumlah_produk || "",
+            detail: (dist.detail || []).map((d) => ({
+              warna: d.warna || "",
+              jumlah_produk: d.jumlah_produk || "",
+            })),
+          }))
+        );
+      } else {
+        setDistribusiSeri([{ jumlah_produk: "", detail: [] }]);
+      }
 
       // Fetch detail SPK untuk form
       const spkResponse = await API.get(`/hasil_cutting/detail-spk`, {
@@ -648,7 +700,7 @@ const HasilCutting = () => {
 
   // Handler untuk tambah distribusi seri
   const handleTambahDistribusiSeri = () => {
-    setDistribusiSeri([...distribusiSeri, { jumlah_produk: "" }]);
+    setDistribusiSeri([...distribusiSeri, { jumlah_produk: "", detail: [] }]);
   };
 
   // Handler untuk hapus distribusi seri
@@ -664,6 +716,86 @@ const HasilCutting = () => {
     const newDistribusi = [...distribusiSeri];
     newDistribusi[index] = { ...newDistribusi[index], [field]: value };
     setDistribusiSeri(newDistribusi);
+  };
+
+  // Handler untuk tambah detail distribusi (warna)
+  const handleTambahDetailDistribusi = (distribusiIndex) => {
+    const newDistribusi = [...distribusiSeri];
+    if (!newDistribusi[distribusiIndex].detail) {
+      newDistribusi[distribusiIndex].detail = [];
+    }
+    newDistribusi[distribusiIndex].detail.push({ warna: "", jumlah_produk: "" });
+
+    // Hitung ulang total detail setelah tambah (jika ada detail yang sudah diisi)
+    const totalDetail = newDistribusi[distribusiIndex].detail.reduce((total, item) => {
+      if (item.warna && item.jumlah_produk && parseInt(item.jumlah_produk) > 0) {
+        return total + (parseInt(item.jumlah_produk) || 0);
+      }
+      return total;
+    }, 0);
+
+    // Update jumlah_produk distribusi secara otomatis jika ada total
+    if (totalDetail > 0) {
+      newDistribusi[distribusiIndex].jumlah_produk = totalDetail.toString();
+    }
+
+    setDistribusiSeri(newDistribusi);
+  };
+
+  // Handler untuk hapus detail distribusi
+  const handleHapusDetailDistribusi = (distribusiIndex, detailIndex) => {
+    const newDistribusi = [...distribusiSeri];
+    newDistribusi[distribusiIndex].detail = newDistribusi[distribusiIndex].detail.filter((_, i) => i !== detailIndex);
+
+    // Hitung ulang total detail setelah hapus
+    const totalDetail = newDistribusi[distribusiIndex].detail.reduce((total, item) => {
+      if (item.warna && item.jumlah_produk && parseInt(item.jumlah_produk) > 0) {
+        return total + (parseInt(item.jumlah_produk) || 0);
+      }
+      return total;
+    }, 0);
+
+    // Update jumlah_produk distribusi secara otomatis
+    newDistribusi[distribusiIndex].jumlah_produk = totalDetail > 0 ? totalDetail.toString() : "";
+
+    setDistribusiSeri(newDistribusi);
+  };
+
+  // Handler untuk update detail distribusi
+  const handleUpdateDetailDistribusi = (distribusiIndex, detailIndex, field, value) => {
+    const newDistribusi = [...distribusiSeri];
+    newDistribusi[distribusiIndex].detail[detailIndex] = {
+      ...newDistribusi[distribusiIndex].detail[detailIndex],
+      [field]: value,
+    };
+
+    // Jika field yang diubah adalah jumlah_produk atau warna, hitung ulang total detail
+    // dan update jumlah_produk distribusi secara otomatis
+    if (field === "jumlah_produk" || field === "warna") {
+      const totalDetail = newDistribusi[distribusiIndex].detail.reduce((total, item) => {
+        // Hanya hitung jika warna dan jumlah_produk sudah diisi
+        if (item.warna && item.jumlah_produk && parseInt(item.jumlah_produk) > 0) {
+          return total + (parseInt(item.jumlah_produk) || 0);
+        }
+        return total;
+      }, 0);
+
+      // Update jumlah_produk distribusi secara otomatis
+      newDistribusi[distribusiIndex].jumlah_produk = totalDetail > 0 ? totalDetail.toString() : "";
+    }
+
+    setDistribusiSeri(newDistribusi);
+  };
+
+  // Hitung total detail distribusi untuk satu distribusi
+  const getTotalDetailDistribusi = (distribusiIndex) => {
+    const distribusi = distribusiSeri[distribusiIndex];
+    if (!distribusi || !distribusi.detail || distribusi.detail.length === 0) {
+      return 0;
+    }
+    return distribusi.detail.reduce((total, item) => {
+      return total + (parseInt(item.jumlah_produk) || 0);
+    }, 0);
   };
 
   // Hitung total distribusi seri
@@ -1610,141 +1742,318 @@ const HasilCutting = () => {
                     </div>
 
                     <div style={{ background: "white", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-                      <table className="penjahit-table" style={{ margin: 0 }}>
-                        <thead>
-                          <tr>
-                            <th>NO</th>
-                            <th>KODE SERI</th>
-                            <th>JUMLAH PRODUK</th>
-                            <th>AKSI</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {distribusiSeri.map((seri, index) => {
-                            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                            const kodeSeri = spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting}${alphabet[index]}` : `-${alphabet[index]}`;
+                      {distribusiSeri.map((seri, index) => {
+                        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                        const kodeSeri = spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting}${alphabet[index]}` : `-${alphabet[index]}`;
+                        const totalDetail = getTotalDetailDistribusi(index);
+                        const jumlahProdukDistribusi = parseInt(seri.jumlah_produk) || 0;
+                        const hasDetailData = seri.detail && seri.detail.length > 0 && seri.detail.some((d) => d.warna && d.jumlah_produk && parseInt(d.jumlah_produk) > 0);
 
-                            return (
-                              <tr key={index}>
-                                <td style={{ fontWeight: "600", color: "#667eea" }}>{index + 1}</td>
-                                <td>
-                                  <span
-                                    style={{
-                                      padding: "6px 12px",
-                                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                      color: "white",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      display: "inline-block",
-                                    }}
-                                  >
-                                    {kodeSeri}
-                                  </span>
-                                </td>
-                                <td>
+                        return (
+                          <div key={index} style={{ marginBottom: "24px", border: "2px solid #e0e0e0", borderRadius: "12px", padding: "16px", background: "#f9fafb" }}>
+                            {/* Header Distribusi */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "2px solid #e0e0e0" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <span style={{ fontWeight: "700", color: "#667eea", fontSize: "16px" }}>#{index + 1}</span>
+                                <span
+                                  style={{
+                                    padding: "8px 16px",
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    color: "white",
+                                    borderRadius: "8px",
+                                    fontSize: "14px",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {kodeSeri}
+                                </span>
+                                <div style={{ position: "relative" }}>
                                   <input
                                     type="number"
                                     min="1"
                                     value={seri.jumlah_produk}
                                     onChange={(e) => handleUpdateDistribusiSeri(index, "jumlah_produk", e.target.value)}
-                                    placeholder="0"
+                                    placeholder="Jumlah Produk"
+                                    disabled={hasDetailData}
                                     className="hasil-cutting-form-input"
                                     style={{
                                       maxWidth: "150px",
                                       padding: "8px 12px",
                                       fontSize: "14px",
                                       textAlign: "center",
+                                      background: hasDetailData ? "#e9ecef" : "white",
+                                      cursor: hasDetailData ? "not-allowed" : "text",
+                                      opacity: hasDetailData ? 0.7 : 1,
                                     }}
+                                    title={hasDetailData ? "Jumlah produk otomatis terisi dari total detail warna" : ""}
                                   />
-                                </td>
-                                <td>
-                                  <button
-                                    onClick={() => handleHapusDistribusiSeri(index)}
-                                    disabled={distribusiSeri.length === 1}
-                                    style={{
-                                      padding: "6px 12px",
-                                      background: distribusiSeri.length === 1 ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
-                                      color: "white",
-                                      border: "none",
-                                      borderRadius: "8px",
-                                      cursor: distribusiSeri.length === 1 ? "not-allowed" : "pointer",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      transition: "all 0.3s ease",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "6px",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      if (distribusiSeri.length > 1) {
-                                        e.currentTarget.style.transform = "scale(1.05)";
-                                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
-                                      }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      if (distribusiSeri.length > 1) {
-                                        e.currentTarget.style.transform = "scale(1)";
-                                        e.currentTarget.style.boxShadow = "none";
-                                      }
-                                    }}
-                                  >
-                                    <i className="fas fa-trash"></i>
-                                    Hapus
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot>
-                          <tr
-                            style={{
-                              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
-                              Total Distribusi:
-                            </td>
-                            <td
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                fontSize: "16px",
-                                fontWeight: "700",
-                                color: getTotalDistribusiSeri() === getTotalKeseluruhan() ? "#28a745" : "#dc3545",
-                              }}
-                            >
-                              {getTotalDistribusiSeri().toLocaleString("id-ID")}
-                            </td>
-                            <td></td>
-                          </tr>
-                          <tr
-                            style={{
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              fontWeight: "bold",
-                              color: "white",
-                            }}
-                          >
-                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
-                              Total Produk:
-                            </td>
-                            <td
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                fontSize: "16px",
-                                fontWeight: "700",
-                                color: "white",
-                              }}
-                            >
-                              {getTotalKeseluruhan().toLocaleString("id-ID")}
-                            </td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                                  {hasDetailData && (
+                                    <i
+                                      className="fas fa-info-circle"
+                                      style={{
+                                        position: "absolute",
+                                        right: "-25px",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        color: "#667eea",
+                                        fontSize: "14px",
+                                        cursor: "help",
+                                      }}
+                                      title="Jumlah produk otomatis terisi dari total detail warna"
+                                    />
+                                  )}
+                                </div>
+                                {jumlahProdukDistribusi > 0 && (
+                                  <span style={{ fontSize: "13px", color: totalDetail === jumlahProdukDistribusi ? "#28a745" : "#dc3545", fontWeight: "600" }}>
+                                    {hasDetailData ? (
+                                      <span>
+                                        <i className="fas fa-sync-alt" style={{ marginRight: "4px" }}></i>
+                                        Total Detail: {totalDetail.toLocaleString("id-ID")}
+                                      </span>
+                                    ) : (
+                                      <span>
+                                        Total Detail: {totalDetail.toLocaleString("id-ID")} / {jumlahProdukDistribusi.toLocaleString("id-ID")}
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <button
+                                  onClick={() => handleTambahDetailDistribusi(index)}
+                                  style={{
+                                    padding: "6px 12px",
+                                    background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    transition: "all 0.3s ease",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 167, 69, 0.4)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <i className="fas fa-plus"></i>
+                                  Tambah Warna
+                                </button>
+                                <button
+                                  onClick={() => handleHapusDistribusiSeri(index)}
+                                  disabled={distribusiSeri.length === 1}
+                                  style={{
+                                    padding: "6px 12px",
+                                    background: distribusiSeri.length === 1 ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    cursor: distribusiSeri.length === 1 ? "not-allowed" : "pointer",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    transition: "all 0.3s ease",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (distribusiSeri.length > 1) {
+                                      e.currentTarget.style.transform = "scale(1.05)";
+                                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (distribusiSeri.length > 1) {
+                                      e.currentTarget.style.transform = "scale(1)";
+                                      e.currentTarget.style.boxShadow = "none";
+                                    }
+                                  }}
+                                >
+                                  <i className="fas fa-trash"></i>
+                                  Hapus Seri
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Tabel Detail Warna */}
+                            {seri.detail && seri.detail.length > 0 ? (
+                              <table className="penjahit-table" style={{ margin: 0, background: "white" }}>
+                                <thead>
+                                  <tr>
+                                    <th>NO</th>
+                                    <th>WARNA</th>
+                                    <th>JUMLAH PRODUK</th>
+                                    <th>AKSI</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {seri.detail.map((detail, detailIndex) => (
+                                    <tr key={detailIndex}>
+                                      <td style={{ fontWeight: "600", color: "#667eea" }}>{detailIndex + 1}</td>
+                                      <td>
+                                        <select
+                                          value={detail.warna || ""}
+                                          onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "warna", e.target.value)}
+                                          className="modern-input"
+                                          style={{
+                                            width: "100%",
+                                            padding: "8px 12px",
+                                            fontSize: "14px",
+                                            border: "2px solid #e0e0e0",
+                                            borderRadius: "8px",
+                                          }}
+                                        >
+                                          <option value="">-- Pilih Warna --</option>
+                                          {getWarnaList().map((warna) => (
+                                            <option key={warna} value={warna}>
+                                              {warna}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          value={detail.jumlah_produk || ""}
+                                          onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "jumlah_produk", e.target.value)}
+                                          placeholder="0"
+                                          className="hasil-cutting-form-input"
+                                          style={{
+                                            maxWidth: "150px",
+                                            padding: "8px 12px",
+                                            fontSize: "14px",
+                                            textAlign: "center",
+                                          }}
+                                        />
+                                      </td>
+                                      <td>
+                                        <button
+                                          onClick={() => handleHapusDetailDistribusi(index, detailIndex)}
+                                          style={{
+                                            padding: "6px 12px",
+                                            background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "8px",
+                                            cursor: "pointer",
+                                            fontSize: "12px",
+                                            fontWeight: "600",
+                                            transition: "all 0.3s ease",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = "scale(1.05)";
+                                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = "scale(1)";
+                                            e.currentTarget.style.boxShadow = "none";
+                                          }}
+                                        >
+                                          <i className="fas fa-trash"></i>
+                                          Hapus
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <div
+                                style={{
+                                  textAlign: "center",
+                                  padding: "20px",
+                                  background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                                  borderRadius: "8px",
+                                  border: "2px dashed #667eea",
+                                }}
+                              >
+                                <p style={{ margin: 0, color: "#667eea", fontSize: "14px", fontWeight: "600" }}>Belum ada detail warna. Klik "Tambah Warna" untuk menambahkan.</p>
+                              </div>
+                            )}
+
+                            {/* Warning jika total detail tidak sama dengan jumlah produk */}
+                            {hasDetailData && jumlahProdukDistribusi > 0 && totalDetail !== jumlahProdukDistribusi && (
+                              <div
+                                style={{
+                                  marginTop: "12px",
+                                  padding: "12px",
+                                  background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
+                                  borderRadius: "8px",
+                                  border: "1px solid #ffc107",
+                                  fontSize: "13px",
+                                  color: "#856404",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                <i className="fas fa-exclamation-triangle"></i>
+                                <span>
+                                  Total detail ({totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk ({jumlahProdukDistribusi.toLocaleString("id-ID")})
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Summary Total */}
+                      <div
+                        style={{
+                          marginTop: "16px",
+                          padding: "16px",
+                          background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                          borderRadius: "12px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "16px", fontWeight: "700", color: "#333" }}>Total Distribusi:</div>
+                        <div
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: "700",
+                            color: getTotalDistribusiSeri() === getTotalKeseluruhan() ? "#28a745" : "#dc3545",
+                          }}
+                        >
+                          {getTotalDistribusiSeri().toLocaleString("id-ID")}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          padding: "16px",
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          borderRadius: "12px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "16px", fontWeight: "700", color: "white" }}>Total Produk:</div>
+                        <div
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: "700",
+                            color: "white",
+                          }}
+                        >
+                          {getTotalKeseluruhan().toLocaleString("id-ID")}
+                        </div>
+                      </div>
 
                       {(() => {
                         const totalDistribusi = getTotalDistribusiSeri();
@@ -2157,6 +2466,7 @@ const HasilCutting = () => {
                             <th>NO</th>
                             <th>KODE SERI</th>
                             <th>JUMLAH PRODUK</th>
+                            <th>DETAIL WARNA</th>
                             <th>STATUS</th>
                           </tr>
                         </thead>
@@ -2195,6 +2505,68 @@ const HasilCutting = () => {
                                 </span>
                               </td>
                               <td>
+                                {distribusi.detail && distribusi.detail.length > 0 ? (
+                                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    {distribusi.detail.map((detail, detailIdx) => (
+                                      <div
+                                        key={detailIdx}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                          padding: "6px 10px",
+                                          background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                                          borderRadius: "6px",
+                                          border: "1px solid #2196f3",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            padding: "4px 8px",
+                                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                            color: "white",
+                                            borderRadius: "6px",
+                                            fontSize: "11px",
+                                            fontWeight: "600",
+                                            minWidth: "60px",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {detail.warna}
+                                        </span>
+                                        <span
+                                          style={{
+                                            padding: "4px 8px",
+                                            background: "white",
+                                            color: "#1565c0",
+                                            borderRadius: "6px",
+                                            fontSize: "11px",
+                                            fontWeight: "700",
+                                            border: "1px solid #2196f3",
+                                          }}
+                                        >
+                                          {detail.jumlah_produk?.toLocaleString("id-ID")} pcs
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span
+                                    style={{
+                                      padding: "6px 12px",
+                                      background: "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
+                                      color: "#666",
+                                      borderRadius: "8px",
+                                      fontSize: "12px",
+                                      fontStyle: "italic",
+                                      display: "inline-block",
+                                    }}
+                                  >
+                                    Tidak ada detail warna
+                                  </span>
+                                )}
+                              </td>
+                              <td>
                                 <span
                                   style={{
                                     padding: "6px 12px",
@@ -2226,7 +2598,7 @@ const HasilCutting = () => {
                               color: "white",
                             }}
                           >
-                            <td colSpan="2" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
+                            <td colSpan="3" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
                               Total Distribusi:
                             </td>
                             <td
