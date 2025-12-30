@@ -55,31 +55,67 @@ const SpkCmt = () => {
   const [selectedKategori, setSelectedKategori] = useState("");
   const [allData, setAllData] = useState(false);
   const [selectedSisaHari, setSelectedSisaHari] = useState("");
-  
+  const [distribusiList, setDistribusiList] = useState([]);
+  const [spkJasaList, setSpkJasaList] = useState([]);
 
-  const [newSpk, setNewSpk] = useState({
-    id_produk: '',
-    jumlah_produk: 0, // Akan dihitung secara otomatis
-    deadline: '',
-    id_penjahit: '',
-    keterangan: '',
-    tgl_spk: '',
-    status: 'Pending',
-    nomor_seri: "",
-    tanggal_ambil: '',
-    catatan: '',
-    markeran: '',
-    aksesoris: '',
-    handtag: '',
-    merek: '',
-    harga_per_barang: '',
-    harga_per_jasa: '',
-    total_harga:'',
-    harga_jasa_awal: "",
-    jenis_harga_jasa: "per_barang",
-    kategori_produk: "",
-    warna: [{ nama_warna: '', qty: 0 }], // Array warna dengan qty default 0
-  });
+const [newSpk, setNewSpk] = useState({
+  source_type: "",
+  source_id: "",
+
+  deadline: "",
+  id_penjahit: "",
+  keterangan: "",
+  catatan: "",
+
+  markeran: "",
+  aksesoris: "",
+  handtag: "",
+  merek: "",
+
+  // 🔴 BARU
+  harga_barang_dasar: "",
+  jenis_harga_barang: "per_pcs",
+
+  // 🔴 JASA
+  harga_per_jasa: "",
+  jenis_harga_jasa: "per_barang",
+});
+
+
+
+
+
+useEffect(() => {
+  if (newSpk.source_type === "cutting") {
+    fetchDistribusi();
+  }
+
+  if (newSpk.source_type === "jasa") {
+    fetchSpkJasa();
+  }
+}, [newSpk.source_type]);
+
+const fetchDistribusi = async () => {
+  try {
+    const res = await API.get("/spk-cutting-distribusi");
+    setDistribusiList(res.data.data || res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const fetchSpkJasa = async () => {
+  try {
+    const res = await API.get("/SpkJasa");
+
+    console.log("SPK JASA PAGINATION:", res.data);
+    console.log("SPK JASA LIST:", res.data.data);
+
+    setSpkJasaList(res.data.data); // ⬅️ WAJIB .data
+  } catch (err) {
+    console.error("FETCH SPK JASA ERROR:", err);
+  }
+};
 
 
   const produkOptions = produkList.map(produk => ({
@@ -670,29 +706,12 @@ useEffect(() => {
 const handleInputChange = (e) => {
   const { name, value } = e.target;
 
-  setNewSpk((prev) => {
-    let updatedData = { ...prev, [name]: value };
-
-    // Jika harga per barang berubah, update total harga
-    if (name === "harga_per_barang") {
-      const totalProduk = calculateJumlahProduk(updatedData.warna);
-      updatedData.total_harga = value * totalProduk;
-    }
-
-    if (name === "jenis_harga_jasa") {
-      // Jika user mengubah jenis harga jasa, set ulang harga_per_jasa sesuai jenis
-      updatedData.harga_per_jasa =
-        value === "per_lusin" ? prev.harga_jasa_awal : prev.harga_per_jasa;
-    }
-
-    if (name === "harga_per_jasa") {
-      // Jika user mengedit manual, biarkan inputnya berubah
-      updatedData.harga_per_jasa = value;
-    }
-
-    return updatedData;
-  });
+  setNewSpk((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
 };
+
 
 
 
@@ -775,62 +794,51 @@ const handleUpdateSubmit = async (e, id) => {
 
 
 
-// Filter data berdasarkan pencarian
 const filteredSpk = spkCmtData.filter((spk) =>
-  spk.nama_produk?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  spk.sumber_pekerjaan?.nama?.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
- 
   
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    // Hitung ulang jumlah_produk
-    const totalJumlahProduk = newSpk.warna.reduce(
-      (sum, warna) => sum + Number(warna.qty || 0),
-      0
-    );
-  
-    // Buat FormData
-    const formData = new FormData();
-  
-    // Tambahkan semua field kecuali 'warna'
-    Object.keys(newSpk).forEach((key) => {
-      if (key !== "warna") {
-        formData.append(
-          key,
-          key === "jumlah_produk" ? totalJumlahProduk : newSpk[key]
-        );
-      }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+
+  formData.append("source_type", newSpk.source_type);
+  formData.append("source_id", newSpk.source_id);
+
+  formData.append("deadline", newSpk.deadline);
+  formData.append("id_penjahit", newSpk.id_penjahit);
+  formData.append("keterangan", newSpk.keterangan);
+  formData.append("catatan", newSpk.catatan);
+
+  formData.append("markeran", newSpk.markeran);
+  formData.append("aksesoris", newSpk.aksesoris);
+  formData.append("handtag", newSpk.handtag);
+  formData.append("merek", newSpk.merek);
+
+  // 🔴 BARU (HARGA BARANG)
+  formData.append("harga_barang_dasar", newSpk.harga_barang_dasar);
+  formData.append("jenis_harga_barang", newSpk.jenis_harga_barang);
+
+  // 🔴 JASA
+  formData.append("harga_per_jasa", newSpk.harga_per_jasa);
+  formData.append("jenis_harga_jasa", newSpk.jenis_harga_jasa);
+
+  try {
+    const response = await API.post("/spkcmt", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-  
-    // Kirim data warna sebagai JSON string
-    formData.append("warna", JSON.stringify(newSpk.warna));
-  
-    // Tambahkan file gambar_produk jika ada
-    if (newSpk.gambar_produk) {
-      formData.append("gambar_produk", newSpk.gambar_produk);
-    }
-  
-    try {
-      const response = await API.post("/spkcmt", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-  
-      // Ambil data dari response
-      const savedSpk = response.data;
-  
-      // Tambahkan data baru ke list SPK
-      setSpkCmtData((prev) => [...prev, savedSpk.data]);
-      setShowForm(false);
-  
-      alert("SPK berhasil disimpan!");
-    } catch (error) {
-      alert("Error: " + (error.response?.data?.message || error.message));
-    }
-  };
 
+    setSpkCmtData((prev) => [...prev, response.data.data]);
+    setShowForm(false);
+
+    alert("SPK CMT berhasil disimpan!");
+  } catch (error) {
+    alert(error.response?.data?.message || error.message);
+  }
+};
 
 
 
@@ -1787,242 +1795,129 @@ return (
   </div>
 )}
 
-
-
 {/* Modal Form */}
 {showForm && (
   <div className="modal">
     <div className="modal-content">
-      <h2>TAMBAH DATA SPK</h2>
-      <form
-      className="modern-form"
-      onSubmit={(e) => {
-        console.log("Form submit triggered!"); // Debugging tambahan
-        selectedSpk ? handleUpdateSubmit(e, selectedSpk.id_spk) : handleSubmit(e);
-      }}
-    >
+      <h2>TAMBAH DATA SPK CMT</h2>
 
-    <div className="form-group">
-      <label>Nama Produk</label>
-      <Select
-        options={produkOptions}
-         className="custom-select"
-        onChange={(selectedOption) => {
-          setNewSpk({ ...newSpk, id_produk: selectedOption.value });
-        }}
-        value={produkOptions.find(option => option.value === newSpk.id_produk)}
-        placeholder="Cari Produk..."
-        isSearchable
-      />
-    </div>
-
-    
-    <div className="form-group">
-          <label>Nomor Seri </label>
-          <input
-           type="text"
-            name="nomor_seri"
-            value={newSpk.nomor_seri}
-            onChange={handleInputChange}
-            placeholder="Tambahkan nomor seri.."
-          />
+      <form className="modern-form" onSubmit={handleSubmit}>
+        {/* ================= SOURCE TYPE ================= */}
+        <div className="form-group">
+          <label>Sumber SPK</label>
+          <select
+            value={newSpk.source_type}
+            onChange={(e) =>
+              setNewSpk({
+                ...newSpk,
+                source_type: e.target.value,
+                source_id: "",
+              })
+            }
+            required
+          >
+            <option value="">Pilih</option>
+            <option value="cutting">Dari Cutting</option>
+            <option value="jasa">Dari SPK Jasa</option>
+          </select>
         </div>
 
-       
+        {/* ================= SOURCE ID ================= */}
+        {newSpk.source_type && (
+          <div className="form-group">
+            <label>
+              {newSpk.source_type === "cutting"
+                ? "Distribusi Cutting"
+                : "SPK Jasa"}
+            </label>
+            <select
+              value={newSpk.source_id}
+              onChange={(e) =>
+                setNewSpk({ ...newSpk, source_id: e.target.value })
+              }
+              required
+            >
+              <option value="">Pilih</option>
 
+              {newSpk.source_type === "cutting" &&
+                distribusiList.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.kode_seri}
+                  </option>
+                ))}
+
+              {newSpk.source_type === "jasa" &&
+                spkJasaList.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    Jasa #{j.id} - Distribusi {j.spk_cutting_distribusi_id}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
+        {/* ================= PENJAHIT ================= */}
         <div className="form-group">
           <label>Penjahit</label>
           <select
-            name="id_penjahit"
             value={newSpk.id_penjahit}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, id_penjahit: e.target.value })
+            }
             required
           >
-            <option value="">Pilih Penjahit</option>
-            {penjahitList.map((penjahit) => (
-              <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                {penjahit.nama_penjahit}
+            <option value="">Pilih</option>
+            {penjahitList.map((p) => (
+              <option key={p.id_penjahit} value={p.id_penjahit}>
+                {p.nama_penjahit}
               </option>
             ))}
           </select>
         </div>
 
+        {/* ================= DEADLINE ================= */}
         <div className="form-group">
           <label>Deadline</label>
           <input
             type="date"
-            name="deadline"
             value={newSpk.deadline}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Tanggal SPK</label>
-          <input
-            type="date"
-            name="tgl_spk"
-            value={newSpk.tgl_spk}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Tanggal Ambil</label>
-          <input
-            type="date"
-            name="tanggal_ambil"
-            value={newSpk.tanggal_ambil}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, deadline: e.target.value })
+            }
             required
           />
         </div>
 
-       
-
+        {/* ================= KETERANGAN ================= */}
         <div className="form-group">
           <label>Keterangan</label>
           <textarea
-            name="keterangan"
             value={newSpk.keterangan}
-            onChange={handleInputChange}
-            placeholder="Tambahkan keterangan..."
-          ></textarea>
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, keterangan: e.target.value })
+            }
+          />
         </div>
 
-
-        <div className="form-group">
-          <label>Status</label>
-          <select
-            name="status"
-            value={newSpk.status}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="Pending">Pending</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-
-        
-    
         <div className="form-group">
           <label>Catatan</label>
           <textarea
-            name="catatan"
             value={newSpk.catatan}
-            onChange={handleInputChange}
-            placeholder="Tambahkan catatan.."
-          ></textarea>
-        </div>
-
-       
-        
-
-
-        <div className="form-group">
-        <label>Warna Produk</label>
-        {newSpk.warna.map((item, index) => (
-          <div key={index} className="warna-item">
-            <input
-              type="text"
-              name={`nama_warna_${index}`}
-              value={item.nama_warna}
-              onChange={(e) => handleWarnaChange(e, index)}
-              placeholder="Masukkan nama warna"
-              required
-            />
-            <input
-              type="number"
-              name={`qty_${index}`}
-              value={item.qty === 0 ? "" : item.qty} // Jika 0, biarkan kosong agar placeholder muncul
-              onChange={(e) => handleWarnaChange(e, index)}
-              placeholder="Masukkan jumlah"
-              required
-            />
-
-            <button
-              type="button"
-              onClick={() => handleRemoveWarna(index)}
-            >
-             <FaTrash /> 
-            </button>
-          </div>
-          
-        ))}
-        <button 
-       className="btn1"
-        onClick={handleAddWarna}>
-        <FaPlus /> Tambah Warna
-        </button>
-      </div>
-      
-      <div className="form-group">
-        <label>Jumlah Produk</label>
-        <input
-          type="number"
-          name="jumlah_produk"
-          value={newSpk.jumlah_produk}
-          readOnly
-        />
-      </div>
-      <div className="form-group">
-          <label>Harga per barang</label>
-          <input
-            type="number"
-            name="harga_per_barang"
-            value={newSpk.harga_per_barang}
-            onChange={handleInputChange}
-            placeholder="Masukkan harga"
-            required
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, catatan: e.target.value })
+            }
           />
         </div>
 
-       
-
-      <div className="form-group">
-        <label>Jenis Harga Jasa</label>
-        <select name="jenis_harga_jasa" 
-          value={newSpk.jenis_harga_jasa} 
-          onChange={handleInputChange}>
-          <option value="per_barang">Per Barang</option>
-          <option value="per_lusin">Per Lusin</option>
-        </select>
-      </div>
-        <div className="form-group">
-          <label>Harga Jasa</label>
-          <input
-            type="number"
-            name="harga_per_jasa"
-            value={newSpk.harga_per_jasa} 
-            onChange={handleInputChange}
-            placeholder="Masukkan harga"
-            required
-          />
-        </div>
-         
-        <div className="form-group">
-          <label>Total Harga</label>
-          <input
-            type="number"
-             name="total_harga"
-            value={newSpk.total_harga}
-            readOnly // Total harga dihitung otomatis
-          />
-        </div>
-
+        {/* ================= ATRIBUT ================= */}
         <div className="form-group">
           <label>Markeran</label>
           <input
             type="text"
-            name="markeran"
             value={newSpk.markeran}
-            onChange={handleInputChange}
-            placeholder="Masukkan markeran"
-           
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, markeran: e.target.value })
+            }
           />
         </div>
 
@@ -2030,11 +1925,10 @@ return (
           <label>Aksesoris</label>
           <input
             type="text"
-            name="aksesoris"
             value={newSpk.aksesoris}
-            onChange={handleInputChange}
-            placeholder="Masukkan aksesoris"
-           
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, aksesoris: e.target.value })
+            }
           />
         </div>
 
@@ -2042,11 +1936,10 @@ return (
           <label>Handtag</label>
           <input
             type="text"
-            name="handtag"
             value={newSpk.handtag}
-            onChange={handleInputChange}
-            placeholder="Masukkan handtag"
-           
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, handtag: e.target.value })
+            }
           />
         </div>
 
@@ -2054,33 +1947,88 @@ return (
           <label>Merek</label>
           <input
             type="text"
-            name="merek"
             value={newSpk.merek}
-            onChange={handleInputChange}
-            placeholder="Masukkan merek"
-           
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, merek: e.target.value })
+            }
           />
         </div>
-        
 
-
-        <div className="form-actions">
-        <button type="submit" className="btn btn-submit">
-        {selectedSpk ? "Update" : "Simpan"}</button>
-        <button
-            type="button"
-            className="btn btn-cancel"
-            onClick={() => setShowForm(false)}
-          >
-            Batal
-        </button>
+        {/* ================= HARGA BARANG ================= */}
+        <div className="form-group">
+          <label>Harga Barang</label>
+          <input
+            type="number"
+            value={newSpk.harga_barang_dasar}
+            onChange={(e) =>
+              setNewSpk({
+                ...newSpk,
+                harga_barang_dasar: e.target.value,
+              })
+            }
+            required
+          />
         </div>
+
+        <div className="form-group">
+          <label>Jenis Harga Barang</label>
+          <select
+            value={newSpk.jenis_harga_barang}
+            onChange={(e) =>
+              setNewSpk({
+                ...newSpk,
+                jenis_harga_barang: e.target.value,
+              })
+            }
+          >
+            <option value="per_pcs">Per Pcs</option>
+            <option value="per_lusin">Per Lusin</option>
+          </select>
+        </div>
+
+        {/* PREVIEW */}
+        {newSpk.harga_barang_dasar && (
+          <small className="price-preview">
+            Harga / pcs:{" "}
+            {newSpk.jenis_harga_barang === "per_lusin"
+              ? (newSpk.harga_barang_dasar / 12).toLocaleString("id-ID")
+              : Number(newSpk.harga_barang_dasar).toLocaleString("id-ID")}
+          </small>
+        )}
+
+        {/* ================= HARGA JASA ================= */}
+        <div className="form-group">
+          <label>Jenis Harga Jasa</label>
+          <select
+            value={newSpk.jenis_harga_jasa}
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, jenis_harga_jasa: e.target.value })
+            }
+          >
+            <option value="per_barang">Per Barang</option>
+            <option value="per_lusin">Per Lusin</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Harga Jasa</label>
+          <input
+            type="number"
+            value={newSpk.harga_per_jasa}
+            onChange={(e) =>
+              setNewSpk({ ...newSpk, harga_per_jasa: e.target.value })
+            }
+            required
+          />
+        </div>
+
+        <button type="submit" className="btn btn-submit">
+          Simpan SPK CMT
+        </button>
       </form>
     </div>
   </div>
 )}
-
-
 
 
  </div>
