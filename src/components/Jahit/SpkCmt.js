@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import "./Penjahit.css";
 import "./SpkCmt.css";
 import axios from "axios";
@@ -173,6 +173,26 @@ const SpkCmt = () => {
     value: produk.id,
     label: produk.nama_produk,
   }));
+
+  // Options untuk dropdown Cutting (dengan useMemo untuk optimasi)
+  const distribusiOptions = useMemo(
+    () =>
+      distribusiList.map((d) => ({
+        value: d.id,
+        label: d.kode_seri || `Distribusi #${d.id}`,
+      })),
+    [distribusiList]
+  );
+
+  // Options untuk dropdown Jasa (dengan useMemo untuk optimasi)
+  const spkJasaOptions = useMemo(
+    () =>
+      spkJasaList.map((j) => ({
+        value: j.id,
+        label: j.spk_cutting_distribusi?.kode_seri || `Jasa #${j.id}`,
+      })),
+    [spkJasaList]
+  );
 
   const [newDeadline, setNewDeadline] = useState({
     deadline: "",
@@ -1172,176 +1192,152 @@ const SpkCmt = () => {
       </div>
 
       <div className="spkcmt-table-container">
-  <table className="spkcmt-table spkcmt-table-responsive">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nama Baju</th>
-        <th>Penjahit</th>
-        <th>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span>Sisa Hari</span>
-            <button
-              onClick={handleOrderChange}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "4px",
-                cursor: "pointer",
-                fontSize: "12px",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              {sortOrder === "asc" ? <FaArrowDown size={12} /> : <FaArrowUp size={12} />}
-            </button>
-          </div>
-        </th>
-        <th title="Waktu Pengerjaan">WAKTU</th>
-        <th title="Jumlah Produk">JML PRODUK</th>
-        <th title="Jumlah Dikirim">JML KIRIM</th>
-        <th title="Sisa Barang">SISA</th>
-        <th>STATUS</th>
-        <th>AKSI</th> {/* Kolom Download dihapus, digabung ke sini */}
-      </tr>
-    </thead>
-    <tbody>
-      {filteredSpk.map((spk) => {
-        // Hitung sisa barang terbaru dari pengiriman
-        const latestPengiriman = spk.pengiriman?.length
-          ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1)
-          : null;
-        const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
+        <table className="spkcmt-table spkcmt-table-responsive">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nama Baju</th>
+              <th>Penjahit</th>
+              <th>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>Sisa Hari</span>
+                  <button
+                    onClick={handleOrderChange}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {sortOrder === "asc" ? <FaArrowDown size={12} /> : <FaArrowUp size={12} />}
+                  </button>
+                </div>
+              </th>
+              <th title="Waktu Pengerjaan">WAKTU</th>
+              <th title="Jumlah Produk">JML PRODUK</th>
+              <th title="Jumlah Dikirim">JML KIRIM</th>
+              <th title="Sisa Barang">SISA</th>
+              <th>STATUS</th>
+              <th>AKSI</th> {/* Kolom Download dihapus, digabung ke sini */}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredSpk.map((spk) => {
+              // Hitung sisa barang terbaru dari pengiriman
+              const latestPengiriman = spk.pengiriman?.length ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1) : null;
+              const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
 
-        return (
-          <tr key={spk.id_spk}>
-            <td>{spk.id_spk}</td>
-            <td>
-              <strong>
-                {(spk.nama_produk || "–") + (spk.nomor_seri ? ` / ${spk.nomor_seri}` : "")}
-              </strong>
-            </td>
-            <td>{spk.penjahit?.nama_penjahit || "–"}</td>
-            <td
-              style={{
-                color: getStatusColor(spk.status, spk.sisa_hari),
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
-            >
-              {spk.sisa_hari ?? "–"}
-            </td>
-            <td style={{ textAlign: "center" }}>{spk.waktu_pengerjaan ?? "–"}</td>
-            <td style={{ textAlign: "right" }}>
-              <strong>{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</strong>
-            </td>
-            <td style={{ textAlign: "center" }}>
-              <button
-                onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")}
-                style={{
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "11px",
-                  minWidth: "60px",
-                }}
-              >
-                {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
-              </button>
-            </td>
-            <td style={{ textAlign: "center" }}>
-              <button
-                onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")}
-                style={{
-                  background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                  color: "white",
-                  border: "none",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "11px",
-                  minWidth: "60px",
-                }}
-              >
-                {sisaBarang.toLocaleString("id-ID")}
-              </button>
-            </td>
-            <td>
-              <select
-                value={spk.status || "belum_diambil"}
-                onChange={(e) => handleStatusChangeDirect(spk.id_spk, e.target.value)}
-                className="spkcmt-status-select"
-                style={{
-                  backgroundColor: getStatusColor(spk.status, spk.sisa_hari),
-                  color: "white",
-                  border: "2px solid transparent",
-                  padding: "6px 8px",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  minWidth: "130px",
-                  outline: "none",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <option value="belum_diambil">Belum Diambil</option>
-                <option value="sudah_diambil">Sudah Diambil</option>
-              </select>
-            </td>
-            {/* Kolom Aksi — Termasuk Download */}
-            <td style={{ textAlign: "center" }}>
-              <div className="spkcmt-action-group">
-                <button
-                  className="spkcmt-btn-icon spkcmt-btn-icon-info"
-                  onClick={() => handleDetailClick(spk)}
-                  title="Detail"
-                >
-                  <FaInfoCircle size={12} />
-                </button>
-                <button
-                  className="spkcmt-btn-icon spkcmt-btn-icon-info"
-                  onClick={() => handleUpdateDeadlineClick(spk)}
-                  title="Update Deadline"
-                >
-                  <FaClock size={12} />
-                </button>
-                <button
-                  className="spkcmt-btn-icon spkcmt-btn-icon-settings"
-                  onClick={() => handleUpdateStatusClick(spk)}
-                  title="Update Status"
-                >
-                  <FaCog size={12} />
-                </button>
-                <button
-                  className="spkcmt-btn-icon spkcmt-btn-icon-edit"
-                  onClick={() => handleEditClick(spk)}
-                  title="Edit"
-                >
-                  <FaEdit size={12} />
-                </button>
-                {/* ✅ Tombol Download dipindahkan ke sini */}
-                <button
-                  onClick={() => downloadPdf(spk.id_spk)}
-                  className="spkcmt-btn-icon spkcmt-btn-icon-download"
-                  title="Download PDF"
-                >
-                  <FaSave size={12} />
-                </button>
-              </div>
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
+              return (
+                <tr key={spk.id_spk}>
+                  <td>{spk.id_spk}</td>
+                  <td>
+                    <strong>{(spk.nama_produk || "–") + (spk.nomor_seri ? ` / ${spk.nomor_seri}` : "")}</strong>
+                  </td>
+                  <td>{spk.penjahit?.nama_penjahit || "–"}</td>
+                  <td
+                    style={{
+                      color: getStatusColor(spk.status, spk.sisa_hari),
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    {spk.sisa_hari ?? "–"}
+                  </td>
+                  <td style={{ textAlign: "center" }}>{spk.waktu_pengerjaan ?? "–"}</td>
+                  <td style={{ textAlign: "right" }}>
+                    <strong>{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</strong>
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    <button
+                      onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")}
+                      style={{
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        color: "white",
+                        border: "none",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: "11px",
+                        minWidth: "60px",
+                      }}
+                    >
+                      {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
+                    </button>
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    <button
+                      onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")}
+                      style={{
+                        background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                        color: "white",
+                        border: "none",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: "11px",
+                        minWidth: "60px",
+                      }}
+                    >
+                      {sisaBarang.toLocaleString("id-ID")}
+                    </button>
+                  </td>
+                  <td>
+                    <select
+                      value={spk.status || "belum_diambil"}
+                      onChange={(e) => handleStatusChangeDirect(spk.id_spk, e.target.value)}
+                      className="spkcmt-status-select"
+                      style={{
+                        backgroundColor: getStatusColor(spk.status, spk.sisa_hari),
+                        color: "white",
+                        border: "2px solid transparent",
+                        padding: "6px 8px",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        minWidth: "130px",
+                        outline: "none",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <option value="belum_diambil">Belum Diambil</option>
+                      <option value="sudah_diambil">Sudah Diambil</option>
+                    </select>
+                  </td>
+                  {/* Kolom Aksi — Termasuk Download */}
+                  <td style={{ textAlign: "center" }}>
+                    <div className="spkcmt-action-group">
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleDetailClick(spk)} title="Detail">
+                        <FaInfoCircle size={12} />
+                      </button>
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline">
+                        <FaClock size={12} />
+                      </button>
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-settings" onClick={() => handleUpdateStatusClick(spk)} title="Update Status">
+                        <FaCog size={12} />
+                      </button>
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit">
+                        <FaEdit size={12} />
+                      </button>
+                      {/* ✅ Tombol Download dipindahkan ke sini */}
+                      <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF">
+                        <FaSave size={12} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {/* Pagination */}
       <div className="spkcmt-pagination">
         <button className="spkcmt-pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
@@ -1832,23 +1828,41 @@ const SpkCmt = () => {
                 {newSpk.source_type && (
                   <div className="spkcmt-form-group">
                     <label className="spkcmt-form-label">{newSpk.source_type === "cutting" ? "Distribusi Cutting" : "SPK Jasa"}</label>
-                    <select className="spkcmt-form-select" value={newSpk.source_id} onChange={(e) => setNewSpk({ ...newSpk, source_id: e.target.value })} required>
-                      <option value="">Pilih</option>
-
-                      {newSpk.source_type === "cutting" &&
-                        distribusiList.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.kode_seri}
-                          </option>
-                        ))}
-
-                      {newSpk.source_type === "jasa" &&
-                        spkJasaList.map((j) => (
-                          <option key={j.id} value={j.id}>
-                            Jasa #{j.id} - Distribusi {j.spk_cutting_distribusi_id}
-                          </option>
-                        ))}
-                    </select>
+                    <Select
+                      options={newSpk.source_type === "cutting" ? distribusiOptions : spkJasaOptions}
+                      value={newSpk.source_type === "cutting" ? distribusiOptions.find((opt) => opt.value === newSpk.source_id) || null : spkJasaOptions.find((opt) => opt.value === newSpk.source_id) || null}
+                      onChange={(selected) =>
+                        setNewSpk({
+                          ...newSpk,
+                          source_id: selected ? selected.value : "",
+                        })
+                      }
+                      placeholder="Pilih atau cari..."
+                      isSearchable={true}
+                      isClearable={true}
+                      isLoading={newSpk.source_type === "cutting" ? distribusiList.length === 0 : spkJasaList.length === 0}
+                      noOptionsMessage={({ inputValue }) => (inputValue ? `Tidak ditemukan untuk "${inputValue}"` : newSpk.source_type === "cutting" ? "Tidak ada data distribusi cutting" : "Tidak ada data SPK Jasa")}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: "40px",
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          "&:hover": {
+                            borderColor: "#667eea",
+                          },
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: "#999",
+                        }),
+                      }}
+                    />
                   </div>
                 )}
 
@@ -1859,6 +1873,22 @@ const SpkCmt = () => {
                       <h3>📋 Preview SPK yang Dipilih</h3>
                     </div>
                     <div className="spkcmt-preview-content">
+                      {/* Foto Produk */}
+                      {previewData.gambar_produk && (
+                        <div style={{ marginBottom: "16px", textAlign: "center" }}>
+                          <img
+                            src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
+                            alt={previewData.nama_produk || "Gambar Produk"}
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "300px",
+                              borderRadius: "8px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
+                      )}
                       <div className="spkcmt-preview-item">
                         <strong>Kode Seri:</strong>
                         <span>{previewData.kode_seri || "-"}</span>
@@ -1959,7 +1989,7 @@ const SpkCmt = () => {
 
                 {/* ================= HARGA BARANG ================= */}
                 <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Jenis Harga Barang</label>
+                  <label className="spkcmt-form-label">Jenis Harga Produk</label>
                   <select
                     className="spkcmt-form-select"
                     value={newSpk.jenis_harga_barang}
@@ -1976,7 +2006,7 @@ const SpkCmt = () => {
                 </div>
 
                 <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Harga Barang</label>
+                  <label className="spkcmt-form-label">Harga Produk</label>
                   <div className="spkcmt-currency-input">
                     <span className="currency-prefix">Rp</span>
                     <input type="text" className="spkcmt-form-input" name="harga_barang_dasar" value={newSpk.harga_barang_dasar} onChange={handleInputChange} placeholder="0" required />
