@@ -18,8 +18,6 @@ const Pengiriman = () => {
     const [sortBy, setSortBy] = useState("created_at"); 
     const [sortOrder, setSortOrder] = useState("desc");
     const [penjahitList, setPenjahitList] = useState([]); 
-    const [produkList, setProdukList] = useState([]);
-    const [selectedNamaProduk, setSelectedNamaProduk] = useState("");
     const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
     const [warnaData, setWarnaData] = useState([]);
     const [showPetugasAtasPopup, setShowPetugasAtasPopup] = useState(false);
@@ -45,15 +43,14 @@ const Pengiriman = () => {
             console.log("sortOrder:", sortOrder);
 
             const response = await API.get(`/pengiriman`, {
-                params: { 
-                  page: currentPage,
-                  id_penjahit:selectedPenjahit,
-                  sortBy: sortBy,   
-                  sortOrder: sortOrder,
-                  nama_produk:selectedNamaProduk,
-                  status_verifikasi: selectedStatusVerifikasi
-                }, 
-                  
+               params: { 
+                page: currentPage,
+                id_penjahit: selectedPenjahit,
+                sortBy,
+                sortOrder,
+                status_verifikasi: selectedStatusVerifikasi
+                },
+
               });
             
               console.log("Data Pengiriman:", response.data); // Debugging
@@ -69,7 +66,7 @@ const Pengiriman = () => {
           };
         
           fetchPengirimans();
- }, [currentPage, selectedPenjahit, sortBy, sortOrder,selectedNamaProduk ,selectedStatusVerifikasi]); 
+ }, [currentPage, selectedPenjahit, sortBy, sortOrder,selectedStatusVerifikasi]); 
      
  
  useEffect(() => {
@@ -91,18 +88,6 @@ const Pengiriman = () => {
   
   
 
-useEffect(() => {
-    const fetchProdukList = async () => {
-        try {
-            const response = await API.get("/produk");
-            console.log("Produk List:", response.data); // Debugging
-            setProdukList(response.data.data); 
-        } catch (error) {
-            console.error("Error fetching produk list:", error);
-        }
-    };
-    fetchProdukList();
-}, []);
 
 
 useEffect(() => {
@@ -123,10 +108,12 @@ const fetchWarnaBySpk = async (id_spk) => {
             return;
         }
 
-        setWarnaData(response.data.warna.map(warna => ({
-            warna: warna.nama_warna,
-            jumlah_dikirim: 0
-        })));
+       setWarnaData(response.data.warna.map(w => ({
+        nama_warna: w.nama_warna,
+        qty_spk: w.qty,
+        jumlah_dikirim: 0
+    })));
+
     } catch (error) {
         console.error("Error fetching warna:", error);
     }
@@ -222,28 +209,37 @@ const fetchWarnaBySpk = async (id_spk) => {
         setShowPopup(false); 
       };
 
-      const handlePetugasAtasSubmit = async (e) => {
-        e.preventDefault();
-    
-        try {
-            const response = await API.put(`/pengiriman/petugas-atas/${selectedPengiriman.id_pengiriman}`, {
-                _method: "PUT",
-                warna: warnaData,
-            });
-    
-            alert("Data berhasil diperbarui!");
-    
-            setPengirimans(pengirimans.map(item =>
-                item.id_pengiriman === selectedPengiriman.id_pengiriman ? { ...item, ...response.data.data } : item
-            ));
-    
-            setSelectedPengiriman(null); // Tutup modal setelah submit
-        } catch (error) {
-            console.error("Error updating data:", error);
-            alert("Gagal memperbarui data pengiriman.");
-        }
-    };
-    
+     const handlePetugasAtasSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const response = await API.put(
+      `/pengiriman/petugas-atas/${selectedPengiriman.id_pengiriman}`,
+      {
+        warna: warnaData.map(w => ({
+          warna: w.nama_warna,      // ✅ FIX DI SINI
+          jumlah_dikirim: w.jumlah_dikirim
+        }))
+      }
+    );
+
+    alert("Data berhasil diperbarui!");
+
+    setPengirimans(pengirimans.map(item =>
+      item.id_pengiriman === selectedPengiriman.id_pengiriman
+        ? { ...item, ...response.data.data }
+        : item
+    ));
+
+    setShowPetugasAtasPopup(false);
+    setSelectedPengiriman(null);
+
+  } catch (error) {
+    console.error("Error updating data:", error.response?.data);
+    alert(error.response?.data?.error || "Gagal memperbarui data pengiriman.");
+  }
+};
+
     
     
     
@@ -284,18 +280,7 @@ const fetchWarnaBySpk = async (id_spk) => {
                  <label htmlFor="statusFilter" className="filter-label"></label>
                 
                  <label htmlFor="produkFilter" className="filter-label"></label>
-                <select
-                    value={selectedNamaProduk}
-                    onChange={(e) => setSelectedNamaProduk(e.target.value)}
-                    className="filter-select1"
-                >
-                    <option value="">Semua Produk</option>
-                    {produkList.map((produk) => (
-                        <option key={produk.nama_produk} value={produk.nama_produk}>
-                            {produk.nama_produk}
-                        </option>
-                    ))}
-                </select>
+                
                 
                 <select 
                 value={sortOrder} 
@@ -346,15 +331,15 @@ const fetchWarnaBySpk = async (id_spk) => {
                                 
                              
                                <td data-label="Total Kirim : ">
-    {pengiriman.total_barang_dikirim}
-</td>
+                                {pengiriman.total_barang_dikirim}
+                            </td>
 
-<td
-    data-label="Sisa Barang"
-    style={{ color: pengiriman.sisa_barang > 0 ? "red" : "black" }}
->
-    {pengiriman.sisa_barang}
-</td>
+                            <td
+                                data-label="Sisa Barang"
+                                style={{ color: pengiriman.sisa_barang > 0 ? "red" : "black" }}
+                            >
+                                {pengiriman.sisa_barang}
+                            </td>
 
 
 
@@ -558,7 +543,9 @@ const fetchWarnaBySpk = async (id_spk) => {
             <form onSubmit={handlePetugasAtasSubmit} className="modern-form">
                 {warnaData.map((item, index) => (
                     <div className="form-group" key={index}>
-                        <label>Warna: {item.warna}</label>
+                        <label>
+                         {item.nama_warna} <small>(SPK: {item.qty_spk})</small>
+                        </label>
                         <input
                             type="number"
                             value={item.jumlah_dikirim}
