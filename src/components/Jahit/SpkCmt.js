@@ -177,20 +177,45 @@ const SpkCmt = () => {
   // Options untuk dropdown Cutting (dengan useMemo untuk optimasi)
   const distribusiOptions = useMemo(
     () =>
-      distribusiList.map((d) => ({
-        value: d.id,
-        label: d.kode_seri || `Distribusi #${d.id}`,
-      })),
+      distribusiList.map((d) => {
+        const kodeSeri = d.kode_seri || `Distribusi #${d.id}`;
+        // Coba path camelCase (default Laravel) atau snake_case (fallback)
+        const namaProduk = d.spkCutting?.produk?.nama_produk || d.spk_cutting?.produk?.nama_produk || null;
+
+        // Format label: "Kode Seri - Nama Produk" jika ada nama produk, jika tidak hanya "Kode Seri"
+        const label = namaProduk ? `${kodeSeri} - ${namaProduk}` : kodeSeri;
+
+        return {
+          value: d.id,
+          label: label,
+        };
+      }),
     [distribusiList]
   );
 
   // Options untuk dropdown Jasa (dengan useMemo untuk optimasi)
   const spkJasaOptions = useMemo(
     () =>
-      spkJasaList.map((j) => ({
-        value: j.id,
-        label: j.spk_cutting_distribusi?.kode_seri || `Jasa #${j.id}`,
-      })),
+      spkJasaList.map((j) => {
+        const kodeSeri = j.spkCuttingDistribusi?.kode_seri || j.spk_cutting_distribusi?.kode_seri || `Jasa #${j.id}`;
+
+        // Coba path camelCase (default Laravel) atau snake_case (fallback)
+        // Path: spkCuttingDistribusi.spkCutting.produk.nama_produk
+        const namaProduk =
+          j.spkCuttingDistribusi?.spkCutting?.produk?.nama_produk ||
+          j.spkCuttingDistribusi?.spk_cutting?.produk?.nama_produk ||
+          j.spk_cutting_distribusi?.spkCutting?.produk?.nama_produk ||
+          j.spk_cutting_distribusi?.spk_cutting?.produk?.nama_produk ||
+          null;
+
+        // Format label: "Kode Seri - Nama Produk" jika ada nama produk, jika tidak hanya "Kode Seri"
+        const label = namaProduk ? `${kodeSeri} - ${namaProduk}` : kodeSeri;
+
+        return {
+          value: j.id,
+          label: label,
+        };
+      }),
     [spkJasaList]
   );
 
