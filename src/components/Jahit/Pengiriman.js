@@ -1,80 +1,81 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import "./Pengiriman.css";
-import API from "../../api"; 
-import { FaPlus, FaTrash,FaMoneyBillWave, FaSave, FaTimes, FaRegEye, FaEdit, FaClock,FaInfoCircle,FaClipboard , FaList,  } from 'react-icons/fa';
+import API from "../../api";
+import { FaPlus, FaMoneyBillWave, FaTimes, FaInfoCircle } from "react-icons/fa";
+import Select from "react-select";
 
 const Pengiriman = () => {
-    const [pengirimans, setPengirimans] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [showForm, setShowForm] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [showModal, setShowModal] = useState(false);
-    const [selectedPengiriman, setSelectedPengiriman] = useState(null);
-    const [showPopup, setShowPopup] = useState(false);
-    const [selectedPenjahit, setSelectedPenjahit] = useState("");
-    const [sortBy, setSortBy] = useState("created_at"); 
-    const [sortOrder, setSortOrder] = useState("desc");
-    const [penjahitList, setPenjahitList] = useState([]); 
-    const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
-    const [warnaData, setWarnaData] = useState([]);
-    const [showPetugasAtasPopup, setShowPetugasAtasPopup] = useState(false);
-    
-    const [newPengiriman, setNewPengiriman] = useState({
-        tanggal_pengiriman: "",
-        total_barang_dikirim: "",
-        sisa_barang: "",
-        total_bayar: "",
-        warna: [] // Inisialisasi warna dengan array kosong
-    });
+  const [pengirimans, setPengirimans] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPengiriman, setSelectedPengiriman] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedPenjahit, setSelectedPenjahit] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [penjahitList, setPenjahitList] = useState([]);
+  const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
+  const [warnaData, setWarnaData] = useState([]);
+  const [showPetugasAtasPopup, setShowPetugasAtasPopup] = useState(false);
+  const [spkCmtList, setSpkCmtList] = useState([]);
 
-    const userRole = localStorage.getItem("role");
-    console.log("User Role dari localStorage:", userRole);
+  const [newPengiriman, setNewPengiriman] = useState({
+    id_spk: "",
+    tanggal_pengiriman: "",
+    total_barang_dikirim: "",
+    sisa_barang: "",
+    total_bayar: "",
+    warna: [], // Inisialisasi warna dengan array kosong
+  });
 
-    useEffect(() => {
+  const userRole = localStorage.getItem("role");
+  console.log("User Role dari localStorage:", userRole);
+
+  useEffect(() => {
     const fetchPengirimans = async () => {
-        try {
-            setLoading(true);
+      try {
+        setLoading(true);
 
-            console.log("Selected Penjahit:", selectedPenjahit); // Debugging
-            console.log("sortBy:", sortBy);
-            console.log("sortOrder:", sortOrder);
+        console.log("Selected Penjahit:", selectedPenjahit); // Debugging
+        console.log("sortBy:", sortBy);
+        console.log("sortOrder:", sortOrder);
 
-            const response = await API.get(`/pengiriman`, {
-               params: { 
-                page: currentPage,
-                id_penjahit: selectedPenjahit,
-                sortBy,
-                sortOrder,
-                status_verifikasi: selectedStatusVerifikasi
-                },
+        const response = await API.get(`/pengiriman`, {
+          params: {
+            page: currentPage,
+            id_penjahit: selectedPenjahit,
+            sortBy,
+            sortOrder,
+            status_verifikasi: selectedStatusVerifikasi,
+          },
+        });
 
-              });
-            
-              console.log("Data Pengiriman:", response.data); // Debugging
-  
-              setPengirimans(response.data.data);
-              setLastPage(response.data.last_page);
-            } catch (error) {
-              setError(error.response?.data?.message || "Failed to fetch data");
-              console.error("Error fetching SPK:", error);
-            } finally {
-              setLoading(false);
-            }
-          };
-        
-          fetchPengirimans();
- }, [currentPage, selectedPenjahit, sortBy, sortOrder,selectedStatusVerifikasi]); 
-     
- 
- useEffect(() => {
+        console.log("Data Pengiriman:", response.data); // Debugging
+
+        setPengirimans(response.data.data);
+        setLastPage(response.data.last_page);
+      } catch (error) {
+        setError(error.response?.data?.message || "Failed to fetch data");
+        console.error("Error fetching SPK:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPengirimans();
+  }, [currentPage, selectedPenjahit, sortBy, sortOrder, selectedStatusVerifikasi]);
+
+  useEffect(() => {
     const fetchPenjahits = async () => {
       try {
         setLoading(true);
-  
-        const response = await API.get("/penjahit"); 
+
+        const response = await API.get("/penjahit");
         setPenjahitList(response.data);
       } catch (error) {
         setError("Gagal mengambil data penjahit.");
@@ -82,498 +83,551 @@ const Pengiriman = () => {
         setLoading(false);
       }
     };
-  
+
     fetchPenjahits();
   }, []);
-  
-  
 
-
-
-useEffect(() => {
-    if (selectedPengiriman) {
-        fetchWarnaBySpk(selectedPengiriman.id_spk);
-    }
-}, [selectedPengiriman]);
-
-const fetchWarnaBySpk = async (id_spk) => {
-    try {
-        const response = await API.get(`/spk-cmt/${id_spk}/warna`);
-        
-        console.log("API Response:", response.data); // Debugging
-
-        // Pastikan data berbentuk array sebelum diproses
-        if (!Array.isArray(response.data.warna)) {
-            console.error("Expected an array but got:", response.data.warna);
-            return;
-        }
-
-       setWarnaData(response.data.warna.map(w => ({
-        nama_warna: w.nama_warna,
-        qty_spk: w.qty,
-        jumlah_dikirim: 0
-    })));
-
-    } catch (error) {
-        console.error("Error fetching warna:", error);
-    }
-};
-
-
-     // Filter data berdasarkan pencarian
-     const filteredPengirimans = Array.isArray(pengirimans) 
-     ? pengirimans
-         .filter((pengiriman) =>
-             pengiriman.id_spk.toString().includes(searchTerm.toLowerCase())
-         )
-         .sort((a, b) => 
-             sortOrder === "asc" 
-                 ? new Date(a.created_at) - new Date(b.created_at)  // Terlama dulu
-                 : new Date(b.created_at) - new Date(a.created_at)  // Terbaru dulu
-         )
-     : [];
- 
-    
-     const handleFormSubmit = async (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData();
-        formData.append("id_spk", newPengiriman.id_spk);
-        formData.append("tanggal_pengiriman", newPengiriman.tanggal_pengiriman);
-        formData.append("total_barang_dikirim", newPengiriman.total_barang_dikirim);
-        
-        if (newPengiriman.foto_nota) {
-            formData.append("foto_nota", newPengiriman.foto_nota);
-        }
-    
-        try {
-            const response = await API.post("/pengiriman/petugas-bawah", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            setPengirimans([...pengirimans, response.data.data]); // Tambah ke list
-            setShowForm(false); // Tutup modal
-    
-            // Reset form
-            setNewPengiriman({
-                id_spk: "",
-                tanggal_pengiriman: "",
-                total_barang_dikirim: "",
-                foto_nota: null,
-            });
-    
-        } catch (error) {
-            console.error("Error adding data:", error);
-            alert(error.response?.data?.error || "Terjadi kesalahan saat menambahkan pengiriman.");
-        }
-    };
-    
-    const handleQtyChange = (index, value) => {
-        const newWarnaData = [...warnaData];
-        newWarnaData[index].jumlah_dikirim = value;
-        setWarnaData(newWarnaData);
-    };
-    
-
-    const handleInputChange = (e) => {
-        setNewPengiriman({
-            ...newPengiriman,
-            [e.target.name]: e.target.value,
+  // Fetch SPK CMT dengan status sudah_diambil untuk dropdown
+  useEffect(() => {
+    const fetchSpkCmt = async () => {
+      try {
+        const response = await API.get("/spkcmt", {
+          params: {
+            status: "sudah_diambil",
+            allData: "true",
+          },
         });
-    };
-    
 
-    const formatTanggal = (tanggal) => {
-        const date = new Date(tanggal);
-        return new Intl.DateTimeFormat("id-ID", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
-      };
+        console.log("SPK CMT Response:", response.data); // Debugging
 
-      const handleDetailClick = (pengiriman) => {
-        setSelectedPengiriman(pengiriman); // Simpan detail SPK yang dipilih
-        setShowPopup(true);  // Tampilkan pop-up
-        setShowPetugasAtasPopup(false);
-      };
-      const closePopup = () => {
-        setShowPopup(false); // Sembunyikan pop-up
-        setSelectedPengiriman(null); 
-      
-      };
+        // Handle response structure
+        let data = [];
+        if (response.data?.spk) {
+          // Ketika allData = true, response.data.spk adalah array langsung
+          if (Array.isArray(response.data.spk)) {
+            data = response.data.spk;
+          }
+          // Jika paginated (allData = false), ada property data
+          else if (response.data.spk.data && Array.isArray(response.data.spk.data)) {
+            data = response.data.spk.data;
+          }
+        }
 
-      const handlePetugasAtas = (pengiriman) => {
-        setSelectedPengiriman(pengiriman); // Set pengiriman yang dipilijh
-        setShowPetugasAtasPopup(true);  // Buka modal petugas atas
-        setShowPopup(false); 
-      };
-
-     const handlePetugasAtasSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    const response = await API.put(
-      `/pengiriman/petugas-atas/${selectedPengiriman.id_pengiriman}`,
-      {
-        warna: warnaData.map(w => ({
-          warna: w.nama_warna,      // ✅ FIX DI SINI
-          jumlah_dikirim: w.jumlah_dikirim
-        }))
+        console.log("SPK CMT Data extracted:", data); // Debugging
+        setSpkCmtList(data);
+      } catch (error) {
+        console.error("Error fetching SPK CMT:", error);
+        console.error("Error details:", error.response?.data); // Debugging
+        setSpkCmtList([]);
       }
-    );
+    };
 
-    alert("Data berhasil diperbarui!");
+    fetchSpkCmt();
+  }, []);
 
-    setPengirimans(pengirimans.map(item =>
-      item.id_pengiriman === selectedPengiriman.id_pengiriman
-        ? { ...item, ...response.data.data }
-        : item
-    ));
+  useEffect(() => {
+    if (selectedPengiriman) {
+      fetchWarnaBySpk(selectedPengiriman.id_spk);
+    }
+  }, [selectedPengiriman]);
 
+  const fetchWarnaBySpk = async (id_spk) => {
+    try {
+      const response = await API.get(`/spk-cmt/${id_spk}/warna`);
+
+      console.log("API Response:", response.data); // Debugging
+
+      // Pastikan data berbentuk array sebelum diproses
+      if (!Array.isArray(response.data.warna)) {
+        console.error("Expected an array but got:", response.data.warna);
+        return;
+      }
+
+      setWarnaData(
+        response.data.warna.map((w) => ({
+          nama_warna: w.nama_warna,
+          qty_spk: w.qty,
+          jumlah_dikirim: 0,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching warna:", error);
+    }
+  };
+
+  // Filter data berdasarkan pencarian
+  const filteredPengirimans = Array.isArray(pengirimans)
+    ? pengirimans
+        .filter((pengiriman) => pengiriman.id_spk.toString().includes(searchTerm.toLowerCase()))
+        .sort(
+          (a, b) =>
+            sortOrder === "asc"
+              ? new Date(a.created_at) - new Date(b.created_at) // Terlama dulu
+              : new Date(b.created_at) - new Date(a.created_at) // Terbaru dulu
+        )
+    : [];
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!newPengiriman.id_spk) {
+      alert("Silakan pilih SPK CMT terlebih dahulu");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("id_spk", Number(newPengiriman.id_spk));
+    formData.append("tanggal_pengiriman", newPengiriman.tanggal_pengiriman);
+    formData.append("total_barang_dikirim", newPengiriman.total_barang_dikirim);
+
+    if (newPengiriman.foto_nota) {
+      formData.append("foto_nota", newPengiriman.foto_nota);
+    }
+
+    try {
+      const response = await API.post("/pengiriman/petugas-bawah", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setPengirimans([...pengirimans, response.data.data]); // Tambah ke list
+      setShowForm(false); // Tutup modal
+
+      // Reset form
+      setNewPengiriman({
+        id_spk: "",
+        tanggal_pengiriman: "",
+        total_barang_dikirim: "",
+        sisa_barang: "",
+        total_bayar: "",
+        warna: [],
+        foto_nota: null,
+      });
+    } catch (error) {
+      console.error("Error adding data:", error);
+      alert(error.response?.data?.error || "Terjadi kesalahan saat menambahkan pengiriman.");
+    }
+  };
+
+  const handleQtyChange = (index, value) => {
+    const newWarnaData = [...warnaData];
+    newWarnaData[index].jumlah_dikirim = value;
+    setWarnaData(newWarnaData);
+  };
+
+  const handleInputChange = (e) => {
+    setNewPengiriman({
+      ...newPengiriman,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Options untuk dropdown SPK CMT
+  const spkCmtOptions = useMemo(() => {
+    console.log("spkCmtList untuk options:", spkCmtList); // Debugging
+
+    if (!Array.isArray(spkCmtList) || spkCmtList.length === 0) {
+      console.log("spkCmtList kosong atau bukan array"); // Debugging
+      return [];
+    }
+
+    const options = spkCmtList
+      .filter((spk) => spk.status === "sudah_diambil") // Filter lagi di frontend untuk memastikan
+      .map((spk) => {
+        const nomorSeri = spk.nomor_seri || `SPK-${spk.id_spk}`;
+        const namaProduk = spk.nama_produk || "Produk Tidak Diketahui";
+        const label = `${nomorSeri} - ${namaProduk}`;
+
+        return {
+          value: spk.id_spk,
+          label: label,
+        };
+      });
+
+    console.log("spkCmtOptions generated:", options); // Debugging
+    return options;
+  }, [spkCmtList]);
+
+  const formatTanggal = (tanggal) => {
+    const date = new Date(tanggal);
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
+
+  // Format rupiah tanpa desimal jika 0
+  const formatRupiah = (value) => {
+    if (!value && value !== 0) return "Rp 0";
+
+    // Konversi ke number jika string
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+
+    // Jika bukan number atau NaN, return 0
+    if (isNaN(numValue)) return "Rp 0";
+
+    // Format dengan pemisah ribuan menggunakan titik (Indonesia)
+    // Tanpa desimal karena kita hanya butuh bilangan bulat
+    return `Rp ${Math.floor(numValue).toLocaleString("id-ID")}`;
+  };
+
+  const handleDetailClick = (pengiriman) => {
+    setSelectedPengiriman(pengiriman); // Simpan detail SPK yang dipilih
+    setShowPopup(true); // Tampilkan pop-up
     setShowPetugasAtasPopup(false);
+  };
+  const closePopup = () => {
+    setShowPopup(false); // Sembunyikan pop-up
     setSelectedPengiriman(null);
+  };
 
-  } catch (error) {
-    console.error("Error updating data:", error.response?.data);
-    alert(error.response?.data?.error || "Gagal memperbarui data pengiriman.");
-  }
-};
+  const handlePetugasAtas = (pengiriman) => {
+    setSelectedPengiriman(pengiriman); // Set pengiriman yang dipilijh
+    setShowPetugasAtasPopup(true); // Buka modal petugas atas
+    setShowPopup(false);
+  };
 
-    
-    
-    
-    return (
-        <div>
-            <div className="penjahit-container">
+  const handlePetugasAtasSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await API.put(`/pengiriman/petugas-atas/${selectedPengiriman.id_pengiriman}`, {
+        warna: warnaData.map((w) => ({
+          warna: w.nama_warna, // ✅ FIX DI SINI
+          jumlah_dikirim: w.jumlah_dikirim,
+        })),
+      });
+
+      alert("Data berhasil diperbarui!");
+
+      setPengirimans(pengirimans.map((item) => (item.id_pengiriman === selectedPengiriman.id_pengiriman ? { ...item, ...response.data.data } : item)));
+
+      setShowPetugasAtasPopup(false);
+      setSelectedPengiriman(null);
+    } catch (error) {
+      console.error("Error updating data:", error.response?.data);
+      alert(error.response?.data?.error || "Gagal memperbarui data pengiriman.");
+    }
+  };
+
+  return (
+    <div className="pengiriman-wrapper">
+      <div className="pengiriman-header">
         <h1>Daftar Pengiriman</h1>
       </div>
-            <div className="table-container">
-            <div className="filter-header1">
-           
-    <button onClick={() => setShowForm(true)}>
-        Tambah
-    </button>
 
-
-                <div className="search-bar1">
-                <input
-                    type="text"
-                    placeholder="Cari id spk..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                </div>
-                <label htmlFor="statusFilter" className="filter-label"></label>
-                <select 
-                    value={selectedPenjahit} 
-                    onChange={(e) => setSelectedPenjahit(e.target.value)}
-                    className="filter-select1"
-                    >
-                    <option value="">All CMT</option>
-                    {penjahitList.map((penjahit) => (
-                        <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                            {penjahit.nama_penjahit}
-                        </option>
-                ))}
-                 </select>
-                 <label htmlFor="statusFilter" className="filter-label"></label>
-                
-                 <label htmlFor="produkFilter" className="filter-label"></label>
-                
-                
-                <select 
-                value={sortOrder} 
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="filter-select1"
-                >
-                    <option value="asc">Terlama</option>
-                    <option value="desc">Terbaru</option>
-                </select>
-                
-                <select 
-                value={selectedStatusVerifikasi} 
-                onChange={(e) => setSelectedStatusVerifikasi(e.target.value)}
-                className="filter-select1"
-                >
-                    <option value="pending">Pending</option>
-                    <option value="invalid">Invalid</option>
-                    <option value="valid">Valid</option>
-                </select>
-            </div>
-            
-            <div className="table-wrapper">
-                <table className="penjahit-table">
-                    <thead>
-                        <tr>
-                           
-                            <th>ID SPK</th>
-                            <th>NAMA CMT</th>
-                            <th>NAMA PRODUK</th>
-                            <th>Tanggal Pengiriman</th>
-                            <th>Total Barang Dikirim</th>
-                            <th>Sisa Barang</th>
-                            <th>Status Verfikasi</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredPengirimans.map((pengiriman) => (
-                            <tr key={pengiriman.id_pengiriman}>
-                                
-                                <td data-label="ID SPK : ">{pengiriman.id_spk}</td>
-                                <td data-label="Penjahit : ">
-                                {pengiriman.nama_penjahit} {pengiriman.id_penjahit}
-                            </td>
-
-                                <td data-label="Penjahit : ">{pengiriman.nama_produk}</td>
-                                <td data-label="Tanggal Kirim : ">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
-                                
-                             
-                               <td data-label="Total Kirim : ">
-                                {pengiriman.total_barang_dikirim}
-                            </td>
-
-                            <td
-                                data-label="Sisa Barang"
-                                style={{ color: pengiriman.sisa_barang > 0 ? "red" : "black" }}
-                            >
-                                {pengiriman.sisa_barang}
-                            </td>
-
-
-
-                            <td data-label="Status Verifikasi:">
-                            <span style={{ color: pengiriman.status_verifikasi === 'valid' ? 'green' : 'red' }}>
-                                {pengiriman.status_verifikasi}
-                            </span>
-                            </td>
-
-
-                                <td data-label=" ">
-                                    <div className="action-card">
-                                        <button className="btn1-icon" onClick={() => handleDetailClick(pengiriman)}>
-                                            <FaInfoCircle className="icon" />
-                                        </button>
-                                        {userRole !== "staff_bawah" && (
-                                                <button className="btn1-icon" onClick={() => handlePetugasAtas(pengiriman)}>
-                                                    <FaMoneyBillWave className="icon" />
-                                                </button>
-                                            )}
-                             </div>
-                                </td> 
-                        </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-             {/* Pagination */}
-             <div className="pagination-container">
-                        <button 
-                        className="pagination-button" 
-                        disabled={currentPage === 1} 
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        >
-                        ◀ Prev
-                        </button>
-
-                        <span className="pagination-info">Halaman {currentPage} dari {lastPage}</span>
-
-                        <button 
-                        className="pagination-button" 
-                        disabled={currentPage === lastPage} 
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        >
-                        Next ▶
-                        </button>
-                    </div>
-            </div>
-
- {/* Pop-Up Card */}
- {showPopup && selectedPengiriman && (
-  <div className="popup-overlay">
-      <div className="popup-card">
-      <div className="popup-header">
-        <h2>Detail Pengiriman</h2>
-        <button className="btn-close" onClick={closePopup}>
-          &times;
+      <div className="pengiriman-filters">
+        <button onClick={() => setShowForm(true)}>
+          <FaPlus /> Tambah
         </button>
+
+        <div className="pengiriman-search">
+          <input type="text" placeholder="Cari ID SPK..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+
+        <select value={selectedPenjahit} onChange={(e) => setSelectedPenjahit(e.target.value)}>
+          <option value="">All CMT</option>
+          {penjahitList.map((penjahit) => (
+            <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+              {penjahit.nama_penjahit}
+            </option>
+          ))}
+        </select>
+
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+          <option value="asc">Terlama</option>
+          <option value="desc">Terbaru</option>
+        </select>
+
+        <select value={selectedStatusVerifikasi} onChange={(e) => setSelectedStatusVerifikasi(e.target.value)}>
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="invalid">Invalid</option>
+          <option value="valid">Valid</option>
+        </select>
       </div>
-            <div className="popup-content">
-            {selectedPengiriman ? (
-                <div className="popup-details">
-                    <table>
-                        <thead>
-                            <tr>
-                                
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span>ID SPK:</span></td>
-                                <td>{selectedPengiriman.id_spk}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Tanggal Pengiriman:</span></td>
-                                <td>{selectedPengiriman.tanggal_pengiriman}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Total Barang:</span></td>
-                                <td>{selectedPengiriman.total_barang_dikirim}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Sisa Barang:</span></td>
-                                <td>{selectedPengiriman.sisa_barang}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Total Bayar:</span></td>
-                                <td>{selectedPengiriman.total_bayar}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Detail warna dikirim:</span></td>
-                                <td>{selectedPengiriman.warna.map((warnaDetail) => (
-                                        <div key={warnaDetail.id_pengiriman_warna}>
-                                            {warnaDetail.warna}: {warnaDetail.jumlah_dikirim} pcs
-                                        </div>
-                                    ))}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Detail sisa warna:</span></td>
-                                <td>{selectedPengiriman.warna.map((warnaDetail) => (
-                                        <div key={warnaDetail.id_pengiriman_warna}>
-                                            {warnaDetail.warna}: {warnaDetail.sisa_barang_per_warna} pcs
-                                        </div>
-                                    ))}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Total Claim:</span></td>
-                                <td>{selectedPengiriman.claim}</td>
-                            </tr>
-                            <tr>
-                                <td><span>Total Refund Claim:</span></td>
-                                <td>{selectedPengiriman.refund_claim}</td>
-                            </tr>
-                        </tbody>
-                    </table>
 
-                    
-                </div>
-            ) : (
-                <p>Loading...</p> // Menampilkan loading atau pesan saat data belum ada
-            )}
+      <div className="pengiriman-table-container">
+        <div className="pengiriman-table-wrapper">
+          <table className="pengiriman-table">
+            <thead>
+              <tr>
+                <th>ID SPK</th>
+                <th>Nama CMT</th>
+                <th>Nama Produk</th>
+                <th>Tanggal Pengiriman</th>
+                <th>Total Barang Dikirim</th>
+                <th>Sisa Barang</th>
+                <th>Status Verifikasi</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                    Memuat data...
+                  </td>
+                </tr>
+              ) : filteredPengirimans.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "40px", color: "#718096" }}>
+                    Tidak ada data pengiriman
+                  </td>
+                </tr>
+              ) : (
+                filteredPengirimans.map((pengiriman) => (
+                  <tr key={pengiriman.id_pengiriman}>
+                    <td>{pengiriman.id_spk}</td>
+                    <td>{pengiriman.nama_penjahit || "-"}</td>
+                    <td>{pengiriman.nama_produk || "-"}</td>
+                    <td>{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                    <td>{pengiriman.total_barang_dikirim || 0}</td>
+                    <td
+                      style={{
+                        color: pengiriman.sisa_barang > 0 ? "#e53e3e" : "#48bb78",
+                        fontWeight: pengiriman.sisa_barang > 0 ? 600 : 400,
+                      }}
+                    >
+                      {pengiriman.sisa_barang || 0}
+                    </td>
+                    <td>
+                      <span className={`status-badge ${pengiriman.status_verifikasi || "pending"}`}>{pengiriman.status_verifikasi || "pending"}</span>
+                    </td>
+                    <td>
+                      <div className="pengiriman-actions">
+                        <button className="pengiriman-btn-icon info" onClick={() => handleDetailClick(pengiriman)} title="Detail">
+                          <FaInfoCircle />
+                        </button>
+                        {userRole !== "staff_bawah" && (
+                          <button className="pengiriman-btn-icon payment" onClick={() => handlePetugasAtas(pengiriman)} title="Verifikasi">
+                            <FaMoneyBillWave />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
+
+        <div className="pengiriman-pagination">
+          <button className="pengiriman-pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+            ◀ Prev
+          </button>
+          <span className="pengiriman-pagination-info">
+            Halaman {currentPage} dari {lastPage}
+          </span>
+          <button className="pengiriman-pagination-btn" disabled={currentPage === lastPage} onClick={() => setCurrentPage(currentPage + 1)}>
+            Next ▶
+          </button>
         </div>
-</div>
-)}
+      </div>
 
-
-
-
-         {/* Modal Form */}
-{showForm && (
-    <div className="modal">
-        <div className="modal-content">
-            <h2>Tambah Data Pengiriman</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-                {/* Input ID SPK */}
-                <div className="form-group">
-                    <label>ID SPK</label>
-                    <input
-                        type="number"
-                        name="id_spk"
-                        value={newPengiriman.id_spk || ""}
-                        onChange={handleInputChange}
-                        required
-                    />
-                </div>
-                
-                {/* Input Tanggal Pengiriman */}
-                <div className="form-group">
-                    <label>Tanggal Kirim</label>
-                    <input
-                        type="date"
-                        name="tanggal_pengiriman"
-                        value={newPengiriman.tanggal_pengiriman}
-                        onChange={handleInputChange}
-                        required
-                    />
-                </div>
-
-                {/* Input Total Barang */}
-                <div className="form-group">
-                    <label>Total Barang</label>
-                    <input
-                        type="number"
-                        name="total_barang_dikirim"
-                        value={newPengiriman.total_barang_dikirim}
-                        onChange={handleInputChange}
-                        required
-                    />
-                </div>
-
-                {/* Upload Nota (Upload File) */}
-                <div className="form-group">
-                    <label>Upload Nota</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                            setNewPengiriman({ ...newPengiriman, foto_nota: e.target.files[0] })
-                        }
-                    />
-                </div>
-
-                {/* Aksi */}
-                <div className="form-actions">
-                    <button type="submit" className="btn btn-submit">Simpan</button>
-                    <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>Batal</button>
-                </div>
-            </form>
+      {/* Detail Popup */}
+      {showPopup && selectedPengiriman && (
+        <div className="pengiriman-detail-popup" onClick={closePopup}>
+          <div className="pengiriman-detail-card" onClick={(e) => e.stopPropagation()}>
+            <div className="pengiriman-detail-header">
+              <h2>Detail Pengiriman</h2>
+              <button className="pengiriman-modal-close" onClick={closePopup}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pengiriman-detail-content">
+              <table className="pengiriman-detail-table">
+                <tbody>
+                  <tr>
+                    <td>ID SPK</td>
+                    <td>{selectedPengiriman.id_spk}</td>
+                  </tr>
+                  <tr>
+                    <td>Tanggal Pengiriman</td>
+                    <td>{formatTanggal(selectedPengiriman.tanggal_pengiriman)}</td>
+                  </tr>
+                  <tr>
+                    <td>Total Barang</td>
+                    <td>{selectedPengiriman.total_barang_dikirim || 0}</td>
+                  </tr>
+                  <tr>
+                    <td>Sisa Barang</td>
+                    <td>{selectedPengiriman.sisa_barang || 0}</td>
+                  </tr>
+                  <tr>
+                    <td>Total Bayar</td>
+                    <td>{formatRupiah(selectedPengiriman.total_bayar)}</td>
+                  </tr>
+                  {selectedPengiriman.warna && selectedPengiriman.warna.length > 0 && (
+                    <>
+                      <tr>
+                        <td>Detail Warna Dikirim</td>
+                        <td>
+                          <div className="pengiriman-detail-warna">
+                            {selectedPengiriman.warna.map((warnaDetail) => (
+                              <div key={warnaDetail.id_pengiriman_warna} className="pengiriman-detail-warna-item">
+                                {warnaDetail.warna}: {warnaDetail.jumlah_dikirim} pcs
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Detail Sisa Warna</td>
+                        <td>
+                          <div className="pengiriman-detail-warna">
+                            {selectedPengiriman.warna.map((warnaDetail) => (
+                              <div key={warnaDetail.id_pengiriman_warna} className="pengiriman-detail-warna-item">
+                                {warnaDetail.warna}: {warnaDetail.sisa_barang_per_warna || 0} pcs
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                  <tr>
+                    <td>Total Claim</td>
+                    <td>{formatRupiah(selectedPengiriman.claim)}</td>
+                  </tr>
+                  <tr>
+                    <td>Total Refund Claim</td>
+                    <td>{formatRupiah(selectedPengiriman.refund_claim)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-    </div>
-)}
+      )}
 
+      {/* Modal Form Tambah */}
+      {showForm && (
+        <div className="pengiriman-modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="pengiriman-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pengiriman-modal-header">
+              <h2>Tambah Data Pengiriman</h2>
+              <button className="pengiriman-modal-close" onClick={() => setShowForm(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pengiriman-modal-body">
+              <form onSubmit={handleFormSubmit} className="pengiriman-form">
+                <div className="pengiriman-form-group">
+                  <label className="pengiriman-form-label">SPK CMT</label>
+                  <Select
+                    options={spkCmtOptions}
+                    value={spkCmtOptions.find((opt) => opt.value === newPengiriman.id_spk) || null}
+                    onChange={(selected) =>
+                      setNewPengiriman({
+                        ...newPengiriman,
+                        id_spk: selected ? selected.value : "",
+                      })
+                    }
+                    placeholder="Pilih atau cari SPK CMT..."
+                    isSearchable={true}
+                    isClearable={true}
+                    noOptionsMessage={({ inputValue }) => (inputValue ? `Tidak ditemukan untuk "${inputValue}"` : "Tidak ada SPK CMT dengan status sudah diambil")}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: "48px",
+                        border: "1.5px solid #e1e5e9",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        "&:hover": {
+                          borderColor: "#667eea",
+                        },
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#999",
+                      }),
+                    }}
+                    required
+                  />
+                </div>
 
+                <div className="pengiriman-form-group">
+                  <label className="pengiriman-form-label">Tanggal Kirim</label>
+                  <input type="date" name="tanggal_pengiriman" className="pengiriman-form-input" value={newPengiriman.tanggal_pengiriman} onChange={handleInputChange} required />
+                </div>
+
+                <div className="pengiriman-form-group">
+                  <label className="pengiriman-form-label">Total Barang</label>
+                  <input type="number" name="total_barang_dikirim" className="pengiriman-form-input" value={newPengiriman.total_barang_dikirim} onChange={handleInputChange} required />
+                </div>
+
+                <div className="pengiriman-form-group">
+                  <label className="pengiriman-form-label">Upload Nota</label>
+                  <input type="file" accept="image/*" className="pengiriman-form-input" onChange={(e) => setNewPengiriman({ ...newPengiriman, foto_nota: e.target.files[0] })} />
+                </div>
+
+                <div className="pengiriman-form-actions">
+                  <button type="button" className="pengiriman-btn pengiriman-btn-secondary" onClick={() => setShowForm(false)}>
+                    Batal
+                  </button>
+                  <button type="submit" className="pengiriman-btn pengiriman-btn-primary">
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Form Petugas Atas */}
-{ showPetugasAtasPopup && selectedPengiriman && (
-    <div className="modal">
-        <div className="modal-content">
-            <h2>Pengiriman (ID: {selectedPengiriman.id_pengiriman})</h2>
-            <form onSubmit={handlePetugasAtasSubmit} className="modern-form">
-                {warnaData.map((item, index) => (
-                    <div className="form-group" key={index}>
-                        <label>
-                         {item.nama_warna} <small>(SPK: {item.qty_spk})</small>
-                        </label>
-                        <input
-                            type="number"
-                            value={item.jumlah_dikirim}
-                            onChange={(e) => handleQtyChange(index, parseInt(e.target.value))}
-                            min="0"
-                        />
+      {showPetugasAtasPopup && selectedPengiriman && (
+        <div className="pengiriman-modal-overlay" onClick={() => setShowPetugasAtasPopup(false)}>
+          <div className="pengiriman-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pengiriman-modal-header">
+              <h2>Verifikasi Pengiriman (ID: {selectedPengiriman.id_pengiriman})</h2>
+              <button className="pengiriman-modal-close" onClick={() => setShowPetugasAtasPopup(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pengiriman-modal-body">
+              <form onSubmit={handlePetugasAtasSubmit} className="pengiriman-form">
+                {warnaData.length > 0 ? (
+                  warnaData.map((item, index) => (
+                    <div className="pengiriman-form-group" key={index}>
+                      <label className="pengiriman-form-label">
+                        {item.nama_warna} <small style={{ color: "#718096" }}>(SPK: {item.qty_spk})</small>
+                      </label>
+                      <input type="number" className="pengiriman-form-input" value={item.jumlah_dikirim} onChange={(e) => handleQtyChange(index, parseInt(e.target.value) || 0)} min="0" required />
                     </div>
-                ))}
-                <div className="form-actions">
-                    <button type="submit" className="btn btn-submit">
-                        Simpan 
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-submit"
-                        onClick={() => setSelectedPengiriman(null)}
-                    >
-                        Batal
-                    </button>
+                  ))
+                ) : (
+                  <p style={{ textAlign: "center", color: "#718096", padding: "20px" }}>Tidak ada data warna untuk SPK ini</p>
+                )}
+                <div className="pengiriman-form-actions">
+                  <button
+                    type="button"
+                    className="pengiriman-btn pengiriman-btn-secondary"
+                    onClick={() => {
+                      setShowPetugasAtasPopup(false);
+                      setSelectedPengiriman(null);
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button type="submit" className="pengiriman-btn pengiriman-btn-primary">
+                    Simpan
+                  </button>
                 </div>
-            </form>
+              </form>
+            </div>
+          </div>
         </div>
+      )}
     </div>
-)}
-
-
-        </div>
-    );
+  );
 };
 
 export default Pengiriman;
