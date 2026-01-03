@@ -820,14 +820,10 @@ const SpkCmt = () => {
   }, []);
 
   // Fungsi untuk format rupiah (input formatting dengan titik)
-  const formatRupiah = (value) => {
-    if (!value && value !== 0) return "";
-    // Konversi ke string dan hapus semua karakter non-digit
-    const number = value.toString().replace(/\D/g, "");
-    if (!number) return "";
-    // Format dengan pemisah ribuan menggunakan titik
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
+ const formatRupiah = (value) => {
+  return new Intl.NumberFormat("id-ID").format(value || 0);
+};
+
 
   // Fungsi untuk parse dari format rupiah ke angka (untuk disimpan)
   const parseRupiah = (value) => {
@@ -1674,18 +1670,21 @@ const SpkCmt = () => {
                   <strong>Jumlah Produk</strong>
                   <span>{(selectedSpk.jumlah_produk || 0).toLocaleString("id-ID")}</span>
                 </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Total Harga</strong>
-                  <span>{formatRupiahDisplay(selectedSpk.total_harga || 0)}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Harga Barang</strong>
-                  <span>{formatRupiahDisplay(selectedSpk.harga_per_barang || 0)}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Harga Jasa</strong>
-                  <span>{formatRupiahDisplay(selectedSpk.harga_per_jasa || 0)} /PCS</span>
-                </div>
+               <div className="spkcmt-detail-item">
+                <strong>Total Harga</strong>
+                <span>{formatRupiah(selectedSpk.total_harga)}</span>
+              </div>
+
+              <div className="spkcmt-detail-item">
+                <strong>Harga Barang</strong>
+                <span>{formatRupiah(selectedSpk.harga_per_barang)}</span>
+              </div>
+
+              <div className="spkcmt-detail-item">
+                <strong>Harga Jasa</strong>
+                <span>{formatRupiah(selectedSpk.harga_per_jasa)} / PCS</span>
+              </div>
+
                 <div className="spkcmt-detail-item">
                   <strong>Warna</strong>
                   <span>{selectedSpk.warna && selectedSpk.warna.length > 0 ? selectedSpk.warna.map((w) => `${w.nama_warna} (${w.qty})`).join(", ") : "Tidak ada"}</span>
