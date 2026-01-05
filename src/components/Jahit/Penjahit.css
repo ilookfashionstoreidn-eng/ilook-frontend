@@ -2504,3 +2504,446 @@ select option {
 .filter-row select {
   min-width: 180px;
 }
+
+/* ========================================
+   MODERN STYLING FOR HUTANG COMPONENT
+   Flat design tanpa gradasi
+   ======================================== */
+
+/* Modern Button Styles - Flat Design */
+.filter-header1 button {
+  width: 100%;
+  max-width: 100px;
+  min-width: 80px;
+  height: 38px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header1 button:hover {
+  background-color: #2d3748;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.filter-header1 button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Select Styles - Flat Design */
+.filter-select1 {
+  padding: 9px 12px;
+  height: 38px;
+  font-size: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  width: 140px;
+  max-width: 140px;
+  min-width: 100px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.filter-select1:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.filter-select1:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Modern Form Input Styles - Flat Design */
+.form-group-hutang input[type="text"],
+.form-group-hutang input[type="number"] {
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #2d3748;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group-hutang input[type="text"]:hover,
+.form-group-hutang input[type="number"]:hover {
+  border-color: #cbd5e0;
+}
+
+.form-group-hutang input[type="text"]:focus,
+.form-group-hutang input[type="number"]:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+  background-color: #ffffff;
+}
+
+.form-group-hutang select {
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #2d3748;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.form-group-hutang select:hover {
+  border-color: #cbd5e0;
+}
+
+.form-group-hutang select:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.form-group-hutang label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+/* Modern Modal Content - Flat Design */
+.modal-content-hutang {
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+}
+
+.modal-content-hutang h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* Modern Button Styles in Form */
+.btn-submit-hutang {
+  background-color: #4299e1;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.btn-submit-hutang:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-submit-hutang:active {
+  transform: translateY(0);
+}
+
+.btn-cancel-hutang {
+  background-color: #718096;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(113, 128, 150, 0.2);
+}
+
+.btn-cancel-hutang:hover {
+  background-color: #4a5568;
+  box-shadow: 0 4px 6px rgba(113, 128, 150, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-cancel-hutang:active {
+  transform: translateY(0);
+}
+
+/* Modern Action Buttons - Flat Design */
+.btn1-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4299e1;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.btn1-icon:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn1-icon:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(66, 153, 225, 0.2);
+}
+
+.btn1-icon .icon {
+  color: white;
+}
+
+/* Modern Table Header - Flat Design */
+.penjahit-table th {
+  background-color: #2d3748;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 12px;
+}
+
+/* Modern Status Badge - Flat Design */
+.penjahit-table td span[style*="background-color"] {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Modal - Flat Design */
+.modal {
+  background-color: rgba(26, 32, 44, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: #ffffff;
+  padding: 32px;
+  border-radius: 12px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+}
+
+.modal-content h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.modal-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  background: #2d3748;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #4a5568;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modal-body {
+  padding: 24px;
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.6;
+}
+
+.modal-body p {
+  margin: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-body p:last-of-type {
+  border-bottom: none;
+}
+
+.modal-body strong {
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.modal-body span {
+  color: #4a5568;
+  text-align: right;
+}
+
+/* Modern Form Styles in Modal */
+.modern-form input[type="text"],
+.modern-form input[type="number"] {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #2d3748;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.modern-form input[type="text"]:hover,
+.modern-form input[type="number"]:hover {
+  border-color: #cbd5e0;
+}
+
+.modern-form input[type="text"]:focus,
+.modern-form input[type="number"]:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.modern-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-submit {
+  background-color: #4299e1;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.btn-submit:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-cancel {
+  background-color: #718096;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(113, 128, 150, 0.2);
+}
+
+.btn-cancel:hover {
+  background-color: #4a5568;
+  box-shadow: 0 4px 6px rgba(113, 128, 150, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-close {
+  background: #718096;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(113, 128, 150, 0.2);
+}
+
+.btn-close:hover {
+  background: #4a5568;
+  box-shadow: 0 4px 6px rgba(113, 128, 150, 0.3);
+  transform: translateY(-1px);
+}
+
+/* File Input Styling */
+.form-group-hutang input[type="file"] {
+  padding: 10px;
+  border: 1.5px dashed #cbd5e0;
+  border-radius: 8px;
+  background-color: #f7fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-group-hutang input[type="file"]:hover {
+  border-color: #4299e1;
+  background-color: #edf2f7;
+}
+
+/* Checkbox Styling */
+.checkbox-group-hutang input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4299e1;
+}
+
+.checkbox-group-hutang label {
+  margin: 0;
+  margin-left: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}

@@ -1,0 +1,702 @@
+/* ========================================
+   MODERN HUTANG COMPONENT STYLES
+   Flat design dengan excellent UX
+   ======================================== */
+
+/* Container Utama */
+.hutang-container {
+  padding: 24px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.hutang-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hutang-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+/* Filter Header - Modern */
+.hutang-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hutang-btn-primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #4299e1;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.hutang-btn-primary:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-1px);
+}
+
+.hutang-btn-primary:active {
+  transform: translateY(0);
+}
+
+.hutang-select-filter {
+  padding: 10px 16px;
+  font-size: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.hutang-select-filter:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.hutang-select-filter:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Table Container - Modern */
+.hutang-table-container {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.hutang-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.hutang-table thead {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+.hutang-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #4a5568;
+}
+
+.hutang-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hutang-table tbody tr:hover {
+  background-color: #f7fafc;
+  transform: scale(1.001);
+}
+
+.hutang-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.hutang-table td {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #2d3748;
+  vertical-align: middle;
+}
+
+/* Status Badge - Modern */
+.hutang-status-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.hutang-status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Action Buttons - Modern */
+.hutang-action-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hutang-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hutang-btn-icon-primary {
+  background-color: #4299e1;
+  color: #ffffff;
+}
+
+.hutang-btn-icon-primary:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-2px);
+}
+
+.hutang-btn-icon-info {
+  background-color: #48bb78;
+  color: #ffffff;
+}
+
+.hutang-btn-icon-info:hover {
+  background-color: #38a169;
+  box-shadow: 0 4px 6px rgba(72, 187, 120, 0.3);
+  transform: translateY(-2px);
+}
+
+.hutang-btn-icon:active {
+  transform: translateY(0);
+}
+
+/* Empty State */
+.hutang-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.hutang-empty-state-icon {
+  font-size: 64px;
+  color: #cbd5e0;
+  margin-bottom: 16px;
+}
+
+.hutang-empty-state-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+/* Modal Styles - Modern */
+.hutang-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 32, 44, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hutang-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.hutang-modal-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.hutang-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.hutang-modal-body {
+  padding: 28px;
+}
+
+.hutang-modal-footer {
+  padding: 20px 28px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f7fafc;
+  border-radius: 0 0 16px 16px;
+}
+
+/* Form Styles - Modern */
+.hutang-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hutang-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hutang-form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.hutang-form-input,
+.hutang-form-select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #2d3748;
+  background-color: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.hutang-form-input:focus,
+.hutang-form-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.hutang-form-input:hover,
+.hutang-form-select:hover {
+  border-color: #cbd5e0;
+}
+
+.hutang-form-input::placeholder {
+  color: #a0aec0;
+}
+
+.hutang-form-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+}
+
+.hutang-form-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #4299e1;
+}
+
+.hutang-form-checkbox-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  margin: 0;
+}
+
+.hutang-form-file-input {
+  padding: 12px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  background: #f7fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.hutang-form-file-input:hover {
+  border-color: #4299e1;
+  background: #edf2f7;
+}
+
+/* Button Styles - Modern */
+.hutang-btn {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hutang-btn-submit {
+  background-color: #4299e1;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+}
+
+.hutang-btn-submit:hover {
+  background-color: #3182ce;
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  transform: translateY(-1px);
+}
+
+.hutang-btn-submit:active {
+  transform: translateY(0);
+}
+
+.hutang-btn-cancel {
+  background-color: #718096;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(113, 128, 150, 0.2);
+}
+
+.hutang-btn-cancel:hover {
+  background-color: #4a5568;
+  box-shadow: 0 4px 6px rgba(113, 128, 150, 0.3);
+  transform: translateY(-1px);
+}
+
+.hutang-btn-close {
+  background-color: #e53e3e;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(229, 62, 62, 0.2);
+}
+
+.hutang-btn-close:hover {
+  background-color: #c53030;
+  box-shadow: 0 4px 6px rgba(229, 62, 62, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Detail Modal Styles */
+.hutang-detail-card {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hutang-detail-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  color: #ffffff;
+}
+
+.hutang-detail-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.hutang-detail-body {
+  padding: 24px;
+}
+
+.hutang-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hutang-detail-item:last-child {
+  border-bottom: none;
+}
+
+.hutang-detail-label {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.hutang-detail-value {
+  color: #4a5568;
+  font-size: 14px;
+  text-align: right;
+}
+
+.hutang-detail-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.hutang-detail-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.hutang-filter-select {
+  padding: 10px 16px;
+  font-size: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.hutang-filter-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* History Table Styles */
+.hutang-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hutang-history-table thead {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+
+.hutang-history-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hutang-history-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #2d3748;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hutang-history-table tbody tr:hover {
+  background-color: #f7fafc;
+}
+
+.hutang-history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.hutang-history-link {
+  color: #4299e1;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.hutang-history-link:hover {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.hutang-no-history {
+  text-align: center;
+  padding: 40px 20px;
+  color: #718096;
+  font-size: 14px;
+}
+
+.hutang-scrollable-table {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 8px;
+}
+
+.hutang-scrollable-table::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hutang-scrollable-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.hutang-scrollable-table::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.hutang-scrollable-table::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hutang-container {
+    padding: 16px;
+  }
+
+  .hutang-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hutang-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hutang-btn-primary,
+  .hutang-select-filter {
+    width: 100%;
+  }
+
+  .hutang-table-container {
+    overflow-x: auto;
+  }
+
+  .hutang-table {
+    min-width: 800px;
+  }
+
+  .hutang-modal-content {
+    max-width: 95%;
+    margin: 10px;
+  }
+
+  .hutang-modal-body {
+    padding: 20px;
+  }
+
+  .hutang-detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .hutang-detail-value {
+    text-align: left;
+  }
+}
+
+/* Loading State */
+.hutang-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  color: #718096;
+  font-size: 16px;
+}
+
+/* Animation untuk smooth transitions */
+.hutang-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.hutang-slide-in {
+  animation: slideUp 0.3s ease;
+}
+
+/* Utility Classes */
+.hutang-text-center {
+  text-align: center;
+}
+
+.hutang-text-bold {
+  font-weight: 600;
+}
+
+.hutang-mt-16 {
+  margin-top: 16px;
+}
+
+.hutang-mb-16 {
+  margin-bottom: 16px;
+}
+
+.hutang-gap-12 {
+  gap: 12px;
+}

@@ -1,62 +1,71 @@
 import React, { useEffect, useState } from "react";
-import { FaPlus, FaTrash, FaSave, FaTimes, FaRegEye, FaClock,FaInfoCircle,FaClipboard , FaList,FaMoneyBillWave  } from 'react-icons/fa';
-import "./Penjahit.css";
-import axios from "axios";
-import API from "../../api"; 
+import { FaInfoCircle, FaDownload, FaCalendarAlt, FaMoneyBillWave, FaTimes } from "react-icons/fa";
+import "./Pendapatan.css";
+import API from "../../api";
 
 const Pendapatan = () => {
   const [pendapatans, setPendapatans] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedPendapatan, setSelectedPendapatan] = useState(null);
   const [detailPengiriman, setDetailPengiriman] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [penjahitList, setPenjahitList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedPenjahit, setSelectedPenjahit] = useState(null);
   const [kurangiHutang, setKurangiHutang] = useState(false);
   const [kurangiCashbon, setKurangiCashbon] = useState(false);
   const [aksesorisDipilih, setAksesorisDipilih] = useState([]);
-  const [detailAksesoris, setDetailAksesoris] = useState([]); // buat nampung semua aksesoris
- const [buktiTransfer, setBuktiTransfer] = useState(null);
-
-  const [newPendapatan, setNewPendapatan] = useState({
-    id_pendapatan:"",
-    id_penjahit: "",
-    periode_awal: "",
-    periode_akhir: "",
-    handtag: "",
-    transportasi: "",
-    total_pendapatan: 0,
-    total_claim: 0,
-    total_refund_claim: 0,
-    total_cashbon: 0,
-    total_hutang: 0,
-    total_transfer: 0,
-    bukti_transfer: null,
-
-  });
-
+  const [detailAksesoris, setDetailAksesoris] = useState([]);
+  const [buktiTransfer, setBuktiTransfer] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [downloadingPreview, setDownloadingPreview] = useState(false);
 
   const [simulasi, setSimulasi] = useState({
     total_pendapatan: 0,
     potongan_hutang: 0,
     potongan_cashbon: 0,
+    potongan_aksesoris: 0,
     total_transfer: 0,
   });
-  ;
-  
+
+  useEffect(() => {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const startDateStr = startOfMonth.toISOString().split("T")[0];
+    const endDateStr = endOfMonth.toISOString().split("T")[0];
+
+    setStartDate(startDateStr);
+    setEndDate(endDateStr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+
+    // Debounce untuk mencegah terlalu banyak request saat user mengubah tanggal
+    const timeoutId = setTimeout(() => {
+      fetchPendapatans();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate]);
+
   const fetchSimulasi = async (id_penjahit, kurangiHutang, kurangiCashbon, aksesorisIds = []) => {
+    if (!startDate || !endDate) return;
+
     try {
-      const response = await API.post('/simulasi-pendapatan', {
+      const response = await API.post("/simulasi-pendapatan", {
         id_penjahit,
+        tanggal_awal: startDate,
+        tanggal_akhir: endDate,
         kurangi_hutang: kurangiHutang,
         kurangi_cashbon: kurangiCashbon,
         detail_aksesoris_ids: aksesorisIds, // kirim array id
       });
-  
+
       if (response.data) {
         setSimulasi({
           total_pendapatan: response.data.total_pendapatan || 0,
@@ -66,7 +75,7 @@ const Pendapatan = () => {
           total_transfer: response.data.total_transfer || 0,
         });
       } else {
-        console.warn('Data simulasi kosong:', response.data);
+        console.warn("Data simulasi kosong:", response.data);
         setSimulasi({
           total_pendapatan: 0,
           potongan_hutang: 0,
@@ -76,18 +85,25 @@ const Pendapatan = () => {
         });
       }
     } catch (err) {
-      console.error('Gagal fetch simulasi pendapatan', err);
+      console.error("Gagal fetch simulasi pendapatan", err);
+      setSimulasi({
+        total_pendapatan: 0,
+        potongan_hutang: 0,
+        potongan_cashbon: 0,
+        potongan_aksesoris: 0,
+        total_transfer: 0,
+      });
     }
   };
-  
-  
+
   // Di event handler (misal di onChange checkbox)
   useEffect(() => {
-    if (selectedPenjahit) {
-      fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon,  aksesorisDipilih);
+    if (selectedPenjahit && startDate && endDate) {
+      fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon, aksesorisDipilih);
     }
-  }, [selectedPenjahit, aksesorisDipilih, kurangiHutang, kurangiCashbon]);
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPenjahit, aksesorisDipilih, kurangiHutang, kurangiCashbon, startDate, endDate]);
+
   const fetchDetailAksesoris = async (penjahitId) => {
     try {
       const response = await API.get(`/detail-pesanan-aksesoris?penjahit_id=${penjahitId}`);
@@ -96,107 +112,152 @@ const Pendapatan = () => {
       console.error("Gagal mengambil aksesoris:", error);
     }
   };
-  
 
-  
-  
-  useEffect(() => {
-    const fetchPendapatans = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Token tidak ditemukan. Silakan login kembali.");
-          setLoading(false);
-          return;
-        }
-  
-        const response = await API.get(`/pendapatan/mingguan?page=${currentPage}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        console.log("Data Pendapatan:", response.data); // Debugging
-  
-        setPendapatans(response.data || []); // Set data pendapatan
-        setLastPage(response.last_page); // Set total halaman
-      } catch (error) {
-        setError(error.response?.message || "Gagal mengambil data pendapatan.");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchPendapatans();
-  }, [currentPage]); // Perbaikan: sekarang data diperbarui saat currentPage berubah
-  
-
-  
-  useEffect(() => {
-    const fetchPenjahits = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/penjahit"); 
-        setPenjahitList(response.data);
-      } catch (error) {
-        setError("Gagal mengambil data penjahit.");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchPenjahits();
-  }, []);
-  
-  
-  const handleTambahPendapatan = async (e) => {
-  e.preventDefault();
-
-  try {
-    const formData = new FormData();
-    formData.append('id_penjahit', selectedPenjahit.id_penjahit);
-    formData.append('kurangi_hutang', kurangiHutang ? '1' : '0');
-    formData.append('kurangi_cashbon', kurangiCashbon ? '1' : '0');
-
-    if (buktiTransfer) {
-      formData.append('bukti_transfer', buktiTransfer);
+  const fetchPendapatans = async () => {
+    if (!startDate || !endDate) {
+      console.warn("Start date atau end date belum diisi");
+      return;
     }
 
-    if (aksesorisDipilih.length > 0) {
-      aksesorisDipilih.forEach((id, index) => {
-        formData.append(`detail_aksesoris_ids[${index}]`, id);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await API.get("/pendapatan", {
+        params: {
+          start_date: startDate,
+          end_date: endDate,
+        },
       });
+
+      const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      setPendapatans(data);
+    } catch (e) {
+      console.error("Error fetching pendapatan:", e);
+      if (e.response?.status === 429) {
+        setError("Terlalu banyak request. Silakan tunggu sebentar dan coba lagi.");
+      } else {
+        setError("Gagal mengambil data pendapatan");
+      }
+      setPendapatans([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTambahPendapatan = async (e) => {
+    e.preventDefault();
+
+    if (!startDate || !endDate) {
+      alert("Pilih periode tanggal terlebih dahulu");
+      return;
     }
 
-    const response = await API.post('/bayar-pendapatan', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("id_penjahit", selectedPenjahit.id_penjahit);
+      formData.append("tanggal_awal", startDate);
+      formData.append("tanggal_akhir", endDate);
+      formData.append("kurangi_hutang", kurangiHutang ? 1 : 0);
+      formData.append("kurangi_cashbon", kurangiCashbon ? 1 : 0);
 
-    if (response.data.success) {
-      alert('Pendapatan berhasil ditambahkan!');
-      setShowForm(false);
-    } else {
-      alert(`Gagal: ${response.data.message}`);
+      if (buktiTransfer) {
+        formData.append("bukti_transfer", buktiTransfer);
+      }
+
+      if (aksesorisDipilih.length > 0) {
+        aksesorisDipilih.forEach((id, index) => {
+          formData.append(`detail_aksesoris_ids[${index}]`, id);
+        });
+      }
+
+      const response = await API.post("/pendapatan", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 201) {
+        alert(response.data.message || "Pendapatan berhasil ditambahkan!");
+        setShowForm(false);
+        setSelectedPenjahit(null);
+        setKurangiHutang(false);
+        setKurangiCashbon(false);
+        setAksesorisDipilih([]);
+        setBuktiTransfer(null);
+        setSimulasi({
+          total_pendapatan: 0,
+          potongan_hutang: 0,
+          potongan_cashbon: 0,
+          potongan_aksesoris: 0,
+          total_transfer: 0,
+        });
+        fetchPendapatans();
+      }
+    } catch (error) {
+      console.error("Error saat tambah pendapatan:", error);
+      if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Terjadi kesalahan saat menambahkan pendapatan.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error saat tambah pendapatan:', error);
-    if (error.response?.data?.message) {
-      alert(`Error: ${error.response.data.message}`);
-    } else {
-      alert('Terjadi kesalahan saat menambahkan pendapatan.');
+  };
+
+  const handleDownloadInvoicePreview = async (pendapatan) => {
+    if (!startDate || !endDate) {
+      alert("Pilih periode tanggal terlebih dahulu");
+      return;
     }
-  }
-};
 
+    // Prevent multiple simultaneous requests
+    if (downloadingPreview) {
+      return;
+    }
 
- 
+    setDownloadingPreview(true);
+    try {
+      const response = await API.post(
+        "/pendapatan/download-invoice-preview",
+        {
+          id_penjahit: pendapatan.id_penjahit,
+          tanggal_awal: startDate,
+          tanggal_akhir: endDate,
+        },
+        {
+          responseType: "blob",
+        }
+      );
+
+      // Create blob URL and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Invoice-Preview-Pendapatan-${pendapatan.id_penjahit}_${new Date().toISOString().split("T")[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading invoice preview:", error);
+      if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Gagal mengunduh preview invoice.");
+      }
+    } finally {
+      setDownloadingPreview(false);
+    }
+  };
 
   const handleDetailClick = async (pendapatan) => {
     setSelectedPendapatan(pendapatan);
     setLoading(true);
     setError("");
-  
+
     try {
       // Panggil API untuk mendapatkan detail pengiriman
       const response = await API.get(`/pendapatan/${pendapatan.id_pendapatan}/pengiriman`);
@@ -208,362 +269,387 @@ const Pendapatan = () => {
       setLoading(false);
     }
   };
-  
-  
 
-  
   const closeModal = () => {
     setSelectedPendapatan(null);
     setDetailPengiriman([]);
   };
 
-  const getFilteredPenjahit = async (selectedId, page = 1) => {
+  const handleDownload = async (idPendapatan) => {
     try {
-        const response = await API.get(`/pendapatan`, {
-            params: { penjahit: selectedId, page: page }
-        });
+      const response = await API.get(`/pendapatan/${idPendapatan}/download-nota`, {
+        responseType: "blob", // Pastikan menerima file sebagai blob
+      });
 
-        console.log("Filtered Data:", response.data); // Debugging
+      // Buat URL blob dari response data
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", `nota_pendapatan_${idPendapatan}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
-        setPendapatans(Array.isArray(response.data.data) ? response.data.data : []);
-        setLastPage(response.data.last_page);
+      // Hapus URL blob setelah selesai
+      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-        console.error("Error fetching data:", error);
-
-        // Tampilkan pesan error jika ada respons dari backend
-        const errorMessage = error.response?.data?.message || "Terjadi kesalahan saat mengambil data hutang.";
-        alert(errorMessage);
+      console.error("Error downloading file:", error);
+      alert(error.response?.data?.message || "Gagal mengunduh nota.");
     }
-};
-const handleDownload = async (idPendapatan) => {
-  try {
-    const response = await API.get(`/pendapatan/${idPendapatan}/download-nota`, {
-      responseType: "blob", // Pastikan menerima file sebagai blob
+  };
+
+  const handleOpenForm = (penjahit) => {
+    if (!startDate || !endDate) {
+      alert("Pilih periode tanggal terlebih dahulu");
+      return;
+    }
+    setSelectedPenjahit(penjahit);
+    setShowForm(true);
+    fetchDetailAksesoris(penjahit.id_penjahit);
+  };
+
+  const handleCloseModal = () => {
+    setShowForm(false);
+    setSelectedPenjahit(null);
+    setKurangiHutang(false);
+    setKurangiCashbon(false);
+    setAksesorisDipilih([]);
+    setBuktiTransfer(null);
+    setSimulasi({
+      total_pendapatan: 0,
+      potongan_hutang: 0,
+      potongan_cashbon: 0,
+      potongan_aksesoris: 0,
+      total_transfer: 0,
     });
+  };
 
-    // Buat URL blob dari response data
-    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.setAttribute("download", `nota_pendapatan_${idPendapatan}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    
-    // Hapus URL blob setelah selesai
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    console.error("Error downloading file:", error);
-    alert(error.response?.data?.message || "Gagal mengunduh nota.");
-  }
-};
-  
-const handleOpenForm = (penjahit) => {
-  setSelectedPenjahit(penjahit);
-  setShowForm(true);
-  fetchDetailAksesoris(penjahit.id_penjahit);
-};
+  const handleFilter = () => {
+    if (!startDate || !endDate) {
+      alert("Silakan pilih tanggal mulai dan tanggal akhir terlebih dahulu");
+      return;
+    }
 
-  
+    setSelectedPenjahit(null);
+    setKurangiHutang(false);
+    setKurangiCashbon(false);
+    setAksesorisDipilih([]);
+    setBuktiTransfer(null);
+    setSimulasi({
+      total_pendapatan: 0,
+      potongan_hutang: 0,
+      potongan_cashbon: 0,
+      potongan_aksesoris: 0,
+      total_transfer: 0,
+    });
+    fetchPendapatans();
+  };
+
+  const formatRupiah = (angka) => {
+    if (!angka && angka !== 0) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(angka);
+  };
+
   return (
-    <div>
-      <div className="penjahit-container">
+    <div className="pendapatan-container">
+      <div className="pendapatan-header">
+        <FaMoneyBillWave style={{ fontSize: "32px", color: "#0369a1" }} />
         <h1>Daftar Pendapatan</h1>
-       
       </div>
 
-      <div className="table-container">
-      <div className="filter-header1">
-     
+      <div className="pendapatan-filter-card">
+        <div className="pendapatan-filter-group">
+          <div className="pendapatan-filter-item">
+            <label>
+              <FaCalendarAlt /> Dari Tanggal
+            </label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </div>
 
+          <div className="pendapatan-filter-item">
+            <label>
+              <FaCalendarAlt /> Sampai Tanggal
+            </label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
+
+          <button onClick={handleFilter} className="pendapatan-btn-filter">
+            Terapkan Filter
+          </button>
         </div>
-      <div className="table-container">
-      <table className="penjahit-table">
-          <thead>
-            <tr>
-              
-              <th>Nama Penjahit</th>
-              <th>Total Pendapatan</th>
-              <th>Total Transfer </th>
-              <th>Status Pembayaran Minggu Ini</th>
-              <th>Aksi</th>
-           
-            </tr>
-          </thead>
-          <tbody>
-            {pendapatans
-              .filter((pendapatan) =>
-                pendapatan.id_penjahit?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((pendapatan) => (
-                <tr key={pendapatan.id_penjahit}>
-                
-                   <td data-label="Penjahit : ">
-                    {
-                      penjahitList.find(penjahit => penjahit.id_penjahit === pendapatan.id_penjahit)?.nama_penjahit || 'Tidak Diketahui'
-                    }
-                  </td>
-                 
-                  <td data-label="Total Pendapatan : ">
-                  Rp.{new Intl.NumberFormat("id-ID").format(pendapatan.total_pendapatan)}
+      </div>
+
+      <div className="pendapatan-table-card">
+        {loading ? (
+          <div className="pendapatan-loading">Memuat data...</div>
+        ) : error ? (
+          <div className="pendapatan-error">{error}</div>
+        ) : pendapatans.length === 0 ? (
+          <div className="pendapatan-empty">
+            <div className="pendapatan-empty-icon">💰</div>
+            <p>Tidak ada data pendapatan</p>
+          </div>
+        ) : (
+          <div className="pendapatan-table-wrapper">
+            <table className="pendapatan-table">
+              <thead>
+                <tr>
+                  <th>Nama Penjahit</th>
+                  <th>Total Pendapatan</th>
+                  <th>Total Transfer</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendapatans.map((pendapatan) => (
+                  <tr key={pendapatan.id_penjahit}>
+                    <td>
+                      <span className="pendapatan-name">{pendapatan.nama_penjahit || "Tidak Diketahui"}</span>
                     </td>
-                  <td data-label="Total Transfer: ">
-                  Rp.{new Intl.NumberFormat("id-ID").format(pendapatan.total_transfer)}
-                 </td>
-                  <td data-label=" ">
-                    <div className="action-card">
-                      {pendapatan.status_pembayaran === 'belum dibayar' ? (
-                        <button onClick={() => handleOpenForm(pendapatan)} className="btn-bayar">
-                         Belum Bayar
+                    <td>
+                      <span className="pendapatan-amount">{formatRupiah(pendapatan.total_pendapatan || 0)}</span>
+                    </td>
+                    <td>
+                      <span className="pendapatan-amount">{formatRupiah(pendapatan.total_transfer || 0)}</span>
+                    </td>
+                    <td>
+                      {pendapatan.total_pendapatan > 0 ? (
+                        <button onClick={() => handleOpenForm(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
+                          Bayar
                         </button>
                       ) : (
-                        <span className="btn-bayar2">Sudah dibayar</span>
+                        <span className="pendapatan-badge pendapatan-badge-disabled">Tidak ada pendapatan</span>
                       )}
-                    </div>
-                  </td>
-
-                  <td  data-label=" ">
-                    <div className="action-card">
-                    <button 
-                      className="btn1-icon" 
-                      onClick={() => handleDetailClick(pendapatan)}
-                      >
-                      <FaInfoCircle className="icon" />
-                     </button>   
-                     <button
-                      onClick={() => handleDownload(pendapatan.id_pendapatan)}
-                      className="btn1-icon3" 
-                      >
-                            <FaSave className="icon" />
-
-                    </button>
-                   </div>
-                  </td>
-          
-                
-                </tr>
-              ))}
-          </tbody>
-        </table>
-        {/* Pagination */}
-        <div className="pagination-container">
-          <button 
-            className="pagination-button" 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            ◀ Prev
-          </button>
-
-          <span className="pagination-info">Halaman {currentPage} dari {lastPage}</span>
-
-          <button 
-            className="pagination-button" 
-            disabled={currentPage === lastPage} 
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next ▶
-          </button>
-        </div>
+                    </td>
+                    <td>
+                      <div className="pendapatan-actions">
+                        {pendapatan.pendapatan_id ? (
+                          <>
+                            <button className="pendapatan-btn-icon" onClick={() => handleDetailClick(pendapatan)} title="Detail">
+                              <FaInfoCircle />
+                            </button>
+                            <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
+                              <FaDownload />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="pendapatan-btn-icon"
+                              onClick={() => handleDownloadInvoicePreview(pendapatan)}
+                              title="Download Preview Invoice"
+                              disabled={downloadingPreview || pendapatan.total_pendapatan === 0}
+                              style={{ opacity: downloadingPreview || pendapatan.total_pendapatan === 0 ? 0.5 : 1 }}
+                            >
+                              <FaDownload />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
+      {/* Modal Detail Pendapatan */}
+      {selectedPendapatan && (
+        <div className="pendapatan-modal-overlay" onClick={closeModal}>
+          <div className="pendapatan-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pendapatan-modal-header">
+              <h2>Detail Pendapatan #{selectedPendapatan.id_pendapatan}</h2>
+              <button className="pendapatan-modal-close" onClick={closeModal}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pendapatan-modal-body">
+              <div className="pendapatan-detail-grid">
+                <div className="pendapatan-detail-item">
+                  <label>Total Claim</label>
+                  <span>{formatRupiah(selectedPendapatan.total_claim || 0)}</span>
+                </div>
+                <div className="pendapatan-detail-item">
+                  <label>Total Refund Claim</label>
+                  <span>{formatRupiah(selectedPendapatan.total_refund_claim || 0)}</span>
+                </div>
+                <div className="pendapatan-detail-item">
+                  <label>Total Cashbon</label>
+                  <span>{formatRupiah(selectedPendapatan.total_cashbon || 0)}</span>
+                </div>
+                <div className="pendapatan-detail-item">
+                  <label>Total Hutang</label>
+                  <span>{formatRupiah(selectedPendapatan.total_hutang || 0)}</span>
+                </div>
+                <div className="pendapatan-detail-item">
+                  <label>Handtag</label>
+                  <span>{formatRupiah(selectedPendapatan.handtag || 0)}</span>
+                </div>
+                <div className="pendapatan-detail-item">
+                  <label>Transportasi</label>
+                  <span>{formatRupiah(selectedPendapatan.transportasi || 0)}</span>
+                </div>
+              </div>
 
-      {/* Section untuk detail pengiriman */}
- {/* Modal Section */}
- {selectedPendapatan && (
-       <div
-       className={`modal-pendapatan ${selectedPendapatan ? "show" : ""}`}
-       onClick={closeModal}
-     >
-       <div
-         className="modal-pendapatan-content"
-         onClick={(e) => e.stopPropagation()} // Mencegah modal menutup jika area konten di-klik
-       >
-         <button className="modal-pendapatan-close" onClick={closeModal}>
-           &times;
-         </button>
-         <h2>Detail Pendapatan  {selectedPendapatan.id_pendapatan}</h2>
-         
-        <p><strong>Total Claim :</strong> <span>Rp {selectedPendapatan.total_claim}</span></p>
-        <p><strong>Total Refund Claim :</strong> <span>Rp {selectedPendapatan.total_refund_claim}</span></p>
-        <p><strong>Total Cashbon :</strong> <span>Rp {selectedPendapatan.total_cashbon}</span></p>
-        <p><strong>Total Hutang :</strong> <span>Rp {selectedPendapatan.total_hutang}</span></p>
-        <p><strong>Handtag :</strong> <span>Rp. {selectedPendapatan.handtag}</span></p>
-        <p><strong>Transportasi :</strong> <span>Rp. {selectedPendapatan.transportasi}</span></p>
-        <br></br>
-        <h2
->Detail Pengiriman untuk Pendapatan ID: {selectedPendapatan.id_pendapatan}</h2>
-         
-         {loading && <p>Memuat detail...</p>}
-         {error && <p className="error">{error}</p>}
-         {!loading && !error && (
-           <table className="penjahit-table">
-             <thead>
-               <tr>
-                 <th>ID Pengiriman</th>
-                 <th>Tanggal Pengiriman</th>
-                 <th>Total Pengiriman</th>
-                 <th>Gaji </th>
-                 <th>Claim</th>
-                 <th>Refund Claim</th>
-               </tr>
-             </thead>
-             <tbody>
-               {detailPengiriman.map((pengiriman) => (
-                 <tr key={pengiriman.id_pengiriman}>
-                   <td data-label="ID Kirim">{pengiriman.id_pengiriman}</td>
-                   <td data-label="tanggal Kirim">{pengiriman.tanggal_pengiriman}</td>
-                   <td data-label="Total Kirim">{pengiriman.total_barang_dikirim}</td>
-                   <td data-label="Gaji">{pengiriman.total_bayar}</td>
-                   <td data-label="Claim">{pengiriman.claim}</td>
-                   <td data-label="Refund Claim">{pengiriman.refund_claim}</td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
-         )}
-       </div>
-     </div>
+              <h3 style={{ marginTop: "32px", marginBottom: "16px", fontSize: "18px", fontWeight: "600", color: "#1e293b" }}>Detail Pengiriman</h3>
 
+              {loading ? (
+                <div className="pendapatan-loading">Memuat detail...</div>
+              ) : error ? (
+                <div className="pendapatan-error">{error}</div>
+              ) : (
+                <div className="pendapatan-table-wrapper">
+                  <table className="pendapatan-modal-table">
+                    <thead>
+                      <tr>
+                        <th>ID Pengiriman</th>
+                        <th>Tanggal Pengiriman</th>
+                        <th>Total Pengiriman</th>
+                        <th>Gaji</th>
+                        <th>Claim</th>
+                        <th>Refund Claim</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailPengiriman.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "#94a3b8" }}>
+                            Tidak ada data pengiriman
+                          </td>
+                        </tr>
+                      ) : (
+                        detailPengiriman.map((pengiriman) => (
+                          <tr key={pengiriman.id_pengiriman}>
+                            <td>{pengiriman.id_pengiriman}</td>
+                            <td>{new Date(pengiriman.tanggal_pengiriman).toLocaleDateString("id-ID")}</td>
+                            <td>{pengiriman.total_barang_dikirim || 0}</td>
+                            <td>{formatRupiah(pengiriman.total_bayar || 0)}</td>
+                            <td>{formatRupiah(pengiriman.claim || 0)}</td>
+                            <td>{formatRupiah(pengiriman.refund_claim || 0)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* Modal Form Pembayaran */}
+      {showForm && (
+        <div className="pendapatan-modal-overlay" onClick={handleCloseModal}>
+          <div className="pendapatan-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <div className="pendapatan-modal-header">
+              <h2>Tambah Data Pendapatan</h2>
+              <button className="pendapatan-modal-close" onClick={handleCloseModal}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="pendapatan-modal-body">
+              <form onSubmit={handleTambahPendapatan} className="pendapatan-form">
+                <div className="pendapatan-form-group">
+                  <label>ID Penjahit</label>
+                  <input type="text" value={selectedPenjahit?.id_penjahit || ""} readOnly />
+                </div>
 
-{showForm && (
-  <div className="modal-hutang">
-    <div className="modal-content-hutang">
-      <h2>Tambah Data Pendapatan</h2>
-      <form onSubmit={handleTambahPendapatan} className="form-hutang">
-        <div className="form-group-hutang">
-          <label>ID Penjahit:</label>
-          <input
-            type="text"
-            value={selectedPenjahit?.id_penjahit || ''}
-            readOnly
-          />
+                <div className="pendapatan-form-group">
+                  <label>Nama Penjahit</label>
+                  <input type="text" value={selectedPenjahit?.nama_penjahit || ""} readOnly />
+                </div>
+
+                <div className="pendapatan-form-group">
+                  <label>Total Pendapatan</label>
+                  <input type="text" value={formatRupiah(simulasi.total_pendapatan || 0)} readOnly />
+                </div>
+
+                <div className="pendapatan-form-group">
+                  <label>Potongan Hutang</label>
+                  <input type="text" value={formatRupiah(simulasi.potongan_hutang || 0)} readOnly />
+                </div>
+
+                <div className="pendapatan-form-group">
+                  <label>Potongan Cashbon</label>
+                  <input type="text" value={formatRupiah(simulasi.potongan_cashbon || 0)} readOnly />
+                </div>
+
+                <div className="pendapatan-form-group">
+                  <label>Potongan Aksesoris</label>
+                  <input type="text" value={formatRupiah(simulasi.potongan_aksesoris || 0)} readOnly />
+                </div>
+
+                <div className="pendapatan-checkbox-group">
+                  <label>
+                    <input type="checkbox" checked={kurangiHutang} onChange={(e) => setKurangiHutang(e.target.checked)} />
+                    Potong Hutang
+                  </label>
+                </div>
+
+                <div className="pendapatan-checkbox-group">
+                  <label>
+                    <input type="checkbox" checked={kurangiCashbon} onChange={(e) => setKurangiCashbon(e.target.checked)} />
+                    Potong Cashbon
+                  </label>
+                </div>
+
+                {detailAksesoris.length > 0 && (
+                  <div className="pendapatan-checkbox-group">
+                    <label style={{ marginBottom: "8px", fontWeight: "600" }}>Potong Aksesoris:</label>
+                    {detailAksesoris.map((item) => (
+                      <div key={item.id} className="pendapatan-checkbox-item">
+                        <label>
+                          <input
+                            type="checkbox"
+                            value={item.id}
+                            checked={aksesorisDipilih.includes(item.id)}
+                            onChange={(e) => {
+                              const id = parseInt(e.target.value);
+                              if (e.target.checked) {
+                                setAksesorisDipilih([...aksesorisDipilih, id]);
+                              } else {
+                                setAksesorisDipilih(aksesorisDipilih.filter((itemId) => itemId !== id));
+                              }
+                            }}
+                          />
+                          {item.aksesoris.nama_aksesoris} - {formatRupiah(parseInt(item.total_harga))}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pendapatan-form-group pendapatan-total-transfer">
+                  <label>Total Transfer</label>
+                  <input type="text" value={formatRupiah(simulasi.total_transfer || 0)} readOnly />
+                </div>
+
+                <div className="pendapatan-form-group">
+                  <label>Upload Bukti Transfer</label>
+                  <input type="file" accept="image/*,application/pdf" onChange={(e) => setBuktiTransfer(e.target.files[0])} />
+                </div>
+
+                <div className="pendapatan-form-actions">
+                  <button type="button" className="pendapatan-btn pendapatan-btn-cancel" onClick={handleCloseModal}>
+                    Batal
+                  </button>
+                  <button type="submit" className="pendapatan-btn pendapatan-btn-submit" disabled={loading}>
+                    {loading ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-
-        <div className="form-group">
-          <label>Nama Penjahit:</label>
-          <input
-            type="text"
-            value={selectedPenjahit?.nama_penjahit || ''}
-            readOnly
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Total Pendapatan:</label>
-          <input
-            type="text"
-            value={simulasi.total_pendapatan || 0}
-            readOnly
-          />
-        </div>
-
-      
-
-        {/* Menampilkan hasil simulasi */}
-        <div className="form-group">
-          <label>Potongan Hutang:</label>
-          <input
-            type="text"
-            value={simulasi.potongan_hutang || 0}
-            readOnly
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Potongan Cashbon:</label>
-          <input
-            type="text"
-            value={simulasi.potongan_cashbon || 0}
-            readOnly
-          />
-        </div>
-        <div className="form-group-hutang checkbox-group-hutang">
-          <label>
-            <input
-              type="checkbox"
-              checked={kurangiHutang}
-              onChange={(e) => setKurangiHutang(e.target.checked)}
-            />
-            Potong Hutang
-          </label>
-        </div>
-
-        <div className="form-group-hutang checkbox-group-hutang">
-          <label>
-            <input
-              type="checkbox"
-              checked={kurangiCashbon}
-              onChange={(e) => setKurangiCashbon(e.target.checked)}
-            />
-            Potong Cashbon
-          </label>
-        </div>
-
-        {/* Checklist Aksesoris */}
-        <div className="form-group-hutang checkbox-group-hutang">
-          <label>Potong Aksesoris:</label>
-          {detailAksesoris.length > 0 ? (
-            detailAksesoris.map((item) => (
-              <div key={item.id} className="checkbox-item">
-                <label>
-                  <input 
-                    type="checkbox" 
-                    value={item.id} 
-                    checked={aksesorisDipilih.includes(item.id)}
-                    onChange={(e) => {
-                      const id = parseInt(e.target.value);
-                      if (e.target.checked) {
-                        setAksesorisDipilih([...aksesorisDipilih, id]);
-                      } else {
-                        setAksesorisDipilih(aksesorisDipilih.filter((itemId) => itemId !== id));
-                      }
-                    }}
-                  />
-                  {item.aksesoris.nama_aksesoris} - Rp{parseInt(item.total_harga).toLocaleString()}
-                </label>
-              </div>
-            ))
-          ) : (
-            <p style={{ fontStyle: 'italic' }}>Tidak ada aksesoris untuk dipotong.</p>
-          )}
-        </div>
-
-        <div className="form-group">
-          <strong>Total Transfer:</strong>
-          <input
-            type="text"
-            value={simulasi.total_transfer || 0}
-            readOnly
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Upload Bukti Transfer:</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setBuktiTransfer(e.target.files[0])}
-          />
-        </div>
-
-
-        <div className="form-actions-hutang">
-          <button type="submit"  className="btn-hutang btn-submit-hutang">Simpan</button>
-          <button type="button"    className="btn-hutang btn-cancel-hutang" onClick={() => setShowForm(false)}>
-            Batal
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-
-    
-    </div>
+      )}
     </div>
   );
 };
