@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FaPlus,FaInfoCircle,} from 'react-icons/fa';
-import "./Penjahit.css";
+import { FaPlus, FaInfoCircle, FaTimes, FaSearch } from 'react-icons/fa';
+import "./Cashbon.css";
 import API from "../../api"; 
-
 
 const Cashbon = () => {
   const [cashbons, setCashbons] = useState([]);
@@ -15,219 +14,234 @@ const Cashbon = () => {
   const [selectedCashbon, setSelectedCashbon] = useState(null); 
   const [error, setError] = useState("");
   const [selectedJenisPerubahan, setSelectedJenisPerubahan] = useState(""); 
-  const [logHistory, setLogHistory] = useState([]); // Untuk menyimpan log pembayaran
+  const [logHistory, setLogHistory] = useState([]);
   const [selectedDetailCashbon, setSelectedDetailCashbon] = useState(null); 
   const [newCashbon, setNewCashbon] = useState({
     id_penjahit: "",
     jumlah_cashboan: "",
-    status_pembayaran: "",
-    tanggal_jatuh_tempo: "",
-    tanggal_cashboan: "",
-     bukti_transfer: null,
-
+    bukti_transfer: null,
   });
 
+  // Fungsi untuk format rupiah (input formatting dengan titik)
+  const formatRupiah = (value) => {
+    if (!value && value !== 0) return "";
+    const number = value.toString().replace(/\D/g, "");
+    if (!number) return "";
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
-  const [logPembayaran, setLogPembayaran] = useState({
-      jumlah_dibayar: "",
-      tanggal_bayar: "",
-      catatan: "",
-    });
-  
-    
+  // Fungsi untuk parse dari format rupiah ke angka (untuk disimpan)
+  const parseRupiah = (value) => {
+    if (!value && value !== 0) return "";
+    const cleaned = value.toString().replace(/\D/g, "");
+    return cleaned;
+  };
 
-  
+  // Fungsi untuk format rupiah untuk display (dengan "Rp" prefix)
+  const formatRupiahDisplay = (value) => {
+    if (!value && value !== 0) return "Rp 0";
+    const numValue = typeof value === "string" ? parseFloat(value.replace(/\D/g, "")) : value;
+    return `Rp ${numValue.toLocaleString("id-ID")}`;
+  };
+
   useEffect(() => {
-      const fetchCasbons = async () => {
-        try {
-          setLoading(true);
-
-          const token = localStorage.getItem("token"); 
-          if (!token) {
-              setError("Token tidak ditemukan. Silakan login kembali.");
-              setLoading(false);
-              return;
-          }
-
-          const response = await API.get(`/cashboan?page=${currentPage}`,{
-            headers: { Authorization: `Bearer ${token}` },
-          });
-    
-
-          console.log("Data Cashbon:", response.data); // Debugging
-  
-          setCashbons(response.data.data || []); // Set data pendapatan
-          setLastPage(response.data.last_page); // Set total halaman
-        } catch (error) {
-          setError(error.response?.data?.message || "Gagal mengambil data pendapatan.");
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      fetchCasbons();
-    }, [currentPage]); // Perbaikan: sekarang data diperbarui saat currentPage berubah
-    
-  
-  
-  
-    useEffect(() => {
-      const fetchPenjahits = async () => {
-        try {
-          setLoading(true);
-          const response = await API.get("/penjahit"); 
-          setPenjahitList(response.data);
-        } catch (error) {
-          setError("Gagal mengambil data penjahit.");
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      fetchPenjahits();
-    }, []);
-
-  
-    const fetchHistory = async (id_cashboan, jenis_perubahan = "") => {
+    const fetchCasbons = async () => {
       try {
-        console.log("Fetching history for cashbon ID:", id_cashboan, "with filter:", jenis_perubahan);
-        
-        const response = await API.get(`cashboan/history/${id_cashboan}`, {
-          params: jenis_perubahan ? { jenis_perubahan } : {}, // Hanya kirim params jika ada filter
+        setLoading(true);
+        setError("");
+
+        const token = localStorage.getItem("token"); 
+        if (!token) {
+          setError("Token tidak ditemukan. Silakan login kembali.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await API.get(`/cashboan`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-    
-        console.log("Response from API:", response.data);
-        setLogHistory(response.data || []); // Pastikan tetap array kosong kalau tidak ada data
+
+        console.log("Data Cashbon:", response.data);
+
+        if (response.data.success && response.data.data) {
+          setCashbons(response.data.data || []);
+        } else {
+          setCashbons([]);
+        }
       } catch (error) {
-        console.error("Error fetching history:", error.response?.data || error);
-    
-        setLogHistory([]); // Tetap set array kosong jika error
+        console.error("Error fetching cashbon:", error);
+        setError(error.response?.data?.message || "Gagal mengambil data cashbon.");
+        setCashbons([]);
+      } finally {
+        setLoading(false);
       }
     };
     
-  
-  // Handle submit form
- const handleFormSubmit = async (e) => {
-  e.preventDefault();
+    fetchCasbons();
+  }, []);
 
-  const formData = new FormData();
-  formData.append("id_penjahit", newCashbon.id_penjahit);
-  formData.append("jumlah_cashboan", newCashbon.jumlah_cashboan);
-
-  if (newCashbon.bukti_transfer) {
-    formData.append("bukti_transfer", newCashbon.bukti_transfer);
-  }
-
-  try {
-    const response = await API.post("/cashboan/tambah", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    alert(response.data.message);
-
-    // Update list cashboan
-    setCashbons([...cashbons, response.data.data]);
-    setShowForm(false); // Tutup form modal
-
-    // Reset form input
-    setNewCashbon({
-      id_penjahit: "",
-      jumlah_cashboan: "",
-      potongan_per_minggu: "",
-      bukti_transfer: null,
-    });
-  } catch (error) {
-    console.error("Error:", error.response?.data?.message || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan cashboan.");
-  }
-};
-
-      
-const handlePaymentSubmit = async (e) => {
-  e.preventDefault(); // Mencegah refresh halaman
-
-  // Membuat FormData untuk mengirimkan data dan file
-  const formData = new FormData();
-  formData.append('perubahan_cashboan', newCashbon.jumlah_cashboan);
-
-  // Jika ada bukti transfer, tambahkan ke FormData
-  if (newCashbon.bukti_transfer) {
-    formData.append('bukti_transfer', newCashbon.bukti_transfer);
-  }
-
-  try {
-    const response = await API.post(`/cashboan/tambah/${selectedCashbon.id_cashboan}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data", // Wajib untuk FormData dengan file
-      },
-    });
-
-    alert(response.data.message); // Tampilkan pesan sukses
-
-    // Perbarui daftar cashbon
-    const updatedCashbons = cashbons.map(cashbon =>
-      cashbon.id_cashboan === selectedCashbon.id_cashboan
-        ? {
-            ...cashbon,
-            jumlah_cashboan: cashbon.jumlah_cashboan + parseFloat(newCashbon.jumlah_cashboan),
-          }
-        : cashbon
-    );
-
-    setCashbons(updatedCashbons);
-    setShowForm(false); // Tutup form modal
-
-    // Reset form input
-    setNewCashbon({
-      id_penjahit: "",
-      jumlah_cashboan: "",
-      potongan_per_minggu: "",
-      bukti_transfer: null,
-    });
-
-  } catch (error) {
-    console.error("Error:", error.response?.data?.message || error.message);
-    alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data cashboan.");
-  }
-};
-
-
-      
-const handleDetailClick = (cashbon) => {
-        setSelectedDetailCashbon(cashbon); // Simpan data hutang yang dipilih
-        fetchHistory(cashbon.id_cashboan, selectedJenisPerubahan); // Ambil log history sesuai filter
-      };
-      
-  
- useEffect(() => {
-      if (selectedDetailCashbon) {
-        fetchHistory(selectedDetailCashbon.id_cashboan, selectedJenisPerubahan);
+  useEffect(() => {
+    const fetchPenjahits = async () => {
+      try {
+        const response = await API.get("/penjahit"); 
+        setPenjahitList(response.data);
+      } catch (error) {
+        console.error("Error fetching penjahit:", error);
+        setError("Gagal mengambil data penjahit.");
       }
-    }, [selectedDetailCashbon, selectedJenisPerubahan]); // ✅ Tambahkan selectedDetailHutang
+    };
     
-  
-const getFilteredPenjahit = async (selectedId, page = 1) => {
+    fetchPenjahits();
+  }, []);
+
+  const fetchHistory = async (id_cashboan, jenis_perubahan = "") => {
     try {
-        const response = await API.get(`/cashboan`, {
-            params: { penjahit: selectedId, page: page }
-        });
-
-        console.log("Filtered Data:", response.data); // Debugging
-
-        setCashbons(Array.isArray(response.data.data) ? response.data.data : []);
-        setLastPage(response.data.last_page);
-    } catch (error) {
-        console.error("Error fetching data:", error);
-
-        // Tampilkan pesan error jika ada respons dari backend
-        const errorMessage = error.response?.data?.message || "Terjadi kesalahan saat mengambil data hutang.";
-        alert(errorMessage);
-    }
-};
+      console.log("Fetching history for cashbon ID:", id_cashboan, "with filter:", jenis_perubahan);
+      
+      const response = await API.get(`cashboan/history/${id_cashboan}`, {
+        params: jenis_perubahan ? { jenis_perubahan } : {},
+      });
   
- const formatTanggal = (tanggal) => {
+      console.log("Response from API:", response.data);
+      setLogHistory(response.data || []);
+    } catch (error) {
+      console.error("Error fetching history:", error.response?.data || error);
+      setLogHistory([]);
+    }
+  };
+
+  // Handle submit form
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("id_penjahit", newCashbon.id_penjahit);
+    formData.append("jumlah_cashboan", parseRupiah(newCashbon.jumlah_cashboan));
+
+    if (newCashbon.bukti_transfer) {
+      formData.append("bukti_transfer", newCashbon.bukti_transfer);
+    }
+
+    try {
+      setLoading(true);
+      const response = await API.post("/cashboan/tambah", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      alert(response.data.message);
+
+      // Refresh data
+      const refreshResponse = await API.get("/cashboan");
+      if (refreshResponse.data.success && refreshResponse.data.data) {
+        setCashbons(refreshResponse.data.data || []);
+      }
+
+      setShowForm(false);
+      setNewCashbon({
+        id_penjahit: "",
+        jumlah_cashboan: "",
+        bukti_transfer: null,
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data?.message || error.message);
+      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan cashboan.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+
+    const cashbonId = selectedCashbon.id_cashboan || selectedCashbon.id;
+    if (!cashbonId) {
+      alert("ID cashbon tidak valid");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('perubahan_cashboan', parseRupiah(newCashbon.jumlah_cashboan));
+
+    if (newCashbon.bukti_transfer) {
+      formData.append('bukti_transfer', newCashbon.bukti_transfer);
+    }
+
+    try {
+      setLoading(true);
+      const response = await API.post(`/cashboan/tambah/${cashbonId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      alert(response.data.message);
+
+      // Refresh data
+      const refreshResponse = await API.get("/cashboan");
+      if (refreshResponse.data.success && refreshResponse.data.data) {
+        setCashbons(refreshResponse.data.data || []);
+      }
+
+      setSelectedCashbon(null);
+      setNewCashbon({
+        id_penjahit: "",
+        jumlah_cashboan: "",
+        bukti_transfer: null,
+      });
+    } catch (error) {
+      console.error("Error:", error.response?.data?.message || error.message);
+      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data cashboan.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDetailClick = (cashbon) => {
+    const cashbonId = cashbon.id_cashboan || cashbon.id;
+    if (!cashbonId) {
+      alert("ID cashbon tidak valid untuk melihat detail");
+      return;
+    }
+    setSelectedDetailCashbon(cashbon);
+    fetchHistory(cashbonId, selectedJenisPerubahan);
+  };
+
+  useEffect(() => {
+    if (selectedDetailCashbon) {
+      const cashbonId = selectedDetailCashbon.id_cashboan || selectedDetailCashbon.id;
+      if (cashbonId) {
+        fetchHistory(cashbonId, selectedJenisPerubahan);
+      }
+    }
+  }, [selectedDetailCashbon, selectedJenisPerubahan]);
+
+  const getFilteredPenjahit = async (selectedId) => {
+    try {
+      setLoading(true);
+      const response = await API.get(`/cashboan`, {
+        params: { penjahit: selectedId }
+      });
+
+      console.log("Filtered Data:", response.data);
+
+      if (response.data.success && response.data.data) {
+        setCashbons(response.data.data || []);
+      } else {
+        setCashbons([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      const errorMessage = error.response?.data?.message || "Terjadi kesalahan saat mengambil data cashbon.";
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTanggal = (tanggal) => {
+    if (!tanggal) return "-";
     const date = new Date(tanggal);
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
@@ -236,316 +250,355 @@ const getFilteredPenjahit = async (selectedId, page = 1) => {
     }).format(date);
   };
 
- const getStatusColor = (status_pembayaran) => {
+  const getStatusColor = (status_pembayaran) => {
     switch (status_pembayaran) {
       case "belum lunas":
-        return "#DCA5A0"; // Kategori A: hijau
+        return "belum-lunas";
       case "dibayar sebagian":
-        return "#EAC98D";  // Kategori B: biru
+        return "dibayar-sebagian";
       case "lunas":
-        return "#A0DCDC"; // Kategori C: oranye
+        return "lunas";
       default:
-        return "black";  // Default: hitam jika kategori tidak dikenali
+        return "";
     }
-    
   };
 
-     // Handle klik bayar
-     const handleTambahClick = (cashbon) => {
-      setSelectedCashbon(cashbon); // Set hutang yang dipilih untuk pembayaran
-    };
-  
+  const handleTambahClick = (cashbon) => {
+    setSelectedCashbon(cashbon);
+  };
 
-  
+  const handleJumlahCashbonChange = (e) => {
+    const value = e.target.value;
+    const formatted = formatRupiah(value);
+    setNewCashbon({ ...newCashbon, jumlah_cashboan: formatted });
+  };
+
+  // Filter cashbons berdasarkan search term
+  const filteredCashbons = cashbons.filter((cashbon) => {
+    const namaPenjahit = cashbon.penjahit?.nama_penjahit || 
+      penjahitList.find(p => p.id_penjahit === cashbon.id_penjahit)?.nama_penjahit || 
+      '';
+    return namaPenjahit.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cashbon.status_pembayaran?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   return (
-    <div>
-      <div className="penjahit-container">
-        <h1>Daftar Cashbon</h1>   
-      </div>
-      <div className="table-container">
-      <div className="filter-header1">
-      <button 
-        onClick={() => setShowForm(true)}>
-          Tambah
-        </button>
-        <label htmlFor="penjahitFilter" className="filter-label"></label>
-        <select
-          id="penjahitFilter"
-          className="filter-select1"
-          onChange={(e) => getFilteredPenjahit(e.target.value)}
-        >
-          <option value="">All</option>
-          {penjahitList.map((penjahit) => (
-            <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-              {penjahit.nama_penjahit}
-            </option>
-          ))}
-        </select>
-
-      </div>
-      <div className="table-container">
-      <table className="penjahit-table">
-        <thead>
-          <tr>
-            <th>ID </th>
-            <th>Nama Penjahit</th>
-            <th>JUMLAH CASHBON</th>
-            <th>STATUS PEMBAYRAN</th>
-            <th>AKSI</th>
-          </tr>
-        </thead>
-        <tbody>
-        {cashbons
-              .filter((cashbon) =>
-                cashbon.status_pembayaran.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((cashbon) => (
-            <tr key={cashbon.id_cashboan}>
-              <td data-label="Id Cashbon : ">{cashbon.id_cashboan}</td>
-              <td data-label="Penjahit : ">
-                    {
-                      penjahitList.find(penjahit => penjahit.id_penjahit === cashbon.id_penjahit)?.nama_penjahit || 'Tidak Diketahui'
-                    }
-                  </td>
-             
-           
-              <td data-label="Jumlah Hutang: ">
-                    Rp.{new Intl.NumberFormat("id-ID").format(cashbon.jumlah_cashboan)}
-                    </td>
-              <td   data-label=" ">
-                    <span
-                      style={{
-                        backgroundColor: getStatusColor(cashbon.status_pembayaran),
-                        color: "white",
-                        padding: "3px 5px",
-                        borderRadius: "5px",
-                        textTransform: "capitalize", 
-                      
-                    }}
-                    >
-                    {cashbon.status_pembayaran}
-                    </span>
-                  </td>
-             
-             
-              <td  data-label=" ">
-              <div className="action-card">
-                  <button 
-                    className="btn1-icon"
-                    onClick={() =>handleTambahClick(cashbon)}
-                    >
-                         <FaPlus className="icon" />
-                   </button>
-                    <button 
-                      className="btn1-icon"
-                      onClick={() => handleDetailClick(cashbon)}
-                     >
-                      <FaInfoCircle className="icon" />
-                      </button>
-              </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {/* Pagination */}
-      <div className="pagination-container">
+    <div className="cashbon-container">
+      <div className="cashbon-header">
+        <h1>Daftar Cashbon</h1>
+        <div className="cashbon-actions">
           <button 
-            className="pagination-button" 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(currentPage - 1)}
+            className="btn-primary"
+            onClick={() => setShowForm(true)}
           >
-            ◀ Prev
+            <FaPlus /> Tambah Cashbon
           </button>
-
-          <span className="pagination-info">Halaman {currentPage} dari {lastPage}</span>
-
-          <button 
-            className="pagination-button" 
-            disabled={currentPage === lastPage} 
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next ▶
-          </button>
+          <div className="cashbon-filter">
+            <select
+              onChange={(e) => {
+                if (e.target.value === "") {
+                  // Reload semua data
+                  window.location.reload();
+                } else {
+                  getFilteredPenjahit(e.target.value);
+                }
+              }}
+            >
+              <option value="">Semua Penjahit</option>
+              {penjahitList.map((penjahit) => (
+                <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                  {penjahit.nama_penjahit}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
-      
-     
-      {selectedDetailCashbon && (
-  <div className="modal">
-    <div className="modal-card">
-      <div className="modal-header">
-        <h3>Detail Cashbon</h3>
-      </div>
-      <div className="modal-body">
-        <h4>ID Hutang: {selectedDetailCashbon.id_cashboan}</h4>
-        <p><strong>ID Penjahit :</strong><span>  {selectedDetailCashbon.id_penjahit}</span></p>
-        <p><strong>Jumlah Hutang :</strong> <span> Rp {selectedDetailCashbon.jumlah_hutang}</span></p>
-        <p><strong>Status Pembayaran :</strong> <span> {selectedDetailCashbon.status_pembayaran}</span></p>
-        <p><strong>Sisa Hutang:</strong><span>  {selectedDetailCashbon.sisa_cashboan}</span></p>
-        
-        <br></br><h4>Log History:</h4>
 
-    
-        {logHistory.length > 0 ? (
-          <table className="log-table">
-            <thead>
-              <tr>
-                <th>Tanggal Perubahan</th>
-                <th>Jenis Perubahan</th>
-                <th>Nominal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logHistory.length > 0 ? (
-                logHistory.map((history, index) => (
-                  <tr key={index}>
-                    <td>{history.tanggal_perubahan}</td>
-                    <td>{history.jenis_perubahan}</td>
-                    <td>Rp {history.perubahan_cashboan || 0}</td>
-                  </tr>
-                ))
-              ) : (
+      {loading && cashbons.length === 0 ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+        </div>
+      ) : error ? (
+        <div className="empty-state">
+          <p className="empty-state-text">{error}</p>
+        </div>
+      ) : filteredCashbons.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <p className="empty-state-text">Tidak ada data cashbon</p>
+        </div>
+      ) : (
+        <>
+          <div className="cashbon-table-wrapper">
+            <table className="cashbon-table">
+              <thead>
                 <tr>
-                  <td colSpan="3" style={{ textAlign: "center" }}>Tidak ada log pembayaran.</td>
+                  <th>ID</th>
+                  <th>Nama Penjahit</th>
+                  <th>Jumlah Cashbon</th>
+                  <th>Status Pembayaran</th>
+                  <th>Tanggal Cashbon</th>
+                  <th>Aksi</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        ) : (
-          <p className="no-logs">Tidak ada log pembayaran.</p>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {filteredCashbons.map((cashbon, index) => {
+                  const namaPenjahit = cashbon.penjahit?.nama_penjahit || 
+                    penjahitList.find(p => p.id_penjahit === cashbon.id_penjahit)?.nama_penjahit || 
+                    'Tidak Diketahui';
+                  
+                  return (
+                    <tr key={cashbon.id || cashbon.id_cashboan || index}>
+                      <td>{cashbon.id || cashbon.id_cashboan || '-'}</td>
+                      <td>{namaPenjahit}</td>
+                      <td>{formatRupiahDisplay(cashbon.jumlah_cashboan || 0)}</td>
+                      <td>
+                        <span className={`status-badge ${getStatusColor(cashbon.status_pembayaran)}`}>
+                          {cashbon.status_pembayaran || 'belum lunas'}
+                        </span>
+                      </td>
+                      <td>{formatTanggal(cashbon.tanggal_cashboan)}</td>
+                      <td>
+                        <div className="action-buttons">
+                          {(cashbon.id || cashbon.id_cashboan) && (
+                            <button 
+                              className="btn-icon btn-icon-add"
+                              onClick={() => handleTambahClick(cashbon)}
+                              title="Tambah Cashbon"
+                            >
+                              <FaPlus />
+                            </button>
+                          )}
+                          {(cashbon.id || cashbon.id_cashboan) && (
+                            <button 
+                              className="btn-icon btn-icon-info"
+                              onClick={() => handleDetailClick(cashbon)}
+                              title="Detail Cashbon"
+                            >
+                              <FaInfoCircle />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
-      <div className="modal-footer">
-        <button className="btn-close" onClick={() => setSelectedDetailCashbon(null)}>
-          Tutup
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Detail Modal */}
+      {selectedDetailCashbon && (
+        <div className="modal-overlay" onClick={() => setSelectedDetailCashbon(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Detail Cashbon</h2>
+              <button className="modal-close" onClick={() => setSelectedDetailCashbon(null)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-section">
+                <div className="detail-item">
+                  <span className="detail-label">ID Cashbon:</span>
+                  <span className="detail-value">{selectedDetailCashbon.id_cashboan || selectedDetailCashbon.id || '-'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Nama Penjahit:</span>
+                  <span className="detail-value">
+                    {selectedDetailCashbon.penjahit?.nama_penjahit || 
+                      penjahitList.find(p => p.id_penjahit === selectedDetailCashbon.id_penjahit)?.nama_penjahit || 
+                      'Tidak Diketahui'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Jumlah Cashbon:</span>
+                  <span className="detail-value">{formatRupiahDisplay(selectedDetailCashbon.jumlah_cashboan || 0)}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Status Pembayaran:</span>
+                  <span className="detail-value">
+                    <span className={`status-badge ${getStatusColor(selectedDetailCashbon.status_pembayaran)}`}>
+                      {selectedDetailCashbon.status_pembayaran || 'belum lunas'}
+                    </span>
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Tanggal Cashbon:</span>
+                  <span className="detail-value">{formatTanggal(selectedDetailCashbon.tanggal_cashboan)}</span>
+                </div>
+              </div>
 
+              <div className="detail-section">
+                <h4>Log History</h4>
+                {logHistory.length > 0 ? (
+                  <table className="history-table">
+                    <thead>
+                      <tr>
+                        <th>Tanggal Perubahan</th>
+                        <th>Jenis Perubahan</th>
+                        <th>Nominal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {logHistory.map((history, index) => (
+                        <tr key={index}>
+                          <td>{formatTanggal(history.tanggal_perubahan)}</td>
+                          <td>{history.jenis_perubahan || '-'}</td>
+                          <td>{formatRupiahDisplay(history.perubahan_cashboan || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="no-history">Tidak ada log history.</p>
+                )}
+              </div>
+            </div>
+            <div className="form-actions">
+              <button className="btn btn-cancel" onClick={() => setSelectedDetailCashbon(null)}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Modal Form */}
-        {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Tambah Data Casbon</h2>
-            <form onSubmit={handleFormSubmit} className="modern-form">
-              <div className="form-group">
-              <label>ID Penjahit:</label>
-                <select
-                  value={newCashbon.id_penjahit}
-                  onChange={(e) =>
-                    setNewCashbon({ ...newCashbon, id_penjahit: e.target.value })
-                  }
-                  required
-                >
-                  <option value="" disabled>
-                    Pilih Penjahit
-                  </option>
-                  {penjahitList.map((penjahit) => (
-                    <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                      {penjahit.nama_penjahit}
+      {/* Modal Form Tambah Cashbon */}
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Tambah Cashbon</h2>
+              <button className="modal-close" onClick={() => setShowForm(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleFormSubmit}>
+                <div className="form-group">
+                  <label>Penjahit</label>
+                  <select
+                    value={newCashbon.id_penjahit}
+                    onChange={(e) =>
+                      setNewCashbon({ ...newCashbon, id_penjahit: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="" disabled>
+                      Pilih Penjahit
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {penjahitList.map((penjahit) => (
+                      <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                        {penjahit.nama_penjahit}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="form-group">
-                <label>Jumlah Cashbon</label>
-                <input
-                  type="number"
-                  value={newCashbon.jumlah_cashboan}
-                  onChange={(e) =>
-                    setNewCashbon({ ...newCashbon, jumlah_cashboan: e.target.value })
-                  }
-                  placeholder="Masukkan jumlah cashbon"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Jumlah Cashbon</label>
+                  <input
+                    type="text"
+                    value={newCashbon.jumlah_cashboan}
+                    onChange={handleJumlahCashbonChange}
+                    placeholder="Masukkan jumlah cashbon"
+                    required
+                  />
+                </div>
 
-               <div className="form-group-hutang">
-                <label>Upload Bukti Transfer (Opsional)</label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) =>
-                    setNewCashbon({
-                      ...newCashbon,
-                      bukti_transfer: e.target.files[0],
-                    })
-                  }
-                />
-              </div>
+                <div className="form-group">
+                  <label>Upload Bukti Transfer (Opsional)</label>
+                  <div className="form-group-file">
+                    <label className="file-label">
+                      {newCashbon.bukti_transfer ? newCashbon.bukti_transfer.name : "Pilih File"}
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        onChange={(e) =>
+                          setNewCashbon({
+                            ...newCashbon,
+                            bukti_transfer: e.target.files[0],
+                          })
+                        }
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+                </div>
 
-           
-             
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
-                  Simpan
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-cancel"
-                  onClick={() => setShowForm(false)}
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-cancel" onClick={() => setShowForm(false)}>
+                    Batal
+                  </button>
+                  <button type="submit" className="btn btn-submit">
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
-     {/* Modal Form Pembayaran */}
-     {selectedCashbon && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Penambahan Cashboan (ID: {selectedCashbon.id_cashboan})</h2>
-            <form onSubmit={handlePaymentSubmit} className="modern-form">
-            <div className="form-group">
-              <label>Jumlah Tambah Casbon</label>
-              <input
-                type="number"
-                value={newCashbon.jumlah_cashboan || ""}
-                onChange={(e) =>
-                  setNewCashbon({ ...newCashbon, jumlah_cashboan: e.target.value })
-                }
-                required
-              />
-            </div>
-             
-             <div className="form-group">
-              <label>Bukti Transfer</label>
-              <input
-                type="file"
-                onChange={(e) =>
-                  setNewCashbon({ ...newCashbon, bukti_transfer: e.target.files[0] })
-                }
-                accept="image/*, .pdf"
-              />
-            </div>
 
-              <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
-                  Simpan Pembayaran
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-submit"
-                  onClick={() => setSelectedCashbon(null)}
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
+      {/* Modal Form Tambah Cashbon (Edit) */}
+      {selectedCashbon && (
+        <div className="modal-overlay" onClick={() => setSelectedCashbon(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Tambah Cashbon (ID: {selectedCashbon.id || selectedCashbon.id_cashboan})</h2>
+              <button className="modal-close" onClick={() => setSelectedCashbon(null)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handlePaymentSubmit}>
+                <div className="form-group">
+                  <label>Jumlah Tambah Cashbon</label>
+                  <input
+                    type="text"
+                    value={newCashbon.jumlah_cashboan || ""}
+                    onChange={handleJumlahCashbonChange}
+                    placeholder="Masukkan jumlah tambah cashbon"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Bukti Transfer (Opsional)</label>
+                  <div className="form-group-file">
+                    <label className="file-label">
+                      {newCashbon.bukti_transfer ? newCashbon.bukti_transfer.name : "Pilih File"}
+                      <input
+                        type="file"
+                        onChange={(e) =>
+                          setNewCashbon({ ...newCashbon, bukti_transfer: e.target.files[0] })
+                        }
+                        accept="image/*,.pdf"
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn btn-cancel" onClick={() => setSelectedCashbon(null)}>
+                    Batal
+                  </button>
+                  <button type="submit" className="btn btn-submit">
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
-    </div>
     </div>
   );
 };
 
-export default Cashbon
+export default Cashbon;
