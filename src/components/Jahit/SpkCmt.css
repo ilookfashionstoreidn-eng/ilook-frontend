@@ -1093,3 +1093,44 @@
 .spkcmt-btn-icon-download:hover {
   background: #218838 !important;
 }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: white;
+  width: 600px;
+  max-height: 80vh;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-body {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.log-deadline-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.log-deadline-table th,
+.log-deadline-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 12px;
+}
