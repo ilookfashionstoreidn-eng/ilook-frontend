@@ -9,27 +9,18 @@ import {
   FaMicrophone,
   FaArrowUp,
   FaArrowDown,
-  FaPause,
   FaStop,
-  FaMicrophoneSlash,
   FaImage,
-  FaPhotoVideo,
-  FaVideo,
-  FaVideoSlash,
   FaPlus,
-  FaTrash,
   FaSave,
   FaTimes,
   FaPaperPlane,
   FaBell,
-  FaRegEye,
-  FaCog,
+  FaHistory,
   FaEdit,
   FaClock,
   FaInfoCircle,
-  FaComments,
-  FaCommentDots,
-  FaComment,
+ 
 } from "react-icons/fa";
 import Select from "react-select";
 
@@ -82,6 +73,10 @@ const SpkCmt = () => {
   const [distribusiList, setDistribusiList] = useState([]);
   const [spkJasaList, setSpkJasaList] = useState([]);
   const [previewData, setPreviewData] = useState(null);
+  const [showLogDeadline, setShowLogDeadline] = useState(false);
+  const [logDeadline, setLogDeadline] = useState([]);
+  const [loadingLog, setLoadingLog] = useState(false);
+
 
   const [newSpk, setNewSpk] = useState({
     source_type: "",
@@ -676,6 +671,21 @@ const SpkCmt = () => {
       [name]: value,
     }));
   };
+
+const handleLogDeadlineClick = async (idSpk) => {
+  setShowLogDeadline(true);
+  setLoadingLog(true);
+
+  try {
+    const res = await API.get(`/spk/${idSpk}/log-deadline`);
+    setLogDeadline(res.data);
+  } catch (error) {
+    console.error("Gagal mengambil log deadline", error);
+  } finally {
+    setLoadingLog(false);
+  }
+};
+
 
   //fungsi untuk kirim update dadline ke API
   const updateDeadline = async (spkId) => {
@@ -1316,12 +1326,18 @@ const SpkCmt = () => {
                       <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline">
                         <FaClock size={12} />
                       </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-settings" onClick={() => handleUpdateStatusClick(spk)} title="Update Status">
-                        <FaCog size={12} />
-                      </button>
+                   
                       <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit">
                         <FaEdit size={12} />
                       </button>
+                     <button
+                      className="spkcmt-btn-icon spkcmt-btn-icon-log"
+                      onClick={() => handleLogDeadlineClick(spk.id_spk)}
+                      title="Log Deadline"
+                    >
+                      <FaHistory size={12} />
+                    </button>
+
                       {/* ✅ Tombol Download dipindahkan ke sini */}
                       <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF">
                         <FaSave size={12} />
@@ -2046,6 +2062,51 @@ const SpkCmt = () => {
           </div>
         </div>
       )}
+
+
+      {showLogDeadline && (
+  <div className="modal-overlay">
+    <div className="modal-card">
+      <div className="modal-header">
+        <h4>Riwayat Perubahan Deadline</h4>
+        <button onClick={() => setShowLogDeadline(false)}>✕</button>
+      </div>
+
+      <div className="modal-body">
+       {loadingLog ? (
+  <p>Loading...</p>
+) : Array.isArray(logDeadline) && logDeadline.length === 0 ? (
+  <p>Tidak ada log deadline</p>
+) : (
+  <table className="log-deadline-table">
+    <thead>
+      <tr>
+        <th>Deadline Lama</th>
+        <th>Deadline Baru</th>
+        <th>Tanggal</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {logDeadline.map((log) => (
+        <tr key={log.id_log}>
+          <td>{log.deadline_lama}</td>
+          <td>{log.deadline_baru}</td>
+          <td>{log.tanggal_aktivitas}</td>
+          <td>{log.keterangan}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
+
+      </div>
+    </div>
+  </div>
+)}
+
+
+
     </div>
   );
 };
