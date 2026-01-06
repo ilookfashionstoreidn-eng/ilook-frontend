@@ -157,6 +157,11 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link to="kode-seri-belum-dikerjakan" className={`dropdown-link ${activeMenu === "kodeSeri" ? "active" : ""}`} onClick={() => handleMenuClick("kodeSeri")}>
+                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Belum Dikerjakan
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="spkcmt" className={`dropdown-link ${activeMenu === "spk" ? "active" : ""}`} onClick={() => handleMenuClick("spk")}>
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
                     </Link>
