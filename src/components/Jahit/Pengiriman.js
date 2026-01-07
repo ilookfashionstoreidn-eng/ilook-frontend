@@ -420,6 +420,7 @@ const Pengiriman = () => {
                 <th>Tanggal Pengiriman</th>
                 <th>Total Barang Dikirim</th>
                 <th>Sisa Barang</th>
+                <th>Total Transfer</th>
                 <th>Status Verifikasi</th>
                 <th>Aksi</th>
               </tr>
@@ -427,49 +428,56 @@ const Pengiriman = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                  <td colSpan="9" style={{ textAlign: "center", padding: "40px" }}>
                     Memuat data...
                   </td>
                 </tr>
               ) : filteredPengirimans.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: "center", padding: "40px", color: "#718096" }}>
+                  <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "#718096" }}>
                     Tidak ada data pengiriman
                   </td>
                 </tr>
               ) : (
-                filteredPengirimans.map((pengiriman) => (
-                  <tr key={pengiriman.id_pengiriman}>
-                    <td>{pengiriman.id_spk}</td>
-                    <td>{pengiriman.nama_penjahit || "-"}</td>
-                    <td>{pengiriman.nama_produk || "-"}</td>
-                    <td>{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
-                    <td>{pengiriman.total_barang_dikirim || 0}</td>
-                    <td
-                      style={{
-                        color: pengiriman.sisa_barang > 0 ? "#e53e3e" : "#48bb78",
-                        fontWeight: pengiriman.sisa_barang > 0 ? 600 : 400,
-                      }}
-                    >
-                      {pengiriman.sisa_barang || 0}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${pengiriman.status_verifikasi || "pending"}`}>{pengiriman.status_verifikasi || "pending"}</span>
-                    </td>
-                    <td>
-                      <div className="pengiriman-actions">
-                        <button className="pengiriman-btn-icon info" onClick={() => handleDetailClick(pengiriman)} title="Detail">
-                          <FaInfoCircle />
-                        </button>
-                        {userRole !== "staff_bawah" && (
-                          <button className="pengiriman-btn-icon payment" onClick={() => handlePetugasAtas(pengiriman)} title="Verifikasi">
-                            <FaMoneyBillWave />
+                filteredPengirimans.map((pengiriman) => {
+                  // Hitung total transfer: total_bayar + refund_claim - claim (hanya jika claim belum dibayar)
+                  const claimBelumDibayar = pengiriman.status_claim === "belum_dibayar" ? pengiriman.claim || 0 : 0;
+                  const totalTransfer = (pengiriman.total_bayar || 0) + (pengiriman.refund_claim || 0) - claimBelumDibayar;
+
+                  return (
+                    <tr key={pengiriman.id_pengiriman}>
+                      <td>{pengiriman.id_spk}</td>
+                      <td>{pengiriman.nama_penjahit || "-"}</td>
+                      <td>{pengiriman.nama_produk || "-"}</td>
+                      <td>{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                      <td>{pengiriman.total_barang_dikirim || 0}</td>
+                      <td
+                        style={{
+                          color: pengiriman.sisa_barang > 0 ? "#e53e3e" : "#48bb78",
+                          fontWeight: pengiriman.sisa_barang > 0 ? 600 : 400,
+                        }}
+                      >
+                        {pengiriman.sisa_barang || 0}
+                      </td>
+                      <td>{pengiriman.status_verifikasi === "valid" ? formatRupiah(totalTransfer) : <span style={{ color: "#718096", fontStyle: "italic" }}>Belum diverifikasi</span>}</td>
+                      <td>
+                        <span className={`status-badge ${pengiriman.status_verifikasi || "pending"}`}>{pengiriman.status_verifikasi || "pending"}</span>
+                      </td>
+                      <td>
+                        <div className="pengiriman-actions">
+                          <button className="pengiriman-btn-icon info" onClick={() => handleDetailClick(pengiriman)} title="Detail">
+                            <FaInfoCircle />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {userRole !== "staff_bawah" && (
+                            <button className="pengiriman-btn-icon payment" onClick={() => handlePetugasAtas(pengiriman)} title="Verifikasi">
+                              <FaMoneyBillWave />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -517,10 +525,6 @@ const Pengiriman = () => {
                     <td>Sisa Barang</td>
                     <td>{selectedPengiriman.sisa_barang || 0}</td>
                   </tr>
-                  <tr>
-                    <td>Total Bayar</td>
-                    <td>{formatRupiah(selectedPengiriman.total_bayar)}</td>
-                  </tr>
                   {selectedPengiriman.warna && selectedPengiriman.warna.length > 0 && (
                     <>
                       <tr>
@@ -550,12 +554,43 @@ const Pengiriman = () => {
                     </>
                   )}
                   <tr>
+                    <td>Total Bayar</td>
+                    <td>{selectedPengiriman.status_verifikasi === "valid" ? formatRupiah(selectedPengiriman.total_bayar || 0) : <span style={{ color: "#718096", fontStyle: "italic" }}>Belum diverifikasi</span>}</td>
+                  </tr>
+                  <tr>
                     <td>Total Claim</td>
-                    <td>{formatRupiah(selectedPengiriman.claim)}</td>
+                    <td>{selectedPengiriman.status_verifikasi === "valid" ? formatRupiah(selectedPengiriman.claim || 0) : <span style={{ color: "#718096", fontStyle: "italic" }}>Belum diverifikasi</span>}</td>
                   </tr>
                   <tr>
                     <td>Total Refund Claim</td>
-                    <td>{formatRupiah(selectedPengiriman.refund_claim)}</td>
+                    <td>{selectedPengiriman.status_verifikasi === "valid" ? formatRupiah(selectedPengiriman.refund_claim || 0) : <span style={{ color: "#718096", fontStyle: "italic" }}>Belum diverifikasi</span>}</td>
+                  </tr>
+                  <tr>
+                    <td>Status Claim</td>
+                    <td>
+                      <span
+                        style={{
+                          color: selectedPengiriman.status_claim === "sudah_dibayar" ? "#48bb78" : "#ed8936",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {selectedPengiriman.status_claim === "sudah_dibayar" ? "Sudah Dibayar" : "Belum Dibayar"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Total Transfer</td>
+                    <td>
+                      {selectedPengiriman.status_verifikasi === "valid" ? (
+                        (() => {
+                          const claimBelumDibayar = selectedPengiriman.status_claim === "belum_dibayar" ? selectedPengiriman.claim || 0 : 0;
+                          const totalTransfer = (selectedPengiriman.total_bayar || 0) + (selectedPengiriman.refund_claim || 0) - claimBelumDibayar;
+                          return formatRupiah(totalTransfer);
+                        })()
+                      ) : (
+                        <span style={{ color: "#718096", fontStyle: "italic" }}>Belum diverifikasi</span>
+                      )}
+                    </td>
                   </tr>
                 </tbody>
               </table>

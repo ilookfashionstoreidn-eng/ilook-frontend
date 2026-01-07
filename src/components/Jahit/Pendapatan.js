@@ -15,6 +15,8 @@ const Pendapatan = () => {
   const [kurangiCashbon, setKurangiCashbon] = useState(false);
   const [aksesorisDipilih, setAksesorisDipilih] = useState([]);
   const [detailAksesoris, setDetailAksesoris] = useState([]);
+  const [claimBelumDibayar, setClaimBelumDibayar] = useState([]);
+  const [claimDipilih, setClaimDipilih] = useState([]);
   const [buktiTransfer, setBuktiTransfer] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -22,6 +24,7 @@ const Pendapatan = () => {
 
   const [simulasi, setSimulasi] = useState({
     total_pendapatan: 0,
+    total_claim: 0,
     potongan_hutang: 0,
     potongan_cashbon: 0,
     potongan_aksesoris: 0,
@@ -53,7 +56,7 @@ const Pendapatan = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
 
-  const fetchSimulasi = async (id_penjahit, kurangiHutang, kurangiCashbon, aksesorisIds = []) => {
+  const fetchSimulasi = async (id_penjahit, kurangiHutang, kurangiCashbon, aksesorisIds = [], claimIds = []) => {
     if (!startDate || !endDate) return;
 
     try {
@@ -64,11 +67,13 @@ const Pendapatan = () => {
         kurangi_hutang: kurangiHutang,
         kurangi_cashbon: kurangiCashbon,
         detail_aksesoris_ids: aksesorisIds, // kirim array id
+        claim_ids: claimIds, // kirim array id_pengiriman untuk claim
       });
 
       if (response.data) {
         setSimulasi({
           total_pendapatan: response.data.total_pendapatan || 0,
+          total_claim: response.data.total_claim || 0,
           potongan_hutang: response.data.potongan_hutang || 0,
           potongan_cashbon: response.data.potongan_cashbon || 0,
           potongan_aksesoris: response.data.potongan_aksesoris || 0,
@@ -78,6 +83,7 @@ const Pendapatan = () => {
         console.warn("Data simulasi kosong:", response.data);
         setSimulasi({
           total_pendapatan: 0,
+          total_claim: 0,
           potongan_hutang: 0,
           potongan_cashbon: 0,
           potongan_aksesoris: 0,
@@ -88,6 +94,7 @@ const Pendapatan = () => {
       console.error("Gagal fetch simulasi pendapatan", err);
       setSimulasi({
         total_pendapatan: 0,
+        total_claim: 0,
         potongan_hutang: 0,
         potongan_cashbon: 0,
         potongan_aksesoris: 0,
@@ -99,10 +106,10 @@ const Pendapatan = () => {
   // Di event handler (misal di onChange checkbox)
   useEffect(() => {
     if (selectedPenjahit && startDate && endDate) {
-      fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon, aksesorisDipilih);
+      fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon, aksesorisDipilih, claimDipilih);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPenjahit, aksesorisDipilih, kurangiHutang, kurangiCashbon, startDate, endDate]);
+  }, [selectedPenjahit, aksesorisDipilih, claimDipilih, kurangiHutang, kurangiCashbon, startDate, endDate]);
 
   const fetchDetailAksesoris = async (penjahitId) => {
     try {
@@ -110,6 +117,16 @@ const Pendapatan = () => {
       setDetailAksesoris(response.data);
     } catch (error) {
       console.error("Gagal mengambil aksesoris:", error);
+    }
+  };
+
+  const fetchClaimBelumDibayar = async (penjahitId) => {
+    try {
+      const response = await API.get(`/pendapatan/claim-belum-dibayar/${penjahitId}`);
+      setClaimBelumDibayar(response.data.data || []);
+    } catch (error) {
+      console.error("Gagal mengambil claim belum dibayar:", error);
+      setClaimBelumDibayar([]);
     }
   };
 
@@ -172,6 +189,12 @@ const Pendapatan = () => {
         });
       }
 
+      if (claimDipilih.length > 0) {
+        claimDipilih.forEach((id, index) => {
+          formData.append(`claim_ids[${index}]`, id);
+        });
+      }
+
       const response = await API.post("/pendapatan", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -185,9 +208,11 @@ const Pendapatan = () => {
         setKurangiHutang(false);
         setKurangiCashbon(false);
         setAksesorisDipilih([]);
+        setClaimDipilih([]);
         setBuktiTransfer(null);
         setSimulasi({
           total_pendapatan: 0,
+          total_claim: 0,
           potongan_hutang: 0,
           potongan_cashbon: 0,
           potongan_aksesoris: 0,
@@ -306,6 +331,7 @@ const Pendapatan = () => {
     setSelectedPenjahit(penjahit);
     setShowForm(true);
     fetchDetailAksesoris(penjahit.id_penjahit);
+    fetchClaimBelumDibayar(penjahit.id_penjahit);
   };
 
   const handleCloseModal = () => {
@@ -314,9 +340,12 @@ const Pendapatan = () => {
     setKurangiHutang(false);
     setKurangiCashbon(false);
     setAksesorisDipilih([]);
+    setClaimDipilih([]);
+    setClaimBelumDibayar([]);
     setBuktiTransfer(null);
     setSimulasi({
       total_pendapatan: 0,
+      total_claim: 0,
       potongan_hutang: 0,
       potongan_cashbon: 0,
       potongan_aksesoris: 0,
@@ -334,9 +363,11 @@ const Pendapatan = () => {
     setKurangiHutang(false);
     setKurangiCashbon(false);
     setAksesorisDipilih([]);
+    setClaimDipilih([]);
     setBuktiTransfer(null);
     setSimulasi({
       total_pendapatan: 0,
+      total_claim: 0,
       potongan_hutang: 0,
       potongan_cashbon: 0,
       potongan_aksesoris: 0,
@@ -587,6 +618,11 @@ const Pendapatan = () => {
                   <input type="text" value={formatRupiah(simulasi.potongan_aksesoris || 0)} readOnly />
                 </div>
 
+                <div className="pendapatan-form-group">
+                  <label>Potongan Claim</label>
+                  <input type="text" value={formatRupiah(simulasi.total_claim || 0)} readOnly />
+                </div>
+
                 <div className="pendapatan-checkbox-group">
                   <label>
                     <input type="checkbox" checked={kurangiHutang} onChange={(e) => setKurangiHutang(e.target.checked)} />
@@ -626,6 +662,34 @@ const Pendapatan = () => {
                     ))}
                   </div>
                 )}
+
+                <div className="pendapatan-checkbox-group">
+                  <label style={{ marginBottom: "8px", fontWeight: "600" }}>Potong Claim:</label>
+                  {claimBelumDibayar.length > 0 ? (
+                    claimBelumDibayar.map((claim) => (
+                      <div key={claim.id_pengiriman} className="pendapatan-checkbox-item">
+                        <label>
+                          <input
+                            type="checkbox"
+                            value={claim.id_pengiriman}
+                            checked={claimDipilih.includes(claim.id_pengiriman)}
+                            onChange={(e) => {
+                              const id = parseInt(e.target.value);
+                              if (e.target.checked) {
+                                setClaimDipilih([...claimDipilih, id]);
+                              } else {
+                                setClaimDipilih(claimDipilih.filter((itemId) => itemId !== id));
+                              }
+                            }}
+                          />
+                          ID Pengiriman: {claim.id_pengiriman} - Tanggal: {new Date(claim.tanggal_pengiriman).toLocaleDateString("id-ID")} - Claim: {formatRupiah(parseInt(claim.claim))}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: "8px", color: "#94a3b8", fontStyle: "italic" }}>Tidak ada claim yang belum dibayar</div>
+                  )}
+                </div>
 
                 <div className="pendapatan-form-group pendapatan-total-transfer">
                   <label>Total Transfer</label>
