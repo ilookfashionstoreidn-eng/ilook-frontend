@@ -23,6 +23,8 @@ const Pengiriman = () => {
   const [warnaData, setWarnaData] = useState([]);
   const [showPetugasAtasPopup, setShowPetugasAtasPopup] = useState(false);
   const [spkCmtList, setSpkCmtList] = useState([]);
+  const [selectedSpkDeadline, setSelectedSpkDeadline] = useState(null);
+  const [deadlineError, setDeadlineError] = useState("");
 
   const [newPengiriman, setNewPengiriman] = useState({
     id_spk: "",
@@ -167,6 +169,50 @@ const Pengiriman = () => {
         )
     : [];
 
+  const fetchSpkDeadline = async (id_spk) => {
+    try {
+      // Cari deadline dari spkCmtList yang sudah di-fetch
+      const spkSelected = spkCmtList.find((spk) => spk.id_spk === id_spk);
+      if (spkSelected && spkSelected.deadline) {
+        setSelectedSpkDeadline(spkSelected.deadline);
+      } else {
+        // Jika tidak ditemukan di list, fetch dari API
+        const response = await API.get(`/spkcmt/${id_spk}`);
+        if (response.data && response.data.deadline) {
+          setSelectedSpkDeadline(response.data.deadline);
+        } else {
+          setSelectedSpkDeadline(null);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching SPK deadline:", error);
+      setSelectedSpkDeadline(null);
+    }
+  };
+
+  const validateDeadline = (tanggalPengiriman) => {
+    if (!tanggalPengiriman || !selectedSpkDeadline) {
+      setDeadlineError("");
+      return true;
+    }
+
+    const tanggal = new Date(tanggalPengiriman);
+    const deadline = new Date(selectedSpkDeadline);
+
+    if (tanggal > deadline) {
+      const deadlineFormatted = new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(deadline);
+      setDeadlineError(`Tanggal pengiriman tidak boleh melewati deadline SPK: ${deadlineFormatted}`);
+      return false;
+    }
+
+    setDeadlineError("");
+    return true;
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -175,14 +221,22 @@ const Pengiriman = () => {
       return;
     }
 
+    if (!newPengiriman.foto_nota) {
+      alert("Silakan upload foto nota terlebih dahulu");
+      return;
+    }
+
+    // Validasi deadline
+    if (!validateDeadline(newPengiriman.tanggal_pengiriman)) {
+      alert(deadlineError);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("id_spk", Number(newPengiriman.id_spk));
     formData.append("tanggal_pengiriman", newPengiriman.tanggal_pengiriman);
     formData.append("total_barang_dikirim", newPengiriman.total_barang_dikirim);
-
-    if (newPengiriman.foto_nota) {
-      formData.append("foto_nota", newPengiriman.foto_nota);
-    }
+    formData.append("foto_nota", newPengiriman.foto_nota);
 
     try {
       const response = await API.post("/pengiriman/petugas-bawah", formData, {
@@ -202,6 +256,8 @@ const Pengiriman = () => {
         warna: [],
         foto_nota: null,
       });
+      setSelectedSpkDeadline(null);
+      setDeadlineError("");
     } catch (error) {
       console.error("Error adding data:", error);
       alert(error.response?.data?.error || "Terjadi kesalahan saat menambahkan pengiriman.");
@@ -215,10 +271,16 @@ const Pengiriman = () => {
   };
 
   const handleInputChange = (e) => {
+    const value = e.target.value;
     setNewPengiriman({
       ...newPengiriman,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
+
+    // Validasi deadline jika input adalah tanggal_pengiriman
+    if (e.target.name === "tanggal_pengiriman") {
+      validateDeadline(value);
+    }
   };
 
   // Options untuk dropdown SPK CMT
@@ -504,11 +566,25 @@ const Pengiriman = () => {
 
       {/* Modal Form Tambah */}
       {showForm && (
-        <div className="pengiriman-modal-overlay" onClick={() => setShowForm(false)}>
+        <div
+          className="pengiriman-modal-overlay"
+          onClick={() => {
+            setShowForm(false);
+            setSelectedSpkDeadline(null);
+            setDeadlineError("");
+          }}
+        >
           <div className="pengiriman-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pengiriman-modal-header">
               <h2>Tambah Data Pengiriman</h2>
-              <button className="pengiriman-modal-close" onClick={() => setShowForm(false)}>
+              <button
+                className="pengiriman-modal-close"
+                onClick={() => {
+                  setShowForm(false);
+                  setSelectedSpkDeadline(null);
+                  setDeadlineError("");
+                }}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -519,12 +595,21 @@ const Pengiriman = () => {
                   <Select
                     options={spkCmtOptions}
                     value={spkCmtOptions.find((opt) => opt.value === newPengiriman.id_spk) || null}
-                    onChange={(selected) =>
+                    onChange={(selected) => {
+                      const idSpk = selected ? selected.value : "";
                       setNewPengiriman({
                         ...newPengiriman,
-                        id_spk: selected ? selected.value : "",
-                      })
-                    }
+                        id_spk: idSpk,
+                      });
+
+                      // Fetch deadline ketika SPK dipilih
+                      if (idSpk) {
+                        fetchSpkDeadline(idSpk);
+                      } else {
+                        setSelectedSpkDeadline(null);
+                        setDeadlineError("");
+                      }
+                    }}
                     placeholder="Pilih atau cari SPK CMT..."
                     isSearchable={true}
                     isClearable={true}
@@ -554,8 +639,33 @@ const Pengiriman = () => {
                 </div>
 
                 <div className="pengiriman-form-group">
-                  <label className="pengiriman-form-label">Tanggal Kirim</label>
-                  <input type="date" name="tanggal_pengiriman" className="pengiriman-form-input" value={newPengiriman.tanggal_pengiriman} onChange={handleInputChange} required />
+                  <label className="pengiriman-form-label">
+                    Tanggal Kirim
+                    {selectedSpkDeadline && (
+                      <small style={{ color: "#718096", fontWeight: "normal", marginLeft: "8px" }}>
+                        (Deadline:{" "}
+                        {new Intl.DateTimeFormat("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }).format(new Date(selectedSpkDeadline))}
+                        )
+                      </small>
+                    )}
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggal_pengiriman"
+                    className="pengiriman-form-input"
+                    value={newPengiriman.tanggal_pengiriman}
+                    onChange={handleInputChange}
+                    max={selectedSpkDeadline || undefined}
+                    required
+                    style={{
+                      borderColor: deadlineError ? "#e53e3e" : undefined,
+                    }}
+                  />
+                  {deadlineError && <div style={{ color: "#e53e3e", fontSize: "12px", marginTop: "4px" }}>{deadlineError}</div>}
                 </div>
 
                 <div className="pengiriman-form-group">
@@ -564,12 +674,22 @@ const Pengiriman = () => {
                 </div>
 
                 <div className="pengiriman-form-group">
-                  <label className="pengiriman-form-label">Upload Nota</label>
-                  <input type="file" accept="image/*" className="pengiriman-form-input" onChange={(e) => setNewPengiriman({ ...newPengiriman, foto_nota: e.target.files[0] })} />
+                  <label className="pengiriman-form-label">
+                    Upload Nota (JPG, PNG, PDF) <span style={{ color: "#e53e3e" }}>*</span>
+                  </label>
+                  <input type="file" accept="image/*,.pdf,application/pdf" className="pengiriman-form-input" onChange={(e) => setNewPengiriman({ ...newPengiriman, foto_nota: e.target.files[0] })} required />
                 </div>
 
                 <div className="pengiriman-form-actions">
-                  <button type="button" className="pengiriman-btn pengiriman-btn-secondary" onClick={() => setShowForm(false)}>
+                  <button
+                    type="button"
+                    className="pengiriman-btn pengiriman-btn-secondary"
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedSpkDeadline(null);
+                      setDeadlineError("");
+                    }}
+                  >
                     Batal
                   </button>
                   <button type="submit" className="pengiriman-btn pengiriman-btn-primary">

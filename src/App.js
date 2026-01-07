@@ -17,6 +17,7 @@ import Status from "./components/Jahit/Status";
 import Kinerja from "./components/Jahit/Kinerja";
 import Kinerja2 from "./components/Jahit/Kinerja2";
 import Produk from "./components/Jahit/Produk";
+import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan";
 
 import HistoryPendapatan from "./components/Jahit/HistoryPendapatan";
 import Aksesoris from "./components/Jahit/Aksesoris";
@@ -66,6 +67,7 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route path="home" element={<Home />} />
           <Route path="penjahit" element={<Penjahit />} />
+          <Route path="kode-seri-belum-dikerjakan" element={<KodeSeriBelumDikerjakan />} />
           <Route path="spk" element={<Spk />} />
           <Route path="spkcmt" element={<SpkCmt />} />
           <Route path="pengiriman" element={<Pengiriman />} />
