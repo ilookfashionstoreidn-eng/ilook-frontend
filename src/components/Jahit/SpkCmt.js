@@ -76,6 +76,15 @@ const SpkCmt = () => {
   const [showLogDeadline, setShowLogDeadline] = useState(false);
   const [logDeadline, setLogDeadline] = useState([]);
   const [loadingLog, setLoadingLog] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [pendingDays, setPendingDays] = useState("");
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [pendingSpkId, setPendingSpkId] = useState(null);
+  const [pendingNote, setPendingNote] = useState("");
+  const [pendingUntil, setPendingUntil] = useState("");
+
+
+
 
 
   const [newSpk, setNewSpk] = useState({
@@ -1099,6 +1108,49 @@ const handleLogDeadlineClick = async (idSpk) => {
 
   const handleOrderChange = () => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 
+
+
+  const openPendingModal = (spk) => {
+  setSelectedSpk(spk);
+  setPendingDays("");
+  setShowPendingModal(true);
+};
+const closePendingModal = () => {
+  setShowPendingModal(false);
+  setSelectedSpk(null);
+  setPendingDays("");
+};
+const submitPendingStatus = async () => {
+  if (!pendingUntil) {
+    alert("Tanggal pending harus diisi");
+    return;
+  }
+
+  try {
+    setLoadingPending(true);
+
+    await API.patch(`/spk-cmt/${selectedSpk.id_spk}/status`, {
+      status: "pending",
+      pending_until: pendingUntil,
+    });
+
+    setSpkCmtData((prev) =>
+      prev.map((spk) =>
+        spk.id_spk === selectedSpk.id_spk
+          ? { ...spk, status: "pending" }
+          : spk
+      )
+    );
+
+    closePendingModal();
+  } catch (error) {
+    alert(error.response?.data?.message || "Gagal set pending");
+  } finally {
+    setLoadingPending(false);
+  }
+};
+
+
   return (
     <div className="spkcmt-container">
       <div className="spkcmt-header">
@@ -1297,7 +1349,17 @@ const handleLogDeadlineClick = async (idSpk) => {
                   <td>
                     <select
                       value={spk.status || "belum_diambil"}
-                      onChange={(e) => handleStatusChangeDirect(spk.id_spk, e.target.value)}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+
+                        if (newStatus === "pending") {
+                          // 🔥 buka modal pending, JANGAN update status dulu
+                          openPendingModal(spk);
+                        } else {
+                          // ✅ status normal → update langsung
+                          handleStatusChangeDirect(spk.id_spk, newStatus);
+                        }
+                      }}
                       className="spkcmt-status-select"
                       style={{
                         backgroundColor: getStatusColor(spk.status, spk.sisa_hari),
@@ -1315,8 +1377,12 @@ const handleLogDeadlineClick = async (idSpk) => {
                     >
                       <option value="belum_diambil">Belum Diambil</option>
                       <option value="sudah_diambil">Sudah Diambil</option>
+                      <option value="pending">Pending</option>
+                      <option value="Completed">Completed</option>
+
                     </select>
                   </td>
+
                   {/* Kolom Aksi — Termasuk Download */}
                   <td style={{ textAlign: "center" }}>
                     <div className="spkcmt-action-group">
@@ -1982,25 +2048,7 @@ const handleLogDeadlineClick = async (idSpk) => {
                 </div>
 
                 {/* ================= ATRIBUT ================= */}
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Markeran</label>
-                  <input type="text" className="spkcmt-form-input" value={newSpk.markeran} onChange={(e) => setNewSpk({ ...newSpk, markeran: e.target.value })} />
-                </div>
-
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Aksesoris</label>
-                  <input type="text" className="spkcmt-form-input" value={newSpk.aksesoris} onChange={(e) => setNewSpk({ ...newSpk, aksesoris: e.target.value })} />
-                </div>
-
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Handtag</label>
-                  <input type="text" className="spkcmt-form-input" value={newSpk.handtag} onChange={(e) => setNewSpk({ ...newSpk, handtag: e.target.value })} />
-                </div>
-
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Merek</label>
-                  <input type="text" className="spkcmt-form-input" value={newSpk.merek} onChange={(e) => setNewSpk({ ...newSpk, merek: e.target.value })} />
-                </div>
+              
 
                 {/* ================= HARGA BARANG ================= */}
                 <div className="spkcmt-form-group">
@@ -2036,8 +2084,8 @@ const handleLogDeadlineClick = async (idSpk) => {
                 <div className="spkcmt-form-group">
                   <label className="spkcmt-form-label">Jenis Harga Jasa</label>
                   <select className="spkcmt-form-select" value={newSpk.jenis_harga_jasa} onChange={(e) => setNewSpk({ ...newSpk, jenis_harga_jasa: e.target.value })}>
-                    <option value="per_barang">Per Barang</option>
-                    <option value="per_lusin">Per Lusin</option>
+                    <option value="per_barang">Pcs</option>
+                    <option value="per_lusin">Lusin</option>
                   </select>
                 </div>
 
@@ -2104,6 +2152,54 @@ const handleLogDeadlineClick = async (idSpk) => {
     </div>
   </div>
 )}
+
+{showPendingModal && (
+  <div className="modal-overlay">
+    <div className="modal-card">
+      <h3 className="modal-title">Set Status Pending</h3>
+
+      <div className="modal-body">
+        <p>
+          <strong>SPK:</strong> #{selectedSpk?.id_spk}
+        </p>
+        <p>
+          <strong>Penjahit:</strong> {selectedSpk?.penjahit?.nama_penjahit}
+        </p>
+
+      <label className="modal-label">
+        Pending sampai tanggal
+      </label>
+      <input
+        type="date"
+        value={pendingUntil}
+        onChange={(e) => setPendingUntil(e.target.value)}
+        className="modal-input"
+        min={new Date().toISOString().split("T")[0]}
+      />
+
+      </div>
+
+      <div className="modal-actions">
+        <button
+          className="btn-secondary"
+          onClick={closePendingModal}
+          disabled={loadingPending}
+        >
+          Batal
+        </button>
+
+        <button
+          className="btn-primary"
+          onClick={submitPendingStatus}
+          disabled={loadingPending}
+        >
+          {loadingPending ? "Menyimpan..." : "Simpan"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
 
