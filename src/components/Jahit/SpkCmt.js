@@ -82,7 +82,9 @@ const SpkCmt = () => {
   const [pendingSpkId, setPendingSpkId] = useState(null);
   const [pendingNote, setPendingNote] = useState("");
   const [pendingUntil, setPendingUntil] = useState("");
-
+const [distribusiOptions, setDistribusiOptions] = useState([]);
+const [spkJasaOptions, setSpkJasaOptions] = useState([]);
+const [loadingSource, setLoadingSource] = useState(false);
 
 
 
@@ -110,93 +112,83 @@ const SpkCmt = () => {
     jenis_harga_jasa: "per_barang",
   });
 
-  useEffect(() => {
-    if (newSpk.source_type === "cutting") {
-      fetchDistribusi();
-    }
 
-    if (newSpk.source_type === "jasa") {
-      fetchSpkJasa();
-    }
-
-    // Reset preview ketika source_type berubah
+useEffect(() => {
+  if (!newSpk.source_type) {
+    setDistribusiOptions([]);
+    setSpkJasaOptions([]);
     setPreviewData(null);
-  }, [newSpk.source_type]);
+    return;
+  }
 
-  const fetchPreview = useCallback(async () => {
-    if (!newSpk.source_id || !newSpk.source_type) {
-      setPreviewData(null);
-      return;
-    }
-
+  const getAvailableSources = async () => {
     try {
-      let response;
-      if (newSpk.source_type === "cutting") {
-        response = await API.get(`/spk-cutting-distribusi/${newSpk.source_id}`);
-      } else if (newSpk.source_type === "jasa") {
-        response = await API.get(`/SpkJasa/${newSpk.source_id}`);
-      }
+      setLoadingSource(true);
 
-      if (response?.data) {
-        setPreviewData(response.data);
+      const response = await API.get(
+        `/spk-cmt/available-sources?source_type=${newSpk.source_type}`
+      );
+
+      if (newSpk.source_type === "cutting") {
+        setDistribusiOptions(response.data);
+      } else {
+        setSpkJasaOptions(response.data);
       }
     } catch (error) {
-      console.error("Error fetching preview:", error);
-      setPreviewData(null);
-    }
-  }, [newSpk.source_id, newSpk.source_type]);
-
-  // Fetch preview ketika source_id dipilih
-  useEffect(() => {
-    fetchPreview();
-  }, [fetchPreview]);
-
-  const fetchDistribusi = async () => {
-    try {
-      const res = await API.get("/spk-cutting-distribusi");
-      setDistribusiList(res.data.data || res.data);
-    } catch (err) {
-      console.error(err);
+      setDistribusiOptions([]);
+      setSpkJasaOptions([]);
+    } finally {
+      setLoadingSource(false);
     }
   };
 
-  const fetchSpkJasa = async () => {
-    try {
-      const res = await API.get("/SpkJasa");
+  getAvailableSources();
+}, [newSpk.source_type]);
 
-      console.log("SPK JASA PAGINATION:", res.data);
-      console.log("SPK JASA LIST:", res.data.data);
 
-      setSpkJasaList(res.data.data); // ⬅️ WAJIB .data
-    } catch (err) {
-      console.error("FETCH SPK JASA ERROR:", err);
+
+
+
+ const fetchPreview = useCallback(async () => {
+  if (!newSpk.source_id || !newSpk.source_type) {
+    setPreviewData(null);
+    return;
+  }
+
+  try {
+    let response;
+
+    if (newSpk.source_type === "cutting") {
+      response = await API.get(
+        `/spk-cutting-distribusi/${newSpk.source_id}`
+      );
+    } else {
+      response = await API.get(
+        `/spk-jasa/${newSpk.source_id}`
+      );
     }
-  };
+
+    setPreviewData(response.data?.data ?? response.data);
+  } catch (error) {
+    console.error("Error fetching preview:", error);
+    setPreviewData(null);
+  }
+}, [newSpk.source_id, newSpk.source_type]);
+
+useEffect(() => {
+  fetchPreview();
+}, [fetchPreview]);
+
+
+
+
+
 
   const produkOptions = produkList.map((produk) => ({
     value: produk.id,
     label: produk.nama_produk,
   }));
-
-  // Options untuk dropdown Cutting (dengan useMemo untuk optimasi)
-  const distribusiOptions = useMemo(
-    () =>
-      distribusiList.map((d) => ({
-        value: d.id,
-        label: d.kode_seri || `Distribusi #${d.id}`,
-      })),
-    [distribusiList]
-  );
-
-  // Options untuk dropdown Jasa (dengan useMemo untuk optimasi)
-  const spkJasaOptions = useMemo(
-    () =>
-      spkJasaList.map((j) => ({
-        value: j.id,
-        label: j.spk_cutting_distribusi?.kode_seri || `Jasa #${j.id}`,
-      })),
-    [spkJasaList]
-  );
+  
 
   const [newDeadline, setNewDeadline] = useState({
     deadline: "",
@@ -814,8 +806,13 @@ const handleLogDeadlineClick = async (idSpk) => {
   }, []);
 
   // Fungsi untuk format rupiah (input formatting dengan titik)
- const formatRupiah = (value) => {
-  return new Intl.NumberFormat("id-ID").format(value || 0);
+const formatRupiah = (value) => {
+  if (!value) return "";
+
+  const numeric = value.toString().replace(/\D/g, "");
+  if (!numeric) return "";
+
+  return Number(numeric).toLocaleString("id-ID");
 };
 
 
@@ -1882,140 +1879,182 @@ const submitPendingStatus = async () => {
               </button>
             </div>
 
-            <div className="spkcmt-modal-body">
-              <form onSubmit={handleSubmit}>
-                {/* ================= SOURCE TYPE ================= */}
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Sumber SPK</label>
-                  <select
-                    className="spkcmt-form-select"
-                    value={newSpk.source_type}
-                    onChange={(e) =>
-                      setNewSpk({
-                        ...newSpk,
-                        source_type: e.target.value,
-                        source_id: "",
-                      })
-                    }
-                    required
-                  >
-                    <option value="">Pilih</option>
-                    <option value="cutting">Dari Cutting</option>
-                    <option value="jasa">Dari SPK Jasa</option>
-                  </select>
+           <div className="spkcmt-modal-body">
+  <form onSubmit={handleSubmit}>
+    {/* ================= SOURCE TYPE ================= */}
+    <div className="spkcmt-form-group">
+      <label className="spkcmt-form-label">Sumber SPK</label>
+      <select
+        className="spkcmt-form-select"
+        value={newSpk.source_type}
+        onChange={(e) =>
+          setNewSpk({
+            ...newSpk,
+            source_type: e.target.value,
+            source_id: "",
+          })
+        }
+        required
+      >
+        <option value="">Pilih</option>
+        <option value="cutting">Dari Cutting</option>
+        <option value="jasa">Dari SPK Jasa</option>
+      </select>
+    </div>
+
+    {/* ================= SOURCE ID ================= */}
+    {newSpk.source_type && (
+      <div className="spkcmt-form-group">
+        <label className="spkcmt-form-label">
+          {newSpk.source_type === "cutting"
+            ? "Distribusi Cutting"
+            : "SPK Jasa"}
+        </label>
+
+        <Select
+          options={
+            newSpk.source_type === "cutting"
+              ? distribusiOptions
+              : spkJasaOptions
+          }
+          value={
+            newSpk.source_type === "cutting"
+              ? distribusiOptions.find(
+                  (opt) => opt.value === newSpk.source_id
+                ) || null
+              : spkJasaOptions.find(
+                  (opt) => opt.value === newSpk.source_id
+                ) || null
+          }
+          onChange={(selected) =>
+            setNewSpk({
+              ...newSpk,
+              source_id: selected ? selected.value : "",
+            })
+          }
+          placeholder="Pilih atau cari..."
+          isSearchable
+          isClearable
+          isLoading={loadingSource}
+          isDisabled={loadingSource}
+          noOptionsMessage={({ inputValue }) => {
+            if (loadingSource) return "Memuat data...";
+            if (inputValue)
+              return `Tidak ditemukan untuk "${inputValue}"`;
+            return newSpk.source_type === "cutting"
+              ? "Tidak ada distribusi cutting tersedia"
+              : "Tidak ada SPK Jasa tersedia";
+          }}
+          styles={{
+            control: (base) => ({
+              ...base,
+              minHeight: "40px",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              fontSize: "14px",
+              "&:hover": {
+                borderColor: "#667eea",
+              },
+            }),
+            menu: (base) => ({
+              ...base,
+              zIndex: 9999,
+            }),
+            placeholder: (base) => ({
+              ...base,
+              color: "#999",
+            }),
+          }}
+        />
+      </div>
+    )}
+
+    {/* ================= PREVIEW ================= */}
+    {previewData && (
+      <div className="spkcmt-preview-card">
+        <div className="spkcmt-preview-header">
+          <h3>📋 Preview SPK yang Dipilih</h3>
+        </div>
+
+        <div className="spkcmt-preview-content">
+          {/* Foto Produk (Cutting) */}
+          {previewData.gambar_produk && (
+            <div style={{ marginBottom: "16px", textAlign: "center" }}>
+              <img
+                src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
+                alt={previewData.nama_produk || "Gambar Produk"}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+          )}
+
+          <div className="spkcmt-preview-item">
+            <strong>Kode Seri:</strong>
+            <span>{previewData.kode_seri || "-"}</span>
+          </div>
+
+          {previewData.nomor_seri && (
+            <div className="spkcmt-preview-item">
+              <strong>Nomor Seri:</strong>
+              <span>{previewData.nomor_seri}</span>
+            </div>
+          )}
+
+          <div className="spkcmt-preview-item">
+            <strong>Nama Produk:</strong>
+            <span>{previewData.nama_produk || "-"}</span>
+          </div>
+
+          {previewData.kategori_produk && (
+            <div className="spkcmt-preview-item">
+              <strong>Kategori Produk:</strong>
+              <span>{previewData.kategori_produk}</span>
+            </div>
+          )}
+
+          <div className="spkcmt-preview-item">
+            <strong>Jumlah Produk:</strong>
+            <span className="spkcmt-preview-highlight">
+              {(previewData.jumlah_produk || 0).toLocaleString("id-ID")} pcs
+            </span>
+          </div>
+
+          {/* Warna */}
+          {Array.isArray(previewData.warna) &&
+            previewData.warna.length > 0 && (
+              <div className="spkcmt-preview-item">
+                <strong>Warna & Jumlah:</strong>
+                <div className="spkcmt-preview-warna">
+                  {previewData.warna.map((w, idx) => (
+                    <div key={idx} className="spkcmt-preview-warna-item">
+                      <span className="spkcmt-warna-badge">
+                        {w.nama_warna || w.warna}
+                      </span>
+                      <span className="spkcmt-warna-qty">
+                        {(w.qty || w.jumlah || 0).toLocaleString("id-ID")} pcs
+                      </span>
+                    </div>
+                  ))}
                 </div>
+              </div>
+            )}
 
-                {/* ================= SOURCE ID ================= */}
-                {newSpk.source_type && (
-                  <div className="spkcmt-form-group">
-                    <label className="spkcmt-form-label">{newSpk.source_type === "cutting" ? "Distribusi Cutting" : "SPK Jasa"}</label>
-                    <Select
-                      options={newSpk.source_type === "cutting" ? distribusiOptions : spkJasaOptions}
-                      value={newSpk.source_type === "cutting" ? distribusiOptions.find((opt) => opt.value === newSpk.source_id) || null : spkJasaOptions.find((opt) => opt.value === newSpk.source_id) || null}
-                      onChange={(selected) =>
-                        setNewSpk({
-                          ...newSpk,
-                          source_id: selected ? selected.value : "",
-                        })
-                      }
-                      placeholder="Pilih atau cari..."
-                      isSearchable={true}
-                      isClearable={true}
-                      isLoading={newSpk.source_type === "cutting" ? distribusiList.length === 0 : spkJasaList.length === 0}
-                      noOptionsMessage={({ inputValue }) => (inputValue ? `Tidak ditemukan untuk "${inputValue}"` : newSpk.source_type === "cutting" ? "Tidak ada data distribusi cutting" : "Tidak ada data SPK Jasa")}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          minHeight: "40px",
-                          border: "1px solid #ddd",
-                          borderRadius: "8px",
-                          fontSize: "14px",
-                          "&:hover": {
-                            borderColor: "#667eea",
-                          },
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                        }),
-                        placeholder: (base) => ({
-                          ...base,
-                          color: "#999",
-                        }),
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* ================= PREVIEW ================= */}
-                {previewData && (
-                  <div className="spkcmt-preview-card">
-                    <div className="spkcmt-preview-header">
-                      <h3>📋 Preview SPK yang Dipilih</h3>
-                    </div>
-                    <div className="spkcmt-preview-content">
-                      {/* Foto Produk */}
-                      {previewData.gambar_produk && (
-                        <div style={{ marginBottom: "16px", textAlign: "center" }}>
-                          <img
-                            src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
-                            alt={previewData.nama_produk || "Gambar Produk"}
-                            style={{
-                              maxWidth: "100%",
-                              maxHeight: "300px",
-                              borderRadius: "8px",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                              objectFit: "contain",
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="spkcmt-preview-item">
-                        <strong>Kode Seri:</strong>
-                        <span>{previewData.kode_seri || "-"}</span>
-                      </div>
-                      {previewData.nomor_seri && (
-                        <div className="spkcmt-preview-item">
-                          <strong>Nomor Seri:</strong>
-                          <span>{previewData.nomor_seri}</span>
-                        </div>
-                      )}
-                      <div className="spkcmt-preview-item">
-                        <strong>Nama Produk:</strong>
-                        <span>{previewData.nama_produk || "-"}</span>
-                      </div>
-                      {previewData.kategori_produk && (
-                        <div className="spkcmt-preview-item">
-                          <strong>Kategori Produk:</strong>
-                          <span>{previewData.kategori_produk}</span>
-                        </div>
-                      )}
-                      <div className="spkcmt-preview-item">
-                        <strong>Jumlah Produk:</strong>
-                        <span className="spkcmt-preview-highlight">{(previewData.jumlah_produk || 0).toLocaleString("id-ID")} pcs</span>
-                      </div>
-                      {previewData.warna && previewData.warna.length > 0 && (
-                        <div className="spkcmt-preview-item">
-                          <strong>Warna & Jumlah:</strong>
-                          <div className="spkcmt-preview-warna">
-                            {previewData.warna.map((w, idx) => (
-                              <div key={idx} className="spkcmt-preview-warna-item">
-                                <span className="spkcmt-warna-badge">{w.nama_warna || w.warna}</span>
-                                <span className="spkcmt-warna-qty">{(w.qty || w.jumlah || 0).toLocaleString("id-ID")} pcs</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {previewData.tukang_jasa && (
-                        <div className="spkcmt-preview-item">
-                          <strong>Tukang Jasa:</strong>
-                          <span>{previewData.tukang_jasa.nama || "-"}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+          {/* Tukang Jasa */}
+          {previewData.tukang_jasa && (
+            <div className="spkcmt-preview-item">
+              <strong>Tukang Jasa:</strong>
+              <span>{previewData.tukang_jasa.nama}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
 
                 {/* ================= PENJAHIT ================= */}
                 <div className="spkcmt-form-group">
@@ -2051,22 +2090,15 @@ const submitPendingStatus = async () => {
               
 
                 {/* ================= HARGA BARANG ================= */}
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">Jenis Harga Produk</label>
-                  <select
-                    className="spkcmt-form-select"
-                    value={newSpk.jenis_harga_barang}
-                    onChange={(e) =>
-                      setNewSpk({
-                        ...newSpk,
-                        jenis_harga_barang: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="per_pcs">Per Pcs</option>
-                    <option value="per_lusin">Per Lusin</option>
-                  </select>
-                </div>
+              <div className="spkcmt-form-group">
+                <label className="spkcmt-form-label">Jenis Harga Produk</label>
+                <input
+                  type="text"
+                  className="spkcmt-form-input"
+                  value="Per Pcs"
+                  disabled
+                />
+              </div>
 
                 <div className="spkcmt-form-group">
                   <label className="spkcmt-form-label">Harga Produk</label>

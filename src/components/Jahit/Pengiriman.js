@@ -600,7 +600,19 @@ const Pengiriman = () => {
                       <label className="pengiriman-form-label">
                         {item.nama_warna} <small style={{ color: "#718096" }}>(SPK: {item.qty_spk})</small>
                       </label>
-                      <input type="number" className="pengiriman-form-input" value={item.jumlah_dikirim} onChange={(e) => handleQtyChange(index, parseInt(e.target.value) || 0)} min="0" required />
+                     <input
+                        type="number"
+                        className="pengiriman-form-input"
+                        value={item.jumlah_dikirim === 0 ? "" : item.jumlah_dikirim}
+                        onChange={(e) =>
+                          handleQtyChange(
+                            index,
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                        min="0"
+                        required
+                      />
                     </div>
                   ))
                 ) : (
