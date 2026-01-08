@@ -15,13 +15,21 @@ const Pendapatan = () => {
   const [kurangiCashbon, setKurangiCashbon] = useState(false);
   const [aksesorisDipilih, setAksesorisDipilih] = useState([]);
   const [detailAksesoris, setDetailAksesoris] = useState([]);
+  const [claimBelumDibayar, setClaimBelumDibayar] = useState([]);
+  const [claimDipilih, setClaimDipilih] = useState([]);
   const [buktiTransfer, setBuktiTransfer] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [downloadingPreview, setDownloadingPreview] = useState(false);
+  const [invoiceId, setInvoiceId] = useState(null);
+  const [isEditingInvoice, setIsEditingInvoice] = useState(false);
+  const [formMode, setFormMode] = useState("create"); // "create" atau "pay"
+  const [invoiceData, setInvoiceData] = useState(null); // Simpan data invoice untuk perhitungan realtime
 
   const [simulasi, setSimulasi] = useState({
     total_pendapatan: 0,
+    total_refund_claim: 0,
+    total_claim: 0,
     potongan_hutang: 0,
     potongan_cashbon: 0,
     potongan_aksesoris: 0,
@@ -53,31 +61,74 @@ const Pendapatan = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
 
-  const fetchSimulasi = async (id_penjahit, kurangiHutang, kurangiCashbon, aksesorisIds = []) => {
+  const fetchSimulasi = async (id_penjahit, kurangiHutang, kurangiCashbon, aksesorisIds = [], claimIds = [], preserveTotalPendapatan = null) => {
     if (!startDate || !endDate) return;
+
+    // Pastikan id_penjahit adalah number atau string yang valid
+    const penjahitId = typeof id_penjahit === "object" ? id_penjahit?.id_penjahit : id_penjahit;
+
+    console.log("FetchSimulasi called with:", {
+      id_penjahit,
+      penjahitId,
+      kurangiHutang,
+      kurangiCashbon,
+      id_penjahit_type: typeof id_penjahit,
+      penjahitId_type: typeof penjahitId,
+    });
 
     try {
       const response = await API.post("/simulasi-pendapatan", {
-        id_penjahit,
+        id_penjahit: penjahitId,
         tanggal_awal: startDate,
         tanggal_akhir: endDate,
         kurangi_hutang: kurangiHutang,
         kurangi_cashbon: kurangiCashbon,
         detail_aksesoris_ids: aksesorisIds, // kirim array id
+        claim_ids: claimIds, // kirim array id_pengiriman untuk claim
       });
 
       if (response.data) {
-        setSimulasi({
-          total_pendapatan: response.data.total_pendapatan || 0,
+        // Jika preserveTotalPendapatan diberikan (saat edit invoice), gunakan nilai dari invoice
+        const totalPendapatan = preserveTotalPendapatan !== null ? preserveTotalPendapatan : response.data.total_pendapatan || 0;
+        const totalRefund = preserveTotalPendapatan !== null ? invoiceData?.total_refund_claim || 0 : response.data.total_refund_claim || 0;
+
+        console.log("FetchSimulasi response:", {
+          preserveTotalPendapatan,
+          totalPendapatan,
+          totalRefund,
+          potongan_hutang: response.data.potongan_hutang,
+          potongan_cashbon: response.data.potongan_cashbon,
+          kurangiHutang,
+          kurangiCashbon,
+          fullResponse: response.data,
+        });
+
+        // Debug: Log jika cashbon dicentang tapi nilainya 0
+        if (kurangiCashbon && (!response.data.potongan_cashbon || response.data.potongan_cashbon === 0)) {
+          console.warn("⚠️ WARNING: kurangiCashbon = true tapi potongan_cashbon dari API = 0. Kemungkinan tidak ada cashbon yang belum lunas untuk penjahit ini.");
+        }
+
+        // Hitung total transfer dengan menggunakan total_pendapatan yang benar
+        const totalTransfer = totalPendapatan + totalRefund - (response.data.total_claim || 0) - (response.data.potongan_hutang || 0) - (response.data.potongan_cashbon || 0) - (response.data.potongan_aksesoris || 0);
+
+        const simulasiUpdate = {
+          total_pendapatan: totalPendapatan,
+          total_refund_claim: totalRefund,
+          total_claim: response.data.total_claim || 0,
           potongan_hutang: response.data.potongan_hutang || 0,
           potongan_cashbon: response.data.potongan_cashbon || 0,
           potongan_aksesoris: response.data.potongan_aksesoris || 0,
-          total_transfer: response.data.total_transfer || 0,
-        });
+          total_transfer: totalTransfer,
+        };
+
+        console.log("Setting simulasi:", simulasiUpdate);
+        setSimulasi(simulasiUpdate);
       } else {
         console.warn("Data simulasi kosong:", response.data);
         setSimulasi({
-          total_pendapatan: 0,
+          total_pendapatan: preserveTotalPendapatan !== null ? preserveTotalPendapatan : 0,
+          total_refund_claim: preserveTotalPendapatan !== null ? invoiceData?.total_refund_claim || 0 : 0,
+          total_claim: 0,
           potongan_hutang: 0,
           potongan_cashbon: 0,
           potongan_aksesoris: 0,
@@ -87,7 +138,9 @@ const Pendapatan = () => {
     } catch (err) {
       console.error("Gagal fetch simulasi pendapatan", err);
       setSimulasi({
-        total_pendapatan: 0,
+        total_pendapatan: preserveTotalPendapatan !== null ? preserveTotalPendapatan : 0,
+        total_refund_claim: preserveTotalPendapatan !== null ? invoiceData?.total_refund_claim || 0 : 0,
+        total_claim: 0,
         potongan_hutang: 0,
         potongan_cashbon: 0,
         potongan_aksesoris: 0,
@@ -96,13 +149,116 @@ const Pendapatan = () => {
     }
   };
 
+  // Fungsi untuk menghitung simulasi secara realtime saat edit invoice
+  const calculateSimulasiFromInvoice = () => {
+    if (!invoiceData) return;
+
+    const totalPendapatan = parseFloat(invoiceData.total_pendapatan) || 0;
+    const totalRefund = parseFloat(invoiceData.total_refund_claim) || 0;
+
+    // Hitung potongan hutang
+    // Gunakan nilai yang sudah tersimpan di invoice (total_hutang) jika checkbox dicentang
+    let potonganHutang = 0;
+    if (kurangiHutang) {
+      // Ambil nilai dari invoice, jika tidak ada atau 0, tetap gunakan 0
+      const hutangValue = parseFloat(invoiceData.total_hutang);
+      potonganHutang = hutangValue && hutangValue > 0 ? hutangValue : 0;
+    }
+
+    // Hitung potongan cashbon
+    // Gunakan nilai yang sudah tersimpan di invoice (total_cashbon) jika checkbox dicentang
+    // TAPI jika nilai di invoice adalah 0, jangan gunakan nilai dari invoice karena mungkin perlu fetch dari API
+    let potonganCashbon = 0;
+    if (kurangiCashbon) {
+      // Ambil nilai dari invoice, jika tidak ada atau 0, tetap gunakan 0
+      // Catatan: Jika nilai 0, seharusnya sudah di-fetch dari API sebelumnya
+      const cashbonValue = parseFloat(invoiceData.total_cashbon);
+      potonganCashbon = cashbonValue && cashbonValue > 0 ? cashbonValue : 0;
+    }
+
+    console.log("Calculate simulasi - kurangiHutang:", kurangiHutang, "total_hutang:", invoiceData.total_hutang, "potonganHutang:", potonganHutang);
+    console.log("Calculate simulasi - kurangiCashbon:", kurangiCashbon, "total_cashbon:", invoiceData.total_cashbon, "potonganCashbon:", potonganCashbon);
+
+    // Hitung potongan aksesoris dari yang dipilih
+    let potonganAksesoris = 0;
+    if (detailAksesoris.length > 0 && aksesorisDipilih.length > 0) {
+      potonganAksesoris = detailAksesoris.filter((item) => aksesorisDipilih.includes(item.id)).reduce((sum, item) => sum + (parseFloat(item.total_harga) || 0), 0);
+    }
+
+    // Hitung potongan claim dari yang dipilih
+    let totalClaim = 0;
+    if (claimBelumDibayar.length > 0 && claimDipilih.length > 0) {
+      totalClaim = claimBelumDibayar.filter((claim) => claimDipilih.includes(claim.id_pengiriman)).reduce((sum, claim) => sum + (parseFloat(claim.claim) || 0), 0);
+    }
+
+    // Hitung total transfer
+    const totalTransfer = totalPendapatan + totalRefund - totalClaim - potonganHutang - potonganCashbon - potonganAksesoris;
+
+    setSimulasi({
+      total_pendapatan: totalPendapatan,
+      total_refund_claim: totalRefund,
+      total_claim: totalClaim,
+      potongan_hutang: potonganHutang,
+      potongan_cashbon: potonganCashbon,
+      potongan_aksesoris: potonganAksesoris,
+      total_transfer: totalTransfer,
+    });
+  };
+
   // Di event handler (misal di onChange checkbox)
+  // Fetch simulasi untuk create invoice baru atau edit invoice jika checkbox dicentang tapi nilai di invoice 0
   useEffect(() => {
-    if (selectedPenjahit && startDate && endDate) {
-      fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon, aksesorisDipilih);
+    if (selectedPenjahit && startDate && endDate && formMode === "create") {
+      if (!invoiceId) {
+        // Create invoice baru - selalu fetch simulasi
+        fetchSimulasi(selectedPenjahit.id_penjahit, kurangiHutang, kurangiCashbon, aksesorisDipilih, claimDipilih);
+      } else if (isEditingInvoice && invoiceData) {
+        // Edit invoice - fetch simulasi jika checkbox dicentang tapi nilai di invoice 0
+        const needRecalculateHutang = kurangiHutang && (!invoiceData.total_hutang || parseFloat(invoiceData.total_hutang) === 0);
+        const needRecalculateCashbon = kurangiCashbon && (!invoiceData.total_cashbon || parseFloat(invoiceData.total_cashbon) === 0);
+
+        console.log("Edit invoice check:", {
+          kurangiHutang,
+          kurangiCashbon,
+          total_hutang: invoiceData.total_hutang,
+          total_cashbon: invoiceData.total_cashbon,
+          needRecalculateHutang,
+          needRecalculateCashbon,
+        });
+
+        // SELALU fetch dari API jika checkbox cashbon dicentang (untuk mendapatkan nilai terbaru)
+        // karena cashbon bisa berubah setelah invoice dibuat
+        // Gunakan id_penjahit dari invoiceData untuk memastikan konsistensi
+        const invoicePenjahitId = invoiceData.id_penjahit || selectedPenjahit?.id_penjahit;
+
+        if (needRecalculateHutang || needRecalculateCashbon || kurangiCashbon) {
+          // Fetch simulasi untuk mendapatkan nilai terbaru, tapi preserve total_pendapatan dari invoice
+          const totalPendapatanFromInvoice = parseFloat(invoiceData.total_pendapatan) || 0;
+          console.log("Fetching simulasi dengan preserveTotalPendapatan:", totalPendapatanFromInvoice, "karena kurangiCashbon:", kurangiCashbon, "id_penjahit:", invoicePenjahitId);
+          fetchSimulasi(invoicePenjahitId, kurangiHutang, kurangiCashbon, aksesorisDipilih, claimDipilih, totalPendapatanFromInvoice);
+        } else {
+          // Gunakan nilai dari invoice, hitung secara lokal
+          calculateSimulasiFromInvoice();
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPenjahit, aksesorisDipilih, kurangiHutang, kurangiCashbon, startDate, endDate]);
+  }, [selectedPenjahit, aksesorisDipilih, claimDipilih, kurangiHutang, kurangiCashbon, startDate, endDate, formMode, invoiceId, isEditingInvoice, invoiceData]);
+
+  // Hitung simulasi secara realtime saat edit invoice (jika tidak perlu fetch dari API)
+  useEffect(() => {
+    if (isEditingInvoice && invoiceData && formMode === "create" && invoiceId) {
+      // Cek apakah perlu fetch dari API atau cukup hitung lokal
+      const needRecalculateHutang = kurangiHutang && (!invoiceData.total_hutang || parseFloat(invoiceData.total_hutang) === 0);
+      const needRecalculateCashbon = kurangiCashbon && (!invoiceData.total_cashbon || parseFloat(invoiceData.total_cashbon) === 0);
+
+      // Jika tidak perlu recalculate, hitung secara lokal
+      if (!needRecalculateHutang && !needRecalculateCashbon) {
+        calculateSimulasiFromInvoice();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kurangiHutang, kurangiCashbon, aksesorisDipilih, claimDipilih, invoiceData, isEditingInvoice, formMode, detailAksesoris, claimBelumDibayar, invoiceId]);
 
   const fetchDetailAksesoris = async (penjahitId) => {
     try {
@@ -110,6 +266,16 @@ const Pendapatan = () => {
       setDetailAksesoris(response.data);
     } catch (error) {
       console.error("Gagal mengambil aksesoris:", error);
+    }
+  };
+
+  const fetchClaimBelumDibayar = async (penjahitId) => {
+    try {
+      const response = await API.get(`/pendapatan/claim-belum-dibayar/${penjahitId}`);
+      setClaimBelumDibayar(response.data.data || []);
+    } catch (error) {
+      console.error("Gagal mengambil claim belum dibayar:", error);
+      setClaimBelumDibayar([]);
     }
   };
 
@@ -145,7 +311,7 @@ const Pendapatan = () => {
     }
   };
 
-  const handleTambahPendapatan = async (e) => {
+  const handleCreateInvoice = async (e) => {
     e.preventDefault();
 
     if (!startDate || !endDate) {
@@ -155,52 +321,77 @@ const Pendapatan = () => {
 
     try {
       setLoading(true);
+      const payload = {
+        id_penjahit: selectedPenjahit.id_penjahit,
+        tanggal_awal: startDate,
+        tanggal_akhir: endDate,
+        kurangi_hutang: kurangiHutang,
+        kurangi_cashbon: kurangiCashbon,
+        detail_aksesoris_ids: aksesorisDipilih,
+        claim_ids: claimDipilih,
+      };
+
+      let response;
+      if (isEditingInvoice && invoiceId) {
+        // Update invoice
+        response = await API.put(`/pendapatan/${invoiceId}/update-invoice`, payload);
+      } else {
+        // Create invoice
+        response = await API.post("/pendapatan/create-invoice", payload);
+      }
+
+      if (response.status === 201 || response.status === 200) {
+        alert(response.data.message || "Invoice berhasil dibuat!");
+        setInvoiceId(response.data.data.id_pendapatan);
+        setFormMode("pay");
+        setIsEditingInvoice(false);
+        fetchPendapatans();
+      }
+    } catch (error) {
+      console.error("Error saat create/update invoice:", error);
+      if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Terjadi kesalahan saat membuat invoice.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBayarInvoiceSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!invoiceId) {
+      alert("Invoice tidak ditemukan");
+      return;
+    }
+
+    try {
+      setLoading(true);
       const formData = new FormData();
-      formData.append("id_penjahit", selectedPenjahit.id_penjahit);
-      formData.append("tanggal_awal", startDate);
-      formData.append("tanggal_akhir", endDate);
-      formData.append("kurangi_hutang", kurangiHutang ? 1 : 0);
-      formData.append("kurangi_cashbon", kurangiCashbon ? 1 : 0);
 
       if (buktiTransfer) {
         formData.append("bukti_transfer", buktiTransfer);
       }
 
-      if (aksesorisDipilih.length > 0) {
-        aksesorisDipilih.forEach((id, index) => {
-          formData.append(`detail_aksesoris_ids[${index}]`, id);
-        });
-      }
-
-      const response = await API.post("/pendapatan", formData, {
+      const response = await API.put(`/pendapatan/${invoiceId}/bayar`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      if (response.status === 201) {
-        alert(response.data.message || "Pendapatan berhasil ditambahkan!");
-        setShowForm(false);
-        setSelectedPenjahit(null);
-        setKurangiHutang(false);
-        setKurangiCashbon(false);
-        setAksesorisDipilih([]);
-        setBuktiTransfer(null);
-        setSimulasi({
-          total_pendapatan: 0,
-          potongan_hutang: 0,
-          potongan_cashbon: 0,
-          potongan_aksesoris: 0,
-          total_transfer: 0,
-        });
+      if (response.status === 200) {
+        alert(response.data.message || "Invoice berhasil dibayarkan!");
+        handleCloseModal();
         fetchPendapatans();
       }
     } catch (error) {
-      console.error("Error saat tambah pendapatan:", error);
+      console.error("Error saat bayar invoice:", error);
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
       } else {
-        alert("Terjadi kesalahan saat menambahkan pendapatan.");
+        alert("Terjadi kesalahan saat membayar invoice.");
       }
     } finally {
       setLoading(false);
@@ -305,7 +496,124 @@ const Pendapatan = () => {
     }
     setSelectedPenjahit(penjahit);
     setShowForm(true);
+    setFormMode("create");
+    setInvoiceId(null);
+    setIsEditingInvoice(false);
+    setKurangiHutang(false);
+    setKurangiCashbon(false);
+    setAksesorisDipilih([]);
+    setClaimDipilih([]);
+    setBuktiTransfer(null);
     fetchDetailAksesoris(penjahit.id_penjahit);
+    fetchClaimBelumDibayar(penjahit.id_penjahit);
+  };
+
+  const handleEditInvoice = async (pendapatan) => {
+    if (!startDate || !endDate) {
+      alert("Pilih periode tanggal terlebih dahulu");
+      return;
+    }
+    try {
+      const response = await API.get(`/pendapatan/${pendapatan.pendapatan_id}/invoice`);
+      const invoice = response.data.data;
+
+      console.log("Invoice data untuk edit:", invoice);
+      console.log("Total Hutang dari invoice:", invoice.total_hutang);
+      console.log("Total Cashbon dari invoice:", invoice.total_cashbon);
+      console.log("Kurangi Hutang:", invoice.kurangi_hutang);
+      console.log("Kurangi Cashbon:", invoice.kurangi_cashbon);
+
+      // Simpan data invoice untuk perhitungan realtime
+      setInvoiceData(invoice);
+
+      // Set simulasi awal dari invoice
+      const simulasiData = {
+        total_pendapatan: parseFloat(invoice.total_pendapatan) || 0,
+        total_refund_claim: parseFloat(invoice.total_refund_claim) || 0,
+        total_claim: parseFloat(invoice.total_claim) || 0,
+        potongan_hutang: parseFloat(invoice.total_hutang) || 0,
+        potongan_cashbon: parseFloat(invoice.total_cashbon) || 0,
+        potongan_aksesoris: parseFloat(invoice.potongan_aksesoris) || 0,
+        total_transfer: parseFloat(invoice.total_transfer) || 0,
+      };
+
+      // Set semua state sekaligus
+      // Pastikan menggunakan id_penjahit dari invoice, bukan dari pendapatan object
+      const penjahitObject = {
+        id_penjahit: invoice.id_penjahit,
+        nama_penjahit: invoice.penjahit?.nama_penjahit || pendapatan.nama_penjahit || "Unknown",
+      };
+
+      console.log("Setting selectedPenjahit untuk edit:", {
+        "pendapatan.id_penjahit": pendapatan.id_penjahit,
+        "invoice.id_penjahit": invoice.id_penjahit,
+        penjahitObject: penjahitObject,
+      });
+
+      setSelectedPenjahit(penjahitObject);
+      setInvoiceId(invoice.id_pendapatan);
+      setIsEditingInvoice(true);
+      setFormMode("create");
+      setKurangiHutang(invoice.kurangi_hutang || false);
+      setKurangiCashbon(invoice.kurangi_cashbon || false);
+      setAksesorisDipilih(invoice.detail_aksesoris_ids || []);
+      setClaimDipilih(invoice.claim_ids || []);
+      setBuktiTransfer(null);
+      setSimulasi(simulasiData);
+
+      // Buka form setelah semua state di-set
+      setShowForm(true);
+
+      fetchDetailAksesoris(invoice.id_penjahit);
+      fetchClaimBelumDibayar(invoice.id_penjahit);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      alert("Gagal memuat data invoice");
+    }
+  };
+
+  const handleBayarInvoice = async (pendapatan) => {
+    if (!startDate || !endDate) {
+      alert("Pilih periode tanggal terlebih dahulu");
+      return;
+    }
+    try {
+      const response = await API.get(`/pendapatan/${pendapatan.pendapatan_id}/invoice`);
+      const invoice = response.data.data;
+
+      console.log("Invoice data:", invoice);
+      console.log("Total Pendapatan:", invoice.total_pendapatan);
+
+      // Set simulasi dari invoice TERLEBIH DAHULU sebelum membuka form
+      const simulasiData = {
+        total_pendapatan: parseFloat(invoice.total_pendapatan) || 0,
+        total_claim: parseFloat(invoice.total_claim) || 0,
+        potongan_hutang: parseFloat(invoice.total_hutang) || 0,
+        potongan_cashbon: parseFloat(invoice.total_cashbon) || 0,
+        potongan_aksesoris: parseFloat(invoice.potongan_aksesoris) || 0,
+        total_transfer: parseFloat(invoice.total_transfer) || 0,
+      };
+
+      console.log("Simulasi data:", simulasiData);
+
+      // Set semua state sekaligus
+      setSelectedPenjahit(pendapatan);
+      setInvoiceId(invoice.id_pendapatan);
+      setIsEditingInvoice(false);
+      setFormMode("pay");
+      setKurangiHutang(invoice.kurangi_hutang || false);
+      setKurangiCashbon(invoice.kurangi_cashbon || false);
+      setAksesorisDipilih(invoice.detail_aksesoris_ids || []);
+      setClaimDipilih(invoice.claim_ids || []);
+      setBuktiTransfer(null);
+      setSimulasi(simulasiData);
+
+      // Buka form setelah semua state di-set
+      setShowForm(true);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      alert("Gagal memuat data invoice");
+    }
   };
 
   const handleCloseModal = () => {
@@ -314,9 +622,17 @@ const Pendapatan = () => {
     setKurangiHutang(false);
     setKurangiCashbon(false);
     setAksesorisDipilih([]);
+    setClaimDipilih([]);
+    setClaimBelumDibayar([]);
     setBuktiTransfer(null);
+    setInvoiceId(null);
+    setIsEditingInvoice(false);
+    setFormMode("create");
+    setInvoiceData(null);
     setSimulasi({
       total_pendapatan: 0,
+      total_refund_claim: 0,
+      total_claim: 0,
       potongan_hutang: 0,
       potongan_cashbon: 0,
       potongan_aksesoris: 0,
@@ -334,9 +650,12 @@ const Pendapatan = () => {
     setKurangiHutang(false);
     setKurangiCashbon(false);
     setAksesorisDipilih([]);
+    setClaimDipilih([]);
     setBuktiTransfer(null);
     setSimulasi({
       total_pendapatan: 0,
+      total_refund_claim: 0,
+      total_claim: 0,
       potongan_hutang: 0,
       potongan_cashbon: 0,
       potongan_aksesoris: 0,
@@ -419,9 +738,17 @@ const Pendapatan = () => {
                     </td>
                     <td>
                       {pendapatan.total_pendapatan > 0 ? (
-                        <button onClick={() => handleOpenForm(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
-                          Bayar
-                        </button>
+                        pendapatan.status_pembayaran === "belum dibayar" && pendapatan.pendapatan_id ? (
+                          <button onClick={() => handleBayarInvoice(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
+                            Bayar
+                          </button>
+                        ) : pendapatan.status_pembayaran === "sudah dibayar" ? (
+                          <span className="pendapatan-badge pendapatan-badge-success">Sudah Dibayar</span>
+                        ) : (
+                          <button onClick={() => handleOpenForm(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
+                            Buat Invoice
+                          </button>
+                        )
                       ) : (
                         <span className="pendapatan-badge pendapatan-badge-disabled">Tidak ada pendapatan</span>
                       )}
@@ -430,12 +757,21 @@ const Pendapatan = () => {
                       <div className="pendapatan-actions">
                         {pendapatan.pendapatan_id ? (
                           <>
-                            <button className="pendapatan-btn-icon" onClick={() => handleDetailClick(pendapatan)} title="Detail">
-                              <FaInfoCircle />
-                            </button>
-                            <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
-                              <FaDownload />
-                            </button>
+                            {pendapatan.status_pembayaran === "belum dibayar" && (
+                              <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
+                                <FaDownload />
+                              </button>
+                            )}
+                            {pendapatan.status_pembayaran === "sudah dibayar" && (
+                              <>
+                                <button className="pendapatan-btn-icon" onClick={() => handleDetailClick(pendapatan)} title="Detail">
+                                  <FaInfoCircle />
+                                </button>
+                                <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
+                                  <FaDownload />
+                                </button>
+                              </>
+                            )}
                           </>
                         ) : (
                           <>
@@ -545,107 +881,196 @@ const Pendapatan = () => {
         </div>
       )}
 
-      {/* Modal Form Pembayaran */}
+      {/* Modal Form Invoice */}
       {showForm && (
         <div className="pendapatan-modal-overlay" onClick={handleCloseModal}>
           <div className="pendapatan-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
             <div className="pendapatan-modal-header">
-              <h2>Tambah Data Pendapatan</h2>
+              <h2>{formMode === "pay" ? "Bayar Invoice" : isEditingInvoice ? "Edit Invoice" : "Buat Invoice"}</h2>
               <button className="pendapatan-modal-close" onClick={handleCloseModal}>
                 <FaTimes />
               </button>
             </div>
             <div className="pendapatan-modal-body">
-              <form onSubmit={handleTambahPendapatan} className="pendapatan-form">
-                <div className="pendapatan-form-group">
-                  <label>ID Penjahit</label>
-                  <input type="text" value={selectedPenjahit?.id_penjahit || ""} readOnly />
-                </div>
-
-                <div className="pendapatan-form-group">
-                  <label>Nama Penjahit</label>
-                  <input type="text" value={selectedPenjahit?.nama_penjahit || ""} readOnly />
-                </div>
-
-                <div className="pendapatan-form-group">
-                  <label>Total Pendapatan</label>
-                  <input type="text" value={formatRupiah(simulasi.total_pendapatan || 0)} readOnly />
-                </div>
-
-                <div className="pendapatan-form-group">
-                  <label>Potongan Hutang</label>
-                  <input type="text" value={formatRupiah(simulasi.potongan_hutang || 0)} readOnly />
-                </div>
-
-                <div className="pendapatan-form-group">
-                  <label>Potongan Cashbon</label>
-                  <input type="text" value={formatRupiah(simulasi.potongan_cashbon || 0)} readOnly />
-                </div>
-
-                <div className="pendapatan-form-group">
-                  <label>Potongan Aksesoris</label>
-                  <input type="text" value={formatRupiah(simulasi.potongan_aksesoris || 0)} readOnly />
-                </div>
-
-                <div className="pendapatan-checkbox-group">
-                  <label>
-                    <input type="checkbox" checked={kurangiHutang} onChange={(e) => setKurangiHutang(e.target.checked)} />
-                    Potong Hutang
-                  </label>
-                </div>
-
-                <div className="pendapatan-checkbox-group">
-                  <label>
-                    <input type="checkbox" checked={kurangiCashbon} onChange={(e) => setKurangiCashbon(e.target.checked)} />
-                    Potong Cashbon
-                  </label>
-                </div>
-
-                {detailAksesoris.length > 0 && (
-                  <div className="pendapatan-checkbox-group">
-                    <label style={{ marginBottom: "8px", fontWeight: "600" }}>Potong Aksesoris:</label>
-                    {detailAksesoris.map((item) => (
-                      <div key={item.id} className="pendapatan-checkbox-item">
-                        <label>
-                          <input
-                            type="checkbox"
-                            value={item.id}
-                            checked={aksesorisDipilih.includes(item.id)}
-                            onChange={(e) => {
-                              const id = parseInt(e.target.value);
-                              if (e.target.checked) {
-                                setAksesorisDipilih([...aksesorisDipilih, id]);
-                              } else {
-                                setAksesorisDipilih(aksesorisDipilih.filter((itemId) => itemId !== id));
-                              }
-                            }}
-                          />
-                          {item.aksesoris.nama_aksesoris} - {formatRupiah(parseInt(item.total_harga))}
-                        </label>
-                      </div>
-                    ))}
+              {formMode === "create" ? (
+                <form onSubmit={handleCreateInvoice} className="pendapatan-form">
+                  <div className="pendapatan-form-group">
+                    <label>ID Penjahit</label>
+                    <input type="text" value={selectedPenjahit?.id_penjahit || ""} readOnly />
                   </div>
-                )}
 
-                <div className="pendapatan-form-group pendapatan-total-transfer">
-                  <label>Total Transfer</label>
-                  <input type="text" value={formatRupiah(simulasi.total_transfer || 0)} readOnly />
-                </div>
+                  <div className="pendapatan-form-group">
+                    <label>Nama Penjahit</label>
+                    <input type="text" value={selectedPenjahit?.nama_penjahit || ""} readOnly />
+                  </div>
 
-                <div className="pendapatan-form-group">
-                  <label>Upload Bukti Transfer</label>
-                  <input type="file" accept="image/*,application/pdf" onChange={(e) => setBuktiTransfer(e.target.files[0])} />
-                </div>
+                  <div className="pendapatan-form-group">
+                    <label>Total Pendapatan</label>
+                    <input type="text" value={formatRupiah(simulasi.total_pendapatan || 0)} readOnly />
+                  </div>
 
-                <div className="pendapatan-form-actions">
-                  <button type="button" className="pendapatan-btn pendapatan-btn-cancel" onClick={handleCloseModal}>
-                    Batal
-                  </button>
-                  <button type="submit" className="pendapatan-btn pendapatan-btn-submit" disabled={loading}>
-                    {loading ? "Menyimpan..." : "Simpan"}
-                  </button>
-                </div>
-              </form>
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Hutang</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_hutang || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Cashbon</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_cashbon || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Aksesoris</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_aksesoris || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Claim</label>
+                    <input type="text" value={formatRupiah(simulasi.total_claim || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-checkbox-group">
+                    <label>
+                      <input type="checkbox" checked={kurangiHutang} onChange={(e) => setKurangiHutang(e.target.checked)} />
+                      Potong Hutang
+                    </label>
+                  </div>
+
+                  <div className="pendapatan-checkbox-group">
+                    <label>
+                      <input type="checkbox" checked={kurangiCashbon} onChange={(e) => setKurangiCashbon(e.target.checked)} />
+                      Potong Cashbon
+                    </label>
+                  </div>
+
+                  {detailAksesoris.length > 0 && (
+                    <div className="pendapatan-checkbox-group">
+                      <label style={{ marginBottom: "8px", fontWeight: "600" }}>Potong Aksesoris:</label>
+                      {detailAksesoris.map((item) => (
+                        <div key={item.id} className="pendapatan-checkbox-item">
+                          <label>
+                            <input
+                              type="checkbox"
+                              value={item.id}
+                              checked={aksesorisDipilih.includes(item.id)}
+                              onChange={(e) => {
+                                const id = parseInt(e.target.value);
+                                if (e.target.checked) {
+                                  setAksesorisDipilih([...aksesorisDipilih, id]);
+                                } else {
+                                  setAksesorisDipilih(aksesorisDipilih.filter((itemId) => itemId !== id));
+                                }
+                              }}
+                            />
+                            {item.aksesoris.nama_aksesoris} - {formatRupiah(parseInt(item.total_harga))}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pendapatan-checkbox-group">
+                    <label style={{ marginBottom: "8px", fontWeight: "600" }}>Potong Claim:</label>
+                    {claimBelumDibayar.length > 0 ? (
+                      claimBelumDibayar.map((claim) => (
+                        <div key={claim.id_pengiriman} className="pendapatan-checkbox-item">
+                          <label>
+                            <input
+                              type="checkbox"
+                              value={claim.id_pengiriman}
+                              checked={claimDipilih.includes(claim.id_pengiriman)}
+                              onChange={(e) => {
+                                const id = parseInt(e.target.value);
+                                if (e.target.checked) {
+                                  setClaimDipilih([...claimDipilih, id]);
+                                } else {
+                                  setClaimDipilih(claimDipilih.filter((itemId) => itemId !== id));
+                                }
+                              }}
+                            />
+                            ID Pengiriman: {claim.id_pengiriman} - Tanggal: {new Date(claim.tanggal_pengiriman).toLocaleDateString("id-ID")} - Claim: {formatRupiah(parseInt(claim.claim))}
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ padding: "8px", color: "#94a3b8", fontStyle: "italic" }}>Tidak ada claim yang belum dibayar</div>
+                    )}
+                  </div>
+
+                  <div className="pendapatan-form-group pendapatan-total-transfer">
+                    <label>Total Transfer</label>
+                    <input type="text" value={formatRupiah(simulasi.total_transfer || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-actions">
+                    <button type="button" className="pendapatan-btn pendapatan-btn-cancel" onClick={handleCloseModal}>
+                      Batal
+                    </button>
+                    <button type="submit" className="pendapatan-btn pendapatan-btn-submit" disabled={loading}>
+                      {loading ? "Menyimpan..." : isEditingInvoice ? "Update Invoice" : "Buat Invoice"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleBayarInvoiceSubmit} className="pendapatan-form">
+                  <div className="pendapatan-form-group">
+                    <label>ID Penjahit</label>
+                    <input type="text" value={selectedPenjahit?.id_penjahit || ""} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Nama Penjahit</label>
+                    <input type="text" value={selectedPenjahit?.nama_penjahit || ""} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Total Pendapatan</label>
+                    <input type="text" value={formatRupiah(simulasi.total_pendapatan || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Hutang</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_hutang || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Cashbon</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_cashbon || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Aksesoris</label>
+                    <input type="text" value={formatRupiah(simulasi.potongan_aksesoris || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Potongan Claim</label>
+                    <input type="text" value={formatRupiah(simulasi.total_claim || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group pendapatan-total-transfer">
+                    <label>Total Transfer</label>
+                    <input type="text" value={formatRupiah(simulasi.total_transfer || 0)} readOnly />
+                  </div>
+
+                  <div className="pendapatan-form-group">
+                    <label>Upload Bukti Transfer</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e) => setBuktiTransfer(e.target.files[0])} />
+                  </div>
+
+                  <div className="pendapatan-form-actions">
+                    <button type="button" className="pendapatan-btn pendapatan-btn-cancel" onClick={() => handleEditInvoice(selectedPenjahit)}>
+                      Edit Invoice
+                    </button>
+                    <button type="button" className="pendapatan-btn pendapatan-btn-cancel" onClick={handleCloseModal}>
+                      Batal
+                    </button>
+                    <button type="submit" className="pendapatan-btn pendapatan-btn-submit" disabled={loading}>
+                      {loading ? "Memproses..." : "Bayar Invoice"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

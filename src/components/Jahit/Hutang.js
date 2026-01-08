@@ -34,7 +34,6 @@ const Hutang = () => {
     persentase_potongan: null,
     bukti_transfer: null,
   });
-  const [selectedHutang, setSelectedHutang] = useState(null);
 
   useEffect(() => {
     const fetchHutangs = async () => {
@@ -121,56 +120,28 @@ const Hutang = () => {
     }
   };
 
-  const handlePaymentSubmit = async (e) => {
-    e.preventDefault(); // Mencegah refresh halaman
-
-    // Membuat FormData untuk mengirimkan data bersama file
-    const formData = new FormData();
-    // Parse angka dari format dengan titik sebelum submit
-    formData.append("perubahan_hutang", parseNumberFromFormat(newHutang.jumlah_hutang));
-
-    // Jika ada bukti transfer, tambahkan ke FormData
-    if (newHutang.bukti_transfer) {
-      formData.append("bukti_transfer", newHutang.bukti_transfer);
-    }
-
-    try {
-      // Gunakan id_penjahit sesuai perubahan backend
-      const response = await API.post(`/hutang/tambah/${selectedHutang.id_penjahit}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Pastikan menggunakan multipart untuk upload file
-        },
-      });
-
-      alert(response.data.message); // Tampilkan pesan sukses
-
-      // Refresh data setelah submit
-      const fetchResponse = await API.get(`/hutang`);
-      setHutangs(fetchResponse.data.data || []);
-      setSelectedHutang(null); // Tutup form modal
-
-      // Reset form input
-      setNewHutang({
-        id_penjahit: "",
-        jumlah_hutang: "",
-        jenis_hutang: "",
-        potongan_per_minggu: "",
-        bukti_transfer: null, // Reset bukti transfer
-      });
-    } catch (error) {
-      console.error("Error:", error.response?.data?.message || error.message);
-
-      // Tampilkan pesan error dari backend jika ada
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data hutang.");
-    }
-  };
-
-  // Handle klik bayar
+  // Handle klik tambah hutang di aksi
   const handleTambahClick = (hutang) => {
-    setSelectedHutang(hutang); // Set hutang yang dipilih untuk pembayaran
+    // Set form dengan penjahit yang dipilih
+    setNewHutang({
+      id_penjahit: hutang.id_penjahit,
+      jumlah_hutang: "",
+      jenis_hutang: "overtime",
+      potongan_per_minggu: "",
+      is_potongan_persen: false,
+      persentase_potongan: null,
+      bukti_transfer: null,
+    });
+    setShowForm(true); // Buka form lengkap
   };
 
   const fetchHistory = async (id, jenis_perubahan) => {
+    // Jika tidak ada id (penjahit belum punya hutang), set history kosong
+    if (!id) {
+      setLogHistory([]);
+      return;
+    }
+
     try {
       console.log("Fetching history for hutang ID:", id, "with filter:", jenis_perubahan);
 
@@ -185,20 +156,23 @@ const Hutang = () => {
 
       if (error.response?.status === 404) {
         setLogHistory([]); // Jangan null, tetap kosongkan array
+      } else {
+        setLogHistory([]); // Set kosong jika ada error lain
       }
     }
   };
 
   const handleDetailClick = (hutang) => {
     setSelectedDetailHutang(hutang); // Simpan data hutang yang dipilih
-    // Gunakan id atau id_penjahit sesuai struktur baru
-    const hutangId = hutang.id || hutang.id_penjahit;
+    // Gunakan id (hutang_id) jika ada, jika tidak ada berarti penjahit belum punya hutang
+    const hutangId = hutang.id || null;
     fetchHistory(hutangId, selectedJenisPerubahan); // Ambil log history sesuai filter
   };
 
   useEffect(() => {
     if (selectedDetailHutang) {
-      const hutangId = selectedDetailHutang.id || selectedDetailHutang.id_penjahit;
+      // Gunakan id (hutang_id) jika ada
+      const hutangId = selectedDetailHutang.id || null;
       fetchHistory(hutangId, selectedJenisPerubahan);
     }
   }, [selectedDetailHutang, selectedJenisPerubahan]); // ✅ Tambahkan selectedDetailHutang
@@ -239,9 +213,6 @@ const Hutang = () => {
       </div>
       <div className="hutang-table-container">
         <div className="hutang-filter-header">
-          <button className="hutang-btn-primary" onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah Hutang
-          </button>
           <select id="penjahitFilter" className="hutang-select-filter" onChange={(e) => getFilteredPenjahit(e.target.value)}>
             <option value="">Semua Penjahit</option>
             {penjahitList.map((penjahit) => (
@@ -313,11 +284,41 @@ const Hutang = () => {
       </div>
 
       {showForm && (
-        <div className="hutang-modal-overlay" onClick={() => setShowForm(false)}>
+        <div
+          className="hutang-modal-overlay"
+          onClick={() => {
+            setShowForm(false);
+            setNewHutang({
+              id_penjahit: "",
+              jumlah_hutang: "",
+              jenis_hutang: "overtime",
+              potongan_per_minggu: "",
+              is_potongan_persen: false,
+              persentase_potongan: null,
+              bukti_transfer: null,
+            });
+          }}
+        >
           <div className="hutang-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="hutang-modal-header">
-              <h2>Tambah Data Hutang</h2>
-              <button type="button" className="hutang-btn-icon hutang-btn-icon-primary" onClick={() => setShowForm(false)} style={{ background: "transparent", boxShadow: "none" }}>
+              <h2>Tambah Data Hutang {newHutang.id_penjahit ? `- ${penjahitList.find((p) => p.id_penjahit === newHutang.id_penjahit)?.nama_penjahit || ""}` : ""}</h2>
+              <button
+                type="button"
+                className="hutang-btn-icon hutang-btn-icon-primary"
+                onClick={() => {
+                  setShowForm(false);
+                  setNewHutang({
+                    id_penjahit: "",
+                    jumlah_hutang: "",
+                    jenis_hutang: "overtime",
+                    potongan_per_minggu: "",
+                    is_potongan_persen: false,
+                    persentase_potongan: null,
+                    bukti_transfer: null,
+                  });
+                }}
+                style={{ background: "transparent", boxShadow: "none" }}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -326,7 +327,14 @@ const Hutang = () => {
                 {/* Pilih Penjahit */}
                 <div className="hutang-form-group">
                   <label className="hutang-form-label">Penjahit</label>
-                  <select className="hutang-form-select" value={newHutang.id_penjahit} onChange={(e) => setNewHutang({ ...newHutang, id_penjahit: e.target.value })} required>
+                  <select
+                    className="hutang-form-select"
+                    value={newHutang.id_penjahit}
+                    onChange={(e) => setNewHutang({ ...newHutang, id_penjahit: e.target.value })}
+                    required
+                    disabled={!!newHutang.id_penjahit}
+                    style={newHutang.id_penjahit ? { backgroundColor: "#f7f7f7", cursor: "not-allowed" } : {}}
+                  >
                     <option value="" disabled>
                       Pilih Penjahit
                     </option>
@@ -438,7 +446,22 @@ const Hutang = () => {
                   <button type="submit" className="hutang-btn hutang-btn-submit">
                     Simpan
                   </button>
-                  <button type="button" className="hutang-btn hutang-btn-cancel" onClick={() => setShowForm(false)}>
+                  <button
+                    type="button"
+                    className="hutang-btn hutang-btn-cancel"
+                    onClick={() => {
+                      setShowForm(false);
+                      setNewHutang({
+                        id_penjahit: "",
+                        jumlah_hutang: "",
+                        jenis_hutang: "overtime",
+                        potongan_per_minggu: "",
+                        is_potongan_persen: false,
+                        persentase_potongan: null,
+                        bukti_transfer: null,
+                      });
+                    }}
+                  >
                     Batal
                   </button>
                 </div>
@@ -548,51 +571,6 @@ const Hutang = () => {
               <button className="hutang-btn hutang-btn-close" onClick={() => setSelectedDetailHutang(null)}>
                 Tutup
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Form Pembayaran */}
-      {selectedHutang && (
-        <div className="hutang-modal-overlay" onClick={() => setSelectedHutang(null)}>
-          <div className="hutang-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="hutang-modal-header">
-              <h2>Tambah Hutang - {selectedHutang.penjahit?.nama_penjahit || "Penjahit"}</h2>
-              <button type="button" className="hutang-btn-icon hutang-btn-icon-primary" onClick={() => setSelectedHutang(null)} style={{ background: "transparent", boxShadow: "none" }}>
-                <FaTimes />
-              </button>
-            </div>
-            <div className="hutang-modal-body">
-              <form onSubmit={handlePaymentSubmit} className="hutang-form">
-                <div className="hutang-form-group">
-                  <label className="hutang-form-label">Jumlah Tambah Hutang</label>
-                  <input
-                    type="text"
-                    className="hutang-form-input"
-                    value={formatNumberWithDot(newHutang.jumlah_hutang)}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, "");
-                      setNewHutang({ ...newHutang, jumlah_hutang: value !== "" ? value : "" });
-                    }}
-                    placeholder="Masukkan jumlah (contoh: 500.000)"
-                    required
-                  />
-                </div>
-                <div className="hutang-form-group">
-                  <label className="hutang-form-label">Bukti Transfer</label>
-                  <input type="file" className="hutang-form-file-input" onChange={(e) => setNewHutang({ ...newHutang, bukti_transfer: e.target.files[0] })} accept="image/*, .pdf" />
-                </div>
-
-                <div className="hutang-modal-footer">
-                  <button type="submit" className="hutang-btn hutang-btn-submit">
-                    Simpan
-                  </button>
-                  <button type="button" className="hutang-btn hutang-btn-cancel" onClick={() => setSelectedHutang(null)}>
-                    Batal
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
         </div>
