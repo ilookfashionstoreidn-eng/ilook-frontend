@@ -5,23 +5,7 @@ import axios from "axios";
 import Pusher from "pusher-js";
 import { toast } from "react-toastify";
 import API from "../../api";
-import {
-  FaMicrophone,
-  FaArrowUp,
-  FaArrowDown,
-  FaStop,
-  FaImage,
-  FaPlus,
-  FaSave,
-  FaTimes,
-  FaPaperPlane,
-  FaBell,
-  FaHistory,
-  FaEdit,
-  FaClock,
-  FaInfoCircle,
- 
-} from "react-icons/fa";
+import { FaMicrophone, FaArrowUp, FaArrowDown, FaStop, FaImage, FaPlus, FaSave, FaTimes, FaPaperPlane, FaBell, FaHistory, FaEdit, FaClock, FaInfoCircle } from "react-icons/fa";
 import Select from "react-select";
 
 const SpkCmt = () => {
@@ -82,12 +66,15 @@ const SpkCmt = () => {
   const [pendingSpkId, setPendingSpkId] = useState(null);
   const [pendingNote, setPendingNote] = useState("");
   const [pendingUntil, setPendingUntil] = useState("");
-const [distribusiOptions, setDistribusiOptions] = useState([]);
-const [spkJasaOptions, setSpkJasaOptions] = useState([]);
-const [loadingSource, setLoadingSource] = useState(false);
-
-
-
+  const [distribusiOptions, setDistribusiOptions] = useState([]);
+  const [spkJasaOptions, setSpkJasaOptions] = useState([]);
+  const [loadingSource, setLoadingSource] = useState(false);
+  const [statusCount, setStatusCount] = useState({
+    belum_diambil: 0,
+    sudah_diambil: 0,
+    pending: 0,
+    completed: 0,
+  });
 
   const [newSpk, setNewSpk] = useState({
     source_type: "",
@@ -112,83 +99,66 @@ const [loadingSource, setLoadingSource] = useState(false);
     jenis_harga_jasa: "per_barang",
   });
 
-
-useEffect(() => {
-  if (!newSpk.source_type) {
-    setDistribusiOptions([]);
-    setSpkJasaOptions([]);
-    setPreviewData(null);
-    return;
-  }
-
-  const getAvailableSources = async () => {
-    try {
-      setLoadingSource(true);
-
-      const response = await API.get(
-        `/spk-cmt/available-sources?source_type=${newSpk.source_type}`
-      );
-
-      if (newSpk.source_type === "cutting") {
-        setDistribusiOptions(response.data);
-      } else {
-        setSpkJasaOptions(response.data);
-      }
-    } catch (error) {
+  useEffect(() => {
+    if (!newSpk.source_type) {
       setDistribusiOptions([]);
       setSpkJasaOptions([]);
-    } finally {
-      setLoadingSource(false);
-    }
-  };
-
-  getAvailableSources();
-}, [newSpk.source_type]);
-
-
-
-
-
- const fetchPreview = useCallback(async () => {
-  if (!newSpk.source_id || !newSpk.source_type) {
-    setPreviewData(null);
-    return;
-  }
-
-  try {
-    let response;
-
-    if (newSpk.source_type === "cutting") {
-      response = await API.get(
-        `/spk-cutting-distribusi/${newSpk.source_id}`
-      );
-    } else {
-      response = await API.get(
-        `/spk-jasa/${newSpk.source_id}`
-      );
+      setPreviewData(null);
+      return;
     }
 
-    setPreviewData(response.data?.data ?? response.data);
-  } catch (error) {
-    console.error("Error fetching preview:", error);
-    setPreviewData(null);
-  }
-}, [newSpk.source_id, newSpk.source_type]);
+    const getAvailableSources = async () => {
+      try {
+        setLoadingSource(true);
 
-useEffect(() => {
-  fetchPreview();
-}, [fetchPreview]);
+        const response = await API.get(`/spk-cmt/available-sources?source_type=${newSpk.source_type}`);
 
+        if (newSpk.source_type === "cutting") {
+          setDistribusiOptions(response.data);
+        } else {
+          setSpkJasaOptions(response.data);
+        }
+      } catch (error) {
+        setDistribusiOptions([]);
+        setSpkJasaOptions([]);
+      } finally {
+        setLoadingSource(false);
+      }
+    };
 
+    getAvailableSources();
+  }, [newSpk.source_type]);
 
+  const fetchPreview = useCallback(async () => {
+    if (!newSpk.source_id || !newSpk.source_type) {
+      setPreviewData(null);
+      return;
+    }
 
+    try {
+      let response;
 
+      if (newSpk.source_type === "cutting") {
+        response = await API.get(`/spk-cutting-distribusi/${newSpk.source_id}`);
+      } else {
+        response = await API.get(`/spk-jasa/${newSpk.source_id}`);
+      }
+
+      setPreviewData(response.data?.data ?? response.data);
+    } catch (error) {
+      console.error("Error fetching preview:", error);
+      setPreviewData(null);
+    }
+  }, [newSpk.source_id, newSpk.source_type]);
+
+  useEffect(() => {
+    fetchPreview();
+  }, [fetchPreview]);
 
   const produkOptions = produkList.map((produk) => ({
     value: produk.id,
     label: produk.nama_produk,
   }));
-  
 
   const [newDeadline, setNewDeadline] = useState({
     deadline: "",
@@ -323,6 +293,24 @@ useEffect(() => {
 
     fetchSpkCmtData();
   }, [currentPage, selectedStatus, selectedPenjahit, sortBy, sortOrder, selectedProduk, selectedKategori, selectedSisaHari]);
+
+  // Fetch status count
+  useEffect(() => {
+    const fetchStatusCount = async () => {
+      try {
+        const params = {};
+        if (selectedPenjahit) {
+          params.id_penjahit = selectedPenjahit;
+        }
+        const response = await API.get("/spk-cmt/status-count", { params });
+        setStatusCount(response.data);
+      } catch (error) {
+        console.error("Error fetching status count:", error);
+      }
+    };
+
+    fetchStatusCount();
+  }, [selectedPenjahit]);
 
   useEffect(() => {
     const fetchProduks = async () => {
@@ -673,20 +661,19 @@ useEffect(() => {
     }));
   };
 
-const handleLogDeadlineClick = async (idSpk) => {
-  setShowLogDeadline(true);
-  setLoadingLog(true);
+  const handleLogDeadlineClick = async (idSpk) => {
+    setShowLogDeadline(true);
+    setLoadingLog(true);
 
-  try {
-    const res = await API.get(`/spk/${idSpk}/log-deadline`);
-    setLogDeadline(res.data);
-  } catch (error) {
-    console.error("Gagal mengambil log deadline", error);
-  } finally {
-    setLoadingLog(false);
-  }
-};
-
+    try {
+      const res = await API.get(`/spk/${idSpk}/log-deadline`);
+      setLogDeadline(res.data);
+    } catch (error) {
+      console.error("Gagal mengambil log deadline", error);
+    } finally {
+      setLoadingLog(false);
+    }
+  };
 
   //fungsi untuk kirim update dadline ke API
   const updateDeadline = async (spkId) => {
@@ -737,6 +724,14 @@ const handleLogDeadlineClick = async (idSpk) => {
 
       // Update state lokal dengan status baru
       setSpkCmtData((prevSpkCmtData) => prevSpkCmtData.map((spk) => (spk.id_spk === spkId ? { ...spk, status: newStatus } : spk)));
+
+      // Refresh status count
+      const params = {};
+      if (selectedPenjahit) {
+        params.id_penjahit = selectedPenjahit;
+      }
+      const countResponse = await API.get("/spk-cmt/status-count", { params });
+      setStatusCount(countResponse.data);
 
       // Tampilkan notifikasi sukses (opsional)
       console.log("Status berhasil diupdate:", response.data.message);
@@ -806,15 +801,14 @@ const handleLogDeadlineClick = async (idSpk) => {
   }, []);
 
   // Fungsi untuk format rupiah (input formatting dengan titik)
-const formatRupiah = (value) => {
-  if (!value) return "";
+  const formatRupiah = (value) => {
+    if (!value) return "";
 
-  const numeric = value.toString().replace(/\D/g, "");
-  if (!numeric) return "";
+    const numeric = value.toString().replace(/\D/g, "");
+    if (!numeric) return "";
 
-  return Number(numeric).toLocaleString("id-ID");
-};
-
+    return Number(numeric).toLocaleString("id-ID");
+  };
 
   // Fungsi untuk parse dari format rupiah ke angka (untuk disimpan)
   const parseRupiah = (value) => {
@@ -1105,48 +1099,47 @@ const formatRupiah = (value) => {
 
   const handleOrderChange = () => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 
-
-
   const openPendingModal = (spk) => {
-  setSelectedSpk(spk);
-  setPendingDays("");
-  setShowPendingModal(true);
-};
-const closePendingModal = () => {
-  setShowPendingModal(false);
-  setSelectedSpk(null);
-  setPendingDays("");
-};
-const submitPendingStatus = async () => {
-  if (!pendingUntil) {
-    alert("Tanggal pending harus diisi");
-    return;
-  }
+    setSelectedSpk(spk);
+    setPendingDays("");
+    setShowPendingModal(true);
+  };
+  const closePendingModal = () => {
+    setShowPendingModal(false);
+    setSelectedSpk(null);
+    setPendingDays("");
+  };
+  const submitPendingStatus = async () => {
+    if (!pendingUntil) {
+      alert("Tanggal pending harus diisi");
+      return;
+    }
 
-  try {
-    setLoadingPending(true);
+    try {
+      setLoadingPending(true);
 
-    await API.patch(`/spk-cmt/${selectedSpk.id_spk}/status`, {
-      status: "pending",
-      pending_until: pendingUntil,
-    });
+      await API.patch(`/spk-cmt/${selectedSpk.id_spk}/status`, {
+        status: "pending",
+        pending_until: pendingUntil,
+      });
 
-    setSpkCmtData((prev) =>
-      prev.map((spk) =>
-        spk.id_spk === selectedSpk.id_spk
-          ? { ...spk, status: "pending" }
-          : spk
-      )
-    );
+      setSpkCmtData((prev) => prev.map((spk) => (spk.id_spk === selectedSpk.id_spk ? { ...spk, status: "pending" } : spk)));
 
-    closePendingModal();
-  } catch (error) {
-    alert(error.response?.data?.message || "Gagal set pending");
-  } finally {
-    setLoadingPending(false);
-  }
-};
+      // Refresh status count
+      const params = {};
+      if (selectedPenjahit) {
+        params.id_penjahit = selectedPenjahit;
+      }
+      const countResponse = await API.get("/spk-cmt/status-count", { params });
+      setStatusCount(countResponse.data);
 
+      closePendingModal();
+    } catch (error) {
+      alert(error.response?.data?.message || "Gagal set pending");
+    } finally {
+      setLoadingPending(false);
+    }
+  };
 
   return (
     <div className="spkcmt-container">
@@ -1202,6 +1195,89 @@ const submitPendingStatus = async () => {
         )}
       </div>
 
+      {/* Status Count Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+          padding: "0 16px",
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            borderRadius: "12px",
+            padding: "20px",
+            color: "white",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.2s ease",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          onClick={() => setSelectedStatus("belum_diambil")}
+        >
+          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Belum Diambil</div>
+          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.belum_diambil || 0}</div>
+        </div>
+
+        <div
+          style={{
+            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            borderRadius: "12px",
+            padding: "20px",
+            color: "white",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.2s ease",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          onClick={() => setSelectedStatus("sudah_diambil")}
+        >
+          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Sudah Diambil</div>
+          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.sudah_diambil || 0}</div>
+        </div>
+
+        <div
+          style={{
+            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+            borderRadius: "12px",
+            padding: "20px",
+            color: "white",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.2s ease",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          onClick={() => setSelectedStatus("pending")}
+        >
+          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Pending</div>
+          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.pending || 0}</div>
+        </div>
+
+        <div
+          style={{
+            background: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+            borderRadius: "12px",
+            padding: "20px",
+            color: "white",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.2s ease",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          onClick={() => setSelectedStatus("Completed")}
+        >
+          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Completed</div>
+          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.completed || 0}</div>
+        </div>
+      </div>
+
       <div className="spkcmt-filters">
         <button className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
           <FaPlus /> Tambah SPK CMT
@@ -1212,8 +1288,9 @@ const submitPendingStatus = async () => {
         </div>
         <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="spkcmt-filter-select">
           <option value="">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
+          <option value="belum_diambil">Belum Diambil</option>
+          <option value="sudah_diambil">Sudah Diambil</option>
+          <option value="pending">Pending</option>
           <option value="Completed">Completed</option>
         </select>
         <select value={selectedPenjahit} onChange={(e) => setSelectedPenjahit(e.target.value)} className="spkcmt-filter-select">
@@ -1376,7 +1453,6 @@ const submitPendingStatus = async () => {
                       <option value="sudah_diambil">Sudah Diambil</option>
                       <option value="pending">Pending</option>
                       <option value="Completed">Completed</option>
-
                     </select>
                   </td>
 
@@ -1389,17 +1465,13 @@ const submitPendingStatus = async () => {
                       <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline">
                         <FaClock size={12} />
                       </button>
-                   
+
                       <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit">
                         <FaEdit size={12} />
                       </button>
-                     <button
-                      className="spkcmt-btn-icon spkcmt-btn-icon-log"
-                      onClick={() => handleLogDeadlineClick(spk.id_spk)}
-                      title="Log Deadline"
-                    >
-                      <FaHistory size={12} />
-                    </button>
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-log" onClick={() => handleLogDeadlineClick(spk.id_spk)} title="Log Deadline">
+                        <FaHistory size={12} />
+                      </button>
 
                       {/* ✅ Tombol Download dipindahkan ke sini */}
                       <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF">
@@ -1724,20 +1796,20 @@ const submitPendingStatus = async () => {
                   <strong>Jumlah Produk</strong>
                   <span>{(selectedSpk.jumlah_produk || 0).toLocaleString("id-ID")}</span>
                 </div>
-               <div className="spkcmt-detail-item">
-                <strong>Total Harga</strong>
-                <span>{formatRupiah(selectedSpk.total_harga)}</span>
-              </div>
+                <div className="spkcmt-detail-item">
+                  <strong>Total Harga</strong>
+                  <span>{formatRupiah(selectedSpk.total_harga)}</span>
+                </div>
 
-              <div className="spkcmt-detail-item">
-                <strong>Harga Barang</strong>
-                <span>{formatRupiah(selectedSpk.harga_per_barang)}</span>
-              </div>
+                <div className="spkcmt-detail-item">
+                  <strong>Harga Barang</strong>
+                  <span>{formatRupiah(selectedSpk.harga_per_barang)}</span>
+                </div>
 
-              <div className="spkcmt-detail-item">
-                <strong>Harga Jasa</strong>
-                <span>{formatRupiah(selectedSpk.harga_per_jasa)} / PCS</span>
-              </div>
+                <div className="spkcmt-detail-item">
+                  <strong>Harga Jasa</strong>
+                  <span>{formatRupiah(selectedSpk.harga_per_jasa)} / PCS</span>
+                </div>
 
                 <div className="spkcmt-detail-item">
                   <strong>Warna</strong>
@@ -1879,182 +1951,156 @@ const submitPendingStatus = async () => {
               </button>
             </div>
 
-           <div className="spkcmt-modal-body">
-  <form onSubmit={handleSubmit}>
-    {/* ================= SOURCE TYPE ================= */}
-    <div className="spkcmt-form-group">
-      <label className="spkcmt-form-label">Sumber SPK</label>
-      <select
-        className="spkcmt-form-select"
-        value={newSpk.source_type}
-        onChange={(e) =>
-          setNewSpk({
-            ...newSpk,
-            source_type: e.target.value,
-            source_id: "",
-          })
-        }
-        required
-      >
-        <option value="">Pilih</option>
-        <option value="cutting">Dari Cutting</option>
-        <option value="jasa">Dari SPK Jasa</option>
-      </select>
-    </div>
-
-    {/* ================= SOURCE ID ================= */}
-    {newSpk.source_type && (
-      <div className="spkcmt-form-group">
-        <label className="spkcmt-form-label">
-          {newSpk.source_type === "cutting"
-            ? "Distribusi Cutting"
-            : "SPK Jasa"}
-        </label>
-
-        <Select
-          options={
-            newSpk.source_type === "cutting"
-              ? distribusiOptions
-              : spkJasaOptions
-          }
-          value={
-            newSpk.source_type === "cutting"
-              ? distribusiOptions.find(
-                  (opt) => opt.value === newSpk.source_id
-                ) || null
-              : spkJasaOptions.find(
-                  (opt) => opt.value === newSpk.source_id
-                ) || null
-          }
-          onChange={(selected) =>
-            setNewSpk({
-              ...newSpk,
-              source_id: selected ? selected.value : "",
-            })
-          }
-          placeholder="Pilih atau cari..."
-          isSearchable
-          isClearable
-          isLoading={loadingSource}
-          isDisabled={loadingSource}
-          noOptionsMessage={({ inputValue }) => {
-            if (loadingSource) return "Memuat data...";
-            if (inputValue)
-              return `Tidak ditemukan untuk "${inputValue}"`;
-            return newSpk.source_type === "cutting"
-              ? "Tidak ada distribusi cutting tersedia"
-              : "Tidak ada SPK Jasa tersedia";
-          }}
-          styles={{
-            control: (base) => ({
-              ...base,
-              minHeight: "40px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              fontSize: "14px",
-              "&:hover": {
-                borderColor: "#667eea",
-              },
-            }),
-            menu: (base) => ({
-              ...base,
-              zIndex: 9999,
-            }),
-            placeholder: (base) => ({
-              ...base,
-              color: "#999",
-            }),
-          }}
-        />
-      </div>
-    )}
-
-    {/* ================= PREVIEW ================= */}
-    {previewData && (
-      <div className="spkcmt-preview-card">
-        <div className="spkcmt-preview-header">
-          <h3>📋 Preview SPK yang Dipilih</h3>
-        </div>
-
-        <div className="spkcmt-preview-content">
-          {/* Foto Produk (Cutting) */}
-          {previewData.gambar_produk && (
-            <div style={{ marginBottom: "16px", textAlign: "center" }}>
-              <img
-                src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
-                alt={previewData.nama_produk || "Gambar Produk"}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "300px",
-                  borderRadius: "8px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  objectFit: "contain",
-                }}
-              />
-            </div>
-          )}
-
-          <div className="spkcmt-preview-item">
-            <strong>Kode Seri:</strong>
-            <span>{previewData.kode_seri || "-"}</span>
-          </div>
-
-          {previewData.nomor_seri && (
-            <div className="spkcmt-preview-item">
-              <strong>Nomor Seri:</strong>
-              <span>{previewData.nomor_seri}</span>
-            </div>
-          )}
-
-          <div className="spkcmt-preview-item">
-            <strong>Nama Produk:</strong>
-            <span>{previewData.nama_produk || "-"}</span>
-          </div>
-
-          {previewData.kategori_produk && (
-            <div className="spkcmt-preview-item">
-              <strong>Kategori Produk:</strong>
-              <span>{previewData.kategori_produk}</span>
-            </div>
-          )}
-
-          <div className="spkcmt-preview-item">
-            <strong>Jumlah Produk:</strong>
-            <span className="spkcmt-preview-highlight">
-              {(previewData.jumlah_produk || 0).toLocaleString("id-ID")} pcs
-            </span>
-          </div>
-
-          {/* Warna */}
-          {Array.isArray(previewData.warna) &&
-            previewData.warna.length > 0 && (
-              <div className="spkcmt-preview-item">
-                <strong>Warna & Jumlah:</strong>
-                <div className="spkcmt-preview-warna">
-                  {previewData.warna.map((w, idx) => (
-                    <div key={idx} className="spkcmt-preview-warna-item">
-                      <span className="spkcmt-warna-badge">
-                        {w.nama_warna || w.warna}
-                      </span>
-                      <span className="spkcmt-warna-qty">
-                        {(w.qty || w.jumlah || 0).toLocaleString("id-ID")} pcs
-                      </span>
-                    </div>
-                  ))}
+            <div className="spkcmt-modal-body">
+              <form onSubmit={handleSubmit}>
+                {/* ================= SOURCE TYPE ================= */}
+                <div className="spkcmt-form-group">
+                  <label className="spkcmt-form-label">Sumber SPK</label>
+                  <select
+                    className="spkcmt-form-select"
+                    value={newSpk.source_type}
+                    onChange={(e) =>
+                      setNewSpk({
+                        ...newSpk,
+                        source_type: e.target.value,
+                        source_id: "",
+                      })
+                    }
+                    required
+                  >
+                    <option value="">Pilih</option>
+                    <option value="cutting">Dari Cutting</option>
+                    <option value="jasa">Dari SPK Jasa</option>
+                  </select>
                 </div>
-              </div>
-            )}
 
-          {/* Tukang Jasa */}
-          {previewData.tukang_jasa && (
-            <div className="spkcmt-preview-item">
-              <strong>Tukang Jasa:</strong>
-              <span>{previewData.tukang_jasa.nama}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    )}
+                {/* ================= SOURCE ID ================= */}
+                {newSpk.source_type && (
+                  <div className="spkcmt-form-group">
+                    <label className="spkcmt-form-label">{newSpk.source_type === "cutting" ? "Distribusi Cutting" : "SPK Jasa"}</label>
+
+                    <Select
+                      options={newSpk.source_type === "cutting" ? distribusiOptions : spkJasaOptions}
+                      value={newSpk.source_type === "cutting" ? distribusiOptions.find((opt) => opt.value === newSpk.source_id) || null : spkJasaOptions.find((opt) => opt.value === newSpk.source_id) || null}
+                      onChange={(selected) =>
+                        setNewSpk({
+                          ...newSpk,
+                          source_id: selected ? selected.value : "",
+                        })
+                      }
+                      placeholder="Pilih atau cari..."
+                      isSearchable
+                      isClearable
+                      isLoading={loadingSource}
+                      isDisabled={loadingSource}
+                      noOptionsMessage={({ inputValue }) => {
+                        if (loadingSource) return "Memuat data...";
+                        if (inputValue) return `Tidak ditemukan untuk "${inputValue}"`;
+                        return newSpk.source_type === "cutting" ? "Tidak ada distribusi cutting tersedia" : "Tidak ada SPK Jasa tersedia";
+                      }}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: "40px",
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          "&:hover": {
+                            borderColor: "#667eea",
+                          },
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: "#999",
+                        }),
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* ================= PREVIEW ================= */}
+                {previewData && (
+                  <div className="spkcmt-preview-card">
+                    <div className="spkcmt-preview-header">
+                      <h3>📋 Preview SPK yang Dipilih</h3>
+                    </div>
+
+                    <div className="spkcmt-preview-content">
+                      {/* Foto Produk (Cutting) */}
+                      {previewData.gambar_produk && (
+                        <div style={{ marginBottom: "16px", textAlign: "center" }}>
+                          <img
+                            src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
+                            alt={previewData.nama_produk || "Gambar Produk"}
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "300px",
+                              borderRadius: "8px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      <div className="spkcmt-preview-item">
+                        <strong>Kode Seri:</strong>
+                        <span>{previewData.kode_seri || "-"}</span>
+                      </div>
+
+                      {previewData.nomor_seri && (
+                        <div className="spkcmt-preview-item">
+                          <strong>Nomor Seri:</strong>
+                          <span>{previewData.nomor_seri}</span>
+                        </div>
+                      )}
+
+                      <div className="spkcmt-preview-item">
+                        <strong>Nama Produk:</strong>
+                        <span>{previewData.nama_produk || "-"}</span>
+                      </div>
+
+                      {previewData.kategori_produk && (
+                        <div className="spkcmt-preview-item">
+                          <strong>Kategori Produk:</strong>
+                          <span>{previewData.kategori_produk}</span>
+                        </div>
+                      )}
+
+                      <div className="spkcmt-preview-item">
+                        <strong>Jumlah Produk:</strong>
+                        <span className="spkcmt-preview-highlight">{(previewData.jumlah_produk || 0).toLocaleString("id-ID")} pcs</span>
+                      </div>
+
+                      {/* Warna */}
+                      {Array.isArray(previewData.warna) && previewData.warna.length > 0 && (
+                        <div className="spkcmt-preview-item">
+                          <strong>Warna & Jumlah:</strong>
+                          <div className="spkcmt-preview-warna">
+                            {previewData.warna.map((w, idx) => (
+                              <div key={idx} className="spkcmt-preview-warna-item">
+                                <span className="spkcmt-warna-badge">{w.nama_warna || w.warna}</span>
+                                <span className="spkcmt-warna-qty">{(w.qty || w.jumlah || 0).toLocaleString("id-ID")} pcs</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tukang Jasa */}
+                      {previewData.tukang_jasa && (
+                        <div className="spkcmt-preview-item">
+                          <strong>Tukang Jasa:</strong>
+                          <span>{previewData.tukang_jasa.nama}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* ================= PENJAHIT ================= */}
                 <div className="spkcmt-form-group">
@@ -2087,18 +2133,12 @@ const submitPendingStatus = async () => {
                 </div>
 
                 {/* ================= ATRIBUT ================= */}
-              
 
                 {/* ================= HARGA BARANG ================= */}
-              <div className="spkcmt-form-group">
-                <label className="spkcmt-form-label">Jenis Harga Produk</label>
-                <input
-                  type="text"
-                  className="spkcmt-form-input"
-                  value="Per Pcs"
-                  disabled
-                />
-              </div>
+                <div className="spkcmt-form-group">
+                  <label className="spkcmt-form-label">Jenis Harga Produk</label>
+                  <input type="text" className="spkcmt-form-input" value="Per Pcs" disabled />
+                </div>
 
                 <div className="spkcmt-form-group">
                   <label className="spkcmt-form-label">Harga Produk</label>
@@ -2143,98 +2183,75 @@ const submitPendingStatus = async () => {
         </div>
       )}
 
-
       {showLogDeadline && (
-  <div className="modal-overlay">
-    <div className="modal-card">
-      <div className="modal-header">
-        <h4>Riwayat Perubahan Deadline</h4>
-        <button onClick={() => setShowLogDeadline(false)}>✕</button>
-      </div>
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h4>Riwayat Perubahan Deadline</h4>
+              <button onClick={() => setShowLogDeadline(false)}>✕</button>
+            </div>
 
-      <div className="modal-body">
-       {loadingLog ? (
-  <p>Loading...</p>
-) : Array.isArray(logDeadline) && logDeadline.length === 0 ? (
-  <p>Tidak ada log deadline</p>
-) : (
-  <table className="log-deadline-table">
-    <thead>
-      <tr>
-        <th>Deadline Lama</th>
-        <th>Deadline Baru</th>
-        <th>Tanggal</th>
-        <th>Keterangan</th>
-      </tr>
-    </thead>
-    <tbody>
-      {logDeadline.map((log) => (
-        <tr key={log.id_log}>
-          <td>{log.deadline_lama}</td>
-          <td>{log.deadline_baru}</td>
-          <td>{log.tanggal_aktivitas}</td>
-          <td>{log.keterangan}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-)}
+            <div className="modal-body">
+              {loadingLog ? (
+                <p>Loading...</p>
+              ) : Array.isArray(logDeadline) && logDeadline.length === 0 ? (
+                <p>Tidak ada log deadline</p>
+              ) : (
+                <table className="log-deadline-table">
+                  <thead>
+                    <tr>
+                      <th>Deadline Lama</th>
+                      <th>Deadline Baru</th>
+                      <th>Tanggal</th>
+                      <th>Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logDeadline.map((log) => (
+                      <tr key={log.id_log}>
+                        <td>{log.deadline_lama}</td>
+                        <td>{log.deadline_baru}</td>
+                        <td>{log.tanggal_aktivitas}</td>
+                        <td>{log.keterangan}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-      </div>
-    </div>
-  </div>
-)}
+      {showPendingModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3 className="modal-title">Set Status Pending</h3>
 
-{showPendingModal && (
-  <div className="modal-overlay">
-    <div className="modal-card">
-      <h3 className="modal-title">Set Status Pending</h3>
+            <div className="modal-body">
+              <p>
+                <strong>SPK:</strong> #{selectedSpk?.id_spk}
+              </p>
+              <p>
+                <strong>Penjahit:</strong> {selectedSpk?.penjahit?.nama_penjahit}
+              </p>
 
-      <div className="modal-body">
-        <p>
-          <strong>SPK:</strong> #{selectedSpk?.id_spk}
-        </p>
-        <p>
-          <strong>Penjahit:</strong> {selectedSpk?.penjahit?.nama_penjahit}
-        </p>
+              <label className="modal-label">Pending sampai tanggal</label>
+              <input type="date" value={pendingUntil} onChange={(e) => setPendingUntil(e.target.value)} className="modal-input" min={new Date().toISOString().split("T")[0]} />
+            </div>
 
-      <label className="modal-label">
-        Pending sampai tanggal
-      </label>
-      <input
-        type="date"
-        value={pendingUntil}
-        onChange={(e) => setPendingUntil(e.target.value)}
-        className="modal-input"
-        min={new Date().toISOString().split("T")[0]}
-      />
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={closePendingModal} disabled={loadingPending}>
+                Batal
+              </button>
 
-      </div>
-
-      <div className="modal-actions">
-        <button
-          className="btn-secondary"
-          onClick={closePendingModal}
-          disabled={loadingPending}
-        >
-          Batal
-        </button>
-
-        <button
-          className="btn-primary"
-          onClick={submitPendingStatus}
-          disabled={loadingPending}
-        >
-          {loadingPending ? "Menyimpan..." : "Simpan"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-
+              <button className="btn-primary" onClick={submitPendingStatus} disabled={loadingPending}>
+                {loadingPending ? "Menyimpan..." : "Simpan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
