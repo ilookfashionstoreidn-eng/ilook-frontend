@@ -201,7 +201,7 @@ const Pengiriman = () => {
       } else {
         // Jika tidak ditemukan di list, fetch dari API
         const response = await API.get(`/spkcmt/${id_spk}`);
-        if (response.data && response.data.deadline) {
+        if (response.data && response.data.deadline) { 
           setSelectedSpkDeadline(response.data.deadline);
         } else {
           setSelectedSpkDeadline(null);
@@ -311,7 +311,7 @@ const Pengiriman = () => {
       alert(deadlineValidation.error);
       return;
     }
-
+   
     const formData = new FormData();
     formData.append("id_spk", Number(newPengiriman.id_spk));
     formData.append("tanggal_pengiriman", newPengiriman.tanggal_pengiriman);
@@ -361,7 +361,7 @@ const Pengiriman = () => {
     // Validasi tanggal jika input adalah tanggal_pengiriman
     if (e.target.name === "tanggal_pengiriman") {
       // Validasi tanggal tidak boleh sebelum hari ini
-      validateTanggalMasaLalu(value);
+      validateTanggalMasaLalu(value); 
       // Validasi deadline
       validateDeadline(value);
     }
