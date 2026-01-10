@@ -1284,6 +1284,7 @@ const SpkCutting = () => {
               <thead>
                 <tr>
                   <th>No</th>
+                  <th>ID</th>
                   <th>SPK Cutting ID</th>
                   <th>Tukang Cutting</th>
                   <th>Nama Produk</th>
@@ -1303,6 +1304,7 @@ const SpkCutting = () => {
                 {currentItems.map((spk, index) => (
                   <tr key={spk.id}>
                     <td>{indexOfFirstItem + index + 1}</td>
+                    <td>{spk.id}</td>
                     <td>{spk.id_spk_cutting}</td>
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
                     <td>{spk.produk?.nama_produk || "-"}</td>
