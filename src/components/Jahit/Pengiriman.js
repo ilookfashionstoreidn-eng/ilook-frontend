@@ -25,10 +25,20 @@ const Pengiriman = () => {
   const [spkCmtList, setSpkCmtList] = useState([]);
   const [selectedSpkDeadline, setSelectedSpkDeadline] = useState(null);
   const [deadlineError, setDeadlineError] = useState("");
+  const [tanggalMasaLaluError, setTanggalMasaLaluError] = useState("");
+
+  // Fungsi helper untuk mendapatkan tanggal hari ini dalam format YYYY-MM-DD
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const [newPengiriman, setNewPengiriman] = useState({
     id_spk: "",
-    tanggal_pengiriman: "",
+    tanggal_pengiriman: getTodayDate(), // Set default ke tanggal hari ini
     total_barang_dikirim: "",
     sisa_barang: "",
     total_bayar: "",
@@ -133,6 +143,19 @@ const Pengiriman = () => {
     }
   }, [selectedPengiriman]);
 
+  // Reset tanggal ke hari ini saat form dibuka
+  useEffect(() => {
+    if (showForm) {
+      const today = getTodayDate();
+      setNewPengiriman(prev => ({
+        ...prev,
+        tanggal_pengiriman: today
+      }));
+      setTanggalMasaLaluError("");
+      setDeadlineError("");
+    }
+  }, [showForm]);
+
   const fetchWarnaBySpk = async (id_spk) => {
     try {
       const response = await API.get(`/spk-cmt/${id_spk}/warna`);
@@ -190,27 +213,76 @@ const Pengiriman = () => {
     }
   };
 
-  const validateDeadline = (tanggalPengiriman) => {
-    if (!tanggalPengiriman || !selectedSpkDeadline) {
-      setDeadlineError("");
-      return true;
+  // Validasi tanggal tidak boleh sebelum hari ini
+  const validateTanggalMasaLalu = (tanggalPengiriman) => {
+    if (!tanggalPengiriman) {
+      setTanggalMasaLaluError("");
+      return { valid: true, error: "" };
     }
 
     const tanggal = new Date(tanggalPengiriman);
-    const deadline = new Date(selectedSpkDeadline);
+    tanggal.setHours(0, 0, 0, 0);
+    
+    const hariIni = new Date();
+    hariIni.setHours(0, 0, 0, 0);
 
+    // Jika tanggal pengiriman sebelum hari ini, tampilkan error
+    if (tanggal < hariIni) {
+      const tanggalFormatted = new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(tanggal);
+      
+      const hariIniFormatted = new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(hariIni);
+      
+      const errorMessage = `Tanggal pengiriman (${tanggalFormatted}) tidak boleh sebelum hari ini (${hariIniFormatted}). Tanggal kirim harus sama dengan atau setelah tanggal hari ini.`;
+      setTanggalMasaLaluError(errorMessage);
+      return { valid: false, error: errorMessage };
+    }
+
+    setTanggalMasaLaluError("");
+    return { valid: true, error: "" };
+  };
+
+  const validateDeadline = (tanggalPengiriman, returnError = false) => {
+    if (!tanggalPengiriman || !selectedSpkDeadline) {
+      setDeadlineError("");
+      return returnError ? { valid: true, error: "" } : true;
+    }
+
+    // Normalisasi tanggal ke format date saja (hilangkan waktu) untuk perbandingan yang akurat
+    const tanggal = new Date(tanggalPengiriman);
+    tanggal.setHours(0, 0, 0, 0);
+    
+    const deadline = new Date(selectedSpkDeadline);
+    deadline.setHours(0, 0, 0, 0);
+
+    // Jika tanggal pengiriman melewati deadline, tampilkan error
     if (tanggal > deadline) {
       const deadlineFormatted = new Intl.DateTimeFormat("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       }).format(deadline);
-      setDeadlineError(`Tanggal pengiriman tidak boleh melewati deadline SPK: ${deadlineFormatted}`);
-      return false;
+      
+      const tanggalFormatted = new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(tanggal);
+      
+      const errorMessage = `Tanggal pengiriman (${tanggalFormatted}) tidak boleh melewati deadline SPK (${deadlineFormatted}). Silakan pilih tanggal yang sama atau sebelum deadline.`;
+      setDeadlineError(errorMessage);
+      return returnError ? { valid: false, error: errorMessage } : false;
     }
 
     setDeadlineError("");
-    return true;
+    return returnError ? { valid: true, error: "" } : true;
   };
 
   const handleFormSubmit = async (e) => {
@@ -226,9 +298,17 @@ const Pengiriman = () => {
       return;
     }
 
-    // Validasi deadline
-    if (!validateDeadline(newPengiriman.tanggal_pengiriman)) {
-      alert(deadlineError);
+    // Validasi tanggal tidak boleh sebelum hari ini
+    const tanggalMasaLaluValidation = validateTanggalMasaLalu(newPengiriman.tanggal_pengiriman);
+    if (!tanggalMasaLaluValidation.valid) {
+      alert(tanggalMasaLaluValidation.error);
+      return;
+    }
+
+    // Validasi deadline sebelum submit
+    const deadlineValidation = validateDeadline(newPengiriman.tanggal_pengiriman, true);
+    if (!deadlineValidation.valid) {
+      alert(deadlineValidation.error);
       return;
     }
 
@@ -249,7 +329,7 @@ const Pengiriman = () => {
       // Reset form
       setNewPengiriman({
         id_spk: "",
-        tanggal_pengiriman: "",
+        tanggal_pengiriman: getTodayDate(), // Reset ke tanggal hari ini
         total_barang_dikirim: "",
         sisa_barang: "",
         total_bayar: "",
@@ -258,6 +338,7 @@ const Pengiriman = () => {
       });
       setSelectedSpkDeadline(null);
       setDeadlineError("");
+      setTanggalMasaLaluError("");
     } catch (error) {
       console.error("Error adding data:", error);
       alert(error.response?.data?.error || "Terjadi kesalahan saat menambahkan pengiriman.");
@@ -277,8 +358,11 @@ const Pengiriman = () => {
       [e.target.name]: value,
     });
 
-    // Validasi deadline jika input adalah tanggal_pengiriman
+    // Validasi tanggal jika input adalah tanggal_pengiriman
     if (e.target.name === "tanggal_pengiriman") {
+      // Validasi tanggal tidak boleh sebelum hari ini
+      validateTanggalMasaLalu(value);
+      // Validasi deadline
       validateDeadline(value);
     }
   };
@@ -607,6 +691,7 @@ const Pengiriman = () => {
             setShowForm(false);
             setSelectedSpkDeadline(null);
             setDeadlineError("");
+            setTanggalMasaLaluError("");
           }}
         >
           <div className="pengiriman-modal" onClick={(e) => e.stopPropagation()}>
@@ -618,6 +703,7 @@ const Pengiriman = () => {
                   setShowForm(false);
                   setSelectedSpkDeadline(null);
                   setDeadlineError("");
+                  setTanggalMasaLaluError("");
                 }}
               >
                 <FaTimes />
@@ -694,12 +780,14 @@ const Pengiriman = () => {
                     className="pengiriman-form-input"
                     value={newPengiriman.tanggal_pengiriman}
                     onChange={handleInputChange}
+                    min={getTodayDate()} // Tidak bisa memilih tanggal sebelum hari ini
                     max={selectedSpkDeadline || undefined}
                     required
                     style={{
-                      borderColor: deadlineError ? "#e53e3e" : undefined,
+                      borderColor: (deadlineError || tanggalMasaLaluError) ? "#e53e3e" : undefined,
                     }}
                   />
+                  {tanggalMasaLaluError && <div style={{ color: "#e53e3e", fontSize: "12px", marginTop: "4px" }}>{tanggalMasaLaluError}</div>}
                   {deadlineError && <div style={{ color: "#e53e3e", fontSize: "12px", marginTop: "4px" }}>{deadlineError}</div>}
                 </div>
 
@@ -723,11 +811,21 @@ const Pengiriman = () => {
                       setShowForm(false);
                       setSelectedSpkDeadline(null);
                       setDeadlineError("");
+                      setTanggalMasaLaluError("");
                     }}
                   >
                     Batal
                   </button>
-                  <button type="submit" className="pengiriman-btn pengiriman-btn-primary">
+                  <button 
+                    type="submit" 
+                    className="pengiriman-btn pengiriman-btn-primary"
+                    disabled={!!deadlineError || !!tanggalMasaLaluError}
+                    style={{
+                      opacity: (deadlineError || tanggalMasaLaluError) ? 0.5 : 1,
+                      cursor: (deadlineError || tanggalMasaLaluError) ? 'not-allowed' : 'pointer'
+                    }}
+                    title={(deadlineError || tanggalMasaLaluError) || 'Simpan data pengiriman'}
+                  >
                     Simpan
                   </button>
                 </div>

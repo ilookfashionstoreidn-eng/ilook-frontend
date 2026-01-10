@@ -1102,12 +1102,16 @@ const SpkCmt = () => {
   const openPendingModal = (spk) => {
     setSelectedSpk(spk);
     setPendingDays("");
+    setPendingNote("");
+    setPendingUntil("");
     setShowPendingModal(true);
   };
   const closePendingModal = () => {
     setShowPendingModal(false);
     setSelectedSpk(null);
     setPendingDays("");
+    setPendingNote("");
+    setPendingUntil("");
   };
   const submitPendingStatus = async () => {
     if (!pendingUntil) {
@@ -1121,6 +1125,7 @@ const SpkCmt = () => {
       await API.patch(`/spk-cmt/${selectedSpk.id_spk}/status`, {
         status: "pending",
         pending_until: pendingUntil,
+        alasan_pending: pendingNote || null,
       });
 
       setSpkCmtData((prev) => prev.map((spk) => (spk.id_spk === selectedSpk.id_spk ? { ...spk, status: "pending" } : spk)));
@@ -1843,6 +1848,24 @@ const SpkCmt = () => {
                   <strong>Status</strong>
                   <span>{selectedSpk.status || "–"}</span>
                 </div>
+                {selectedSpk.status === "pending" && selectedSpk.pending_until && (
+                  <div className="spkcmt-detail-item">
+                    <strong>Pending Sampai</strong>
+                    <span>
+                      {new Date(selectedSpk.pending_until).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                )}
+                {selectedSpk.status === "pending" && selectedSpk.alasan_pending && (
+                  <div className="spkcmt-detail-item">
+                    <strong>Alasan Pending</strong>
+                    <span>{selectedSpk.alasan_pending}</span>
+                  </div>
+                )}
                 <div className="spkcmt-detail-item">
                   <strong>Merek</strong>
                   <span>{selectedSpk.merek || "–"}</span>
@@ -2238,6 +2261,25 @@ const SpkCmt = () => {
 
               <label className="modal-label">Pending sampai tanggal</label>
               <input type="date" value={pendingUntil} onChange={(e) => setPendingUntil(e.target.value)} className="modal-input" min={new Date().toISOString().split("T")[0]} />
+
+              <label className="modal-label" style={{ marginTop: "16px" }}>Alasan atau Keterangan Pending</label>
+              <textarea
+                value={pendingNote}
+                onChange={(e) => setPendingNote(e.target.value)}
+                className="modal-input"
+                placeholder="Masukkan alasan atau keterangan pending (opsional)"
+                rows={4}
+                maxLength={500}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  fontFamily: "inherit",
+                  resize: "vertical",
+                }}
+              />
             </div>
 
             <div className="modal-actions">
