@@ -31,12 +31,13 @@ const SpkCutting = () => {
   const [summary, setSummary] = useState({
     all: 0,
 
-    "In Progress": {
+    belum_diambil: {
       count: 0,
       total_asumsi_produk: 0,
     },
 
-    Completed: 0,
+    sudah_diambil: 0,
+    selesai: 0,
     in_progress_weekly: {
       count: 0,
       total_asumsi_produk: 0,
@@ -156,7 +157,7 @@ const SpkCutting = () => {
       if (statusFilter && statusFilter !== "all") {
         params.progress_status = statusFilter;
       } else {
-        params.progress_status = "In Progress"; // Default ke In Progress jika all
+        params.progress_status = "belum_diambil"; // Default ke belum_diambil jika all
       }
 
       const response = await API.get("/spk_cutting", { params });
@@ -758,6 +759,46 @@ const SpkCutting = () => {
     }
   };
 
+  // Fungsi untuk mendapatkan warna status berdasarkan status
+  const getStatusColor = (status) => {
+    if (status === "belum_diambil") {
+      return "#A31D1D"; // Merah
+    }
+    if (status === "sudah_diambil") {
+      return "#3B82F6"; // Biru
+    }
+    if (status === "selesai") {
+      return "#22C55E"; // Hijau
+    }
+    return "#667eea"; // Default
+  };
+
+  // Fungsi untuk update status langsung dari dropdown
+  const handleStatusChangeDirect = async (spkId, newStatus) => {
+    try {
+      const response = await API.patch(`/spk-cutting/${spkId}/status`, {
+        status: newStatus,
+      });
+
+      // Update state lokal dengan status baru
+      setSpkCutting((prevSpkCutting) =>
+        prevSpkCutting.map((spk) => (spk.id === spkId ? { ...spk, status_cutting: newStatus } : spk))
+      );
+
+      // Refresh data
+      await fetchSpkCutting();
+
+      // Tampilkan notifikasi sukses (opsional)
+      console.log("Status berhasil diupdate:", response.data.message);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Error: " + (error.response?.data?.message || error.message));
+
+      // Revert perubahan jika error - refetch data
+      await fetchSpkCutting();
+    }
+  };
+
   const handleEditClick = async (spk) => {
     try {
       const response = await API.get(`/spk_cutting/${spk.id}`);
@@ -1061,12 +1102,30 @@ const SpkCutting = () => {
       {/* Summary Card - Dinamis berdasarkan filter */}
       <div className="spk-cutting-summary-cards">
         <div className="spk-cutting-summary-card active">
-          <div className="spk-cutting-summary-card-icon">{statusFilter === "all" ? "📊" : statusFilter === "In Progress" ? "⚙️" : "✅"}</div>
+          <div className="spk-cutting-summary-card-icon">
+            {statusFilter === "all" ? "📊" : statusFilter === "belum_diambil" ? "⏳" : statusFilter === "sudah_diambil" ? "📦" : "✅"}
+          </div>
 
           <div className="spk-cutting-summary-card-content">
-            <div className="spk-cutting-summary-card-label">{statusFilter === "all" ? "Semua" : statusFilter === "In Progress" ? "In Progress" : "Completed"}</div>
+            <div className="spk-cutting-summary-card-label">
+              {statusFilter === "all"
+                ? "Semua"
+                : statusFilter === "belum_diambil"
+                ? "Belum Diambil"
+                : statusFilter === "sudah_diambil"
+                ? "Sudah Diambil"
+                : "Selesai"}
+            </div>
 
-            <div className="spk-cutting-summary-card-value">{statusFilter === "all" ? summary.all : statusFilter === "In Progress" ? summary["In Progress"]?.count || 0 : summary.Completed}</div>
+            <div className="spk-cutting-summary-card-value">
+              {statusFilter === "all"
+                ? summary.all
+                : statusFilter === "belum_diambil"
+                ? summary.belum_diambil?.count || 0
+                : statusFilter === "sudah_diambil"
+                ? summary.sudah_diambil || 0
+                : summary.selesai || 0}
+            </div>
           </div>
         </div>
       </div>
@@ -1077,7 +1136,15 @@ const SpkCutting = () => {
         <div className="spk-cutting-in-progress-card weekly">
           <div className="spk-cutting-in-progress-card-icon">⚙️</div>
           <div className="spk-cutting-in-progress-card-content">
-            <div className="spk-cutting-in-progress-card-label">{statusFilter === "Completed" ? "Completed Mingguan" : statusFilter === "In Progress" ? "In Progress Mingguan" : "In Progress Mingguan"}</div>
+            <div className="spk-cutting-in-progress-card-label">
+              {statusFilter === "selesai"
+                ? "Selesai Mingguan"
+                : statusFilter === "belum_diambil"
+                ? "Belum Diambil Mingguan"
+                : statusFilter === "sudah_diambil"
+                ? "Sudah Diambil Mingguan"
+                : "Belum Diambil Mingguan"}
+            </div>
             {/* Filter periode mingguan */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
               <input type="date" value={weeklyStart} onChange={handleWeeklyStartChange} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
@@ -1114,7 +1181,7 @@ const SpkCutting = () => {
                 </button>
               )}
             </div>
-            {statusFilter === "Completed" ? (
+            {statusFilter === "selesai" ? (
               <>
                 <div className="spk-cutting-in-progress-card-value">
                   Total: <strong>{(summary.in_progress_weekly?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
@@ -1150,7 +1217,15 @@ const SpkCutting = () => {
         <div className="spk-cutting-in-progress-card daily">
           <div className="spk-cutting-in-progress-card-icon daily">📅</div>
           <div className="spk-cutting-in-progress-card-content">
-            <div className="spk-cutting-in-progress-card-label daily">{statusFilter === "Completed" ? "Completed Harian" : statusFilter === "In Progress" ? "In Progress Harian" : "In Progress Harian"}</div>
+            <div className="spk-cutting-in-progress-card-label daily">
+              {statusFilter === "selesai"
+                ? "Selesai Harian"
+                : statusFilter === "belum_diambil"
+                ? "Belum Diambil Harian"
+                : statusFilter === "sudah_diambil"
+                ? "Sudah Diambil Harian"
+                : "Belum Diambil Harian"}
+            </div>
             {/* Filter tanggal harian */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
               <input type="date" value={dailyDate} onChange={handleDailyDateChange} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
@@ -1185,7 +1260,7 @@ const SpkCutting = () => {
                 </button>
               )}
             </div>
-            {statusFilter === "Completed" ? (
+            {statusFilter === "selesai" ? (
               <>
                 <div className="spk-cutting-in-progress-card-value daily">
                   Total: <strong>{Number(summary.in_progress_daily?.total_asumsi_produk || 0).toLocaleString("id-ID")} Pcs</strong>
@@ -1263,9 +1338,11 @@ const SpkCutting = () => {
             <select className="spk-cutting-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">Semua Status</option>
 
-              <option value="In Progress">In Progress</option>
+              <option value="belum_diambil">Belum Diambil</option>
 
-              <option value="Completed">Completed</option>
+              <option value="sudah_diambil">Sudah Diambil</option>
+
+              <option value="selesai">Selesai</option>
             </select>
 
             <div className="spk-cutting-search-bar">
@@ -1317,7 +1394,30 @@ const SpkCutting = () => {
                     <td>{spk.jumlah_asumsi_produk !== null && spk.jumlah_asumsi_produk !== undefined ? spk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</td>
                     <td>{spk.jenis_spk || "-"}</td>
                     <td>
-                      <span className={`spk-cutting-badge ${spk.status_cutting?.toLowerCase().replace(" ", "-") || "in-progress"}`}>{spk.status_cutting || "In Progress"}</span>
+                      <select
+                        value={spk.status_cutting || "belum_diambil"}
+                        onChange={(e) => {
+                          const newStatus = e.target.value;
+                          handleStatusChangeDirect(spk.id, newStatus);
+                        }}
+                        style={{
+                          backgroundColor: getStatusColor(spk.status_cutting),
+                          color: "white",
+                          border: "2px solid transparent",
+                          padding: "6px 8px",
+                          borderRadius: "8px",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          minWidth: "130px",
+                          outline: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <option value="belum_diambil">Belum Diambil</option>
+                        <option value="sudah_diambil">Sudah Diambil</option>
+                        <option value="selesai">Selesai</option>
+                      </select>
                     </td>
               
                     <td>
@@ -1588,7 +1688,7 @@ const SpkCutting = () => {
               <div className="spk-cutting-detail-item">
                 <strong>Status</strong>
                 <span>
-                  <span className={`spk-cutting-badge ${selectedDetailSpk.status_cutting?.toLowerCase().replace(" ", "-") || "in-progress"}`}>{selectedDetailSpk.status_cutting || "In Progress"}</span>
+                  <span className={`spk-cutting-badge ${selectedDetailSpk.status_cutting?.toLowerCase().replace(" ", "-") || "belum-diambil"}`}>{selectedDetailSpk.status_cutting || "Belum Diambil"}</span>
                 </span>
               </div>
               <div className="spk-cutting-detail-item">
