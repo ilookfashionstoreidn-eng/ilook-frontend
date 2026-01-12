@@ -16,6 +16,7 @@ import Deadline from "./components/Jahit/Deadline";
 import Status from "./components/Jahit/Status";
 import Kinerja from "./components/Jahit/Kinerja";
 import Kinerja2 from "./components/Jahit/Kinerja2";
+import DataDikerjakanPengirimanCmt from "./components/Jahit/DataDikerjakanPengirimanCmt";
 import Produk from "./components/Jahit/Produk";
 import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan";
 
@@ -79,6 +80,7 @@ const App = () => {
           <Route path="status" element={<Status />} />
           <Route path="kinerja" element={<Kinerja />} />
           <Route path="kinerja2" element={<Kinerja2 />} />
+          <Route path="data-dikerjakan-pengiriman-cmt" element={<DataDikerjakanPengirimanCmt />} />
           <Route path="/kinerja/:kategori" element={<Kinerja />} />
           <Route path="produk" element={<Produk />} />
           <Route path="historyPendapatan" element={<HistoryPendapatan />} />
