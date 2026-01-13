@@ -29,6 +29,7 @@ import {
   FaBuilding,
   FaBarcode,
   FaLayerGroup,
+  FaChartLine,
 } from "react-icons/fa";
 import API from "../../api";
 
@@ -173,6 +174,11 @@ const Layout = () => {
                   </li>
                   {role !== "penjahit" && (
                     <>
+                      <li>
+                        <Link to="data-dikerjakan-pengiriman-cmt" className={`dropdown-link ${activeMenu === "dataDikerjakanPengiriman" ? "active" : ""}`} onClick={() => handleMenuClick("dataDikerjakanPengiriman")}>
+                          <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Data Dikerjakan & Pengiriman
+                        </Link>
+                      </li>
                       <li>
                         <Link to="pengiriman" className={`dropdown-link ${activeMenu === "pengiriman" ? "active" : ""}`} onClick={() => handleMenuClick("pengiriman")}>
                           <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman
