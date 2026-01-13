@@ -502,35 +502,68 @@ const PembelianBahan = () => {
     try {
       const formData = new FormData();
       formData.append("keterangan", editItem.keterangan || "");
-      formData.append("gudang_id", editItem.gudang_id);
-      formData.append("pabrik_id", editItem.pabrik_id);
-      formData.append("tanggal_kirim", editItem.tanggal_kirim);
-      formData.append("bahan_id", editItem.bahan_id);
-      formData.append("gramasi", editItem.gramasi || "");
-      formData.append("lebar_kain", editItem.lebar_kain || "");
+      formData.append("gudang_id", String(editItem.gudang_id || ""));
+      formData.append("pabrik_id", String(editItem.pabrik_id || ""));
+      formData.append("tanggal_kirim", editItem.tanggal_kirim || "");
+      formData.append("bahan_id", String(editItem.bahan_id || ""));
+      formData.append("gramasi", editItem.gramasi !== null && editItem.gramasi !== undefined ? String(editItem.gramasi) : "");
+      formData.append("lebar_kain", editItem.lebar_kain !== null && editItem.lebar_kain !== undefined ? String(editItem.lebar_kain) : "");
       formData.append("sku", editItem.sku || "");
       // Hitung harga yang akan dikirim ke DB
       // Unformat rupiah ke angka, lalu jika PPN dicentang tambahkan 11%
       const hargaInput = parseFloat(unformatRupiah(editItem.harga)) || 0;
       const hargaForDB = usePPNEdit ? calculateHargaWithPPN(hargaInput) : hargaInput;
-      formData.append("harga", hargaForDB.toString());
+      formData.append("harga", String(hargaForDB));
       if (editItem.no_surat_jalan) formData.append("no_surat_jalan", editItem.no_surat_jalan);
       if (editItem.foto_surat_jalan) {
         formData.append("foto_surat_jalan", editItem.foto_surat_jalan);
       }
 
+      // Validasi warna sebelum submit
+      for (let i = 0; i < editItem.warna.length; i++) {
+        const w = editItem.warna[i];
+        const namaWarna = w.isCustom ? (w.customNama || "").trim() : (w.nama || "").trim();
+        if (!namaWarna) {
+          alert(`Warna ${i + 1} harus diisi!`);
+          return;
+        }
+        if (!w.rol || w.rol.length === 0) {
+          alert(`Warna ${i + 1} harus memiliki minimal 1 rol!`);
+          return;
+        }
+        // Validasi bahwa semua rol memiliki nilai yang valid
+        for (let j = 0; j < w.rol.length; j++) {
+          const berat = parseFloat(w.rol[j]);
+          if (isNaN(berat) || berat < 0) {
+            alert(`Warna ${i + 1}, Rol ${j + 1} harus memiliki berat yang valid!`);
+            return;
+          }
+        }
+      }
+
       editItem.warna.forEach((w, i) => {
-        const namaWarna = w.isCustom ? w.customNama || "" : w.nama || "";
+        const namaWarna = w.isCustom ? (w.customNama || "").trim() : (w.nama || "").trim();
         formData.append(`warna[${i}][nama]`, namaWarna);
-        formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
-        w.rol.forEach((berat, j) => {
-          formData.append(`warna[${i}][rol][${j}]`, berat);
-        });
+        const jumlahRol = w.jumlah_rol || (w.rol ? w.rol.length : 0);
+        formData.append(`warna[${i}][jumlah_rol]`, String(jumlahRol));
+        if (w.rol && Array.isArray(w.rol) && w.rol.length > 0) {
+          w.rol.forEach((berat, j) => {
+            const beratValue = parseFloat(berat) || 0;
+            formData.append(`warna[${i}][rol][${j}]`, String(beratValue));
+          });
+        }
       });
 
+      // Debug: log FormData contents
+      console.log("FormData yang akan dikirim:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+      }
+
+      // Gunakan POST dengan _method=PUT karena Laravel kadang bermasalah dengan FormData pada PUT
+      formData.append("_method", "PUT");
       const response = await API.post(`/pembelian-bahan/${editItem.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        params: { _method: "PUT" },
       });
 
       const updatedData = response.data.data || response.data;
@@ -540,11 +573,17 @@ const PembelianBahan = () => {
       alert("Pembelian bahan berhasil diperbarui!");
     } catch (error) {
       console.error("Update error:", error);
+      console.error("Error response:", error.response?.data);
       if (error.response?.data?.errors?.no_surat_jalan) {
         setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
         alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
       } else {
-        alert(error.response?.data?.message || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) || "Gagal memperbarui pembelian bahan.");
+        const errorMessages = error.response?.data?.errors 
+          ? Object.entries(error.response.data.errors)
+              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+              .join("\n")
+          : error.response?.data?.message || "Gagal memperbarui pembelian bahan.";
+        alert(errorMessages);
       }
     }
   };
