@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { FaSync, FaFilePdf, FaFileExcel, FaChartBar, FaChartLine } from 'react-icons/fa';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -36,8 +38,17 @@ const DataDikerjakanPengirimanCmt = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedPeriods, setSelectedPeriods] = useState([0, -1, -2, -3, -4]); // Default: minggu ini + 4 minggu sebelumnya
+    const [weekRange, setWeekRange] = useState(5); // Default: 5 minggu terakhir
     const [periodeInfo, setPeriodeInfo] = useState([]);
+
+    // Generate selectedPeriods dari weekRange
+    const selectedPeriods = useMemo(() => {
+        const periods = [];
+        for (let i = 0; i < weekRange; i++) {
+            periods.push(-i);
+        }
+        return periods.sort((a, b) => b - a); // Sort descending: [0, -1, -2, -3, -4]
+    }, [weekRange]);
 
     useEffect(() => {
         fetchData();
@@ -67,26 +78,16 @@ const DataDikerjakanPengirimanCmt = () => {
         }
     };
 
-    const handlePeriodChange = (offset) => {
-        setSelectedPeriods(prev => {
-            if (prev.includes(offset)) {
-                // Hapus jika sudah ada (minimal harus ada 1 periode)
-                if (prev.length > 1) {
-                    return prev.filter(p => p !== offset);
-                }
-                return prev;
-            } else {
-                // Tambahkan dan sort
-                const newPeriods = [...prev, offset].sort((a, b) => b - a); // Sort descending
-                return newPeriods;
-            }
-        });
+    const handleWeekRangeChange = (value) => {
+        setWeekRange(parseInt(value));
     };
 
     // Filter data berdasarkan searchTerm
-    const filteredData = data.filter((item) =>
-        item.nama_cmt?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredData = useMemo(() => {
+        return data.filter((item) =>
+            item.nama_cmt?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [data, searchTerm]);
 
     // Format number dengan pemisah ribuan
     const formatNumber = (num) => {
@@ -102,26 +103,149 @@ const DataDikerjakanPengirimanCmt = () => {
         return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     };
 
-    // Hitung penurunan 2 minggu lalu
-    const calculatePenurunan2MingguLalu = () => {
-        if (!data || data.length === 0) return 0;
+    // Hitung persentase perubahan vs rata-rata mingguan
+    const calculatePercentageChangeVsAverage = () => {
+        if (!data || data.length === 0 || !summary.total_rata_rata || summary.total_rata_rata === 0) {
+            return { percentage: 0, isPositive: false };
+        }
         const totalMingguIni = summary.total_pengiriman_minggu_ini || 0;
-        const total2MingguLalu = data.reduce((sum, item) => {
-            return sum + (item['periode_-2'] || 0);
-        }, 0);
-        return totalMingguIni - total2MingguLalu;
+        const totalRataRata = summary.total_rata_rata || 0;
+        const percentage = ((totalMingguIni - totalRataRata) / totalRataRata) * 100;
+        return {
+            percentage: Math.round(percentage * 10) / 10, // Round to 1 decimal
+            isPositive: percentage >= 0
+        };
     };
 
     // Handle export PDF
     const handleExportPDF = () => {
-        // TODO: Implement export PDF
-        console.log('Export PDF');
+        try {
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Data Yang Dikerjakan dan Pengiriman CMT', 14, 15);
+            
+            // Date info
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Tanggal Export: ${getCurrentDate()}`, 14, 22);
+
+            // Prepare table data
+            const tableData = filteredData.map((item, index) => {
+                const row = [
+                    index + 1,
+                    item.nama_cmt || '',
+                    formatNumber(item.lebih_dari_deadline || 0),
+                    formatNumber(item.masih_dalam_deadline || 0),
+                    formatNumber(item.pengiriman_minggu_ini || 0),
+                    formatNumber(item.rata_rata_pengiriman_mingguan || 0),
+                ];
+
+                // Add periode columns
+                selectedPeriods.forEach((offset) => {
+                    const key = `periode_${offset}`;
+                    row.push(formatNumber(item[key] || 0));
+                });
+
+                row.push(formatNumber(item.kenaikan_penurunan_dari_rata2 || 0));
+                row.push(formatNumber(item.pengiriman_tertinggi || 0));
+                row.push(formatNumber(item.kenaikan_penurunan_dari_tertinggi || 0));
+
+                return row;
+            });
+
+            // Table headers
+            const headers = [
+                'No',
+                'Nama CMT',
+                'Lebih Deadline',
+                'Masih Deadline',
+                'Pengiriman Minggu Ini',
+                'Rata-Rata',
+            ];
+
+            // Add periode headers
+            selectedPeriods.forEach((offset) => {
+                const label = offset === 0 ? 'Minggu Ini' : `${Math.abs(offset)} M.Lalu`;
+                headers.push(label);
+            });
+
+            headers.push('Kenaikan/Penurunan Rata2');
+            headers.push('Pengiriman Tertinggi');
+            headers.push('Kenaikan/Penurunan Tertinggi');
+
+            // Generate table
+            doc.autoTable({
+                head: [headers],
+                body: tableData,
+                startY: 28,
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 249, 250] },
+                margin: { top: 28, left: 14, right: 14 },
+            });
+
+            // Footer with summary
+            if (summary && Object.keys(summary).length > 0) {
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Summary:', 14, finalY);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text(`Total Dikerjakan: ${formatNumber(summary.total_dikerjakan || 0)}`, 14, finalY + 7);
+                doc.text(`Total Lebih Deadline: ${formatNumber(summary.total_lebih_deadline || 0)}`, 14, finalY + 12);
+                doc.text(`Total Masih Deadline: ${formatNumber(summary.total_masih_deadline || 0)}`, 14, finalY + 17);
+                doc.text(`Total Pengiriman Minggu Ini: ${formatNumber(summary.total_pengiriman_minggu_ini || 0)}`, 14, finalY + 22);
+            }
+
+            // Save PDF
+            const fileName = `data-dikerjakan-pengiriman-cmt-${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            alert('Gagal export data ke PDF');
+        }
     };
 
     // Handle export Excel
-    const handleExportExcel = () => {
-        // TODO: Implement export Excel
-        console.log('Export Excel');
+    const handleExportExcel = async () => {
+        try {
+            const params = {
+                periode: selectedPeriods
+            };
+
+
+            const response = await API.get('/cmt/data-dikerjakan-pengiriman/export/excel', {
+                params,
+                responseType: 'blob',
+            });
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            
+            const fileName = `data-dikerjakan-pengiriman-cmt-${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.setAttribute('download', fileName);
+            
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting Excel:', error);
+            // If backend endpoint doesn't exist, show alert
+            if (error.response?.status === 404) {
+                alert('Fitur export Excel belum tersedia. Silakan hubungi administrator.');
+            } else {
+                alert(error.response?.data?.message || 'Gagal export data ke Excel');
+            }
+        }
     };
 
     // Get current date
@@ -135,7 +259,7 @@ const DataDikerjakanPengirimanCmt = () => {
         return Math.round((value / total) * 100);
     };
 
-    const penurunan2MingguLalu = calculatePenurunan2MingguLalu();
+    const percentageChangeVsAverage = calculatePercentageChangeVsAverage();
     const persentaseMelebihiDeadline = calculatePercentage(summary.total_lebih_deadline, summary.total_dikerjakan);
 
     // Chart data untuk Bar Chart - Pengiriman per CMT (Top 8)
@@ -313,22 +437,6 @@ const DataDikerjakanPengirimanCmt = () => {
             {/* Header */}
             <div className="data-dikerjakan-header">
                 <h1>Data Yang Dikerjakan dan Pengiriman CMT</h1>
-                <div className="dashboard-actions">
-                    <div className="date-filter">
-                        <label>Filter:</label>
-                        <input type="date" className="date-input" />
-                        <input type="date" className="date-input" />
-                    </div>
-                    <button className="export-btn" onClick={handleExportPDF}>
-                        <FaFilePdf /> Export PDF
-                    </button>
-                    <button className="export-btn" onClick={handleExportExcel}>
-                        <FaFileExcel /> Export Excel
-                    </button>
-                    <button className="export-btn" onClick={fetchData}>
-                        <FaSync /> Refresh
-                    </button>
-                </div>
             </div>
 
             {/* KPI SUMMARY Section */}
@@ -352,7 +460,7 @@ const DataDikerjakanPengirimanCmt = () => {
                                 <div className="kpi-value" style={{ color: '#c53030' }}>
                                     {formatNumber(summary.total_lebih_deadline)} ({persentaseMelebihiDeadline}%)
                                 </div>
-                            </div>
+                            </div> 
                         </div>
                         <div className="kpi-card">
                             <div className="kpi-icon" style={{ background: '#4facfe' }}>📦</div>
@@ -362,10 +470,26 @@ const DataDikerjakanPengirimanCmt = () => {
                             </div>
                         </div>
                         <div className="kpi-card">
-                            <div className="kpi-icon" style={{ background: '#30cfd0' }}>📉</div>
+                            <div className="kpi-icon" style={{ 
+                                background: percentageChangeVsAverage.isPositive ? '#198754' : '#DC3545' 
+                            }}>
+                                {percentageChangeVsAverage.isPositive ? '📈' : '📉'}
+                            </div>
                             <div className="kpi-content">
-                                <div className="kpi-label">Penurunan 2 Minggu Lalu</div>
-                                <div className="kpi-value">{formatNumber(penurunan2MingguLalu)}</div>
+                                <div className="kpi-label">Perbandingan Performa</div>
+                                <div className="kpi-value" style={{ 
+                                    color: percentageChangeVsAverage.isPositive ? '#198754' : '#DC3545',
+                                    fontWeight: 700
+                                }}>
+                                    {percentageChangeVsAverage.isPositive ? '+' : ''}{percentageChangeVsAverage.percentage}%
+                                </div>
+                                <div className="kpi-subtitle" style={{ 
+                                    fontSize: '0.85em', 
+                                    color: '#6c757d',
+                                    marginTop: '4px'
+                                }}>
+                                    {percentageChangeVsAverage.isPositive ? 'Above average' : 'Below average'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -435,6 +559,17 @@ const DataDikerjakanPengirimanCmt = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <div className="table-actions">
+                        <button className="export-btn" onClick={handleExportPDF}>
+                            <FaFilePdf /> Export PDF
+                        </button>
+                        <button className="export-btn" onClick={handleExportExcel}>
+                            <FaFileExcel /> Export Excel
+                        </button>
+                        <button className="export-btn" onClick={fetchData}>
+                            <FaSync /> Refresh
+                        </button>
+                    </div>
                 </div>
                 {loading ? (
                     <div className="loading-message">Memuat data...</div>
@@ -456,19 +591,23 @@ const DataDikerjakanPengirimanCmt = () => {
                                     <th colSpan={selectedPeriods.length} className="periode-header-cell">
                                         <div className="periode-header-selector">
                                             <div className="periode-header-label">PENGIRIMAN PERIODE</div>
-                                            <div className="periode-checkboxes-header">
-                                                {[0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10].map((offset) => (
-                                                    <label key={offset} className="periode-checkbox-header">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedPeriods.includes(offset)}
-                                                            onChange={() => handlePeriodChange(offset)}
-                                                        />
-                                                        <span>
-                                                            {offset === 0 ? 'Minggu Ini' : `${Math.abs(offset)} M.Lalu`}
-                                                        </span>
-                                                    </label>
-                                                ))}
+                                            <div className="periode-dropdown-wrapper">
+                                                <select 
+                                                    className="periode-range-select"
+                                                    value={weekRange}
+                                                    onChange={(e) => handleWeekRangeChange(e.target.value)}
+                                                >
+                                                    <option value={1}>1 Minggu Terakhir</option>
+                                                    <option value={2}>2 Minggu Terakhir</option>
+                                                    <option value={3}>3 Minggu Terakhir</option>
+                                                    <option value={4}>4 Minggu Terakhir</option>
+                                                    <option value={5}>5 Minggu Terakhir</option>
+                                                    <option value={6}>6 Minggu Terakhir</option>
+                                                    <option value={7}>7 Minggu Terakhir</option>
+                                                    <option value={8}>8 Minggu Terakhir</option>
+                                                    <option value={9}>9 Minggu Terakhir</option>
+                                                    <option value={10}>10 Minggu Terakhir</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </th>
@@ -481,11 +620,17 @@ const DataDikerjakanPengirimanCmt = () => {
                                     <th className="header-blue">MASIH DALAM DEADLINE</th>
                                     {selectedPeriods.map((offset) => {
                                         const periode = periodeInfo.find(p => p.offset === offset);
-                                        const label = offset === 0 
+                                        let label = offset === 0 
                                             ? 'MINGGU INI' 
                                             : `${Math.abs(offset)} MINGGU LALU`;
+                                        
+                                        // Tambahkan tanggal range jika ada
+                                        if (periode && periode.start_formatted && periode.end_formatted) {
+                                            label = `${label}<br/><small style="font-weight: normal; font-size: 0.85em;">${periode.start_formatted} - ${periode.end_formatted}</small>`;
+                                        }
+                                        
                                         return (
-                                            <th key={offset} className="header-blue-light">{label}</th>
+                                            <th key={offset} className="header-blue-light" dangerouslySetInnerHTML={{ __html: label }}></th>
                                         );
                                     })}
                                 </tr>
