@@ -271,6 +271,11 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link to="laporanhasil" className={`dropdown-link ${activeMenu === "laporanhasil" ? "active" : ""}`} onClick={() => handleMenuClick("laporanhasil")}>
+                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Hasil 
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="historyhasilcutting" className={`dropdown-link ${activeMenu === "historyhasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("historyhasilcutting")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hasil Cutting
                     </Link>
