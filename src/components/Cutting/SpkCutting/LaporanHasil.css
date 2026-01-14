@@ -1,0 +1,236 @@
+/* Laporan Hasil Cutting - Modern Flat Design */
+
+.laporan-hasil-container {
+  width: 100%;
+  padding: 24px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.laporan-hasil-header {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.laporan-hasil-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #212529;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.laporan-hasil-filters {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.laporan-hasil-filters label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-right: 8px;
+}
+
+.laporan-hasil-filters input[type="date"] {
+  padding: 10px 14px;
+  border: 1.5px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #212529;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 160px;
+}
+
+.laporan-hasil-filters input[type="date"]:hover {
+  border-color: #adb5bd;
+}
+
+.laporan-hasil-filters input[type="date"]:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.laporan-hasil-loading {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.laporan-hasil-error {
+  background-color: #fff5f5;
+  padding: 16px 20px;
+  border-radius: 8px;
+  color: #dc3545;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  margin-bottom: 24px;
+}
+
+.laporan-hasil-table-wrapper {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  overflow-x: auto;
+}
+
+.laporan-hasil-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 600px;
+}
+
+.laporan-hasil-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.laporan-hasil-table thead th {
+  background-color: #212529;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 14px;
+  text-align: center;
+  border-bottom: 2px solid #000000;
+  white-space: nowrap;
+}
+
+.laporan-hasil-table thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.laporan-hasil-table thead th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.laporan-hasil-table tbody td {
+  padding: 14px;
+  text-align: center;
+  font-size: 14px;
+  color: #212529;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #ffffff;
+}
+
+.laporan-hasil-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.laporan-hasil-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.laporan-hasil-table tfoot {
+  background-color: #f8f9fa;
+}
+
+.laporan-hasil-table tfoot th {
+  background-color: #495057;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 16px 14px;
+  text-align: center;
+  border-top: 2px solid #212529;
+}
+
+.laporan-hasil-table tfoot th:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.laporan-hasil-table tfoot th:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .laporan-hasil-container {
+    padding: 16px;
+  }
+
+  .laporan-hasil-header {
+    padding: 20px;
+  }
+
+  .laporan-hasil-header h1 {
+    font-size: 22px;
+  }
+
+  .laporan-hasil-filters {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .laporan-hasil-filters label {
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .laporan-hasil-filters input[type="date"] {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .laporan-hasil-table-wrapper {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .laporan-hasil-table {
+    font-size: 12px;
+  }
+
+  .laporan-hasil-table thead th,
+  .laporan-hasil-table tbody td,
+  .laporan-hasil-table tfoot th {
+    padding: 10px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .laporan-hasil-container {
+    padding: 12px;
+  }
+
+  .laporan-hasil-header h1 {
+    font-size: 20px;
+  }
+
+  .laporan-hasil-table {
+    font-size: 11px;
+  }
+
+  .laporan-hasil-table thead th,
+  .laporan-hasil-table tbody td,
+  .laporan-hasil-table tfoot th {
+    padding: 8px 6px;
+  }
+}

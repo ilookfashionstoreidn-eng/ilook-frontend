@@ -92,6 +92,7 @@ const DataDikerjakanPengirimanCmt = () => {
     // Format number dengan pemisah ribuan
     const formatNumber = (num) => {
         if (num === null || num === undefined) return '0';
+        // Intl.NumberFormat otomatis menampilkan minus untuk angka negatif
         return new Intl.NumberFormat('id-ID').format(num);
     };
 
