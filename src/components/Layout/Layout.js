@@ -139,11 +139,18 @@ const Layout = () => {
         <nav className="sidebar-menu">
           <ul>
             {role !== "penjahit" && (
-              <li>
-                <Link to="/home" className={`sidebar-link ${activeMenu === "home" ? "active" : ""}`} onClick={() => handleMenuClick("home")}>
-                  <FaHome className="icon" /> DASHBOARD
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link to="/home" className={`sidebar-link ${activeMenu === "home" ? "active" : ""}`} onClick={() => handleMenuClick("home")}>
+                    <FaHome className="icon" /> DASHBOARD
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/laporan-daily-produksi" className={`sidebar-link ${activeMenu === "laporan-daily-produksi" ? "active" : ""}`} onClick={() => handleMenuClick("laporan-daily-produksi")}>
+                    <FaChartLine className="icon" /> Laporan Daily Produksi
+                  </Link>
+                </li>
+              </>
             )}
             <li>
               <div onClick={toggleCmtMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cmt" ? "active" : ""}`}>

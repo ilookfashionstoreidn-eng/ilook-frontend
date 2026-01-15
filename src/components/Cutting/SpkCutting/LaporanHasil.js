@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import "../../Jahit/Penjahit.css";
+import "./LaporanHasil.css";
 import API from "../../../api"; 
 
 
@@ -51,57 +51,76 @@ useEffect(() => {
 
 
 return (
-  <div>
-    <div className="penjahit-container">
+  <div className="laporan-hasil-container">
+    <div className="laporan-hasil-header">
       <h1>Laporan Hasil Cutting Per Periode</h1>
     </div>
 
     {/* FILTER TANGGAL */}
-    <div className="filter-header1">
-      <input
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-      />
-      <input
-        type="date"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-      />
+    <div className="laporan-hasil-filters">
+      <div>
+        <label htmlFor="start-date">Tanggal Mulai:</label>
+        <input
+          id="start-date"
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+      </div>
+      <div>
+        <label htmlFor="end-date">Tanggal Akhir:</label>
+        <input
+          id="end-date"
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+      </div>
     </div>
 
-    {loading && <p>Loading...</p>}
-    {error && <p className="error">{error}</p>}
+    {loading && (
+      <div className="laporan-hasil-loading">
+        Memuat data laporan...
+      </div>
+    )}
+
+    {error && (
+      <div className="laporan-hasil-error">
+        {error}
+      </div>
+    )}
 
     {!loading && !error && (
-      <div className="table-container">
-        <table className="penjahit-table">
+      <div className="laporan-hasil-table-wrapper">
+        <table className="laporan-hasil-table">
           <thead>
             <tr>
               <th>Tanggal</th>
-
               {tukang.map((nama) => (
                 <th key={nama}>{nama}</th>
               ))}
-
               <th>Total</th>
             </tr>
           </thead>
 
           <tbody>
-            {laporan.map((row, index) => (
-              <tr key={index}>
-                <td data-label="Tanggal">{row.tanggal}</td>
-
-                {tukang.map((nama) => (
-                  <td key={nama} data-label={nama}>
-                    {row[nama]}
-                  </td>
-                ))}
-
-                <td data-label="Total">{row.total}</td>
+            {laporan.length > 0 ? (
+              laporan.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.tanggal}</td>
+                  {tukang.map((nama) => (
+                    <td key={nama}>{row[nama] || 0}</td>
+                  ))}
+                  <td>{row.total || 0}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={tukang.length + 2} style={{ textAlign: 'center', padding: '40px', color: '#6c757d' }}>
+                  Tidak ada data untuk periode yang dipilih
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
 
           {/* GRAND TOTAL */}
@@ -109,12 +128,10 @@ return (
             <tfoot>
               <tr>
                 <th>Total Periode</th>
-
                 {tukang.map((nama) => (
-                  <th key={nama}>{grandTotal[nama]}</th>
+                  <th key={nama}>{grandTotal[nama] || 0}</th>
                 ))}
-
-                <th>{grandTotal.total}</th>
+                <th>{grandTotal.total || 0}</th>
               </tr>
             </tfoot>
           )}
