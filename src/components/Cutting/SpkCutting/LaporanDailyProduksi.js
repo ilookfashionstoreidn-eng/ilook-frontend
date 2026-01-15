@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./LaporanDailyProduksi.css";
 import API from "../../../api";
 
 const LaporanDailyProduksi = () => {
+  const navigate = useNavigate();
   const [laporanData, setLaporanData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -145,7 +147,12 @@ const LaporanDailyProduksi = () => {
               </div>
 
               {/* Card Hasil Cuttingan Minggu Ini */}
-              <div className="laporan-card">
+              <div 
+                className="laporan-card clickable-card" 
+                onClick={() => navigate("/hasilcutting")}
+                style={{ cursor: "pointer" }}
+                title="Klik untuk melihat detail Hasil Cutting"
+              >
                 <h3 className="card-title">Hasil Cuttingan Minggu Ini</h3>
                 <div className="card-content">
                   <div className="stat-row highlight-stat">
@@ -219,7 +226,12 @@ const LaporanDailyProduksi = () => {
               </div>
 
               {/* Card SPK Belum Ambil CMT */}
-              <div className="laporan-card">
+              <div 
+                className="laporan-card clickable-card" 
+                onClick={() => navigate("/kode-seri-belum-dikerjakan")}
+                style={{ cursor: "pointer" }}
+                title="Klik untuk melihat detail Kode Seri Belum Dikerjakan"
+              >
                 <h3 className="card-title">SPK Belum Ambil CMT</h3>
                 <div className="card-content">
                   <div className="stat-row">
@@ -242,7 +254,12 @@ const LaporanDailyProduksi = () => {
               </div>
 
               {/* Card Sedang Dikerjakan */}
-              <div className="laporan-card">
+              <div 
+                className="laporan-card clickable-card" 
+                onClick={() => navigate("/spkcmt")}
+                style={{ cursor: "pointer" }}
+                title="Klik untuk melihat detail SPK CMT"
+              >
                 <h3 className="card-title">Sedang Dikerjakan</h3>
                 <div className="card-content">
                   <div className="stat-row highlight-stat">
@@ -271,7 +288,12 @@ const LaporanDailyProduksi = () => {
               </div>
 
               {/* Card Kemampuan Kirim All CMT */}
-              <div className="laporan-card">
+              <div 
+                className="laporan-card clickable-card" 
+                onClick={() => navigate("/data-dikerjakan-pengiriman-cmt")}
+                style={{ cursor: "pointer" }}
+                title="Klik untuk melihat detail Data Dikerjakan & Pengiriman CMT"
+              >
                 <h3 className="card-title">Kemampuan Kirim All CMT</h3>
                 <div className="card-content">
                   {laporanData.cmt?.kemampuan_kirim?.periode_4_minggu && 

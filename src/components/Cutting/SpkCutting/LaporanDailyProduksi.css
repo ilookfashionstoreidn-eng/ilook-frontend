@@ -261,6 +261,48 @@
   transform: scaleX(1);
 }
 
+/* Clickable Card Styles */
+.laporan-card.clickable-card {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.laporan-card.clickable-card::after {
+  content: '→';
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  font-size: 20px;
+  color: var(--primary-color);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 700;
+}
+
+.laporan-card.clickable-card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-6px);
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.laporan-card.clickable-card:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.laporan-card.clickable-card:active {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.laporan-card.clickable-card .card-title {
+  position: relative;
+  padding-right: 32px;
+}
+
 .laporan-card.highlight-card-yellow {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 2px solid var(--warning-color);
