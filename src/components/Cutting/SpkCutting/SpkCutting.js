@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import "./SpkCutting.css";
 
@@ -7,6 +8,8 @@ import API from "../../../api";
 import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel, FaTimes } from "react-icons/fa";
 
 const SpkCutting = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [spkCutting, setSpkCutting] = useState([]);
 
   const [error, setError] = useState(null);
@@ -21,7 +24,11 @@ const SpkCutting = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Baca statusFilter dari URL atau default "all"
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
+  
+  // Baca jenis_spk dari URL
+  const [jenisSpkFilter, setJenisSpkFilter] = useState(searchParams.get("jenis_spk") || "");
 
   // Filter periode untuk card In Progress (juga digunakan untuk filter tabel)
   const [weeklyStart, setWeeklyStart] = useState("");
@@ -137,6 +144,11 @@ const SpkCutting = () => {
         params.status = statusFilter;
       }
 
+      // Tambahkan filter jenis_spk jika ada
+      if (jenisSpkFilter) {
+        params.jenis_spk = jenisSpkFilter;
+      }
+
       // Gunakan filter tanggal dari card progress untuk filter tabel
       // Prioritas: jika dailyDate ada, gunakan dailyDate; jika tidak, gunakan weeklyStart/weeklyEnd
       if (dailyDate) {
@@ -182,9 +194,22 @@ const SpkCutting = () => {
     }
   };
 
+  // Update statusFilter dan jenisSpkFilter dari URL saat component mount atau URL berubah
+  useEffect(() => {
+    const statusFromUrl = searchParams.get("status");
+    const jenisSpkFromUrl = searchParams.get("jenis_spk");
+    
+    if (statusFromUrl) {
+      setStatusFilter(statusFromUrl);
+    }
+    if (jenisSpkFromUrl) {
+      setJenisSpkFilter(jenisSpkFromUrl);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchSpkCutting();
-  }, [statusFilter, weeklyStart, weeklyEnd, dailyDate]);
+  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -1360,8 +1385,7 @@ const SpkCutting = () => {
             <table className="spk-cutting-table">
               <thead>
                 <tr>
-                  <th>No</th>
-                  <th>ID</th>
+                 
                   <th>SPK Cutting ID</th>
                   <th>Tukang Cutting</th>
                   <th>Nama Produk</th>
@@ -1380,8 +1404,7 @@ const SpkCutting = () => {
               <tbody>
                 {currentItems.map((spk, index) => (
                   <tr key={spk.id}>
-                    <td>{indexOfFirstItem + index + 1}</td>
-                    <td>{spk.id}</td>
+                  
                     <td>{spk.id_spk_cutting}</td>
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
                     <td>{spk.produk?.nama_produk || "-"}</td>

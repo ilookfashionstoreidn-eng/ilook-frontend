@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
 import "./SpkCuting.css";
 import "./HasilCutting.css";
 import API from "../../../api";
 
 const HasilCutting = () => {
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [spkCuttingList, setSpkCuttingList] = useState([]);
   const [selectedSpkId, setSelectedSpkId] = useState("");
   const [spkDetail, setSpkDetail] = useState(null);
@@ -33,10 +37,12 @@ const HasilCutting = () => {
     week_end: "",
     today: "",
   });
-  // Filter periode untuk card target
-  const [weeklyStart, setWeeklyStart] = useState("");
-  const [weeklyEnd, setWeeklyEnd] = useState("");
-  const [dailyDate, setDailyDate] = useState("");
+  // Filter periode untuk card target (baca dari URL atau default kosong)
+  const [weeklyStart, setWeeklyStart] = useState(searchParams.get("weekly_start") || "");
+  const [weeklyEnd, setWeeklyEnd] = useState(searchParams.get("weekly_end") || "");
+  const [dailyDate, setDailyDate] = useState(searchParams.get("daily_date") || "");
+  // Filter tukang cutting (baca dari URL)
+  const [tukangCuttingFilter, setTukangCuttingFilter] = useState(searchParams.get("tukang_cutting") || "");
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
@@ -59,23 +65,95 @@ const HasilCutting = () => {
     fetchSpkCutting();
   }, []);
 
-  // Fetch data hasil cutting untuk index
+  // Track previous searchParams untuk detect perubahan filter
+  const prevSearchParamsRef = useRef(searchParams.toString());
+  
+  // Log searchParams setiap kali berubah untuk debugging
+  useEffect(() => {
+    console.log('SearchParams changed:', searchParams.toString());
+    console.log('Current URL:', window.location.href);
+  }, [searchParams]);
+  
+  // Fetch data hasil cutting - baca langsung dari URL untuk menghindari race condition
   useEffect(() => {
     const fetchDataHasilCutting = async () => {
       if (showForm) return; // Jangan fetch jika sedang di form
 
       setLoadingData(true);
       try {
-        const response = await API.get("/hasil_cutting", {
-          params: {
-            page: currentPage,
-            weekly_start: weeklyStart || undefined,
-            weekly_end: weeklyEnd || undefined,
-            daily_date: dailyDate || undefined,
-          },
+        // Baca langsung dari URL (location.search) untuk menghindari race condition dengan searchParams
+        const urlParams = new URLSearchParams(location.search);
+        const weeklyStartFromUrl = urlParams.get("weekly_start") || searchParams.get("weekly_start");
+        const weeklyEndFromUrl = urlParams.get("weekly_end") || searchParams.get("weekly_end");
+        const dailyDateFromUrl = urlParams.get("daily_date") || searchParams.get("daily_date");
+        const tukangCuttingFromUrl = urlParams.get("tukang_cutting") || searchParams.get("tukang_cutting");
+        
+        console.log('useEffect triggered - Reading from URL:', {
+          weeklyStartFromUrl,
+          weeklyEndFromUrl,
+          dailyDateFromUrl,
+          tukangCuttingFromUrl,
+          locationSearch: location.search,
+          searchParamsString: searchParams.toString(),
+          windowLocation: window.location.href
         });
+        
+        // Cek apakah searchParams berubah (filter berubah)
+        const searchParamsChanged = prevSearchParamsRef.current !== searchParams.toString();
+        
+        // Update state untuk sinkronisasi dengan URL
+        if (weeklyStartFromUrl && weeklyEndFromUrl) {
+          setWeeklyStart(weeklyStartFromUrl);
+          setWeeklyEnd(weeklyEndFromUrl);
+          setDailyDate("");
+        } else if (dailyDateFromUrl) {
+          setDailyDate(dailyDateFromUrl);
+          setWeeklyStart("");
+          setWeeklyEnd("");
+        } else {
+          setDailyDate("");
+          setWeeklyStart("");
+          setWeeklyEnd("");
+        }
+        
+        if (tukangCuttingFromUrl) {
+          setTukangCuttingFilter(tukangCuttingFromUrl);
+        } else {
+          setTukangCuttingFilter("");
+        }
+        
+        // Reset currentPage ke 1 ketika filter berubah (searchParams berubah)
+        if (searchParamsChanged) {
+          setCurrentPage(1);
+          prevSearchParamsRef.current = searchParams.toString();
+        }
+        
+        const params = {
+          page: searchParamsChanged ? 1 : currentPage, // Halaman 1 jika filter berubah, otherwise gunakan currentPage
+        };
+        
+        // Prioritas: jika weekly_start dan weekly_end ada, gunakan itu (jangan gunakan dailyDate)
+        if (weeklyStartFromUrl && weeklyEndFromUrl) {
+          params.weekly_start = weeklyStartFromUrl;
+          params.weekly_end = weeklyEndFromUrl;
+        } else if (dailyDateFromUrl) {
+          params.daily_date = dailyDateFromUrl;
+        }
+        
+        // Tambahkan filter tukang cutting jika ada
+        if (tukangCuttingFromUrl) {
+          params.tukang_cutting = tukangCuttingFromUrl;
+        }
+        
+        // Debug: log parameter yang dikirim
+        console.log('Fetching hasil cutting with params:', params);
+        console.log('URL params:', { weeklyStartFromUrl, weeklyEndFromUrl, dailyDateFromUrl, tukangCuttingFromUrl });
+        console.log('SearchParams changed:', searchParamsChanged);
+        
+        const response = await API.get("/hasil_cutting", { params });
         if (response.data) {
           if (response.data.data) {
+            console.log('Received data count:', response.data.data.length);
             setDataHasilCutting(response.data.data || []);
             setCurrentPage(response.data.current_page || 1);
             setLastPage(response.data.last_page || 1);
@@ -97,7 +175,7 @@ const HasilCutting = () => {
       }
     };
     fetchDataHasilCutting();
-  }, [currentPage, showForm, weeklyStart, weeklyEnd, dailyDate]);
+  }, [location.search, searchParams, showForm, currentPage]); // Gunakan location.search sebagai dependency utama
 
   // Fetch detail SPK Cutting dengan berat dari stok_bahan_keluar
   useEffect(() => {
