@@ -112,7 +112,7 @@ const LaporanDailyProduksi = () => {
             
             <div className="cards-grid">
               {/* Card SPK Belum Potong */}
-              <div className="laporan-card">
+              <div className="laporan-card card-blue">
                 <h3 className="card-title">SPK Belum Potong</h3>
                 <div className="card-content">
                   <div className="stat-row">
@@ -128,15 +128,30 @@ const LaporanDailyProduksi = () => {
                     <div className="turunan-section">
                       <h4 className="turunan-title">Turunan dari Produk:</h4>
                       <div className="turunan-list">
-                        <div className="turunan-item">
+                        <div 
+                          className="turunan-item clickable-turunan-item"
+                          onClick={() => navigate("/spkcutting?jenis_spk=Terjual&status=belum_diambil")}
+                          style={{ cursor: "pointer" }}
+                          title="Klik untuk melihat SPK Cutting dengan jenis Terjual"
+                        >
                           <span>Terjual:</span>
                           <span className="turunan-value">{formatNumber(laporanData.cutting.spk_belum_potong.turunan_produk.terjual || 0)}</span>
                         </div>
-                        <div className="turunan-item">
+                        <div 
+                          className="turunan-item clickable-turunan-item"
+                          onClick={() => navigate("/spkcutting?jenis_spk=Fittingan&status=belum_diambil")}
+                          style={{ cursor: "pointer" }}
+                          title="Klik untuk melihat SPK Cutting dengan jenis Fittingan Baru"
+                        >
                           <span>Fitingan Baru:</span>
                           <span className="turunan-value">{formatNumber(laporanData.cutting.spk_belum_potong.turunan_produk.fittingan_baru || 0)}</span>
                         </div>
-                        <div className="turunan-item">
+                        <div 
+                          className="turunan-item clickable-turunan-item"
+                          onClick={() => navigate("/spkcutting?jenis_spk=Habisin Bahan&status=belum_diambil")}
+                          style={{ cursor: "pointer" }}
+                          title="Klik untuk melihat SPK Cutting dengan jenis Habisin Bahan"
+                        >
                           <span>Habisin Bahan:</span>
                           <span className="turunan-value">{formatNumber(laporanData.cutting.spk_belum_potong.turunan_produk.habisin_bahan || 0)}</span>
                         </div>
@@ -148,7 +163,7 @@ const LaporanDailyProduksi = () => {
 
               {/* Card Hasil Cuttingan Minggu Ini */}
               <div 
-                className="laporan-card clickable-card" 
+                className="laporan-card clickable-card card-green" 
                 onClick={() => navigate("/hasilcutting")}
                 style={{ cursor: "pointer" }}
                 title="Klik untuk melihat detail Hasil Cutting"
@@ -173,14 +188,50 @@ const LaporanDailyProduksi = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {laporanData.cutting.hasil_cuttingan_minggu_ini.tukang_cutting.map((tukang, index) => (
-                            <tr key={index}>
-                              <td>{tukang.nama}</td>
-                              <td>{formatNumber(tukang.jml_pcs || 0)}</td>
-                              <td>{formatNumber(tukang.jml_spk || 0)}</td>
-                              <td>{formatNumber(tukang.jml_tim || 0)}</td>
-                            </tr>
-                          ))}
+                          {laporanData.cutting.hasil_cuttingan_minggu_ini.tukang_cutting.map((tukang, index) => {
+                            // Hitung awal dan akhir minggu ini untuk query parameter
+                            const today = new Date();
+                            const startOfWeek = new Date(today);
+                            startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Senin
+                            startOfWeek.setHours(0, 0, 0, 0);
+                            
+                            const endOfWeek = new Date(startOfWeek);
+                            endOfWeek.setDate(startOfWeek.getDate() + 6); // Minggu
+                            endOfWeek.setHours(23, 59, 59, 999);
+                            
+                            const weeklyStart = startOfWeek.toISOString().split('T')[0];
+                            const weeklyEnd = endOfWeek.toISOString().split('T')[0];
+                            
+                            const handleRowClick = (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const tukangNama = encodeURIComponent(tukang.nama);
+                              const searchParams = new URLSearchParams({
+                                tukang_cutting: tukang.nama,
+                                weekly_start: weeklyStart,
+                                weekly_end: weeklyEnd
+                              });
+                              const url = `/hasilcutting?${searchParams.toString()}`;
+                              console.log('Navigating to:', url);
+                              console.log('Tukang:', tukang.nama, 'Weekly Start:', weeklyStart, 'Weekly End:', weeklyEnd);
+                              navigate(url);
+                            };
+                            
+                            return (
+                              <tr 
+                                key={index}
+                                className="clickable-table-row"
+                                onClick={handleRowClick}
+                                style={{ cursor: "pointer" }}
+                                title={`Klik untuk melihat hasil cutting dari ${tukang.nama} dalam minggu ini`}
+                              >
+                                <td>{tukang.nama}</td>
+                                <td>{formatNumber(tukang.jml_pcs || 0)}</td>
+                                <td>{formatNumber(tukang.jml_spk || 0)}</td>
+                                <td>{formatNumber(tukang.jml_tim || 0)}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -196,7 +247,7 @@ const LaporanDailyProduksi = () => {
             
             <div className="cards-grid">
               {/* Card Perkiraan PCS Waiting Bahan */}
-              <div className="laporan-card">
+              <div className="laporan-card card-purple">
                 <h3 className="card-title">Perkiraan PCS Waiting Bahan</h3>
                 <div className="card-content">
                   <div className="input-manual-section">
@@ -227,7 +278,7 @@ const LaporanDailyProduksi = () => {
 
               {/* Card SPK Belum Ambil CMT */}
               <div 
-                className="laporan-card clickable-card" 
+                className="laporan-card clickable-card card-info" 
                 onClick={() => navigate("/kode-seri-belum-dikerjakan")}
                 style={{ cursor: "pointer" }}
                 title="Klik untuk melihat detail Kode Seri Belum Dikerjakan"
@@ -254,12 +305,7 @@ const LaporanDailyProduksi = () => {
               </div>
 
               {/* Card Sedang Dikerjakan */}
-              <div 
-                className="laporan-card clickable-card" 
-                onClick={() => navigate("/spkcmt")}
-                style={{ cursor: "pointer" }}
-                title="Klik untuk melihat detail SPK CMT"
-              >
+              <div className="laporan-card card-orange">
                 <h3 className="card-title">Sedang Dikerjakan</h3>
                 <div className="card-content">
                   <div className="stat-row highlight-stat">
@@ -270,15 +316,54 @@ const LaporanDailyProduksi = () => {
                   <div className="turunan-section">
                     <h4 className="turunan-title">Turunan:</h4>
                     <div className="turunan-list">
-                      <div className="turunan-item">
+                      <div 
+                        className="turunan-item clickable-turunan-item"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const searchParams = new URLSearchParams({
+                            status: 'sudah_diambil',
+                            deadline_status: 'masih_deadline'
+                          });
+                          navigate(`/spkcmt?${searchParams.toString()}`);
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title="Klik untuk melihat SPK CMT yang masih dalam deadline"
+                      >
                         <span>Masih dalam Deadline:</span>
                         <span className="turunan-value">{formatNumber(laporanData.cmt?.sedang_dikerjakan?.masih_dalam_deadline || 0)}</span>
                       </div>
-                      <div className="turunan-item">
+                      <div 
+                        className="turunan-item clickable-turunan-item"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const searchParams = new URLSearchParams({
+                            status: 'sudah_diambil',
+                            deadline_status: 'over_deadline'
+                          });
+                          navigate(`/spkcmt?${searchParams.toString()}`);
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title="Klik untuk melihat SPK CMT yang over deadline"
+                      >
                         <span>Over Deadline:</span>
                         <span className="turunan-value highlight-red">{formatNumber(laporanData.cmt?.sedang_dikerjakan?.over_deadline || 0)}</span>
                       </div>
-                      <div className="turunan-item">
+                      <div 
+                        className="turunan-item clickable-turunan-item"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const searchParams = new URLSearchParams({
+                            status: 'sudah_diambil',
+                            kirim_minggu_ini: 'true'
+                          });
+                          navigate(`/spkcmt?${searchParams.toString()}`);
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title="Klik untuk melihat SPK CMT yang sudah kirim minggu ini"
+                      >
                         <span>Kirim Minggu Ini:</span>
                         <span className="turunan-value highlight-green">{formatNumber(laporanData.cmt?.sedang_dikerjakan?.kirim_minggu_ini || 0)}</span>
                       </div>
@@ -289,7 +374,7 @@ const LaporanDailyProduksi = () => {
 
               {/* Card Kemampuan Kirim All CMT */}
               <div 
-                className="laporan-card clickable-card" 
+                className="laporan-card clickable-card card-pink" 
                 onClick={() => navigate("/data-dikerjakan-pengiriman-cmt")}
                 style={{ cursor: "pointer" }}
                 title="Klik untuk melihat detail Data Dikerjakan & Pengiriman CMT"

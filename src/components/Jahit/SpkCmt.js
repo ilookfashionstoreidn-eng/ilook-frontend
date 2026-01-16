@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
 import "./Penjahit.css";
 import "./SpkCmt.css";
 import axios from "axios";
@@ -9,6 +10,9 @@ import { FaMicrophone, FaArrowUp, FaArrowDown, FaStop, FaImage, FaPlus, FaSave, 
 import Select from "react-select";
 
 const SpkCmt = () => {
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [spkCmtData, setSpkCmtData] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -44,10 +48,14 @@ const SpkCmt = () => {
   const [modalType, setModalType] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [readers, setReaders] = useState({});
-  const [selectedStatus, setSelectedStatus] = useState("");
+  // Baca dari URL atau default kosong
+  const [selectedStatus, setSelectedStatus] = useState(searchParams.get("status") || "");
   const [selectedPenjahit, setSelectedPenjahit] = useState("");
   const [produkList, setProdukList] = useState([]);
   const [kategoriList, setKategoriList] = useState([]);
+  // Filter baru untuk deadline status dan kirim minggu ini
+  const [deadlineStatusFilter, setDeadlineStatusFilter] = useState(searchParams.get("deadline_status") || "");
+  const [kirimMingguIniFilter, setKirimMingguIniFilter] = useState(searchParams.get("kirim_minggu_ini") || "");
   const [sortBy, setSortBy] = useState("created_at"); // Default sorting by created_at
   const [sortOrder, setSortOrder] = useState("desc"); // Default descending
   const [selectedProduk, setSelectedProduk] = useState("");
@@ -242,15 +250,43 @@ const SpkCmt = () => {
     }
   }, [messages]); // Akan berjalan setiap kali messages berubah
 
+  // Update filter dari URL saat component mount atau URL berubah
+  useEffect(() => {
+    const statusFromUrl = searchParams.get("status");
+    const deadlineStatusFromUrl = searchParams.get("deadline_status");
+    const kirimMingguIniFromUrl = searchParams.get("kirim_minggu_ini");
+    
+    if (statusFromUrl) {
+      setSelectedStatus(statusFromUrl);
+    }
+    if (deadlineStatusFromUrl) {
+      setDeadlineStatusFilter(deadlineStatusFromUrl);
+    }
+    if (kirimMingguIniFromUrl) {
+      setKirimMingguIniFilter(kirimMingguIniFromUrl);
+    }
+    
+    // Reset currentPage ke 1 ketika filter berubah
+    setCurrentPage(1);
+  }, [searchParams]);
+
   useEffect(() => {
     console.log("Fetching SPK with sortOrder:", sortOrder);
     const fetchSpkCmtData = async () => {
       try {
         setLoading(true);
 
+        // Baca langsung dari URL untuk menghindari race condition
+        const urlParams = new URLSearchParams(location.search);
+        const statusFromUrl = urlParams.get("status") || selectedStatus;
+        const deadlineStatusFromUrl = urlParams.get("deadline_status") || deadlineStatusFilter;
+        const kirimMingguIniFromUrl = urlParams.get("kirim_minggu_ini") || kirimMingguIniFilter;
+
         // ✅ Debugging log sebelum request API
         console.log("Current Filters:");
-        console.log("status:", selectedStatus);
+        console.log("status:", statusFromUrl);
+        console.log("deadline_status:", deadlineStatusFromUrl);
+        console.log("kirim_minggu_ini:", kirimMingguIniFromUrl);
         console.log("page:", currentPage);
         console.log("id_penjahit:", selectedPenjahit);
         console.log("sortBy:", sortBy);
@@ -258,18 +294,26 @@ const SpkCmt = () => {
         console.log("selectedProduk (before convert):", selectedProduk);
         console.log("selectedProduk (converted):", selectedProduk ? Number(selectedProduk) : undefined);
 
-        const response = await API.get(`/spkcmt`, {
-          params: {
-            status: selectedStatus,
-            page: currentPage,
-            id_penjahit: selectedPenjahit,
-            sortBy: sortBy,
-            sortOrder: sortOrder,
-            id_produk: selectedProduk,
-            kategori_produk: selectedKategori,
-            sisa_hari: selectedSisaHari,
-          },
-        });
+        const params = {
+          status: statusFromUrl || undefined,
+          page: currentPage,
+          id_penjahit: selectedPenjahit || undefined,
+          sortBy: sortBy,
+          sortOrder: sortOrder,
+          id_produk: selectedProduk || undefined,
+          kategori_produk: selectedKategori || undefined,
+          sisa_hari: selectedSisaHari || undefined,
+        };
+        
+        // Tambahkan filter baru jika ada
+        if (deadlineStatusFromUrl) {
+          params.deadline_status = deadlineStatusFromUrl;
+        }
+        if (kirimMingguIniFromUrl) {
+          params.kirim_minggu_ini = kirimMingguIniFromUrl;
+        }
+
+        const response = await API.get(`/spkcmt`, { params });
 
         console.log("Data SPK:", response.data); // Debugging
         console.log("SPK Data:", response.data.spk?.data); // Debugging
@@ -292,7 +336,7 @@ const SpkCmt = () => {
     };
 
     fetchSpkCmtData();
-  }, [currentPage, selectedStatus, selectedPenjahit, sortBy, sortOrder, selectedProduk, selectedKategori, selectedSisaHari]);
+  }, [currentPage, selectedStatus, selectedPenjahit, sortBy, sortOrder, selectedProduk, selectedKategori, selectedSisaHari, deadlineStatusFilter, kirimMingguIniFilter, location.search]);
 
   // Fetch status count
   useEffect(() => {

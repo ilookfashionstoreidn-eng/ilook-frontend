@@ -8,6 +8,9 @@
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
   --info-color: #3b82f6;
+  --purple-color: #8b5cf6;
+  --orange-color: #f97316;
+  --pink-color: #ec4899;
   --bg-primary: #f8fafc;
   --bg-card: #ffffff;
   --text-primary: #0f172a;
@@ -23,58 +26,32 @@
 .laporan-daily-container {
   width: 100%;
   padding: 32px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f8fafc;
   min-height: 100vh;
-  animation: fadeIn 0.4s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .laporan-daily-header {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--bg-card);
   padding: 32px;
   border-radius: 16px;
   margin-bottom: 32px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--primary-color);
+  border-left: 6px solid var(--primary-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 24px;
   position: relative;
-  overflow: hidden;
-}
-
-.laporan-daily-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-color), var(--info-color), var(--success-color));
 }
 
 .laporan-daily-header h1 {
   font-size: 32px;
   font-weight: 800;
-  color: var(--text-primary);
+  color: var(--primary-color);
   margin: 0;
   letter-spacing: -0.8px;
-  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .laporan-daily-filter {
@@ -104,20 +81,18 @@
   color: var(--text-primary);
   background-color: var(--bg-card);
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   min-width: 180px;
   cursor: pointer;
 }
 
 .laporan-daily-filter input[type="date"]:hover {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
 .laporan-daily-filter input[type="date"]:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .laporan-daily-loading {
@@ -129,8 +104,8 @@
   font-size: 16px;
   font-weight: 500;
   box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border: 2px solid var(--info-color);
+  border-left: 6px solid var(--info-color);
 }
 
 .laporan-daily-empty {
@@ -143,26 +118,17 @@
   font-weight: 500;
   box-shadow: var(--shadow-md);
   border: 2px dashed var(--border-color);
-  animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
 }
 
 .laporan-daily-error {
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  background: #fef2f2;
   padding: 20px 24px;
   border-radius: 12px;
   color: var(--danger-color);
   font-size: 14px;
   font-weight: 600;
-  border: 2px solid #fecaca;
+  border: 2px solid var(--danger-color);
+  border-left: 6px solid var(--danger-color);
   margin-bottom: 24px;
   box-shadow: var(--shadow-md);
   display: flex;
@@ -185,18 +151,6 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  animation: slideUp 0.5s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .section-title {
@@ -205,8 +159,7 @@
   color: var(--text-primary);
   margin: 0;
   padding-bottom: 16px;
-  border-bottom: 3px solid;
-  border-image: linear-gradient(90deg, var(--primary-color), var(--info-color)) 1;
+  border-bottom: 3px solid var(--primary-color);
   position: relative;
   letter-spacing: -0.5px;
 }
@@ -232,33 +185,44 @@
   border-radius: 16px;
   padding: 24px;
   box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid var(--border-color);
+  border-left: 5px solid var(--primary-color);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
-  overflow: hidden;
-}
-
-.laporan-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary-color), var(--info-color));
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease;
 }
 
 .laporan-card:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
   border-color: var(--primary-color);
 }
 
-.laporan-card:hover::before {
-  transform: scaleX(1);
+/* Variasi warna border untuk card yang berbeda */
+.laporan-card.card-blue {
+  border-left-color: var(--primary-color);
+}
+
+.laporan-card.card-info {
+  border-left-color: var(--info-color);
+}
+
+.laporan-card.card-green {
+  border-left-color: var(--success-color);
+}
+
+.laporan-card.card-yellow {
+  border-left-color: var(--warning-color);
+}
+
+.laporan-card.card-purple {
+  border-left-color: var(--purple-color);
+}
+
+.laporan-card.card-orange {
+  border-left-color: var(--orange-color);
+}
+
+.laporan-card.card-pink {
+  border-left-color: var(--pink-color);
 }
 
 /* Clickable Card Styles */
@@ -276,26 +240,18 @@
   font-size: 20px;
   color: var(--primary-color);
   opacity: 0;
-  transform: translateX(-10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease;
   font-weight: 700;
 }
 
 .laporan-card.clickable-card:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
   border-color: var(--primary-color);
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: #f8fafc;
 }
 
 .laporan-card.clickable-card:hover::after {
   opacity: 1;
-  transform: translateX(0);
-}
-
-.laporan-card.clickable-card:active {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
 }
 
 .laporan-card.clickable-card .card-title {
@@ -304,14 +260,10 @@
 }
 
 .laporan-card.highlight-card-yellow {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  background: #fffbeb;
   border: 2px solid var(--warning-color);
-  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.2);
-}
-
-.laporan-card.highlight-card-yellow::before {
-  background: var(--warning-color);
-  transform: scaleX(1);
+  border-left: 6px solid var(--warning-color);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
 }
 
 .card-title {
@@ -337,20 +289,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease;
 }
 
 .stat-row:hover {
-  padding-left: 8px;
-  padding-right: 8px;
   background-color: #f8fafc;
   border-radius: 8px;
-  margin: 0 -8px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 .stat-row.highlight-stat {
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f8fafc;
   border-radius: 12px;
   margin: 8px 0;
   border-left: 4px solid var(--primary-color);
@@ -423,12 +374,39 @@
   color: var(--text-secondary);
   background: #f8fafc;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .turunan-item:hover {
   background: #f1f5f9;
-  transform: translateX(4px);
+}
+
+.turunan-item.clickable-turunan-item {
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.turunan-item.clickable-turunan-item::after {
+  content: '→';
+  position: absolute;
+  right: 12px;
+  font-size: 16px;
+  color: var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-weight: 700;
+}
+
+.turunan-item.clickable-turunan-item:hover {
+  background: #e0f2fe;
+  border-left-color: var(--primary-color);
+  padding-left: 15px;
+}
+
+.turunan-item.clickable-turunan-item:hover::after {
+  opacity: 1;
 }
 
 .turunan-value {
@@ -443,6 +421,11 @@
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid var(--border-color);
+  width: 100%;
+}
+
+.tukang-cutting-table {
+  min-width: 100%;
 }
 
 .tukang-cutting-table table,
@@ -450,11 +433,16 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: auto;
+}
+
+.tukang-cutting-table table {
+  min-width: 100%;
 }
 
 .tukang-cutting-table thead th,
 .periode-table thead th {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f1f5f9;
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
@@ -462,7 +450,18 @@
   letter-spacing: 0.5px;
   padding: 14px 16px;
   text-align: left;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--primary-color);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.tukang-cutting-table thead th:first-child {
+  min-width: 150px;
+}
+
+.tukang-cutting-table thead th:not(:first-child) {
+  min-width: 100px;
+  text-align: center;
 }
 
 .tukang-cutting-table tbody td,
@@ -474,6 +473,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.tukang-cutting-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tukang-cutting-table tbody td:not(:first-child) {
+  text-align: center;
+  font-weight: 700;
+}
+
 .tukang-cutting-table tbody tr:last-child td,
 .periode-table tbody tr:last-child td {
   border-bottom: none;
@@ -481,15 +490,40 @@
 
 .tukang-cutting-table tbody tr:hover,
 .periode-table tbody tr:hover {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  transform: scale(1.01);
-  transition: all 0.2s ease;
+  background: #f8fafc;
+  transition: background-color 0.15s ease;
+}
+
+.tukang-cutting-table tbody tr.clickable-table-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.tukang-cutting-table tbody tr.clickable-table-row::after {
+  content: '→';
+  position: absolute;
+  right: 16px;
+  font-size: 16px;
+  color: var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-weight: 700;
+}
+
+.tukang-cutting-table tbody tr.clickable-table-row:hover {
+  background: #e0f2fe;
+  border-left: 3px solid var(--primary-color);
+}
+
+.tukang-cutting-table tbody tr.clickable-table-row:hover::after {
+  opacity: 1;
 }
 
 .formula-text {
   margin-top: 16px;
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f8fafc;
   border-radius: 10px;
   border-top: 2px solid var(--border-color);
   color: var(--text-secondary);
@@ -536,18 +570,16 @@
   color: var(--text-primary);
   background-color: var(--bg-card);
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .waiting-bahan-input:hover {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
 .waiting-bahan-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .waiting-bahan-input::-webkit-inner-spin-button,
@@ -578,27 +610,17 @@
 }
 
 @keyframes fadeInOut {
-  0% {
+  0%, 100% {
     opacity: 0;
-    transform: translateX(-10px);
   }
-  20% {
+  20%, 80% {
     opacity: 1;
-    transform: translateX(0);
-  }
-  80% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-10px);
   }
 }
 
 .input-display-value {
   padding: 12px 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f8fafc;
   border-radius: 10px;
   font-size: 14px;
   color: var(--text-secondary);
@@ -709,6 +731,20 @@
   .periode-table thead th,
   .periode-table tbody td {
     padding: 10px 8px;
+  }
+
+  .tukang-cutting-table thead th {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 11px;
+  }
+
+  .tukang-cutting-table thead th:first-child {
+    min-width: 120px;
+  }
+
+  .tukang-cutting-table thead th:not(:first-child) {
+    min-width: 80px;
   }
 
   .waiting-bahan-input {
