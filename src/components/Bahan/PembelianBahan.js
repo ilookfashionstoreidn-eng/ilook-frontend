@@ -8,6 +8,8 @@ const PembelianBahan = () => {
   const [pabrikList, setPabrikList] = useState([]);
   const [gudangList, setGudangList] = useState([]);
   const [bahanList, setBahanList] = useState([]);
+  const [spkBahanList, setSpkBahanList] = useState([]);
+  const [selectedSpkBahan, setSelectedSpkBahan] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -33,6 +35,7 @@ const PembelianBahan = () => {
 
   // Form Tambah
   const [newItem, setNewItem] = useState({
+    spk_bahan_id: "",
     pabrik_id: "",
     gudang_id: "",
     tanggal_kirim: "",
@@ -42,9 +45,8 @@ const PembelianBahan = () => {
     gramasi: "",
     lebar_kain: "",
     keterangan: "",
-    sku: "",
     harga: "",
-    warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
+    berat_rol: {}, // Format: { spk_bahan_warna_id: [berat1, berat2, ...] }
   });
 
   // Form Edit
@@ -69,7 +71,13 @@ const PembelianBahan = () => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [resData, resPabrik, resGudang, resBahan] = await Promise.all([API.get("/pembelian-bahan"), API.get("/pabrik"), API.get("/gudang"), API.get("/bahan")]);
+        const [resData, resPabrik, resGudang, resBahan, resSpkBahan] = await Promise.all([
+          API.get("/pembelian-bahan"),
+          API.get("/pabrik"),
+          API.get("/gudang"),
+          API.get("/bahan"),
+          API.get("/spk-bahan")
+        ]);
 
         let dataBahan = Array.isArray(resData.data) ? resData.data : resData.data?.data || [];
         dataBahan = dataBahan.sort((a, b) => b.id - a.id);
@@ -78,6 +86,10 @@ const PembelianBahan = () => {
         setPabrikList(resPabrik.data || []);
         setGudangList(resGudang.data || []);
         setBahanList(resBahan.data || []);
+        
+        // Filter SPK Bahan yang statusnya bukan 'selesai'
+        const spkBahanData = Array.isArray(resSpkBahan.data) ? resSpkBahan.data : resSpkBahan.data?.data || [];
+        setSpkBahanList(spkBahanData.filter(spk => spk.status !== 'selesai'));
 
         setIsReady(true); // 🔹 Pastikan semua data siap
       } catch (e) {
@@ -293,6 +305,7 @@ const PembelianBahan = () => {
 
   const resetForm = () => {
     setNewItem({
+      spk_bahan_id: "",
       pabrik_id: "",
       gudang_id: "",
       tanggal_kirim: "",
@@ -302,10 +315,10 @@ const PembelianBahan = () => {
       gramasi: "",
       lebar_kain: "",
       keterangan: "",
-      sku: "",
       harga: "",
-      warna: [{ nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
+      berat_rol: {},
     });
+    setSelectedSpkBahan(null);
     setEditItem({
       id: null,
       pabrik_id: "",
@@ -328,54 +341,111 @@ const PembelianBahan = () => {
     setShowEditForm(false);
   };
 
-  const addWarna = () => {
-    setNewItem((prev) => ({
-      ...prev,
-      warna: [...prev.warna, { nama: "", jumlah_rol: 1, rol: [0], isCustom: false, customNama: "" }],
-    }));
+  // Handler untuk memilih SPK Bahan
+  const handleSpkBahanChange = async (spkBahanId) => {
+    if (!spkBahanId) {
+      setSelectedSpkBahan(null);
+      setNewItem((prev) => ({
+        ...prev,
+        spk_bahan_id: "",
+        bahan_id: "",
+        berat_rol: {},
+      }));
+      return;
+    }
+
+    try {
+      const spkBahan = spkBahanList.find(spk => spk.id === parseInt(spkBahanId));
+      if (spkBahan) {
+        setSelectedSpkBahan(spkBahan);
+        setNewItem((prev) => ({
+          ...prev,
+          spk_bahan_id: spkBahanId,
+          bahan_id: spkBahan.bahan_id || "",
+          pabrik_id: spkBahan.pabrik_id || "",
+          berat_rol: {},
+        }));
+
+        // Fetch data pembelian bahan yang sudah ada untuk menghitung sisa rol
+        try {
+          const resPembelian = await API.get("/pembelian-bahan");
+          const pembelianData = Array.isArray(resPembelian.data.data) ? resPembelian.data.data : resPembelian.data.data?.data || [];
+          
+          // Hitung sisa rol per warna
+          const sisaRol = {};
+          if (spkBahan.warna && Array.isArray(spkBahan.warna)) {
+            spkBahan.warna.forEach((warna) => {
+              // Hitung total rol yang sudah dikirim untuk warna ini
+              const totalTerkirim = pembelianData
+                .filter(pb => pb.spk?.id === spkBahan.id)
+                .flatMap(pb => pb.warna || [])
+                .filter(w => w.spk_bahan_warna_id === warna.id)
+                .reduce((sum, w) => sum + (w.rol?.length || 0), 0);
+              
+              sisaRol[warna.id] = Math.max(0, (warna.jumlah_rol || 0) - totalTerkirim);
+            });
+          }
+          
+          // Set sisa rol ke state untuk ditampilkan
+          setSelectedSpkBahan((prev) => ({
+            ...prev,
+            sisaRol,
+          }));
+        } catch (err) {
+          console.error("Error calculating sisa rol:", err);
+          // Jika error, set sisa rol sama dengan jumlah rol SPK
+          const sisaRol = {};
+          if (spkBahan.warna && Array.isArray(spkBahan.warna)) {
+            spkBahan.warna.forEach((warna) => {
+              sisaRol[warna.id] = warna.jumlah_rol || 0;
+            });
+          }
+          setSelectedSpkBahan((prev) => ({
+            ...prev,
+            sisaRol,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error loading SPK Bahan:", error);
+      alert("Gagal memuat data SPK Bahan");
+    }
   };
 
-  const removeWarna = (index) => {
-    setNewItem((prev) => ({
-      ...prev,
-      warna: prev.warna.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleWarnaFieldChange = (index, key, value) => {
+  // Handler untuk menambah rol pada warna tertentu
+  const addRolToWarna = (spkBahanWarnaId) => {
     setNewItem((prev) => {
-      const warna = [...prev.warna];
-      warna[index] = { ...warna[index], [key]: value };
-      return { ...prev, warna };
+      const beratRol = { ...prev.berat_rol };
+      if (!beratRol[spkBahanWarnaId]) {
+        beratRol[spkBahanWarnaId] = [];
+      }
+      beratRol[spkBahanWarnaId] = [...beratRol[spkBahanWarnaId], 0];
+      return { ...prev, berat_rol: beratRol };
     });
   };
 
-  const addRol = (warnaIndex) => {
+  // Handler untuk menghapus rol pada warna tertentu
+  const removeRolFromWarna = (spkBahanWarnaId, rolIndex) => {
     setNewItem((prev) => {
-      const warna = [...prev.warna];
-      warna[warnaIndex].rol = [...warna[warnaIndex].rol, 0];
-      warna[warnaIndex].jumlah_rol = warna[warnaIndex].rol.length;
-      return { ...prev, warna };
+      const beratRol = { ...prev.berat_rol };
+      if (beratRol[spkBahanWarnaId]) {
+        beratRol[spkBahanWarnaId] = beratRol[spkBahanWarnaId].filter((_, i) => i !== rolIndex);
+      }
+      return { ...prev, berat_rol: beratRol };
     });
   };
 
-  const removeRol = (warnaIndex, rolIndex) => {
+  // Handler untuk mengubah berat rol
+  const handleBeratRolChange = (spkBahanWarnaId, rolIndex, value) => {
     setNewItem((prev) => {
-      const warna = [...prev.warna];
-      warna[warnaIndex].rol = warna[warnaIndex].rol.filter((_, i) => i !== rolIndex);
-      warna[warnaIndex].jumlah_rol = warna[warnaIndex].rol.length;
-      return { ...prev, warna };
-    });
-  };
-
-  const handleRolChange = (warnaIndex, rolIndex, value) => {
-    setNewItem((prev) => {
-      const warna = [...prev.warna];
-      const arr = [...warna[warnaIndex].rol];
+      const beratRol = { ...prev.berat_rol };
+      if (!beratRol[spkBahanWarnaId]) {
+        beratRol[spkBahanWarnaId] = [];
+      }
+      const arr = [...beratRol[spkBahanWarnaId]];
       arr[rolIndex] = value;
-      warna[warnaIndex].rol = arr;
-      warna[warnaIndex].jumlah_rol = arr.length;
-      return { ...prev, warna };
+      beratRol[spkBahanWarnaId] = arr;
+      return { ...prev, berat_rol: beratRol };
     });
   };
 
@@ -434,6 +504,19 @@ const PembelianBahan = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
+    // Validasi SPK Bahan
+    if (!newItem.spk_bahan_id) {
+      alert("Silakan pilih SPK Bahan terlebih dahulu.");
+      return;
+    }
+
+    // Validasi minimal ada 1 rol yang diisi
+    const totalRol = Object.values(newItem.berat_rol || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+    if (totalRol === 0) {
+      alert("Minimal harus ada 1 rol yang diisi.");
+      return;
+    }
+
     // Validasi nomor surat jalan sebelum submit
     if (newItem.no_surat_jalan && newItem.no_surat_jalan.trim() !== "") {
       const isValid = await checkNoSuratJalan(newItem.no_surat_jalan);
@@ -445,27 +528,28 @@ const PembelianBahan = () => {
 
     try {
       const formData = new FormData();
+      formData.append("spk_bahan_id", newItem.spk_bahan_id);
       formData.append("keterangan", newItem.keterangan || "");
       formData.append("gudang_id", newItem.gudang_id);
       formData.append("pabrik_id", newItem.pabrik_id);
       formData.append("tanggal_kirim", newItem.tanggal_kirim);
       if (newItem.no_surat_jalan) formData.append("no_surat_jalan", newItem.no_surat_jalan);
       if (newItem.foto_surat_jalan) formData.append("foto_surat_jalan", newItem.foto_surat_jalan);
-      formData.append("bahan_id", newItem.bahan_id);
       formData.append("gramasi", newItem.gramasi || "");
       formData.append("lebar_kain", newItem.lebar_kain || "");
-      formData.append("sku", newItem.sku || "");
+      
       // Hitung harga yang akan dikirim ke DB
-      // Unformat rupiah ke angka, lalu jika PPN dicentang tambahkan 11%
       const hargaInput = parseFloat(unformatRupiah(newItem.harga)) || 0;
       const hargaForDB = usePPN ? calculateHargaWithPPN(hargaInput) : hargaInput;
       formData.append("harga", hargaForDB.toString());
-      newItem.warna.forEach((w, i) => {
-        const namaWarna = w.isCustom ? w.customNama || "" : w.nama || "";
-        formData.append(`warna[${i}][nama]`, namaWarna);
-        formData.append(`warna[${i}][jumlah_rol]`, w.jumlah_rol || w.rol.length);
-        w.rol.forEach((berat, j) => {
-          formData.append(`warna[${i}][rol][${j}]`, berat);
+
+      // Format berat_rol sesuai dengan yang diharapkan backend
+      // Format: berat_rol[spk_bahan_warna_id][] = berat1, berat_rol[spk_bahan_warna_id][] = berat2, ...
+      Object.keys(newItem.berat_rol || {}).forEach((spkBahanWarnaId) => {
+        const beratArray = newItem.berat_rol[spkBahanWarnaId] || [];
+        beratArray.forEach((berat) => {
+          // Gunakan format [] untuk array di Laravel
+          formData.append(`berat_rol[${spkBahanWarnaId}][]`, berat);
         });
       });
 
@@ -473,7 +557,13 @@ const PembelianBahan = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const data = Array.isArray(response.data) ? response.data : response.data?.data || response.data;
-      setItems((prev) => [data, ...prev]);
+      
+      // Refresh data
+      const resData = await API.get("/pembelian-bahan");
+      let dataBahan = Array.isArray(resData.data.data) ? resData.data.data : resData.data.data?.data || [];
+      dataBahan = dataBahan.sort((a, b) => b.id - a.id);
+      setItems(dataBahan);
+      
       resetForm();
       setNoSuratJalanError("");
       alert("Pembelian bahan berhasil ditambahkan!");
@@ -482,7 +572,8 @@ const PembelianBahan = () => {
         setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
         alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
       } else {
-        alert(error.response?.data?.message || "Gagal menambah pembelian bahan.");
+        const errorMsg = error.response?.data?.message || error.response?.data?.error || "Gagal menambah pembelian bahan.";
+        alert(errorMsg);
       }
     }
   };
@@ -801,14 +892,14 @@ const PembelianBahan = () => {
                 <tr>
                   <th>No</th>
                   <th>Keterangan</th>
+                  <th>SPK Bahan</th>
                   <th>Nama Bahan</th>
                   <th>Satuan</th>
                   <th>Harga</th>
-                  <th>SKU</th>
                   <th>Gudang</th>
                   <th>Pabrik</th>
                   <th>Tanggal Diterima</th>
-                  <th>Gramasi</th>
+                  <th>Progress</th>
                   <th>Barcode</th>
                   <th>Aksi</th>
                 </tr>
@@ -820,14 +911,46 @@ const PembelianBahan = () => {
                     <td>
                       <span className={`pembelian-bahan-badge ${b.keterangan?.toLowerCase()}`}>{b.keterangan}</span>
                     </td>
+                    <td>
+                      {b.spk ? (
+                        <div>
+                          <div>ID: {b.spk.id}</div>
+                          <div style={{ fontSize: "12px", color: "#666" }}>
+                            Status: <span className={`pembelian-bahan-badge ${b.spk.status?.toLowerCase()}`}>{b.spk.status || "-"}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                     <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
                     <td>{getNamaById(bahanList, b.bahan_id, "satuan")}</td>
                     <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
-                    <td>{b.sku || "-"}</td>
                     <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                     <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
                     <td>{b.tanggal_kirim}</td>
-                    <td>{b.gramasi}</td>
+                    <td>
+                      {b.progress !== undefined ? (
+                        <div>
+                          <div style={{ fontSize: "12px", marginBottom: "4px" }}>
+                            {b.total_rol_dikirim || 0} / {b.total_rol_spk || 0} rol
+                          </div>
+                          <div style={{ width: "100px", height: "8px", backgroundColor: "#e5e7eb", borderRadius: "4px", overflow: "hidden" }}>
+                            <div
+                              style={{
+                                width: `${Math.min(b.progress || 0, 100)}%`,
+                                height: "100%",
+                                backgroundColor: b.progress >= 100 ? "#10b981" : b.progress >= 50 ? "#3b82f6" : "#f59e0b",
+                                transition: "width 0.3s ease",
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{b.progress?.toFixed(1) || 0}%</div>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                     <td>
                       <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
                         <FaDownload />
@@ -879,22 +1002,34 @@ const PembelianBahan = () => {
             <form onSubmit={handleFormSubmit} className="pembelian-bahan-form">
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
+                  <label>SPK Bahan *</label>
+                  <select
+                    name="spk_bahan_id"
+                    value={newItem.spk_bahan_id}
+                    onChange={(e) => handleSpkBahanChange(e.target.value)}
+                    required
+                  >
+                    <option value="">Pilih SPK Bahan</option>
+                    {spkBahanList.map((spk) => (
+                      <option key={spk.id} value={spk.id}>
+                        SPK #{spk.id} - {spk.bahan?.nama_bahan || "-"} ({spk.pabrik?.nama_pabrik || "-"}) - Status: {spk.status || "-"}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedSpkBahan && (
+                    <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#f0f9ff", borderRadius: "6px", fontSize: "13px" }}>
+                      <div><strong>Bahan:</strong> {selectedSpkBahan.bahan?.nama_bahan || "-"}</div>
+                      <div><strong>Pabrik:</strong> {selectedSpkBahan.pabrik?.nama_pabrik || "-"}</div>
+                      <div><strong>Total Rol SPK:</strong> {selectedSpkBahan.jumlah || 0}</div>
+                    </div>
+                  )}
+                </div>
+                <div className="pembelian-bahan-form-group">
                   <label>Keterangan</label>
                   <select name="keterangan" value={newItem.keterangan} onChange={handleInputChange} required>
                     <option value="">Pilih Keterangan</option>
                     <option value="Utuh">Utuh</option>
                     <option value="Sisa">Sisa</option>
-                  </select>
-                </div>
-                <div className="pembelian-bahan-form-group">
-                  <label>Bahan</label>
-                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleInputChange} required>
-                    <option value="">Pilih Bahan</option>
-                    {bahanList.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.nama_bahan} ({b.satuan})
-                      </option>
-                    ))}
                   </select>
                 </div>
               </div>
@@ -914,10 +1049,6 @@ const PembelianBahan = () => {
                       <strong>Harga Setelah PPN:</strong> {formatRupiah(calculateHargaWithPPN(parseFloat(unformatRupiah(newItem.harga)) || 0))}
                     </div>
                   )}
-                </div>
-                <div className="pembelian-bahan-form-group">
-                  <label>SKU</label>
-                  <input type="text" name="sku" value={newItem.sku} onChange={handleInputChange} placeholder="Masukkan SKU (opsional)" />
                 </div>
               </div>
 
@@ -974,81 +1105,95 @@ const PembelianBahan = () => {
                 </div>
               </div>
 
-              <h3>Warna & Rol</h3>
-              {newItem.warna.map((w, wi) => (
-                <div key={wi} className="pembelian-bahan-warna-section">
-                  <div className="pembelian-bahan-warna-header">
-                    <h4>Warna {wi + 1}</h4>
-                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeWarna(wi)}>
-                      Hapus Warna
-                    </button>
-                  </div>
-                  <div className="pembelian-bahan-form-group">
-                    <label>Pilih Warna</label>
-                    <select
-                      value={w.isCustom ? "Lainnya" : w.nama}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "Lainnya") {
-                          handleWarnaFieldChange(wi, "isCustom", true);
-                          handleWarnaFieldChange(wi, "nama", "");
-                        } else {
-                          handleWarnaFieldChange(wi, "isCustom", false);
-                          handleWarnaFieldChange(wi, "nama", value);
-                          handleWarnaFieldChange(wi, "customNama", "");
-                        }
-                      }}
-                      required
-                    >
-                      <option value="">Pilih Warna</option>
-                      {WARNA_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                    {w.isCustom && <input type="text" placeholder="Masukkan warna lain..." value={w.customNama || ""} onChange={(e) => handleWarnaFieldChange(wi, "customNama", e.target.value)} style={{ marginTop: 8 }} required />}
-                  </div>
-                  <div className="pembelian-bahan-form-group">
-                    <label>Jumlah Rol: {w.rol.length}</label>
-                  </div>
-                  <div>
-                    {w.rol.map((berat, ri) => (
-                      <div key={ri} className="pembelian-bahan-rol-item">
-                        <label>Berat / Panjang {ri + 1} (kg / yard)</label>
-                        <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChange(wi, ri, e.target.value)} />
-                        <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeRol(wi, ri)}>
-                          Hapus
-                        </button>
+              <h3>Warna & Rol dari SPK</h3>
+              {selectedSpkBahan && selectedSpkBahan.warna && selectedSpkBahan.warna.length > 0 ? (
+                selectedSpkBahan.warna.map((warna) => {
+                  const sisaRol = selectedSpkBahan.sisaRol?.[warna.id] || warna.jumlah_rol || 0;
+                  const beratRolArray = newItem.berat_rol[warna.id] || [];
+                  const totalBerat = beratRolArray.reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0);
+
+                  return (
+                    <div key={warna.id} className="pembelian-bahan-warna-section" style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ddd", borderRadius: "8px" }}>
+                      <div className="pembelian-bahan-warna-header">
+                        <h4>Warna: {warna.warna}</h4>
+                        <div style={{ fontSize: "13px", color: "#666" }}>
+                          Jumlah Rol SPK: <strong>{warna.jumlah_rol || 0}</strong> | 
+                          Sisa Rol: <strong style={{ color: sisaRol > 0 ? "#059669" : "#dc2626" }}>{sisaRol}</strong>
+                        </div>
                       </div>
-                    ))}
-                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={() => addRol(wi)}>
-                      <FaPlus /> Tambah Rol
-                    </button>
-                  </div>
+                      <div style={{ marginTop: "12px" }}>
+                        {beratRolArray.map((berat, ri) => (
+                          <div key={ri} className="pembelian-bahan-rol-item" style={{ marginBottom: "8px", display: "flex", gap: "8px", alignItems: "center" }}>
+                            <label style={{ minWidth: "150px" }}>Berat Rol {ri + 1} (kg):</label>
+                            <input
+                              type="number"
+                              placeholder="Masukkan berat"
+                              value={berat}
+                              onChange={(e) => handleBeratRolChange(warna.id, ri, e.target.value)}
+                              step="0.01"
+                              min="0"
+                              style={{ flex: 1 }}
+                            />
+                            <button
+                              type="button"
+                              className="pembelian-bahan-btn pembelian-bahan-btn-danger"
+                              onClick={() => removeRolFromWarna(warna.id, ri)}
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="pembelian-bahan-btn pembelian-bahan-btn-primary"
+                          onClick={() => addRolToWarna(warna.id)}
+                          disabled={beratRolArray.length >= sisaRol}
+                          style={{ marginTop: "8px" }}
+                        >
+                          <FaPlus /> Tambah Rol
+                        </button>
+                        {beratRolArray.length >= sisaRol && sisaRol > 0 && (
+                          <div style={{ marginTop: "8px", fontSize: "12px", color: "#dc2626" }}>
+                            Maksimal {sisaRol} rol untuk warna ini
+                          </div>
+                        )}
+                        {totalBerat > 0 && (
+                          <div style={{ marginTop: "8px", fontSize: "13px", color: "#059669" }}>
+                            Total Berat: <strong>{totalBerat.toFixed(2)} kg</strong>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ padding: "20px", textAlign: "center", color: "#666", backgroundColor: "#f9fafb", borderRadius: "8px" }}>
+                  {selectedSpkBahan ? "Tidak ada warna pada SPK ini" : "Pilih SPK Bahan terlebih dahulu"}
                 </div>
-              ))}
-              <div style={{ marginBottom: 20 }}>
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarna}>
-                  <FaPlus /> Tambah Warna
-                </button>
-              </div>
+              )}
 
               {/* Total Jumlah Rol dan Total Harga */}
-              <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
-                <div className="pembelian-bahan-form-row">
-                  <div className="pembelian-bahan-form-group">
-                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll</label>
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>{calculateTotalRoll(newItem.warna)}</div>
-                  </div>
-                  <div className="pembelian-bahan-form-group">
-                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Harga (Rp)</label>
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
-                      {formatRupiah(calculateTotalHarga(newItem.bahan_id, newItem.warna))}
+              {selectedSpkBahan && (
+                <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
+                  <div className="pembelian-bahan-form-row">
+                    <div className="pembelian-bahan-form-group">
+                      <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll yang Dikirim</label>
+                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                        {Object.values(newItem.berat_rol || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0)}
+                      </div>
+                    </div>
+                    <div className="pembelian-bahan-form-group">
+                      <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Berat (kg)</label>
+                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                        {Object.values(newItem.berat_rol || {})
+                          .flat()
+                          .reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0)
+                          .toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="pembelian-bahan-form-actions">
                 <button type="submit" className="pembelian-bahan-btn pembelian-bahan-btn-primary">
@@ -1091,14 +1236,40 @@ const PembelianBahan = () => {
                     <strong>Harga</strong>
                     <span className="pembelian-bahan-price">{formatRupiah(detailItem.harga)}</span>
                   </div>
-                  <div className="pembelian-bahan-detail-item">
-                    <strong>SKU</strong>
-                    <span>{detailItem.sku || "-"}</span>
-                  </div>
+                  {detailItem.spk && (
+                    <div className="pembelian-bahan-detail-item">
+                      <strong>SPK Bahan</strong>
+                      <span>
+                        ID: {detailItem.spk.id} | Status: <span className={`pembelian-bahan-badge ${detailItem.spk.status?.toLowerCase()}`}>{detailItem.spk.status || "-"}</span>
+                      </span>
+                    </div>
+                  )}
                   <div className="pembelian-bahan-detail-item">
                     <strong>Pabrik</strong>
                     <span>{getNamaById(pabrikList, detailItem.pabrik_id, "nama_pabrik")}</span>
                   </div>
+                  {detailItem.progress !== undefined && (
+                    <div className="pembelian-bahan-detail-item">
+                      <strong>Progress</strong>
+                      <span>
+                        <div style={{ marginTop: "8px" }}>
+                          <div style={{ fontSize: "14px", marginBottom: "4px" }}>
+                            {detailItem.total_rol_dikirim || 0} / {detailItem.total_rol_spk || 0} rol ({detailItem.progress?.toFixed(1) || 0}%)
+                          </div>
+                          <div style={{ width: "200px", height: "10px", backgroundColor: "#e5e7eb", borderRadius: "5px", overflow: "hidden" }}>
+                            <div
+                              style={{
+                                width: `${Math.min(detailItem.progress || 0, 100)}%`,
+                                height: "100%",
+                                backgroundColor: detailItem.progress >= 100 ? "#10b981" : detailItem.progress >= 50 ? "#3b82f6" : "#f59e0b",
+                                transition: "width 0.3s ease",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </span>
+                    </div>
+                  )}
                   <div className="pembelian-bahan-detail-item">
                     <strong>Gudang</strong>
                     <span>{getNamaById(gudangList, detailItem.gudang_id, "nama_gudang")}</span>
