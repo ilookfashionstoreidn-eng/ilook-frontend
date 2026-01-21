@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./SpkBahan.css";
 import API from "../../api";
-import { FaPlus, FaFileAlt } from "react-icons/fa";
+import { FaPlus, FaFileAlt, FaTrash } from "react-icons/fa";
 
 const JENIS_PEMBAYARAN_OPTIONS = ["Tunai", "Transfer", "Kredit", "Lainnya"];
-const STATUS_OPTIONS = ["Pending", "Diproses", "Selesai", "Dibatalkan"];
+const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
 const SpkBahan = () => {
   const [items, setItems] = useState([]);
@@ -19,10 +19,9 @@ const SpkBahan = () => {
   const [newItem, setNewItem] = useState({
     pabrik_id: "",
     bahan_id: "",
-    jumlah: "",
     jenis_pembayaran: "Tunai",
     tanggal_pembayaran: "",
-    status: "Pending",
+    warna: [{ warna: "", jumlah_rol: 1 }],
   });
 
   useEffect(() => {
@@ -55,13 +54,15 @@ const SpkBahan = () => {
         }
 
         if (resPabrik.status === "fulfilled") {
-          setPabrikList(toArr(resPabrik.value.data));
+          const data = resPabrik.value.data;
+          setPabrikList(toArr(data) || toArr(data?.data));
         } else {
           setPabrikList([]);
         }
 
         if (resBahan.status === "fulfilled") {
-          setBahanList(toArr(resBahan.value.data));
+          const data = resBahan.value.data;
+          setBahanList(toArr(data) || toArr(data?.data));
         } else {
           setBahanList([]);
         }
@@ -95,18 +96,46 @@ const SpkBahan = () => {
     setNewItem({
       pabrik_id: "",
       bahan_id: "",
-      jumlah: "",
       jenis_pembayaran: "Tunai",
       tanggal_pembayaran: "",
-      status: "Pending",
+      warna: [{ warna: "", jumlah_rol: 1 }],
     });
     setShowForm(false);
   };
 
+  const addWarnaRow = () => {
+    setNewItem((prev) => ({
+      ...prev,
+      warna: [...prev.warna, { warna: "", jumlah_rol: 1 }],
+    }));
+  };
+
+  const removeWarnaRow = (index) => {
+    setNewItem((prev) => ({
+      ...prev,
+      warna: prev.warna.length > 1 ? prev.warna.filter((_, i) => i !== index) : prev.warna,
+    }));
+  };
+
+  const handleWarnaChange = (index, field, value) => {
+    setNewItem((prev) => {
+      const arr = [...prev.warna];
+      arr[index] = { ...arr[index], [field]: field === "jumlah_rol" ? (parseInt(value, 10) || 1) : value };
+      return { ...prev, warna: arr };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newItem.pabrik_id || !newItem.bahan_id || !newItem.jumlah || !newItem.tanggal_pembayaran) {
-      alert("Pabrik, Bahan, Jumlah, dan Tanggal Pembayaran wajib diisi.");
+    if (!newItem.pabrik_id || !newItem.bahan_id || !newItem.tanggal_pembayaran) {
+      alert("Pabrik, Bahan, dan Tanggal Pembayaran wajib diisi.");
+      return;
+    }
+    const validWarna = newItem.warna
+      .map((w) => ({ warna: (w.warna || "").trim(), jumlah_rol: Math.max(1, parseInt(w.jumlah_rol, 10) || 1) }))
+      .filter((w) => w.warna !== "");
+    if (validWarna.length === 0) {
+      alert("Minimal 1 detail warna (nama warna dan jumlah rol) wajib diisi.");
       return;
     }
     try {
@@ -114,10 +143,9 @@ const SpkBahan = () => {
       const payload = {
         pabrik_id: parseInt(newItem.pabrik_id, 10),
         bahan_id: parseInt(newItem.bahan_id, 10),
-        jumlah: parseInt(newItem.jumlah, 10) || 1,
         jenis_pembayaran: newItem.jenis_pembayaran || "Tunai",
         tanggal_pembayaran: newItem.tanggal_pembayaran,
-        status: newItem.status || "Pending",
+        warna: validWarna,
       };
       const res = await API.post("/spk-bahan", payload);
       const created = res.data?.data || res.data;
@@ -125,18 +153,25 @@ const SpkBahan = () => {
         ...created,
         pabrik: pabrikList.find((p) => p.id === parseInt(created.pabrik_id, 10)) || { nama_pabrik: "-" },
         bahan: bahanList.find((b) => b.id === parseInt(created.bahan_id, 10)) || { nama_bahan: "-" },
+        warna: created.warna || [],
       };
       setItems((prev) => [enriched, ...prev]);
       resetForm();
       alert(res.data?.message || "SPK Bahan berhasil disimpan.");
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.errors
-        ? Object.values(err.response.data.errors || {}).flat().join(", ")
-        : "Gagal menyimpan SPK Bahan.";
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.data?.errors ? Object.values(err.response.data.errors || {}).flat().join(", ") : null) ||
+        "Gagal menyimpan SPK Bahan.";
       alert(msg);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const formatWarnaSummary = (warnaArr) => {
+    if (!warnaArr || !Array.isArray(warnaArr) || warnaArr.length === 0) return "-";
+    return warnaArr.map((w) => `${w.warna || "-"} (${w.jumlah_rol || 0})`).join(", ");
   };
 
   const formatDate = (d) => {
@@ -187,7 +222,8 @@ const SpkBahan = () => {
                   <th>ID</th>
                   <th>Pabrik</th>
                   <th>Bahan</th>
-                  <th>Jumlah</th>
+                  <th>Warna</th>
+                  <th>Jumlah Rol</th>
                   <th>Jenis Pembayaran</th>
                   <th>Tanggal Pembayaran</th>
                   <th>Status</th>
@@ -199,6 +235,7 @@ const SpkBahan = () => {
                     <td>{row.id}</td>
                     <td>{row.pabrik?.nama_pabrik || "-"}</td>
                     <td>{row.bahan?.nama_bahan || "-"}</td>
+                    <td className="spk-bahan-cell-warna">{formatWarnaSummary(row.warna)}</td>
                     <td>{row.jumlah ?? "-"}</td>
                     <td>{row.jenis_pembayaran || "-"}</td>
                     <td>{formatDate(row.tanggal_pembayaran)}</td>
@@ -257,18 +294,6 @@ const SpkBahan = () => {
 
               <div className="spk-bahan-form-row">
                 <div className="spk-bahan-form-group">
-                  <label>Jumlah *</label>
-                  <input
-                    type="number"
-                    name="jumlah"
-                    value={newItem.jumlah}
-                    onChange={handleInputChange}
-                    min={1}
-                    placeholder="Jumlah"
-                    required
-                  />
-                </div>
-                <div className="spk-bahan-form-group">
                   <label>Jenis Pembayaran *</label>
                   <select
                     name="jenis_pembayaran"
@@ -280,9 +305,6 @@ const SpkBahan = () => {
                     ))}
                   </select>
                 </div>
-              </div>
-
-              <div className="spk-bahan-form-row">
                 <div className="spk-bahan-form-group">
                   <label>Tanggal Pembayaran *</label>
                   <input
@@ -293,17 +315,63 @@ const SpkBahan = () => {
                     required
                   />
                 </div>
-                <div className="spk-bahan-form-group">
-                  <label>Status *</label>
-                  <select
-                    name="status"
-                    value={newItem.status}
-                    onChange={handleInputChange}
-                  >
-                    {STATUS_OPTIONS.map((o) => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
+              </div>
+
+              <div className="spk-bahan-warna-section">
+                <div className="spk-bahan-warna-section-header">
+                  <label>Detail Warna *</label>
+                  <button type="button" className="spk-bahan-btn-add-row" onClick={addWarnaRow}>
+                    <FaPlus /> Tambah Baris
+                  </button>
+                </div>
+                {newItem.warna.map((w, wi) => (
+                  <div key={wi} className="spk-bahan-warna-row">
+                    <div className="spk-bahan-form-group spk-bahan-warna-name">
+                      <label>Warna</label>
+                      <select
+                        value={WARNA_OPTIONS.includes(w.warna) ? w.warna : "Lainnya"}
+                        onChange={(e) => handleWarnaChange(wi, "warna", e.target.value === "Lainnya" ? "" : e.target.value)}
+                      >
+                        <option value="">-- Pilih / Ketik --</option>
+                        {WARNA_OPTIONS.map((o) => (
+                          <option key={o} value={o}>{o}</option>
+                        ))}
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                      {(!w.warna || w.warna === "Lainnya" || !WARNA_OPTIONS.includes(w.warna)) && (
+                        <input
+                          type="text"
+                          placeholder="Nama warna"
+                          value={WARNA_OPTIONS.includes(w.warna) ? "" : (w.warna || "")}
+                          onChange={(e) => handleWarnaChange(wi, "warna", e.target.value)}
+                          style={{ marginTop: 6 }}
+                        />
+                      )}
+                    </div>
+                    <div className="spk-bahan-form-group spk-bahan-warna-jumlah">
+                      <label>Jumlah Rol</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={w.jumlah_rol}
+                        onChange={(e) => handleWarnaChange(wi, "jumlah_rol", e.target.value)}
+                      />
+                    </div>
+                    <div className="spk-bahan-warna-actions">
+                      <button
+                        type="button"
+                        className="spk-bahan-btn-icon-remove"
+                        onClick={() => removeWarnaRow(wi)}
+                        title="Hapus baris"
+                        disabled={newItem.warna.length <= 1}
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="spk-bahan-warna-total">
+                  Total rol: <strong>{newItem.warna.reduce((s, w) => s + (parseInt(w.jumlah_rol, 10) || 0), 0)}</strong>
                 </div>
               </div>
 

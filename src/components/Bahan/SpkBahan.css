@@ -185,9 +185,117 @@
   color: #c62828;
 }
 
+.spk-bahan-badge-proses {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
 .spk-bahan-badge-default {
   background: #f5f5f5;
   color: #616161;
+}
+
+.spk-bahan-cell-warna {
+  max-width: 220px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* Section Detail Warna */
+.spk-bahan-warna-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f8fcff;
+}
+
+.spk-bahan-warna-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.spk-bahan-warna-section-header label {
+  font-weight: 600;
+  color: #17457c;
+  font-size: 14px;
+}
+
+.spk-bahan-btn-add-row {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.spk-bahan-btn-add-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.spk-bahan-warna-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 44px;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.spk-bahan-warna-row:last-of-type {
+  margin-bottom: 0;
+}
+
+.spk-bahan-warna-name input,
+.spk-bahan-warna-jumlah input {
+  padding: 10px 12px;
+  border: 2px solid #b3d9f2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.spk-bahan-warna-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spk-bahan-btn-icon-remove {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spk-bahan-btn-icon-remove:hover:not(:disabled) {
+  background: #ffcdd2;
+}
+
+.spk-bahan-btn-icon-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spk-bahan-warna-total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #b3d9f2;
+  font-size: 14px;
+  color: #17457c;
 }
 
 /* Modal */
@@ -210,7 +318,7 @@
   background: white;
   border-radius: 20px;
   padding: 35px;
-  max-width: 600px;
+  max-width: 640px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -359,6 +467,11 @@
   }
 
   .spk-bahan-table {
-    min-width: 700px;
+    min-width: 780px;
+  }
+
+  .spk-bahan-warna-row {
+    grid-template-columns: 1fr 100px 40px;
+    gap: 8px;
   }
 }
