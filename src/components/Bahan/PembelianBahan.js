@@ -918,6 +918,11 @@ const PembelianBahan = () => {
                           <div style={{ fontSize: "12px", color: "#666" }}>
                             Status: <span className={`pembelian-bahan-badge ${b.spk.status?.toLowerCase()}`}>{b.spk.status || "-"}</span>
                           </div>
+                          {b.spk.lama_pemesanan !== null && b.spk.lama_pemesanan !== undefined && (
+                            <div style={{ fontSize: "12px", color: "#059669", marginTop: "4px", fontWeight: "500" }}>
+                              Lama Pemesanan: {b.spk.lama_pemesanan} hari
+                            </div>
+                          )}
                         </div>
                       ) : (
                         "-"
@@ -1021,6 +1026,9 @@ const PembelianBahan = () => {
                       <div><strong>Bahan:</strong> {selectedSpkBahan.bahan?.nama_bahan || "-"}</div>
                       <div><strong>Pabrik:</strong> {selectedSpkBahan.pabrik?.nama_pabrik || "-"}</div>
                       <div><strong>Total Rol SPK:</strong> {selectedSpkBahan.jumlah || 0}</div>
+                      {selectedSpkBahan.lama_pemesanan !== null && selectedSpkBahan.lama_pemesanan !== undefined && (
+                        <div><strong>Lama Pemesanan:</strong> {selectedSpkBahan.lama_pemesanan} hari</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1240,7 +1248,12 @@ const PembelianBahan = () => {
                     <div className="pembelian-bahan-detail-item">
                       <strong>SPK Bahan</strong>
                       <span>
-                        ID: {detailItem.spk.id} | Status: <span className={`pembelian-bahan-badge ${detailItem.spk.status?.toLowerCase()}`}>{detailItem.spk.status || "-"}</span>
+                        <div>ID: {detailItem.spk.id} | Status: <span className={`pembelian-bahan-badge ${detailItem.spk.status?.toLowerCase()}`}>{detailItem.spk.status || "-"}</span></div>
+                        {detailItem.spk.lama_pemesanan !== null && detailItem.spk.lama_pemesanan !== undefined && (
+                          <div style={{ marginTop: "4px", color: "#059669", fontWeight: "500" }}>
+                            Lama Pemesanan: {detailItem.spk.lama_pemesanan} hari
+                          </div>
+                        )}
                       </span>
                     </div>
                   )}
