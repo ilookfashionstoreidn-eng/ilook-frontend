@@ -184,6 +184,11 @@ const SpkBahan = () => {
     }
   };
 
+  const formatLamaPemesanan = (hari) => {
+    if (hari === null || hari === undefined) return "-";
+    return `${hari} hari`;
+  };
+
   return (
     <div className="spk-bahan-page">
       <div className="spk-bahan-header">
@@ -226,6 +231,7 @@ const SpkBahan = () => {
                   <th>Jumlah Rol</th>
                   <th>Jenis Pembayaran</th>
                   <th>Tanggal Pembayaran</th>
+                  <th>Lama Pemesanan</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -239,6 +245,7 @@ const SpkBahan = () => {
                     <td>{row.jumlah ?? "-"}</td>
                     <td>{row.jenis_pembayaran || "-"}</td>
                     <td>{formatDate(row.tanggal_pembayaran)}</td>
+                    <td>{formatLamaPemesanan(row.lama_pemesanan)}</td>
                     <td>
                       <span className={`spk-bahan-badge spk-bahan-badge-${(row.status || "").trim() ? (row.status || "").toLowerCase().replace(/\s/g, "-") : "default"}`}>
                         {row.status || "-"}
