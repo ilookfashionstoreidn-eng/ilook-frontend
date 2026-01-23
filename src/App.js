@@ -58,6 +58,7 @@ import ScanBahan from "./components/Bahan/ScanBahan";
 import ScanStokBahanKeluar from "./components/Bahan/ScanStokBahanKeluar";
 import RiwayatStokBahanKeluar from "./components/Bahan/RiwayatStokBahanKeluar";
 import SpkBahan from "./components/Bahan/SpkBahan";
+import RefundBahan from "./components/Bahan/RefundBahan";
 import LaporanHasil from "./components/Cutting/SpkCutting/LaporanHasil";
 import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyProduksi";
 
@@ -123,6 +124,7 @@ const App = () => {
           <Route path="scan-stok-bahan-keluar" element={<ScanStokBahanKeluar />} />
           <Route path="riwayat-stok-bahan-keluar" element={<RiwayatStokBahanKeluar />} />
           <Route path="spk-bahan" element={<SpkBahan />} />
+          <Route path="refund-bahan" element={<RefundBahan />} />
           <Route path="seri" element={<Seri />} />
           <Route path="laporanhasil" element={<LaporanHasil />} />
           <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
