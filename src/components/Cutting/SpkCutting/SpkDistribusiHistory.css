@@ -357,6 +357,18 @@
   color: #333;
 }
 
+.distribusi-history-info-value-long {
+  font-size: 14px;
+  font-weight: 500;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.distribusi-history-additional-info-card {
+  background: linear-gradient(135deg, #e8f4f8 0%, #d4e8f0 100%);
+  margin-top: 16px;
+}
+
 /* Timeline */
 .distribusi-history-timeline-container {
   margin-top: 32px;
