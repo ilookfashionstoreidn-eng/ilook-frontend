@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./PembelianBahan.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes, FaUndo } from "react-icons/fa";
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
@@ -30,6 +30,21 @@ const PembelianBahan = () => {
   const [scanLoading, setScanLoading] = useState(false);
   const [scanError, setScanError] = useState("");
   const beratInputRef = useRef(null);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnHistory, setReturnHistory] = useState([]);
+  const [loadingReturn, setLoadingReturn] = useState(false);
+  
+  // Form Return
+  const [returnForm, setReturnForm] = useState({
+    pembelian_bahan_id: "",
+    pembelian_bahan_rol_id: "",
+    tipe_return: "refund",
+    jumlah_rol: 1,
+    total_refund: "",
+    keterangan: "",
+    tanggal_return: new Date().toISOString().split('T')[0],
+    foto_bukti: null,
+  });
 
   const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
@@ -731,10 +746,128 @@ const PembelianBahan = () => {
       const res = await API.get(`/pembelian-bahan/${item.id}`);
       const data = Array.isArray(res.data) ? res.data : res.data?.data || res.data;
       setDetailItem(data);
+      
+      // Fetch return history
+      try {
+        const returnRes = await API.get(`/return-bahan?pembelian_bahan_id=${item.id}`);
+        setReturnHistory(returnRes.data?.data || []);
+      } catch (err) {
+        console.error("Gagal memuat history return:", err);
+        setReturnHistory([]);
+      }
     } catch (e) {
       setDetailItem(item);
     } finally {
       setShowDetail(true);
+    }
+  };
+
+  const handleOpenReturnForm = (item) => {
+    setReturnForm({
+      pembelian_bahan_id: item.id,
+      pembelian_bahan_rol_id: "",
+      tipe_return: "refund",
+      jumlah_rol: 1,
+      total_refund: "",
+      keterangan: "",
+      tanggal_return: new Date().toISOString().split('T')[0],
+      foto_bukti: null,
+    });
+    setShowReturnForm(true);
+  };
+
+  const handleReturnFormChange = (e) => {
+    const { name, value } = e.target;
+    setReturnForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleReturnFileChange = (e) => {
+    setReturnForm((prev) => ({ ...prev, foto_bukti: e.target.files[0] }));
+  };
+
+  const handleUpdateReturnStatus = async (returnId, newStatus) => {
+    if (!window.confirm(`Yakin ingin mengubah status menjadi "${newStatus.toUpperCase()}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await API.put(`/pembelian-bahan/return/${returnId}/status`, {
+        status: newStatus,
+      });
+
+      if (res.data?.success) {
+        alert(res.data?.message || "Status berhasil diupdate");
+        
+        // Refresh return history
+        if (detailItem) {
+          const returnRes = await API.get(`/pembelian-bahan/${detailItem.id}/return`);
+          setReturnHistory(returnRes.data?.data || []);
+        }
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.error || "Gagal mengupdate status";
+      alert(msg);
+    }
+  };
+
+  const handleSubmitReturn = async (e) => {
+    e.preventDefault();
+    
+    if (!returnForm.pembelian_bahan_id) {
+      alert("Pembelian Bahan ID tidak valid");
+      return;
+    }
+
+    if (returnForm.tipe_return === "refund" && !returnForm.total_refund) {
+      alert("Total refund wajib diisi untuk tipe refund");
+      return;
+    }
+
+    try {
+      setLoadingReturn(true);
+      const formData = new FormData();
+      formData.append("pembelian_bahan_id", returnForm.pembelian_bahan_id);
+      if (returnForm.pembelian_bahan_rol_id) {
+        formData.append("pembelian_bahan_rol_id", returnForm.pembelian_bahan_rol_id);
+      }
+      formData.append("tipe_return", returnForm.tipe_return);
+      formData.append("jumlah_rol", returnForm.jumlah_rol);
+      if (returnForm.total_refund) {
+        formData.append("total_refund", returnForm.total_refund);
+      }
+      formData.append("keterangan", returnForm.keterangan || "");
+      formData.append("tanggal_return", returnForm.tanggal_return);
+      if (returnForm.foto_bukti) {
+        formData.append("foto_bukti", returnForm.foto_bukti);
+      }
+
+      const res = await API.post("/pembelian-bahan/return", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data?.success) {
+        alert(res.data?.message || "Return/Refund berhasil dicatat");
+        setShowReturnForm(false);
+        
+        // Refresh return history
+        if (detailItem) {
+          const returnRes = await API.get(`/pembelian-bahan/${detailItem.id}/return`);
+          setReturnHistory(returnRes.data?.data || []);
+        }
+        
+        // Refresh data
+        const fetchRes = await API.get("/pembelian-bahan");
+        let dataBahan = Array.isArray(fetchRes.data.data) ? fetchRes.data.data : fetchRes.data.data?.data || [];
+        dataBahan = dataBahan.sort((a, b) => b.id - a.id);
+        setItems(dataBahan);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.error || "Gagal mencatat return/refund";
+      alert(msg);
+    } finally {
+      setLoadingReturn(false);
     }
   };
 
@@ -1101,8 +1234,8 @@ const PembelianBahan = () => {
                 <label>Foto Surat Jalan (jpg/png/pdf)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
               </div>
-
-              <div className="pembelian-bahan-form-row">
+                    
+              <div className="pembelian-bahan-form-row">  
                 <div className="pembelian-bahan-form-group">
                   <label>Gramasi</label>
                   <input type="number" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required />
@@ -1344,17 +1477,145 @@ const PembelianBahan = () => {
                 ) : (
                   <div style={{ color: "#666", textAlign: "center", padding: "20px" }}>Tidak ada data warna</div>
                 )}
+
+                {/* Return/Refund History */}
+                <h3 style={{ marginTop: "24px", marginBottom: "12px" }}>History Return/Refund</h3>
+                {detailItem.returns && (
+                  <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#f0f9ff", borderRadius: "8px" }}>
+                    <div style={{ fontSize: "14px", marginBottom: "4px" }}>
+                      <strong>Total Return:</strong> {detailItem.returns.total_return || 0} kali
+                    </div>
+                    <div style={{ fontSize: "14px", marginBottom: "4px" }}>
+                      <strong>Total Refund:</strong> {formatRupiah(detailItem.returns.total_refund || 0)}
+                    </div>
+                    <div style={{ fontSize: "14px" }}>
+                      <strong>Return Barang:</strong> {detailItem.returns.total_return_barang || 0} kali
+                    </div>
+                  </div>
+                )}
+                {returnHistory && returnHistory.length > 0 ? (
+                  <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                    {returnHistory.map((ret, idx) => (
+                      <div key={idx} style={{ marginBottom: "12px", padding: "12px", border: "1px solid #e5e7eb", borderRadius: "8px", backgroundColor: "#fff" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", alignItems: "center" }}>
+                          <div>
+                            <strong style={{ color: "#17457c" }}>
+                              {ret.tipe_return === "refund" ? "Refund" : "Return Barang"}
+                            </strong>
+                            <span style={{ marginLeft: "8px", fontSize: "12px", color: "#666" }}>
+                              {new Date(ret.tanggal_return).toLocaleDateString("id-ID")}
+                            </span>
+                          </div>
+                          <span className={`pembelian-bahan-badge ${ret.status?.toLowerCase()}`}>
+                            {ret.status || "pending"}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: "13px", marginBottom: "4px" }}>
+                          <strong>Jumlah Rol:</strong> {ret.jumlah_rol}
+                        </div>
+                        {ret.total_refund && (
+                          <div style={{ fontSize: "13px", marginBottom: "4px" }}>
+                            <strong>Total Refund:</strong> {formatRupiah(ret.total_refund)}
+                          </div>
+                        )}
+                        {ret.keterangan && (
+                          <div style={{ fontSize: "13px", marginBottom: "4px", color: "#666" }}>
+                            <strong>Keterangan:</strong> {ret.keterangan}
+                          </div>
+                        )}
+                        {ret.foto_bukti && (
+                          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                            <a
+                              href={ret.foto_bukti.startsWith("http") ? ret.foto_bukti : `http://localhost:8000/storage/${ret.foto_bukti}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: "#17457c", fontSize: "12px" }}
+                            >
+                              Lihat Foto Bukti
+                            </a>
+                          </div>
+                        )}
+                        {/* Update Status - hanya tampilkan jika status masih pending */}
+                        {ret.status === "pending" && (
+                          <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #e5e7eb" }}>
+                            <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                              <strong>Update Status:</strong>
+                            </div>
+                            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                              <button
+                                onClick={() => handleUpdateReturnStatus(ret.id, "approved")}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: "12px",
+                                  backgroundColor: "#10b981",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleUpdateReturnStatus(ret.id, "rejected")}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: "12px",
+                                  backgroundColor: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => handleUpdateReturnStatus(ret.id, "completed")}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: "12px",
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Complete
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: "#666", textAlign: "center", padding: "20px" }}>Belum ada history return/refund</div>
+                )}
               </>
             ) : (
               <p className="pembelian-bahan-loading">Memuat detail...</p>
             )}
             <div className="pembelian-bahan-form-actions">
+              {detailItem && (
+                <button
+                  type="button"
+                  className="pembelian-bahan-btn"
+                  style={{ backgroundColor: "#f59e0b", color: "white", marginRight: "8px" }}
+                  onClick={() => handleOpenReturnForm(detailItem)}
+                >
+                  <FaUndo style={{ marginRight: "4px" }} />
+                  Return/Refund
+                </button>
+              )}
               <button
                 type="button"
                 className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
                 onClick={() => {
                   setShowDetail(false);
                   setDetailItem(null);
+                  setReturnHistory([]);
                 }}
               >
                 Tutup
@@ -1683,6 +1944,107 @@ const PembelianBahan = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Return/Refund */}
+      {showReturnForm && (
+        <div className="pembelian-bahan-modal" onClick={() => setShowReturnForm(false)}>
+          <div className="pembelian-bahan-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Return/Refund Barang Rusak</h2>
+            <form onSubmit={handleSubmitReturn} className="pembelian-bahan-form">
+              <div className="pembelian-bahan-form-group">
+                <label>Tipe Return *</label>
+                <select
+                  name="tipe_return"
+                  value={returnForm.tipe_return}
+                  onChange={handleReturnFormChange}
+                  required
+                >
+                  <option value="refund">Refund (Pengembalian Uang)</option>
+                  <option value="return_barang">Return Barang (Pengembalian Barang)</option>
+                </select>
+              </div>
+
+              <div className="pembelian-bahan-form-group">
+                <label>Jumlah Rol *</label>
+                <input
+                  type="number"
+                  name="jumlah_rol"
+                  value={returnForm.jumlah_rol}
+                  onChange={handleReturnFormChange}
+                  min="1"
+                  required
+                />
+              </div>
+
+              {returnForm.tipe_return === "refund" && (
+                <div className="pembelian-bahan-form-group">
+                  <label>Total Refund (Rp) *</label>
+                  <input
+                    type="number"
+                    name="total_refund"
+                    value={returnForm.total_refund}
+                    onChange={handleReturnFormChange}
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="pembelian-bahan-form-group">
+                <label>Tanggal Return *</label>
+                <input
+                  type="date"
+                  name="tanggal_return"
+                  value={returnForm.tanggal_return}
+                  onChange={handleReturnFormChange}
+                  required
+                />
+              </div>
+
+              <div className="pembelian-bahan-form-group">
+                <label>Keterangan</label>
+                <textarea
+                  name="keterangan"
+                  value={returnForm.keterangan}
+                  onChange={handleReturnFormChange}
+                  rows="3"
+                  placeholder="Alasan return/refund..."
+                />
+              </div>
+
+              <div className="pembelian-bahan-form-group">
+                <label>Foto Bukti (Opsional)</label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleReturnFileChange}
+                />
+                <small style={{ color: "#666", fontSize: "12px" }}>
+                  Format: JPG, PNG, atau PDF (Max 5MB)
+                </small>
+              </div>
+
+              <div className="pembelian-bahan-form-actions">
+                <button
+                  type="submit"
+                  className="pembelian-bahan-btn pembelian-bahan-btn-primary"
+                  disabled={loadingReturn}
+                >
+                  {loadingReturn ? "Menyimpan..." : "Simpan"}
+                </button>
+                <button
+                  type="button"
+                  className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
+                  onClick={() => setShowReturnForm(false)}
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

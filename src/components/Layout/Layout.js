@@ -30,6 +30,7 @@ import {
   FaBarcode,
   FaLayerGroup,
   FaChartLine,
+  FaUndo,
 } from "react-icons/fa";
 import API from "../../api";
 
@@ -440,6 +441,11 @@ const Layout = () => {
                   <li>
                     <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
+                      <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Refund Bahan
                     </Link>
                   </li>
                   <li>
