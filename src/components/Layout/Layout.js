@@ -468,6 +468,16 @@ const Layout = () => {
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Stok Bahan Keluar
                     </Link>
                   </li>
+                  <li>
+                    <Link to="pendapatan-pabrik" className={`dropdown-link ${activeMenu === "pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan-pabrik")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan Pabrik
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="history-pendapatan-pabrik" className={`dropdown-link ${activeMenu === "history-pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("history-pendapatan-pabrik")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan Pabrik
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>

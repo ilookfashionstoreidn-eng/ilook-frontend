@@ -3,7 +3,7 @@ import "./SpkBahan.css";
 import API from "../../api";
 import { FaPlus, FaFileAlt, FaTrash } from "react-icons/fa";
 
-const JENIS_PEMBAYARAN_OPTIONS = ["Tunai", "Transfer", "Kredit", "Lainnya"];
+const JENIS_PEMBAYARAN_OPTIONS = ["Cash", "Tempo"];
 const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 
 const SpkBahan = () => {
@@ -19,7 +19,7 @@ const SpkBahan = () => {
   const [newItem, setNewItem] = useState({
     pabrik_id: "",
     bahan_id: "",
-    jenis_pembayaran: "Tunai",
+    jenis_pembayaran: "Cash",
     tanggal_pembayaran: "",
     warna: [{ warna: "", jumlah_rol: 1 }],
   });
@@ -96,7 +96,7 @@ const SpkBahan = () => {
     setNewItem({
       pabrik_id: "",
       bahan_id: "",
-      jenis_pembayaran: "Tunai",
+      jenis_pembayaran: "Cash",
       tanggal_pembayaran: "",
       warna: [{ warna: "", jumlah_rol: 1 }],
     });
@@ -143,7 +143,7 @@ const SpkBahan = () => {
       const payload = {
         pabrik_id: parseInt(newItem.pabrik_id, 10),
         bahan_id: parseInt(newItem.bahan_id, 10),
-        jenis_pembayaran: newItem.jenis_pembayaran || "Tunai",
+        jenis_pembayaran: newItem.jenis_pembayaran || "Cash",
         tanggal_pembayaran: newItem.tanggal_pembayaran,
         warna: validWarna,
       };
