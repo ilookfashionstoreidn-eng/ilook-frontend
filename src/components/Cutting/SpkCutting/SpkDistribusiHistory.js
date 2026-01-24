@@ -221,6 +221,51 @@ const SpkDistribusiHistory = () => {
                 </div>
               </div>
 
+              {/* Info Tambahan */}
+              <div className="distribusi-history-info-card distribusi-history-additional-info-card">
+                <div className="distribusi-history-info-grid">
+                  <div className="distribusi-history-info-item">
+                    <div className="distribusi-history-info-label">
+                      <i className="fas fa-user-secret" style={{ marginRight: "6px" }}></i>
+                      Nama CMT
+                    </div>
+                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_cmt || "-"}</div>
+                  </div>
+                  <div className="distribusi-history-info-item">
+                    <div className="distribusi-history-info-label">
+                      <i className="fas fa-user-tie" style={{ marginRight: "6px" }}></i>
+                      Nama Tukang Jasa
+                    </div>
+                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_jasa || "-"}</div>
+                  </div>
+                  <div className="distribusi-history-info-item">
+                    <div className="distribusi-history-info-label">
+                      <i className="fas fa-cut" style={{ marginRight: "6px" }}></i>
+                      Nama Tukang Cutting
+                    </div>
+                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_cutting || "-"}</div>
+                  </div>
+                  <div className="distribusi-history-info-item">
+                    <div className="distribusi-history-info-label">
+                      <i className="fas fa-industry" style={{ marginRight: "6px" }}></i>
+                      Bahan dari Pabrik
+                    </div>
+                    <div className="distribusi-history-info-value distribusi-history-info-value-long">
+                      {selectedDistribusi.bahan_pabrik || "-"}
+                    </div>
+                  </div>
+                  <div className="distribusi-history-info-item">
+                    <div className="distribusi-history-info-label">
+                      <i className="fas fa-warehouse" style={{ marginRight: "6px" }}></i>
+                      Bahan dari Gudang
+                    </div>
+                    <div className="distribusi-history-info-value distribusi-history-info-value-long">
+                      {selectedDistribusi.bahan_gudang || "-"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Timeline */}
               {selectedDistribusi.history && selectedDistribusi.history.length > 0 ? (
                 <div className="distribusi-history-timeline-container">
