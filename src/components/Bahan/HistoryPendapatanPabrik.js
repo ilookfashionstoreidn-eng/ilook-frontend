@@ -102,6 +102,7 @@ const HistoryPendapatanPabrik = () => {
                 <th>ID</th>
                 <th>NAMA PABRIK</th>
                 <th>TANGGAL BAYAR</th>
+                <th>TANGGAL JATUH TEMPO</th>
                 <th>TOTAL BAYAR</th>
                 <th>JUMLAH PEMBELIAN</th>
                 <th>KETERANGAN</th>
@@ -124,6 +125,7 @@ const HistoryPendapatanPabrik = () => {
                     </div>
                   </td>
                   <td>{formatDate(history.tanggal_bayar)}</td>
+                  <td>{formatDate(history.tanggal_jatuh_tempo) || "-"}</td>
                   <td>
                     <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-success">
                       {formatRupiah(history.total_bayar)}
@@ -175,6 +177,10 @@ const HistoryPendapatanPabrik = () => {
                 <div className="history-pendapatan-pabrik-info-item">
                   <strong>Tanggal Bayar:</strong>
                   <span>{formatDate(selectedHistory.tanggal_bayar)}</span>
+                </div>
+                <div className="history-pendapatan-pabrik-info-item">
+                  <strong>Tanggal Jatuh Tempo:</strong>
+                  <span>{formatDate(selectedHistory.tanggal_jatuh_tempo) || "-"}</span>
                 </div>
                 <div className="history-pendapatan-pabrik-info-item">
                   <strong>Total Bayar:</strong>

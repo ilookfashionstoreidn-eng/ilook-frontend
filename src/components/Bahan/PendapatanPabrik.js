@@ -15,10 +15,12 @@ const PendapatanPabrik = () => {
   const [selectedPembelian, setSelectedPembelian] = useState([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingBayar, setLoadingBayar] = useState(false);
+  const [filterBulan, setFilterBulan] = useState(""); // Format: YYYY-MM atau "" untuk semua
 
   // Form pembayaran
   const [formBayar, setFormBayar] = useState({
     tanggal_bayar: new Date().toISOString().split("T")[0],
+    tanggal_jatuh_tempo: "",
     keterangan: "",
   });
 
@@ -74,8 +76,10 @@ const PendapatanPabrik = () => {
         setSelectedPabrik(res.data.pabrik || pabrik);
         setPembelianList(res.data.pembelian || []);
         setSelectedPembelian([]);
+        setFilterBulan("");
         setFormBayar({
           tanggal_bayar: new Date().toISOString().split("T")[0],
+          tanggal_jatuh_tempo: "",
           keterangan: "",
         });
         setShowBayarModal(true);
@@ -83,8 +87,10 @@ const PendapatanPabrik = () => {
         setSelectedPabrik(pabrik);
         setPembelianList(res.data?.pembelian || []);
         setSelectedPembelian([]);
+        setFilterBulan("");
         setFormBayar({
           tanggal_bayar: new Date().toISOString().split("T")[0],
+          tanggal_jatuh_tempo: "",
           keterangan: "",
         });
         setShowBayarModal(true);
@@ -108,12 +114,25 @@ const PendapatanPabrik = () => {
     });
   };
 
-  // Handle select all
+  // Handle select all (hanya untuk data terfilter)
   const handleSelectAll = () => {
-    if (selectedPembelian.length === pembelianList.length) {
-      setSelectedPembelian([]);
+    const filteredIds = filteredPembelianList.map((p) => p.id);
+    const allFilteredSelected = filteredIds.every((id) => selectedPembelian.includes(id));
+    
+    if (allFilteredSelected) {
+      // Unselect semua yang terfilter
+      setSelectedPembelian((prev) => prev.filter((id) => !filteredIds.includes(id)));
     } else {
-      setSelectedPembelian(pembelianList.map((p) => p.id));
+      // Select semua yang terfilter
+      setSelectedPembelian((prev) => {
+        const newSelection = [...prev];
+        filteredIds.forEach((id) => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
     }
   };
 
@@ -136,6 +155,7 @@ const PendapatanPabrik = () => {
       const res = await API.post("/pendapatan-pabrik", {
         pabrik_id: selectedPabrik.id,
         tanggal_bayar: formBayar.tanggal_bayar,
+        tanggal_jatuh_tempo: formBayar.tanggal_jatuh_tempo || null,
         keterangan: formBayar.keterangan || null,
         pembelian_ids: selectedPembelian,
       });
@@ -187,10 +207,42 @@ const PendapatanPabrik = () => {
   // Filter pabrik
   const filteredPabrik = pabrikList.filter((p) => (p.nama_pabrik || "").toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Hitung total yang dipilih
-  const totalSelected = pembelianList
+  // Filter pembelian berdasarkan bulan (hanya bulan, tidak peduli tahun)
+  const filteredPembelianList = pembelianList.filter((pembelian) => {
+    if (!filterBulan) return true; // Jika tidak ada filter, tampilkan semua
+    
+    if (!pembelian.tanggal_kirim) return false; // Jika tidak ada tanggal, jangan tampilkan
+    
+    // Format tanggal_kirim: YYYY-MM-DD, ambil MM saja
+    const bulanPembelian = pembelian.tanggal_kirim.substring(5, 7); // MM
+    return bulanPembelian === filterBulan;
+  });
+
+  // Hitung total yang dipilih (dari data terfilter)
+  const totalSelected = filteredPembelianList
     .filter((p) => selectedPembelian.includes(p.id))
     .reduce((sum, p) => sum + (parseFloat(p.harga) || 0), 0);
+
+  // Generate list bulan Januari-Desember untuk dropdown (hanya bulan, tanpa tahun)
+  const getAvailableMonths = () => {
+    const months = [];
+    // Generate semua bulan dari 01 sampai 12
+    for (let month = 1; month <= 12; month++) {
+      months.push(String(month).padStart(2, '0')); // Format: "01", "02", ..., "12"
+    }
+    return months;
+  };
+
+  // Format bulan untuk display (hanya nama bulan)
+  const formatMonthDisplay = (monthNumber) => {
+    if (!monthNumber) return "Semua Bulan";
+    const monthNames = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    const monthIndex = parseInt(monthNumber) - 1;
+    return monthNames[monthIndex] || monthNumber;
+  };
 
   return (
     <div className="pendapatan-pabrik-page">
@@ -383,6 +435,15 @@ const PendapatanPabrik = () => {
                 </div>
 
                 <div className="pendapatan-pabrik-form-group">
+                  <label>Tanggal Jatuh Tempo</label>
+                  <input
+                    type="date"
+                    value={formBayar.tanggal_jatuh_tempo}
+                    onChange={(e) => setFormBayar({ ...formBayar, tanggal_jatuh_tempo: e.target.value })}
+                  />
+                </div>
+
+                <div className="pendapatan-pabrik-form-group">
                   <label>Keterangan</label>
                   <textarea
                     value={formBayar.keterangan}
@@ -393,14 +454,43 @@ const PendapatanPabrik = () => {
                 </div>
 
                 <div className="pendapatan-pabrik-form-group">
+                  <label>Filter Berdasarkan Bulan</label>
+                  <select
+                    value={filterBulan}
+                    onChange={(e) => {
+                      setFilterBulan(e.target.value);
+                      // Reset selection saat filter berubah
+                      setSelectedPembelian([]);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "4px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <option value="">Semua Bulan</option>
+                    {getAvailableMonths().map((month) => (
+                      <option key={month} value={month}>
+                        {formatMonthDisplay(month)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pendapatan-pabrik-form-group">
                   <label>
                     <input
                       type="checkbox"
-                      checked={selectedPembelian.length === pembelianList.length && pembelianList.length > 0}
+                      checked={
+                        filteredPembelianList.length > 0 &&
+                        filteredPembelianList.every((p) => selectedPembelian.includes(p.id))
+                      }
                       onChange={handleSelectAll}
                       style={{ marginRight: "8px" }}
                     />
-                    Pilih Semua ({pembelianList.length} pembelian)
+                    Pilih Semua ({filteredPembelianList.length} pembelian{filterBulan ? ` - ${formatMonthDisplay(filterBulan)}` : ""})
                   </label>
                 </div>
 
@@ -411,7 +501,10 @@ const PendapatanPabrik = () => {
                         <th style={{ width: "50px" }}>
                           <input
                             type="checkbox"
-                            checked={selectedPembelian.length === pembelianList.length && pembelianList.length > 0}
+                            checked={
+                              filteredPembelianList.length > 0 &&
+                              filteredPembelianList.every((p) => selectedPembelian.includes(p.id))
+                            }
                             onChange={handleSelectAll}
                           />
                         </th>
@@ -423,7 +516,14 @@ const PendapatanPabrik = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {pembelianList.map((pembelian, index) => (
+                      {filteredPembelianList.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: "center", padding: "20px", color: "#666" }}>
+                            {filterBulan ? `Tidak ada pembelian pada ${formatMonthDisplay(filterBulan)}` : "Tidak ada pembelian"}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredPembelianList.map((pembelian, index) => (
                         <tr key={pembelian.id}>
                           <td>
                             <input
@@ -449,7 +549,8 @@ const PendapatanPabrik = () => {
                           <td>{pembelian.tanggal_kirim || "-"}</td>
                           <td className="pendapatan-pabrik-price">{formatRupiah(pembelian.harga)}</td>
                         </tr>
-                      ))}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
