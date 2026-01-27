@@ -940,7 +940,7 @@ const SpkCmt = () => {
 
     console.log("Jenis harga jasa yang dikirim:", newSpk.jenis_harga_jasa);
 
-    formData.append("_method", "PUT"); // Tambahkan _method untuk Laravel
+    formData.append("_method", "PUT"); 
 
     for (let pair of formData.entries()) {
       console.log(pair[0] + ": " + pair[1]);
@@ -1077,6 +1077,7 @@ const SpkCmt = () => {
     }
   };
 
+  
   const downloadBarcodePdf = async (id) => {
     try {
       const response = await API.get(`/spk-cmt/${id}/barcode-pdf`, {
