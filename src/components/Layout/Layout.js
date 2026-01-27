@@ -43,6 +43,7 @@ const Layout = () => {
   const [isPackingOpen, setIsPackingOpen] = useState(false);
 
   const [isGudangOpen, setIsGudangOpen] = useState(false);
+  const [isGudangProdukOpen, setIsGudangProdukOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState("home");
   const [role, setRole] = useState("");
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
@@ -112,6 +113,10 @@ const Layout = () => {
 
   const toggleAksesorisMenu = () => {
     setIsAksesorisOpen(!isAksesorisOpen);
+  };
+
+  const toggleGudangProdukMenu = () => {
+    setIsGudangProdukOpen(!isGudangProdukOpen);
   };
 
   const handleMenuClick = (menu) => {
@@ -481,6 +486,22 @@ const Layout = () => {
                   <li>
                     <Link to="history-pendapatan-pabrik" className={`dropdown-link ${activeMenu === "history-pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("history-pendapatan-pabrik")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan Pabrik
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            <li>
+              <div onClick={toggleGudangProdukMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang-produk" ? "active" : ""}`}>
+                <FaShoppingBag className="icon" /> Gudang Produk
+                <span className={`arrow ${isGudangProdukOpen ? "open" : ""}`}>{isGudangProdukOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isGudangProdukOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="gudang-produk" className={`dropdown-link ${activeMenu === "gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("gudang-produk")}>
+                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk
                     </Link>
                   </li>
                 </ul>

@@ -1,0 +1,558 @@
+/* ===================================
+   GUDANG PRODUK - MODERN UI
+   Future Blue Gradient Theme
+   =================================== */
+
+.gudang-produk-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.gudang-produk-header {
+  background: transparent;
+  color: #17457c;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.gudang-produk-header-icon {
+  font-size: 42px;
+  background: transparent;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0487d8;
+}
+
+.gudang-produk-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.gudang-produk-table-container {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.gudang-produk-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.gudang-produk-btn-add {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-produk-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.gudang-produk-btn-add:active {
+  transform: translateY(0);
+}
+
+.gudang-produk-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.gudang-produk-search-bar input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.gudang-produk-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+.gudang-produk-table-wrapper {
+  overflow-x: auto;
+}
+
+.gudang-produk-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.gudang-produk-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.gudang-produk-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.gudang-produk-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.gudang-produk-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.gudang-produk-table tbody tr {
+  background: white;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.gudang-produk-table tbody tr:hover {
+  background: #e3f2fd;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
+}
+
+.gudang-produk-table tbody td {
+  padding: 14px 12px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+.gudang-produk-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.gudang-produk-badge-draft {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.gudang-produk-badge-terverifikasi {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.gudang-produk-badge-default {
+  background: #f5f5f5;
+  color: #616161;
+}
+
+.gudang-produk-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gudang-produk-detail-item {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.gudang-produk-verifikasi-info {
+  color: #666;
+  font-size: 12px;
+}
+
+.gudang-produk-btn-verify {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.gudang-produk-btn-verify:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+/* Section Detail Items */
+.gudang-produk-items-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f8fcff;
+}
+
+.gudang-produk-items-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.gudang-produk-items-section-header label {
+  font-weight: 600;
+  color: #17457c;
+  font-size: 14px;
+}
+
+.gudang-produk-btn-add-row {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.gudang-produk-btn-add-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-produk-item-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 44px;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.gudang-produk-item-row:last-of-type {
+  margin-bottom: 0;
+}
+
+.gudang-produk-item-sku select,
+.gudang-produk-item-qty input {
+  padding: 10px 12px;
+  border: 2px solid #b3d9f2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.gudang-produk-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gudang-produk-btn-icon-remove {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gudang-produk-btn-icon-remove:hover:not(:disabled) {
+  background: #ffcdd2;
+}
+
+.gudang-produk-btn-icon-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Verify Section */
+.gudang-produk-verify-section {
+  border: 2px solid #b3d9f2;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f8fcff;
+}
+
+.gudang-produk-verify-info {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1565c0;
+  line-height: 1.5;
+}
+
+.gudang-produk-verify-row {
+  display: grid;
+  grid-template-columns: 1fr 150px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 2px solid #b3d9f2;
+  background: white;
+}
+
+.gudang-produk-verify-row:last-of-type {
+  margin-bottom: 0;
+}
+
+.gudang-produk-verify-row.match {
+  border-color: #4caf50;
+  background: #e8f5e9;
+}
+
+.gudang-produk-verify-row.mismatch {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.gudang-produk-verify-sku {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gudang-produk-verify-acuan {
+  font-size: 12px;
+  color: #666;
+}
+
+.gudang-produk-verify-qty input {
+  padding: 10px 12px;
+  border: 2px solid #b3d9f2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.gudang-produk-match-indicator {
+  color: #2e7d32;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Modal */
+.gudang-produk-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.gudang-produk-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 35px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: gudangProdukModalSlideIn 0.3s ease;
+}
+
+@keyframes gudangProdukModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gudang-produk-modal-content h2 {
+  margin: 0 0 25px 0;
+  color: #17457c;
+  font-size: 26px;
+  font-weight: 700;
+  border-bottom: 3px solid #0487d8;
+  padding-bottom: 15px;
+}
+
+.gudang-produk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gudang-produk-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.gudang-produk-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gudang-produk-form-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.gudang-produk-form-group input,
+.gudang-produk-form-group select {
+  padding: 12px 14px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.gudang-produk-form-group input:focus,
+.gudang-produk-form-group select:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+.gudang-produk-form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 2px solid #b3d9f2;
+}
+
+.gudang-produk-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gudang-produk-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gudang-produk-btn-primary {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.gudang-produk-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.gudang-produk-btn-secondary {
+  background: linear-gradient(135deg, #757575 0%, #424242 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.gudang-produk-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.gudang-produk-loading,
+.gudang-produk-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+.gudang-produk-error {
+  color: #f44336;
+}
+
+@media (max-width: 768px) {
+  .gudang-produk-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-produk-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gudang-produk-search-bar {
+    max-width: 100%;
+  }
+
+  .gudang-produk-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .gudang-produk-table {
+    min-width: 1000px;
+  }
+
+  .gudang-produk-item-row {
+    grid-template-columns: 1fr 100px 40px;
+    gap: 8px;
+  }
+
+  .gudang-produk-verify-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
