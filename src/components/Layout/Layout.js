@@ -435,12 +435,12 @@ const Layout = () => {
                   </li>
                   <li>
                     <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
-                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Bahan
+                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
                     </Link>
                   </li>
                   <li>
                     <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
-                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Bahan
+                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Pemesanan Bahan
                     </Link>
                   </li>
                   <li>
