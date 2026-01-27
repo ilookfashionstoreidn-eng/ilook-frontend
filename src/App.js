@@ -63,6 +63,7 @@ import PendapatanPabrik from "./components/Bahan/PendapatanPabrik";
 import HistoryPendapatanPabrik from "./components/Bahan/HistoryPendapatanPabrik";
 import LaporanHasil from "./components/Cutting/SpkCutting/LaporanHasil";
 import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyProduksi";
+import Sku from "./components/Jahit/Sku";
 
 const App = () => {
   return (
@@ -132,6 +133,7 @@ const App = () => {
           <Route path="seri" element={<Seri />} />
           <Route path="laporanhasil" element={<LaporanHasil />} />
           <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
+          <Route path="sku" element={<Sku />} />
 
         </Route>
       </Routes>

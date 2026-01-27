@@ -6,7 +6,7 @@ import axios from "axios";
 import Pusher from "pusher-js";
 import { toast } from "react-toastify";
 import API from "../../api";
-import { FaMicrophone, FaArrowUp, FaArrowDown, FaStop, FaImage, FaPlus, FaSave, FaTimes, FaPaperPlane, FaBell, FaHistory, FaEdit, FaClock, FaInfoCircle } from "react-icons/fa";
+import { FaMicrophone, FaArrowUp, FaArrowDown, FaStop, FaImage, FaPlus, FaSave, FaTimes, FaPaperPlane, FaBell, FaHistory, FaEdit, FaClock, FaInfoCircle, FaBarcode } from "react-icons/fa";
 import Select from "react-select";
 
 const SpkCmt = () => {
@@ -83,6 +83,7 @@ const SpkCmt = () => {
     pending: 0,
     completed: 0,
   });
+  const [skuList, setSkuList] = useState([]);
 
   const [newSpk, setNewSpk] = useState({
     source_type: "",
@@ -105,6 +106,9 @@ const SpkCmt = () => {
     // 🔴 JASA
     harga_per_jasa: "",
     jenis_harga_jasa: "per_barang",
+
+    // 🔴 SKU
+    sku_ids: [],
   });
 
   useEffect(() => {
@@ -374,6 +378,23 @@ const SpkCmt = () => {
     };
 
     fetchProduks();
+  }, []);
+
+  // Fetch SKU List
+  useEffect(() => {
+    const fetchSkus = async () => {
+      try {
+        const response = await API.get("/skus");
+        const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+        // Filter hanya SKU yang aktif
+        const activeSkus = data.filter((sku) => sku.is_active !== false);
+        setSkuList(activeSkus);
+      } catch (error) {
+        console.error("Gagal mengambil data SKU:", error);
+      }
+    };
+
+    fetchSkus();
   }, []);
 
   // Ambil chat saat komponen pertama kali dirender
@@ -964,6 +985,12 @@ const SpkCmt = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validasi SKU
+    if (!newSpk.sku_ids || newSpk.sku_ids.length === 0) {
+      alert("SKU wajib dipilih minimal 1 SKU");
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append("source_type", newSpk.source_type);
@@ -987,6 +1014,13 @@ const SpkCmt = () => {
     formData.append("harga_per_jasa", parseRupiah(newSpk.harga_per_jasa));
     formData.append("jenis_harga_jasa", newSpk.jenis_harga_jasa);
 
+    // 🔴 SKU - Kirim sebagai array
+    if (newSpk.sku_ids && newSpk.sku_ids.length > 0) {
+      newSpk.sku_ids.forEach((skuId) => {
+        formData.append("sku_ids[]", skuId);
+      });
+    }
+
     try {
       const response = await API.post("/spkcmt", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -994,6 +1028,25 @@ const SpkCmt = () => {
 
       setSpkCmtData((prev) => [...prev, response.data.data]);
       setShowForm(false);
+      // Reset form
+      setNewSpk({
+        source_type: "",
+        source_id: "",
+        deadline: "",
+        id_penjahit: "",
+        keterangan: "",
+        catatan: "",
+        markeran: "",
+        aksesoris: "",
+        handtag: "",
+        merek: "",
+        harga_barang_dasar: "",
+        jenis_harga_barang: "per_pcs",
+        harga_per_jasa: "",
+        jenis_harga_jasa: "per_barang",
+        sku_ids: [],
+      });
+      setPreviewData(null);
 
       alert("SPK CMT berhasil disimpan!");
     } catch (error) {
@@ -1025,6 +1078,34 @@ const SpkCmt = () => {
   };
 
   
+  const downloadBarcodePdf = async (id) => {
+    try {
+      const response = await API.get(`/spk-cmt/${id}/barcode-pdf`, {
+        responseType: "blob", // Pastikan menerima file sebagai blob
+      });
+
+      // Buat URL blob dari response data
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", `barcode_spk_cmt_${id}.pdf`); // Sesuaikan nama file
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      // Hapus URL blob setelah selesai
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Error downloading barcode:", error);
+      alert(error.response?.data?.error || "Gagal mengunduh barcode SKU.");
+    }
+  };
+
+  const downloadStaffPdf = (id) => {
+    const url = `http://localhost:8000/api/spk-cmt/${id}/download-staff-pdf`;
+    window.open(url, "_blank"); // Membuka file PDF di tab baru
+  };
+
   const handleWarnaChange = (e, index) => {
     const { name, value } = e.target;
     const updatedWarna = [...newSpk.warna];
@@ -1098,7 +1179,11 @@ const SpkCmt = () => {
   const handleEditClick = (spk) => {
     console.log("SPK yang diedit:", spk); // Debugging
     setSelectedSpk(spk);
-    setNewSpk({ ...spk, warna: spk.warna || [] });
+    setNewSpk({ 
+      ...spk, 
+      warna: spk.warna || [],
+      sku_ids: spk.skus ? spk.skus.map((s) => s.id) : [],
+    });
     setShowForm(true); // Tampilkan form
   };
 
@@ -1368,39 +1453,39 @@ const SpkCmt = () => {
         </select>
       </div>
 
-      <div className="spkcmt-table-container">
-        <table className="spkcmt-table spkcmt-table-responsive">
+      <div className="spkcmt-table-container" style={{ overflowX: "auto", width: "100%" }}>
+        <table className="spkcmt-table spkcmt-table-responsive" style={{ width: "100%", minWidth: "auto", borderCollapse: "separate", borderSpacing: 0 }}>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nama Baju</th>
-              <th>Penjahit</th>
-              <th>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <th style={{ padding: "12px 5px", width: "45px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>ID</th>
+              <th style={{ padding: "12px 8px", minWidth: "200px", maxWidth: "250px", textAlign: "left", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>Nama Baju</th>
+              <th style={{ padding: "12px 5px", width: "90px", textAlign: "left", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>Penjahit</th>
+              <th style={{ padding: "12px 5px", width: "85px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                   <span>Sisa Hari</span>
                   <button
                     onClick={handleOrderChange}
                     style={{
                       background: "none",
                       border: "none",
-                      padding: "4px",
+                      padding: "2px",
                       cursor: "pointer",
-                      fontSize: "12px",
+                      fontSize: "11px",
                       color: "white",
                       display: "flex",
                       alignItems: "center",
                     }}
                   >
-                    {sortOrder === "asc" ? <FaArrowDown size={12} /> : <FaArrowUp size={12} />}
+                    {sortOrder === "asc" ? <FaArrowDown size={11} /> : <FaArrowUp size={11} />}
                   </button>
                 </div>
               </th>
-              <th title="Waktu Pengerjaan">WAKTU</th>
-              <th title="Jumlah Produk">JML PRODUK</th>
-              <th title="Jumlah Dikirim">JML KIRIM</th>
-              <th title="Sisa Barang">SISA</th>
-              <th>STATUS</th>
-              <th>AKSI</th> {/* Kolom Download dihapus, digabung ke sini */}
+              <th style={{ padding: "12px 5px", width: "60px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Waktu Pengerjaan">WAKTU</th>
+              <th style={{ padding: "12px 5px", width: "85px", textAlign: "right", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Jumlah Produk">JML PRODUK</th>
+              <th style={{ padding: "12px 5px", width: "90px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Jumlah Dikirim">JML KIRIM</th>
+              <th style={{ padding: "12px 5px", width: "65px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Sisa Barang">SISA</th>
+              <th style={{ padding: "12px 5px", width: "120px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>STATUS</th>
+              <th style={{ padding: "12px 5px", width: "170px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>AKSI</th>
             </tr>
           </thead>
           <tbody>
@@ -1411,61 +1496,85 @@ const SpkCmt = () => {
 
               return (
                 <tr key={spk.id_spk}>
-                  <td>{spk.id_spk}</td>
-                  <td>
-                    <strong>{(spk.nama_produk || "–") + (spk.nomor_seri ? ` / ${spk.nomor_seri}` : "")}</strong>
+                  <td style={{ padding: "10px 5px", textAlign: "center", fontWeight: "600", fontSize: "13px" }}>{spk.id_spk}</td>
+                  <td style={{ padding: "10px 8px", maxWidth: "250px", wordWrap: "break-word", lineHeight: "1.5" }}>
+                    <strong style={{ fontSize: "13px" }}>{(spk.nama_produk || "–") + (spk.nomor_seri ? ` / ${spk.nomor_seri}` : "")}</strong>
                   </td>
-                  <td>{spk.penjahit?.nama_penjahit || "–"}</td>
+                  <td style={{ padding: "10px 5px", fontSize: "13px" }}>{spk.penjahit?.nama_penjahit || "–"}</td>
                   <td
                     style={{
+                      padding: "10px 5px",
                       color: getStatusColor(spk.status, spk.sisa_hari),
                       fontWeight: "bold",
                       textAlign: "center",
+                      fontSize: "13px",
                     }}
                   >
                     {spk.sisa_hari ?? "–"}
                   </td>
-                  <td style={{ textAlign: "center" }}>{spk.waktu_pengerjaan ?? "–"}</td>
-                  <td style={{ textAlign: "right" }}>
+                  <td style={{ padding: "10px 5px", textAlign: "center", fontSize: "13px", fontWeight: "500" }}>{spk.waktu_pengerjaan ?? "–"}</td>
+                  <td style={{ padding: "10px 5px", textAlign: "right", fontSize: "13px" }}>
                     <strong>{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</strong>
                   </td>
-                  <td style={{ textAlign: "center" }}>
+                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
                     <button
                       onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")}
                       style={{
                         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                         color: "white",
                         border: "none",
-                        padding: "4px 10px",
+                        padding: "5px 10px",
                         borderRadius: "6px",
                         cursor: "pointer",
                         fontWeight: "600",
-                        fontSize: "11px",
-                        minWidth: "60px",
+                        fontSize: "12px",
+                        minWidth: "50px",
+                        whiteSpace: "nowrap",
+                        transition: "all 0.2s ease",
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      title="Klik untuk detail pengiriman"
                     >
                       {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
                     </button>
                   </td>
-                  <td style={{ textAlign: "center" }}>
+                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
                     <button
                       onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")}
                       style={{
                         background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
                         color: "white",
                         border: "none",
-                        padding: "4px 10px",
+                        padding: "5px 10px",
                         borderRadius: "6px",
                         cursor: "pointer",
                         fontWeight: "600",
-                        fontSize: "11px",
-                        minWidth: "60px",
+                        fontSize: "12px",
+                        minWidth: "50px",
+                        whiteSpace: "nowrap",
+                        transition: "all 0.2s ease",
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      title="Klik untuk detail sisa barang"
                     >
                       {sisaBarang.toLocaleString("id-ID")}
                     </button>
                   </td>
-                  <td>
+                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
                     <select
                       value={spk.status || "belum_diambil"}
                       onChange={(e) => {
@@ -1485,14 +1594,19 @@ const SpkCmt = () => {
                         color: "white",
                         border: "2px solid transparent",
                         padding: "6px 8px",
-                        borderRadius: "8px",
+                        borderRadius: "6px",
                         fontWeight: "600",
                         fontSize: "12px",
                         cursor: "pointer",
-                        minWidth: "130px",
+                        width: "100%",
+                        maxWidth: "115px",
                         outline: "none",
                         transition: "all 0.2s ease",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                       }}
+                      title={spk.status === "belum_diambil" ? "Belum Diambil" : spk.status === "sudah_diambil" ? "Sudah Diambil" : spk.status || "Belum Diambil"}
                     >
                       <option value="belum_diambil">Belum Diambil</option>
                       <option value="sudah_diambil">Sudah Diambil</option>
@@ -1502,26 +1616,30 @@ const SpkCmt = () => {
                   </td>
 
                   {/* Kolom Aksi — Termasuk Download */}
-                  <td style={{ textAlign: "center" }}>
-                    <div className="spkcmt-action-group">
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleDetailClick(spk)} title="Detail">
-                        <FaInfoCircle size={12} />
+                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
+                    <div className="spkcmt-action-group" style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleDetailClick(spk)} title="Detail" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                        <FaInfoCircle size={13} />
                       </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline">
-                        <FaClock size={12} />
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                        <FaClock size={13} />
                       </button>
-
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit">
-                        <FaEdit size={12} />
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                        <FaEdit size={13} />
                       </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-log" onClick={() => handleLogDeadlineClick(spk.id_spk)} title="Log Deadline">
-                        <FaHistory size={12} />
+                      <button className="spkcmt-btn-icon spkcmt-btn-icon-log" onClick={() => handleLogDeadlineClick(spk.id_spk)} title="Log Deadline" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                        <FaHistory size={13} />
                       </button>
-
-                      {/* ✅ Tombol Download dipindahkan ke sini */}
-                      <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF">
-                        <FaSave size={12} />
+                      {/* ✅ Tombol Download PDF */}
+                      <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                        <FaSave size={13} />
                       </button>
+                      {/* ✅ Tombol Download Barcode SKU */}
+                      {spk.skus && spk.skus.length > 0 && (
+                        <button onClick={() => downloadBarcodePdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download Barcode SKU" style={{ background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
+                          <FaBarcode size={13} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1801,9 +1919,57 @@ const SpkCmt = () => {
           <div className="spkcmt-detail-card" onClick={(e) => e.stopPropagation()}>
             <div className="spkcmt-detail-header">
               <h2>📋 Detail SPK</h2>
-              <button className="spkcmt-modal-close" onClick={closePopup}>
-                <FaTimes />
-              </button>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                {/* Tombol Download PDF */}
+                <button
+                  onClick={() => {
+                    downloadPdf(selectedSpk.id_spk);
+                  }}
+                  style={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  title="Download PDF"
+                >
+                  <FaSave size={14} /> PDF
+                </button>
+                {/* Tombol Download Barcode */}
+                {selectedSpk.skus && selectedSpk.skus.length > 0 && (
+                  <button
+                    onClick={() => {
+                      downloadBarcodePdf(selectedSpk.id_spk);
+                    }}
+                    style={{
+                      background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                      color: "white",
+                      border: "none",
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                    title="Download Barcode SKU"
+                  >
+                    <FaBarcode size={14} /> Barcode
+                  </button>
+                )}
+                <button className="spkcmt-modal-close" onClick={closePopup}>
+                  <FaTimes />
+                </button>
+              </div>
             </div>
 
             <div className="spkcmt-detail-content">
@@ -1859,6 +2025,32 @@ const SpkCmt = () => {
                 <div className="spkcmt-detail-item">
                   <strong>Warna</strong>
                   <span>{selectedSpk.warna && selectedSpk.warna.length > 0 ? selectedSpk.warna.map((w) => `${w.nama_warna} (${w.qty})`).join(", ") : "Tidak ada"}</span>
+                </div>
+                <div className="spkcmt-detail-item">
+                  <strong>SKU</strong>
+                  <span>
+                    {selectedSpk.skus && selectedSpk.skus.length > 0 ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                        {selectedSpk.skus.map((sku, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              color: "white",
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {sku.sku}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      "Tidak ada"
+                    )}
+                  </span>
                 </div>
                 <div className="spkcmt-detail-item">
                   <strong>Tanggal SPK</strong>
@@ -2005,11 +2197,57 @@ const SpkCmt = () => {
       )}
 
       {showForm && (
-        <div className="spkcmt-modal-overlay" onClick={() => setShowForm(false)}>
+        <div
+          className="spkcmt-modal-overlay"
+          onClick={() => {
+            setShowForm(false);
+            setNewSpk({
+              source_type: "",
+              source_id: "",
+              deadline: "",
+              id_penjahit: "",
+              keterangan: "",
+              catatan: "",
+              markeran: "",
+              aksesoris: "",
+              handtag: "",
+              merek: "",
+              harga_barang_dasar: "",
+              jenis_harga_barang: "per_pcs",
+              harga_per_jasa: "",
+              jenis_harga_jasa: "per_barang",
+              sku_ids: [],
+            });
+            setPreviewData(null);
+          }}
+        >
           <div className="spkcmt-modal" onClick={(e) => e.stopPropagation()}>
             <div className="spkcmt-modal-header">
               <h2>➕ Tambah Data SPK CMT</h2>
-              <button className="spkcmt-modal-close" onClick={() => setShowForm(false)}>
+              <button
+                className="spkcmt-modal-close"
+                onClick={() => {
+                  setShowForm(false);
+                  setNewSpk({
+                    source_type: "",
+                    source_id: "",
+                    deadline: "",
+                    id_penjahit: "",
+                    keterangan: "",
+                    catatan: "",
+                    markeran: "",
+                    aksesoris: "",
+                    handtag: "",
+                    merek: "",
+                    harga_barang_dasar: "",
+                    jenis_harga_barang: "per_pcs",
+                    harga_per_jasa: "",
+                    jenis_harga_jasa: "per_barang",
+                    sku_ids: [],
+                  });
+                  setPreviewData(null);
+                }}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -2232,11 +2470,89 @@ const SpkCmt = () => {
                   </div>
                 </div>
 
+                {/* ================= SKU ================= */}
+                <div className="spkcmt-form-group">
+                  <label className="spkcmt-form-label">SKU *</label>
+                  <Select
+                    isMulti
+                    options={skuList.map((sku) => ({
+                      value: sku.id,
+                      label: sku.sku,
+                    }))}
+                    value={newSpk.sku_ids?.map((skuId) => {
+                      const sku = skuList.find((s) => s.id === skuId);
+                      return sku ? { value: sku.id, label: sku.sku } : null;
+                    }).filter(Boolean)}
+                    onChange={(selected) => {
+                      setNewSpk({
+                        ...newSpk,
+                        sku_ids: selected ? selected.map((s) => s.value) : [],
+                      });
+                    }}
+                    placeholder="Pilih SKU..."
+                    isSearchable
+                    isClearable
+                    noOptionsMessage={({ inputValue }) => {
+                      if (inputValue) return `Tidak ditemukan SKU "${inputValue}"`;
+                      return "Tidak ada SKU tersedia";
+                    }}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: "40px",
+                        border: "1px solid #ddd",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        "&:hover": {
+                          borderColor: "#667eea",
+                        },
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#999",
+                      }),
+                    }}
+                  />
+                  {newSpk.sku_ids && newSpk.sku_ids.length > 0 && (
+                    <div style={{ marginTop: "8px", fontSize: "12px", color: "#667eea" }}>
+                      ✓ {newSpk.sku_ids.length} SKU dipilih
+                    </div>
+                  )}
+                </div>
+
                 <div className="spkcmt-form-actions">
                   <button type="submit" className="spkcmt-btn-submit">
                     <FaSave /> Simpan SPK CMT
                   </button>
-                  <button type="button" className="spkcmt-btn-cancel" onClick={() => setShowForm(false)}>
+                  <button
+                    type="button"
+                    className="spkcmt-btn-cancel"
+                    onClick={() => {
+                      setShowForm(false);
+                      setNewSpk({
+                        source_type: "",
+                        source_id: "",
+                        deadline: "",
+                        id_penjahit: "",
+                        keterangan: "",
+                        catatan: "",
+                        markeran: "",
+                        aksesoris: "",
+                        handtag: "",
+                        merek: "",
+                        harga_barang_dasar: "",
+                        jenis_harga_barang: "per_pcs",
+                        harga_per_jasa: "",
+                        jenis_harga_jasa: "per_barang",
+                        sku_ids: [],
+                      });
+                      setPreviewData(null);
+                    }}
+                  >
                     <FaTimes /> Batal
                   </button>
                 </div>
