@@ -222,6 +222,11 @@ const Layout = () => {
                           <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Log Status
                         </Link>
                       </li>
+                      <li>
+                        <Link to="sku" className={`dropdown-link ${activeMenu === "sku" ? "active" : ""}`} onClick={() => handleMenuClick("sku")}>
+                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SKU
+                        </Link>
+                      </li>
                     </>
                   )}
                 </ul>
