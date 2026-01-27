@@ -20,7 +20,7 @@ useEffect(() => {
   const fetchLaporanPeriode = async () => {
     if (!startDate || !endDate) return;
 
-    try {
+    try { 
       setLoading(true);
       setError(null);
 

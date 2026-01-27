@@ -919,7 +919,7 @@ const SpkCmt = () => {
 
     console.log("Jenis harga jasa yang dikirim:", newSpk.jenis_harga_jasa);
 
-    formData.append("_method", "PUT"); // Tambahkan _method untuk Laravel
+    formData.append("_method", "PUT"); 
 
     for (let pair of formData.entries()) {
       console.log(pair[0] + ": " + pair[1]);
@@ -1024,11 +1024,7 @@ const SpkCmt = () => {
     }
   };
 
-  const downloadStaffPdf = (id) => {
-    const url = `http://localhost:8000/api/spk-cmt/${id}/download-staff-pdf`;
-    window.open(url, "_blank"); // Membuka file PDF di tab baru
-  };
-
+  
   const handleWarnaChange = (e, index) => {
     const { name, value } = e.target;
     const updatedWarna = [...newSpk.warna];
