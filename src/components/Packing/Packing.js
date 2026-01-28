@@ -8,12 +8,12 @@ import { useRef } from "react";
 const Packing = () => {
  const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState(null);
-  const [scannedSku, setScannedSku] = useState("");
+  const [scannedBarcode, setScannedBarcode] = useState("");
   const [scannedItems, setScannedItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [nomorSeri, setNomorSeri] = useState("");
-  const skuInputRef = useRef(null);
+  const barcodeInputRef = useRef(null);
   const serialInputRefs = useRef({});
   const submitButtonRef = useRef(null);
   const [canSubmitByEnter, setCanSubmitByEnter] = useState(false);
@@ -85,10 +85,36 @@ const handleSearchOrder = async () => {
 };
 
 
- const handleScanSku = (e) => {
+ const handleScanBarcode = (e) => {
   e.preventDefault();
-  const sku = scannedSku.trim();
-  if (!sku) return;
+  const barcode = scannedBarcode.trim();
+  if (!barcode) return;
+
+  // Parse barcode format "SKU | KODE_SERI"
+  if (!barcode.includes(" | ")) {
+    setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
+
+  const parts = barcode.split(" | ");
+  if (parts.length !== 2) {
+    setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
+
+  const sku = parts[0].trim();
+  const nomorSeri = parts[1].trim();
+
+  if (!sku || !nomorSeri) {
+    setMessage("❌ SKU atau nomor seri tidak boleh kosong");
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
 
   const skuBelumLengkap = scannedItems.find(item =>
     item.serials.some(s => !s || s.trim() === "")
@@ -96,10 +122,10 @@ const handleSearchOrder = async () => {
 
   if (skuBelumLengkap) {
     setMessage(
-      `⚠️ Harap isi semua nomor seri untuk SKU ${skuBelumLengkap.sku} sebelum scan SKU lain.`
+      `⚠️ Harap isi semua nomor seri untuk SKU ${skuBelumLengkap.sku} sebelum scan barcode lain.`
     );
     playSound("isinoseri");
-    setScannedSku("");  
+    setScannedBarcode("");  
     return;
   }
 
@@ -108,7 +134,7 @@ const handleSearchOrder = async () => {
   if (itemIndex === -1) {
     setMessage(`❌ SKU ${sku} tidak ditemukan dalam order`);
     playSound("noproduk");
-    setScannedSku(""); 
+    setScannedBarcode(""); 
     return;
   }
 
@@ -118,33 +144,46 @@ const handleSearchOrder = async () => {
   if (target.scanned_qty >= target.ordered_qty) {
     setMessage(`⚠️ SKU ${sku} discan melebihi jumlah pesanan`);
     playSound("error");
+    setScannedBarcode("");
+    return;
+  }
 
-    } else {
-      target.scanned_qty += 1;
-      target.serials.push(""); 
-      setMessage(`✅ SKU ${sku} berhasil discan`);
-      playSound("scanproduk");
-    }
-      setScannedItems(updatedItems);
-      setScannedSku("");
+  // Validasi nomor seri tidak boleh duplikat dalam item yang sama
+  if (target.serials.includes(nomorSeri)) {
+    setMessage(`⚠️ Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${sku}`);
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
 
-      
-      setTimeout(() => {
-        const serialIndex = target.serials.length - 1;
-        const key = `${target.sku}-${serialIndex}`;
+  // Tambahkan scanned_qty dan isi nomor seri otomatis
+  target.scanned_qty += 1;
+  target.serials.push(nomorSeri);
+  setMessage(`✅ SKU ${sku} dengan nomor seri ${nomorSeri} berhasil discan`);
+  playSound("scanproduk");
+  
+  setScannedItems(updatedItems);
+  setScannedBarcode("");
 
-        if (serialInputRefs.current[key]) {
-          serialInputRefs.current[key].focus();
-        }
-      }, 50);
-
-  };
+  // Focus ke input barcode berikutnya setelah scan berhasil
+  setTimeout(() => {
+    barcodeInputRef.current?.focus();
+  }, 50);
+};
 
   const handleSubmitValidation = async () => {
   if (!order) return;
 
-
+  // Validasi semua item sudah lengkap
   for (let item of scannedItems) {
+    // Pastikan semua item sudah di-scan sesuai pesanan
+    if (item.scanned_qty < item.ordered_qty) {
+      setMessage(`⚠️ SKU ${item.sku} belum lengkap. Dipesan: ${item.ordered_qty}, discan: ${item.scanned_qty}`);
+      playSound("error");
+      return;
+    }
+
+    // Pastikan tidak ada nomor seri kosong
     const emptySerial = item.serials.some(s => !s || s.trim() === "");
     if (emptySerial) {
       setMessage(`⚠️ Ada nomor seri SKU ${item.sku} yang masih kosong.`);
@@ -152,24 +191,42 @@ const handleSearchOrder = async () => {
       return;
     }
 
+    // Pastikan jumlah nomor seri sesuai dengan qty scan
     if (item.serials.length !== item.scanned_qty) {
       setMessage(`⚠️ Jumlah nomor seri SKU ${item.sku} tidak sesuai qty scan`);
       playSound("error");
-      
-setCanSubmitByEnter(false);
-
+      setCanSubmitByEnter(false);
       return;
     }
   }
 
   try {
+    // Kirim semua item yang sudah lengkap (harus semua item dari order)
+    // Pastikan hanya item dengan scanned_qty > 0 dan serials tidak kosong
+    const filteredItems = scannedItems.filter((item) => item.scanned_qty > 0 && item.serials.length > 0);
+    
+    // Validasi limit jumlah item (untuk performa)
+    const MAX_ITEMS_PER_REQUEST = 1000;
+    if (filteredItems.length > MAX_ITEMS_PER_REQUEST) {
+      setMessage(`⚠️ Maksimal ${MAX_ITEMS_PER_REQUEST} item per request. Silakan bagi menjadi beberapa request.`);
+      playSound("error");
+      return;
+    }
+    
     const payload = {
-      items: scannedItems.map((item) => ({
+      items: filteredItems.map((item) => ({
         sku: item.sku,
         quantity: item.scanned_qty,
-       serials: item.serials,
+        serials: item.serials.filter(s => s && s.trim() !== ""), // Filter serial kosong
       })),
     };
+
+    // Pastikan ada item yang dikirim
+    if (payload.items.length === 0) {
+      setMessage("⚠️ Tidak ada item yang bisa divalidasi. Pastikan semua item sudah di-scan.");
+      playSound("error");
+      return;
+    }
 
     const response = await API.post(
       `/orders/scan/${trackingNumber}`,
@@ -185,7 +242,22 @@ setCanSubmitByEnter(false);
     setTrackingNumber("");
 
   } catch (error) {
-    setMessage(error.response?.data?.message || "❌ Validasi gagal");
+    // Tampilkan error message yang lebih detail
+    let errorMessage = "❌ Validasi gagal";
+    
+    if (error.response?.data) {
+      const data = error.response.data;
+      
+      // Jika ada errors dari Laravel validation
+      if (data.errors) {
+        const errorList = Object.values(data.errors).flat();
+        errorMessage = `❌ ${data.message || 'Data tidak valid'}\n${errorList.join('\n')}`;
+      } else if (data.message) {
+        errorMessage = `❌ ${data.message}`;
+      }
+    }
+    
+    setMessage(errorMessage);
     playSound("error");
   }
 };
@@ -296,7 +368,7 @@ setCanSubmitByEnter(false);
 
                   if (!isCurrentItemComplete) {
                     setTimeout(() => {
-                      skuInputRef.current?.focus();
+                      barcodeInputRef.current?.focus();
                     }, 50);
                     return;
                   }
@@ -314,7 +386,7 @@ setCanSubmitByEnter(false);
                   }
                   else {
                     setTimeout(() => {
-                    skuInputRef.current?.focus();
+                    barcodeInputRef.current?.focus();
                     }, 50);
                   }
                 }}
@@ -344,16 +416,21 @@ setCanSubmitByEnter(false);
 
 
       <div className="sku-input-wrapper">
-        <label className="sku-label">Scan SKU Produk</label>
+        <label className="sku-label">Scan SPK CMT Barcode</label>
 
-        <form onSubmit={handleScanSku} className="sku-input">
+        <form onSubmit={handleScanBarcode} className="sku-input">
           <input
             type="text"
-            placeholder="Scan SKU Produk..."
-            value={scannedSku}
-            onChange={(e) => setScannedSku(e.target.value)}
-            ref={skuInputRef}
-            
+            placeholder="Scan SPK CMT Barcode..."
+            value={scannedBarcode}
+            onChange={(e) => setScannedBarcode(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleScanBarcode(e);
+              }
+            }}
+            ref={barcodeInputRef}
             autoFocus
           />
           <button type="submit">Scan</button>

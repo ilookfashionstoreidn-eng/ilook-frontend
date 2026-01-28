@@ -504,6 +504,11 @@ const Layout = () => {
                       <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk
                     </Link>
                   </li>
+                  <li>
+                    <Link to="stok-gudang-produk" className={`dropdown-link ${activeMenu === "stok-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-gudang-produk")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Produk
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>
