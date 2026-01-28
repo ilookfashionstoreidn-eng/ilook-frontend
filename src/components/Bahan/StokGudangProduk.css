@@ -1,0 +1,198 @@
+/* ===================================
+   STOK GUDANG PRODUK - MODERN UI
+   Future Blue Gradient Theme
+   =================================== */
+
+.stok-gudang-produk-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.stok-gudang-produk-header {
+  background: transparent;
+  color: #17457c;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.stok-gudang-produk-header-icon {
+  font-size: 42px;
+  background: transparent;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0487d8;
+}
+
+.stok-gudang-produk-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.stok-gudang-produk-table-container {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.stok-gudang-produk-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.stok-gudang-produk-btn-refresh {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+}
+
+.stok-gudang-produk-btn-refresh:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+}
+
+.stok-gudang-produk-btn-refresh:active {
+  transform: translateY(0);
+}
+
+.stok-gudang-produk-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.stok-gudang-produk-search-bar input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #b3d9f2;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.stok-gudang-produk-search-bar input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+.stok-gudang-produk-table-wrapper {
+  overflow-x: auto;
+}
+
+.stok-gudang-produk-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.stok-gudang-produk-table thead {
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+}
+
+.stok-gudang-produk-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.stok-gudang-produk-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.stok-gudang-produk-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.stok-gudang-produk-table tbody tr {
+  background: white;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.stok-gudang-produk-table tbody tr:hover {
+  background: #e3f2fd;
+  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
+}
+
+.stok-gudang-produk-table tbody td {
+  padding: 14px 12px;
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
+}
+
+.stok-gudang-produk-qty {
+  display: inline-block;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.stok-gudang-produk-loading,
+.stok-gudang-produk-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+.stok-gudang-produk-error {
+  color: #f44336;
+}
+
+@media (max-width: 768px) {
+  .stok-gudang-produk-filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stok-gudang-produk-search-bar {
+    max-width: 100%;
+  }
+
+  .stok-gudang-produk-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .stok-gudang-produk-table {
+    min-width: 600px;
+  }
+}
