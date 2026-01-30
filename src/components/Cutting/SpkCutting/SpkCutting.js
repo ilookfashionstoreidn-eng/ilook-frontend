@@ -73,6 +73,11 @@ const SpkCutting = () => {
 
   const itemsPerPage = 5;
 
+  // State untuk SKU
+  const [skuList, setSkuList] = useState([]);
+  const [selectedSkuIds, setSelectedSkuIds] = useState([]);
+  const [editSelectedSkuIds, setEditSelectedSkuIds] = useState([]);
+
   // List nama bagian untuk dropdown
 
   const namaBagianList = ["fullbody", "atasan", "bawahan", "combinasi"];
@@ -280,6 +285,23 @@ const SpkCutting = () => {
     fetchBahan();
   }, []);
 
+  // Fungsi untuk fetch SKU berdasarkan produk_id
+  const fetchSkuByProduk = async (produkId) => {
+    if (!produkId) {
+      setSkuList([]);
+      return;
+    }
+
+    try {
+      const response = await API.get(`/produk/${produkId}`);
+      const skus = response.data.skus || [];
+      setSkuList(skus);
+    } catch (error) {
+      console.error("Gagal mengambil data SKU:", error);
+      setSkuList([]);
+    }
+  };
+
   // Fungsi untuk fetch warna berdasarkan bahan_id
 
   const fetchWarnaByBahan = async (bahanId) => {
@@ -467,6 +489,12 @@ const SpkCutting = () => {
       return;
     }
 
+    // Validasi SKU harus dipilih
+    if (!selectedSkuIds || selectedSkuIds.length === 0) {
+      alert("Pilih minimal 1 SKU produk!");
+      return;
+    }
+
     // Validasi frontend sebelum submit
 
     if (!newSpkCutting.bagian || newSpkCutting.bagian.length === 0) {
@@ -527,6 +555,7 @@ const SpkCutting = () => {
       jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
       jenis_spk: newSpkCutting.jenis_spk || null,
       tukang_pola_id: newSpkCutting.tukang_pola_id ? parseInt(newSpkCutting.tukang_pola_id) : null,
+      produk_sku_ids: selectedSkuIds.map((id) => parseInt(id)), // Tambahkan produk_sku_ids
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
@@ -627,9 +656,14 @@ const SpkCutting = () => {
     setNewSpkCutting((prev) => ({ ...prev, [name]: value }));
 
     // Jika tukang cutting berubah, generate nomor seri baru
-
     if (name === "tukang_cutting_id") {
       await fetchSpkNumber(value);
+    }
+
+    // Jika produk berubah, fetch SKU untuk produk tersebut
+    if (name === "produk_id") {
+      await fetchSkuByProduk(value);
+      setSelectedSkuIds([]); // Reset selected SKU
     }
   };
 
@@ -830,6 +864,18 @@ const SpkCutting = () => {
 
       const data = response.data.data || response.data;
 
+      // Set selected SKU IDs dari data yang sudah ada
+      if (data.skus && Array.isArray(data.skus)) {
+        setEditSelectedSkuIds(data.skus.map((sku) => sku.id.toString()));
+      } else {
+        setEditSelectedSkuIds([]);
+      }
+
+      // Fetch SKU list untuk produk yang dipilih
+      if (data.produk_id) {
+        await fetchSkuByProduk(data.produk_id);
+      }
+
       // Transform data untuk form edit
 
       const bagianData = await Promise.all(
@@ -904,7 +950,7 @@ const SpkCutting = () => {
     }
   };
 
-  const handleEditInputChange = (e) => {
+  const handleEditInputChange = async (e) => {
     const { name, value } = e.target;
 
     // Handle format untuk harga_jasa
@@ -932,6 +978,12 @@ const SpkCutting = () => {
     }
 
     setEditSpkCutting((prev) => ({ ...prev, [name]: value }));
+
+    // Jika produk berubah, fetch SKU untuk produk tersebut
+    if (name === "produk_id") {
+      await fetchSkuByProduk(value);
+      setEditSelectedSkuIds([]); // Reset selected SKU
+    }
   };
 
   const handleEditBagianChange = (index, key, value) => {
@@ -984,6 +1036,12 @@ const SpkCutting = () => {
 
   const handleFormUpdate = async (e) => {
     e.preventDefault();
+
+    // Validasi SKU harus dipilih
+    if (!editSelectedSkuIds || editSelectedSkuIds.length === 0) {
+      alert("Pilih minimal 1 SKU produk!");
+      return;
+    }
 
     // Validasi
 
@@ -1043,6 +1101,7 @@ const SpkCutting = () => {
       keterangan: editSpkCutting.keterangan || "",
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
       tukang_pola_id: editSpkCutting.tukang_pola_id ? parseInt(editSpkCutting.tukang_pola_id) : null,
+      produk_sku_ids: editSelectedSkuIds.map((id) => parseInt(id)), // Tambahkan produk_sku_ids
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 
@@ -1090,6 +1149,8 @@ const SpkCutting = () => {
         bagian: [],
       });
 
+      setEditSelectedSkuIds([]);
+      setSkuList([]);
       setShowEditForm(false);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -1348,6 +1409,8 @@ const SpkCutting = () => {
                   bagian: [],
                 });
 
+                setSelectedSkuIds([]);
+                setSkuList([]);
                 setShowForm(true);
               }}
             >
@@ -1546,6 +1609,45 @@ const SpkCutting = () => {
               </div>
 
               <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group" style={{ width: "100%" }}>
+                  <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
+                  <select
+                    multiple
+                    value={selectedSkuIds}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, (option) => option.value);
+                      setSelectedSkuIds(selected);
+                    }}
+                    required
+                    disabled={!newSpkCutting.produk_id || skuList.length === 0}
+                    style={{
+                      width: "100%",
+                      minHeight: "120px",
+                      padding: "8px",
+                      fontSize: "14px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    {skuList.length > 0 ? (
+                      skuList.map((sku) => (
+                        <option key={sku.id} value={sku.id.toString()}>
+                          {sku.sku} ({sku.warna} - {sku.ukuran})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        {newSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
+                      </option>
+                    )}
+                  </select>
+                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                    Gunakan Ctrl/Cmd + Klik untuk memilih multiple SKU. Minimal pilih 1 SKU.
+                  </small>
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Harga Jasa:</label>
                   <div style={{ position: "relative" }}>
@@ -1708,6 +1810,29 @@ const SpkCutting = () => {
                 <strong>Jenis SPK</strong>
                 <span>{selectedDetailSpk.jenis_spk || "-"}</span>
               </div>
+              {selectedDetailSpk.skus && selectedDetailSpk.skus.length > 0 && (
+                <div className="spk-cutting-detail-item" style={{ gridColumn: "1 / -1" }}>
+                  <strong>SKU Produk:</strong>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
+                    {selectedDetailSpk.skus.map((sku) => (
+                      <span
+                        key={sku.id}
+                        style={{
+                          padding: "6px 12px",
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          display: "inline-block",
+                        }}
+                      >
+                        {sku.sku} ({sku.warna} - {sku.ukuran})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="spk-cutting-detail-item">
                 <strong>Status</strong>
                 <span>
@@ -1836,6 +1961,45 @@ const SpkCutting = () => {
                 <div className="spk-cutting-form-group">
                   <label>Tanggal Batas Kirim:</label>
                   <input type="date" name="tanggal_batas_kirim" value={editSpkCutting.tanggal_batas_kirim} onChange={handleEditInputChange} required />
+                </div>
+              </div>
+
+              <div className="spk-cutting-form-row">
+                <div className="spk-cutting-form-group" style={{ width: "100%" }}>
+                  <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
+                  <select
+                    multiple
+                    value={editSelectedSkuIds}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, (option) => option.value);
+                      setEditSelectedSkuIds(selected);
+                    }}
+                    required
+                    disabled={!editSpkCutting.produk_id || skuList.length === 0}
+                    style={{
+                      width: "100%",
+                      minHeight: "120px",
+                      padding: "8px",
+                      fontSize: "14px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    {skuList.length > 0 ? (
+                      skuList.map((sku) => (
+                        <option key={sku.id} value={sku.id.toString()}>
+                          {sku.sku} ({sku.warna} - {sku.ukuran})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        {editSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
+                      </option>
+                    )}
+                  </select>
+                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
+                    Gunakan Ctrl/Cmd + Klik untuk memilih multiple SKU. Minimal pilih 1 SKU.
+                  </small>
                 </div>
               </div>
 

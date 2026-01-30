@@ -5,7 +5,7 @@ import { FaPlus, FaCheck, FaWarehouse, FaTrash } from "react-icons/fa";
 
 const GudangProduk = () => {
   const [items, setItems] = useState([]);
-  const [skuList, setSkuList] = useState([]);
+  const [produkList, setProdukList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showVerifyForm, setShowVerifyForm] = useState(false);
@@ -15,14 +15,14 @@ const GudangProduk = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [newItem, setNewItem] = useState({
-    items: [{ sku_id: "", qty: 1 }],
+    items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [] }],
   });
 
   const [verifyItems, setVerifyItems] = useState([]);
 
   useEffect(() => {
     fetchData();
-    fetchSkuList();
+    fetchProdukList();
   }, []);
 
   const fetchData = async () => {
@@ -40,15 +40,16 @@ const GudangProduk = () => {
     }
   };
 
-  const fetchSkuList = async () => {
+  const fetchProdukList = async () => {
     try {
-      const res = await API.get("/skus");
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      setSkuList(data.filter((sku) => sku.is_active !== false));
+      const res = await API.get("/produk", { params: { per_page: 1000 } });
+      const data = Array.isArray(res.data?.data) ? res.data.data : res.data?.data?.data || [];
+      setProdukList(data.filter((produk) => produk.status_produk !== 'nonaktif'));
     } catch (e) {
-      console.error("Gagal memuat data SKU:", e);
+      console.error("Gagal memuat data produk:", e);
     }
   };
+
 
   const filtered = items.filter((row) => {
     const term = (searchTerm || "").toLowerCase();
@@ -66,21 +67,60 @@ const GudangProduk = () => {
     setNewItem((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemChange = async (index, field, value) => {
     setNewItem((prev) => {
       const arr = [...prev.items];
       arr[index] = {
         ...arr[index],
         [field]: field === "qty" ? (parseInt(value, 10) || 1) : value,
       };
+      
+      // Jika produk berubah, reset SKU dan fetch SKU baru untuk baris ini
+      if (field === "produk_id") {
+        arr[index].sku_id = "";
+        arr[index].skuList = [];
+        
+        // Fetch SKU untuk produk yang dipilih
+        if (value) {
+          fetchSkuByProdukForItem(value, index);
+        }
+      }
+      
       return { ...prev, items: arr };
     });
+  };
+
+  const fetchSkuByProdukForItem = async (produkId, index) => {
+    if (!produkId) {
+      setNewItem((prev) => {
+        const arr = [...prev.items];
+        arr[index].skuList = [];
+        return { ...prev, items: arr };
+      });
+      return;
+    }
+    try {
+      const res = await API.get("/skus", { params: { produk_id: produkId } });
+      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      setNewItem((prev) => {
+        const arr = [...prev.items];
+        arr[index].skuList = data;
+        return { ...prev, items: arr };
+      });
+    } catch (e) {
+      console.error("Gagal memuat data SKU:", e);
+      setNewItem((prev) => {
+        const arr = [...prev.items];
+        arr[index].skuList = [];
+        return { ...prev, items: arr };
+      });
+    }
   };
 
   const addItemRow = () => {
     setNewItem((prev) => ({
       ...prev,
-      items: [...prev.items, { sku_id: "", qty: 1 }],
+      items: [...prev.items, { produk_id: "", sku_id: "", qty: 1, skuList: [] }],
     }));
   };
 
@@ -92,7 +132,7 @@ const GudangProduk = () => {
   };
 
   const resetForm = () => {
-    setNewItem({ items: [{ sku_id: "", qty: 1 }] });
+    setNewItem({ items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [] }] });
     setShowForm(false);
   };
 
@@ -294,17 +334,33 @@ const GudangProduk = () => {
                 </div>
                 {newItem.items.map((item, idx) => (
                   <div key={idx} className="gudang-produk-item-row">
+                    <div className="gudang-produk-form-group gudang-produk-item-produk">
+                      <label>Produk</label>
+                      <select
+                        value={item.produk_id}
+                        onChange={(e) => handleItemChange(idx, "produk_id", e.target.value)}
+                        required
+                      >
+                        <option value="">Pilih Produk</option>
+                        {produkList.map((produk) => (
+                          <option key={produk.id} value={produk.id}>
+                            {produk.nama_produk}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="gudang-produk-form-group gudang-produk-item-sku">
                       <label>SKU</label>
                       <select
                         value={item.sku_id}
                         onChange={(e) => handleItemChange(idx, "sku_id", e.target.value)}
                         required
+                        disabled={!item.produk_id}
                       >
-                        <option value="">Pilih SKU</option>
-                        {skuList.map((sku) => (
+                        <option value="">{item.produk_id ? "Pilih SKU" : "Pilih Produk terlebih dahulu"}</option>
+                        {(item.skuList || []).map((sku) => (
                           <option key={sku.id} value={sku.id}>
-                            {sku.sku}
+                            {sku.display_text || sku.sku}
                           </option>
                         ))}
                       </select>

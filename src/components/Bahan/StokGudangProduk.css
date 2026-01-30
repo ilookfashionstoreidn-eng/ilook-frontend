@@ -156,6 +156,25 @@
   vertical-align: middle;
 }
 
+.stok-gudang-produk-produk-header {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+  border-bottom: 2px solid #0487d8 !important;
+  font-weight: 600;
+}
+
+.stok-gudang-produk-produk-header:hover {
+  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%) !important;
+}
+
+.stok-gudang-produk-sku-row {
+  background: #f8fcff !important;
+  border-left: 3px solid #b3d9f2;
+}
+
+.stok-gudang-produk-sku-row:hover {
+  background: #e3f2fd !important;
+}
+
 .stok-gudang-produk-qty {
   display: inline-block;
   padding: 6px 12px;
@@ -164,6 +183,17 @@
   border-radius: 6px;
   font-weight: 600;
   font-size: 13px;
+}
+
+.stok-gudang-produk-total-qty {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(4, 135, 216, 0.3);
 }
 
 .stok-gudang-produk-loading,
