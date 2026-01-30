@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import "./StokGudangProduk.css";
 import API from "../../api";
 import { FaWarehouse, FaSync, FaChevronDown, FaChevronRight } from "react-icons/fa";
@@ -6,21 +6,44 @@ import { FaWarehouse, FaSync, FaChevronDown, FaChevronRight } from "react-icons/
 const StokGudangProduk = () => {
   const [stok, setStok] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedProduk, setExpandedProduk] = useState({});
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    per_page: 100,
+    total: 0,
+    last_page: 1,
+  });
 
   useEffect(() => {
-    fetchData();
+    fetchData(1, 100);
   }, []);
 
-  const fetchData = async () => {
+  // ✅ OPTIMASI: Debounce search term untuk mengurangi re-render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchData = async (page = 1, perPage = 100) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get("/stok-gudang-produk");
+      const res = await API.get("/stok-gudang-produk", {
+        params: { page, per_page: perPage },
+      });
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
       setStok(data);
+      
+      // Set pagination info
+      if (res.data?.pagination) {
+        setPagination(res.data.pagination);
+      }
     } catch (e) {
       setError("Gagal memuat data stok gudang produk.");
       setStok([]);
@@ -29,30 +52,34 @@ const StokGudangProduk = () => {
     }
   };
 
-  const toggleProduk = (produkId) => {
+  // ✅ OPTIMASI: useCallback untuk toggle function (mencegah re-render)
+  const toggleProduk = useCallback((produkId) => {
     setExpandedProduk((prev) => ({
       ...prev,
       [produkId]: !prev[produkId],
     }));
-  };
+  }, []);
 
-  const filtered = stok.filter((produk) => {
-    const term = (searchTerm || "").toLowerCase();
-    const produkNama = (produk.produk_nama || "").toLowerCase();
+  // ✅ OPTIMASI: useMemo untuk filter (hanya re-compute saat stok atau debouncedSearchTerm berubah)
+  const filtered = useMemo(() => {
+    if (!debouncedSearchTerm) return stok; // Jika tidak ada search, return semua
     
-    // Cek apakah produk nama cocok
-    if (produkNama.includes(term)) return true;
-    
-    // Cek apakah ada SKU yang cocok
-    const hasMatchingSku = produk.skus?.some((sku) => {
-      const skuId = (sku.sku_id || "").toString();
-      const skuText = (sku.sku || "").toLowerCase();
-      const skuDisplay = (sku.sku_display || "").toLowerCase();
-      return skuId.includes(term) || skuText.includes(term) || skuDisplay.includes(term);
+    const term = debouncedSearchTerm.toLowerCase();
+    return stok.filter((produk) => {
+      const produkNama = (produk.produk_nama || "").toLowerCase();
+      
+      // Cek apakah produk nama cocok
+      if (produkNama.includes(term)) return true;
+      
+      // Cek apakah ada SKU yang cocok
+      return produk.skus?.some((sku) => {
+        const skuId = (sku.sku_id || "").toString();
+        const skuText = (sku.sku || "").toLowerCase();
+        const skuDisplay = (sku.sku_display || "").toLowerCase();
+        return skuId.includes(term) || skuText.includes(term) || skuDisplay.includes(term);
+      });
     });
-    
-    return hasMatchingSku;
-  });
+  }, [stok, debouncedSearchTerm]);
 
   return (
     <div className="stok-gudang-produk-page">
@@ -65,7 +92,7 @@ const StokGudangProduk = () => {
 
       <div className="stok-gudang-produk-table-container">
         <div className="stok-gudang-produk-filter-header">
-          <button className="stok-gudang-produk-btn-refresh" onClick={fetchData} title="Refresh">
+          <button className="stok-gudang-produk-btn-refresh" onClick={() => fetchData(pagination.current_page, pagination.per_page)} title="Refresh">
             <FaSync /> Refresh
           </button>
           <div className="stok-gudang-produk-search-bar">
@@ -96,9 +123,10 @@ const StokGudangProduk = () => {
               </thead>
               <tbody>
                 {filtered.map((produk, index) => {
+                  // ✅ OPTIMASI: Default collapsed untuk mengurangi initial render
                   const isExpanded = expandedProduk[produk.produk_id] !== undefined 
                     ? expandedProduk[produk.produk_id] 
-                    : true; // Default expanded
+                    : false; // Default collapsed
                   
                   return (
                     <React.Fragment key={produk.produk_id || index}>
@@ -149,6 +177,64 @@ const StokGudangProduk = () => {
                 })}
               </tbody>
             </table>
+            
+            {/* ✅ OPTIMASI: Pagination Controls */}
+            {pagination.last_page > 1 && (
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center", 
+                marginTop: "20px",
+                padding: "16px",
+                background: "#f5f5f5",
+                borderRadius: "8px"
+              }}>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Menampilkan {((pagination.current_page - 1) * pagination.per_page) + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total)} dari {pagination.total} produk
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => fetchData(pagination.current_page - 1, pagination.per_page)}
+                    disabled={pagination.current_page === 1}
+                    style={{
+                      padding: "8px 16px",
+                      background: pagination.current_page === 1 ? "#ccc" : "#0487d8",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: pagination.current_page === 1 ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Sebelumnya
+                  </button>
+                  <span style={{ 
+                    padding: "8px 16px", 
+                    background: "white", 
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: "600"
+                  }}>
+                    Halaman {pagination.current_page} dari {pagination.last_page}
+                  </span>
+                  <button
+                    onClick={() => fetchData(pagination.current_page + 1, pagination.per_page)}
+                    disabled={pagination.current_page === pagination.last_page}
+                    style={{
+                      padding: "8px 16px",
+                      background: pagination.current_page === pagination.last_page ? "#ccc" : "#0487d8",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: pagination.current_page === pagination.last_page ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
