@@ -54,6 +54,10 @@ const HppProduk = () => {
       jumlah_bahan: "",
     },
   ]);
+  const [warnaList, setWarnaList] = useState([""]);
+  const [ukuranList, setUkuranList] = useState([""]);
+  const [editWarnaList, setEditWarnaList] = useState([""]);
+  const [editUkuranList, setEditUkuranList] = useState([""]);
   const addKomponen = () => {
     setKomponenList([
       ...komponenList,
@@ -147,6 +151,19 @@ const HppProduk = () => {
       formData.append("gambar_produk", newProduk.gambar_produk);
     }
 
+    // ===== WARNA DAN UKURAN =====
+    warnaList.forEach((warna) => {
+      if (warna && warna.trim()) {
+        formData.append("warna[]", warna.trim());
+      }
+    });
+
+    ukuranList.forEach((ukuran) => {
+      if (ukuran && ukuran.trim()) {
+        formData.append("ukuran[]", ukuran.trim());
+      }
+    });
+
     // ===== KOMponen =====
     komponenList.forEach((komp, index) => {
       formData.append(`komponen[${index}][jenis_komponen]`, komp.jenis_komponen);
@@ -211,7 +228,8 @@ const HppProduk = () => {
           satuan_bahan: "",
         },
       ]);
-
+      setWarnaList([""]);
+      setUkuranList([""]);
       setShowForm(false);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -239,6 +257,19 @@ const HppProduk = () => {
     if (editProduk.gambar_produk instanceof File) {
       formData.append("gambar_produk", editProduk.gambar_produk);
     }
+
+    // ===== WARNA DAN UKURAN =====
+    editWarnaList.forEach((warna) => {
+      if (warna && warna.trim()) {
+        formData.append("warna[]", warna.trim());
+      }
+    });
+
+    editUkuranList.forEach((ukuran) => {
+      if (ukuran && ukuran.trim()) {
+        formData.append("ukuran[]", ukuran.trim());
+      }
+    });
 
     // komponen
     editKomponenList.forEach((komp, index) => {
@@ -351,7 +382,7 @@ const HppProduk = () => {
     }));
   };
 
-  const handleEditClick = (produk) => {
+  const handleEditClick = async (produk) => {
     console.log("Produk yang dipilih untuk diedit:", produk); // Tambahkan log untuk memastikan data yang dikirim
 
     setEditProduk({
@@ -378,7 +409,95 @@ const HppProduk = () => {
       }))
     );
 
+    // Ambil data SKU untuk mendapatkan warna dan ukuran
+    try {
+      const response = await API.get(`/produk/${produk.id}`);
+      const produkDetail = response.data;
+      
+      if (produkDetail.skus && produkDetail.skus.length > 0) {
+        // Ambil unique warna dan ukuran dari SKU
+        const uniqueWarna = [...new Set(produkDetail.skus.map(sku => sku.warna))];
+        const uniqueUkuran = [...new Set(produkDetail.skus.map(sku => sku.ukuran))];
+        
+        setEditWarnaList(uniqueWarna.length > 0 ? uniqueWarna : [""]);
+        setEditUkuranList(uniqueUkuran.length > 0 ? uniqueUkuran : [""]);
+      } else {
+        setEditWarnaList([""]);
+        setEditUkuranList([""]);
+      }
+    } catch (error) {
+      console.error("Error fetching produk detail:", error);
+      setEditWarnaList([""]);
+      setEditUkuranList([""]);
+    }
+
     setShowEditForm(true);
+  };
+
+  // Fungsi untuk handle warna dan ukuran
+  const handleWarnaChange = (index, value) => {
+    const updated = [...warnaList];
+    updated[index] = value;
+    setWarnaList(updated);
+  };
+
+  const addWarna = () => {
+    setWarnaList([...warnaList, ""]);
+  };
+
+  const removeWarna = (index) => {
+    if (warnaList.length > 1) {
+      setWarnaList(warnaList.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleUkuranChange = (index, value) => {
+    const updated = [...ukuranList];
+    updated[index] = value;
+    setUkuranList(updated);
+  };
+
+  const addUkuran = () => {
+    setUkuranList([...ukuranList, ""]);
+  };
+
+  const removeUkuran = (index) => {
+    if (ukuranList.length > 1) {
+      setUkuranList(ukuranList.filter((_, i) => i !== index));
+    }
+  };
+
+  // Fungsi untuk handle edit warna dan ukuran
+  const handleEditWarnaChange = (index, value) => {
+    const updated = [...editWarnaList];
+    updated[index] = value;
+    setEditWarnaList(updated);
+  };
+
+  const addEditWarna = () => {
+    setEditWarnaList([...editWarnaList, ""]);
+  };
+
+  const removeEditWarna = (index) => {
+    if (editWarnaList.length > 1) {
+      setEditWarnaList(editWarnaList.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleEditUkuranChange = (index, value) => {
+    const updated = [...editUkuranList];
+    updated[index] = value;
+    setEditUkuranList(updated);
+  };
+
+  const addEditUkuran = () => {
+    setEditUkuranList([...editUkuranList, ""]);
+  };
+
+  const removeEditUkuran = (index) => {
+    if (editUkuranList.length > 1) {
+      setEditUkuranList(editUkuranList.filter((_, i) => i !== index));
+    }
   };
 
   const handleCancelEdit = () => {
@@ -789,6 +908,110 @@ const HppProduk = () => {
                     <option value="Urgent">Urgent</option>
                   </select>
                 </div>
+
+                {/* Warna dan Ukuran untuk SKU */}
+                <div className="hpp-form-group">
+                  <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+                  {warnaList.map((warna, index) => (
+                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                      <select
+                        className="hpp-form-select"
+                        value={warna || ""}
+                        onChange={(e) => handleWarnaChange(index, e.target.value)}
+                        required={index === 0}
+                      >
+                        <option value="">Pilih Warna</option>
+                        <option value="Merah">Merah</option>
+                        <option value="Biru">Biru</option>
+                        <option value="Hitam">Hitam</option>
+                        <option value="Putih">Putih</option>
+                        <option value="Abu-abu">Abu-abu</option>
+                        <option value="Coklat">Coklat</option>
+                        <option value="Krem">Krem</option>
+                        <option value="Navy">Navy</option>
+                        <option value="Maroon">Maroon</option>
+                        <option value="Hijau">Hijau</option>
+                        <option value="Kuning">Kuning</option>
+                        <option value="Orange">Orange</option>
+                        <option value="Pink">Pink</option>
+                        <option value="Ungu">Ungu</option>
+                      </select>
+                      {warnaList.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => removeWarna(index)}
+                          className="hpp-komponen-remove-btn"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    type="button" 
+                    onClick={addWarna}
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#6c757d', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      marginTop: '5px'
+                    }}
+                  >
+                    + Tambah Warna
+                  </button>
+                </div>
+
+                <div className="hpp-form-group">
+                  <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+                  {ukuranList.map((ukuran, index) => (
+                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                      <select
+                        className="hpp-form-select"
+                        value={ukuran || ""}
+                        onChange={(e) => handleUkuranChange(index, e.target.value)}
+                        required={index === 0}
+                      >
+                        <option value="">Pilih Ukuran</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                        <option value="XXXL">XXXL</option>
+                        <option value="All Size">All Size</option>
+                      </select>
+                      {ukuranList.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => removeUkuran(index)}
+                          className="hpp-komponen-remove-btn"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    type="button" 
+                    onClick={addUkuran}
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#6c757d', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      marginTop: '5px'
+                    }}
+                  >
+                    + Tambah Ukuran
+                  </button>
+                </div>
+
                 {/* Komponen Produk */}
                 <div className="hpp-komponen-section">
                   <h3>🔧 Komponen Produk</h3>
@@ -953,6 +1176,117 @@ const HppProduk = () => {
                 <div className="hpp-form-group">
                   <label>Harga Overhead</label>
                   <input type="number" name="harga_overhead" className="hpp-form-input" value={editProduk.harga_overhead} onChange={handleInputChange} />
+                </div>
+
+                <div className="hpp-form-group">
+                  <label>Status HPP</label>
+                  <select name="status_produk" className="hpp-form-select" value={editProduk.status_produk} onChange={handleInputChange}>
+                    <option value="">Pilih Status</option>
+                    <option value="Sementara">Sementara</option>
+                    <option value="Fix">Fix</option>
+                    <option value="Bermasalah">Bermasalah</option>
+                  </select>
+                </div>
+
+                {/* Warna dan Ukuran untuk SKU */}
+                <div className="hpp-form-group">
+                  <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+                  {editWarnaList.map((warna, index) => (
+                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                      <select
+                        className="hpp-form-select"
+                        value={warna || ""}
+                        onChange={(e) => handleEditWarnaChange(index, e.target.value)}
+                      >
+                        <option value="">Pilih Warna</option>
+                        <option value="Merah">Merah</option>
+                        <option value="Biru">Biru</option>
+                        <option value="Hitam">Hitam</option>
+                        <option value="Putih">Putih</option>
+                        <option value="Abu-abu">Abu-abu</option>
+                        <option value="Coklat">Coklat</option>
+                        <option value="Krem">Krem</option>
+                        <option value="Navy">Navy</option>
+                        <option value="Maroon">Maroon</option>
+                        <option value="Hijau">Hijau</option>
+                        <option value="Kuning">Kuning</option>
+                        <option value="Orange">Orange</option>
+                        <option value="Pink">Pink</option>
+                        <option value="Ungu">Ungu</option>
+                      </select>
+                      {editWarnaList.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => removeEditWarna(index)}
+                          className="hpp-komponen-remove-btn"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    type="button" 
+                    onClick={addEditWarna}
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#6c757d', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      marginTop: '5px'
+                    }}
+                  >
+                    + Tambah Warna
+                  </button>
+                </div>
+
+                <div className="hpp-form-group">
+                  <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+                  {editUkuranList.map((ukuran, index) => (
+                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                      <select
+                        className="hpp-form-select"
+                        value={ukuran || ""}
+                        onChange={(e) => handleEditUkuranChange(index, e.target.value)}
+                      >
+                        <option value="">Pilih Ukuran</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                        <option value="XXXL">XXXL</option>
+                        <option value="All Size">All Size</option>
+                      </select>
+                      {editUkuranList.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => removeEditUkuran(index)}
+                          className="hpp-komponen-remove-btn"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    type="button" 
+                    onClick={addEditUkuran}
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#6c757d', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      marginTop: '5px'
+                    }}
+                  >
+                    + Tambah Ukuran
+                  </button>
                 </div>
 
                 {/* Komponen */}

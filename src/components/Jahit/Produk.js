@@ -47,6 +47,10 @@ const Produk = () => {
     jumlah_bahan: "", 
     satuan_bahan: "" }
 ]);
+  const [warnaList, setWarnaList] = useState([""]);
+  const [ukuranList, setUkuranList] = useState([""]);
+  const [editWarnaList, setEditWarnaList] = useState([""]);
+  const [editUkuranList, setEditUkuranList] = useState([""]);
 
 
 
@@ -97,6 +101,20 @@ const handleFormSubmit = async (e) => {
   if (newProduk.gambar_produk) {
       formData.append("gambar_produk", newProduk.gambar_produk);
   }
+
+  // Tambahkan warna dan ukuran
+  warnaList.forEach((warna) => {
+    if (warna.trim()) {
+      formData.append("warna[]", warna.trim());
+    }
+  });
+
+  ukuranList.forEach((ukuran) => {
+    if (ukuran.trim()) {
+      formData.append("ukuran[]", ukuran.trim());
+    }
+  });
+
   komponenList.forEach((komp, index) => {
     formData.append(`komponen[${index}][jenis_komponen]`, komp.jenis_komponen);
     formData.append(`komponen[${index}][nama_bahan]`, komp.nama_bahan);
@@ -115,7 +133,16 @@ const handleFormSubmit = async (e) => {
       console.log("Response Data:", response.data); // Debugging
 
       alert("Produk berhasil ditambahkan!");
-      setProduks((prevProduks) => [...prevProduks, response.data]); 
+      
+      // Refresh data produk untuk mendapatkan SKU terbaru
+      const refreshResponse = await API.get(`/produk`, {
+        params: { 
+          kategori_produk: selectedKategori || "",
+          status_produk: selectedStatus || "" 
+        }, 
+      });
+      setProduks(refreshResponse.data.data);
+      
       setShowForm(false); // Tutup modal
 
       // Reset form input
@@ -131,6 +158,8 @@ const handleFormSubmit = async (e) => {
           harga_overhead: "",
         });
         setKomponenList([{ jenis_komponen: "", nama_bahan: "", harga_bahan: "", jumlah_bahan: "", satuan_bahan: "" }]);
+        setWarnaList([""]);
+        setUkuranList([""]);
         setShowForm(false);
 
       } catch (error) {
@@ -158,6 +187,19 @@ const handleFormUpdate = async (e) => {
     formData.append("gambar_produk", editProduk.gambar_produk);
   }
 
+  // Tambahkan warna dan ukuran untuk update
+  editWarnaList.forEach((warna) => {
+    if (warna.trim()) {
+      formData.append("warna[]", warna.trim());
+    }
+  });
+
+  editUkuranList.forEach((ukuran) => {
+    if (ukuran.trim()) {
+      formData.append("ukuran[]", ukuran.trim());
+    }
+  });
+
   // komponen (serialisasi array)
   editKomponenList.forEach((komp, index) => {
     formData.append(`komponen[${index}][jenis_komponen]`, komp.jenis_komponen);
@@ -175,9 +217,16 @@ const handleFormUpdate = async (e) => {
     });
 
     alert("Produk berhasil diperbarui!");
-    setProduks(prev =>
-      prev.map(p => (p.id === editProduk.id ? response.data : p))
-    );
+    
+    // Refresh data produk untuk mendapatkan SKU terbaru
+    const refreshResponse = await API.get(`/produk`, {
+      params: { 
+        kategori_produk: selectedKategori || "",
+        status_produk: selectedStatus || "" 
+      }, 
+    });
+    setProduks(refreshResponse.data.data);
+    
     setShowEditForm(false);
   } catch (error) {
     console.error("Update error:", error.response?.data || error.message);
@@ -237,7 +286,7 @@ const handleFileChange = (e) => {
   };
   
 
-  const handleEditClick = (produk) => {
+  const handleEditClick = async (produk) => {
     console.log("Produk yang dipilih untuk diedit:", produk);  // Tambahkan log untuk memastikan data yang dikirim
    
     setEditProduk({
@@ -252,6 +301,29 @@ const handleFileChange = (e) => {
         harga_overhead: produk.harga_overhead || "",
       });
   setEditKomponenList(produk.komponen || []);
+  
+  // Ambil data SKU untuk mendapatkan warna dan ukuran
+  try {
+    const response = await API.get(`/produk/${produk.id}`);
+    const produkDetail = response.data;
+    
+    if (produkDetail.skus && produkDetail.skus.length > 0) {
+      // Ambil unique warna dan ukuran dari SKU
+      const uniqueWarna = [...new Set(produkDetail.skus.map(sku => sku.warna))];
+      const uniqueUkuran = [...new Set(produkDetail.skus.map(sku => sku.ukuran))];
+      
+      setEditWarnaList(uniqueWarna.length > 0 ? uniqueWarna : [""]);
+      setEditUkuranList(uniqueUkuran.length > 0 ? uniqueUkuran : [""]);
+    } else {
+      setEditWarnaList([""]);
+      setEditUkuranList([""]);
+    }
+  } catch (error) {
+    console.error("Error fetching produk detail:", error);
+    setEditWarnaList([""]);
+    setEditUkuranList([""]);
+  }
+  
   setShowEditForm(true);
 };
 
@@ -291,9 +363,83 @@ const removeEditKomponen = (index) => {
   setEditKomponenList(prev => prev.filter((_, i) => i !== index));
 };
 
-  const handleDetailClick = (produk) => {
-    setSelectedProduk(produk);
-    setIsModalOpen(true);
+// Fungsi untuk handle warna dan ukuran
+const handleWarnaChange = (index, value) => {
+  const updated = [...warnaList];
+  updated[index] = value;
+  setWarnaList(updated);
+};
+
+const addWarna = () => {
+  setWarnaList([...warnaList, ""]);
+};
+
+const removeWarna = (index) => {
+  if (warnaList.length > 1) {
+    setWarnaList(warnaList.filter((_, i) => i !== index));
+  }
+};
+
+const handleUkuranChange = (index, value) => {
+  const updated = [...ukuranList];
+  updated[index] = value;
+  setUkuranList(updated);
+};
+
+const addUkuran = () => {
+  setUkuranList([...ukuranList, ""]);
+};
+
+const removeUkuran = (index) => {
+  if (ukuranList.length > 1) {
+    setUkuranList(ukuranList.filter((_, i) => i !== index));
+  }
+};
+
+// Fungsi untuk handle edit warna dan ukuran
+const handleEditWarnaChange = (index, value) => {
+  const updated = [...editWarnaList];
+  updated[index] = value;
+  setEditWarnaList(updated);
+};
+
+const addEditWarna = () => {
+  setEditWarnaList([...editWarnaList, ""]);
+};
+
+const removeEditWarna = (index) => {
+  if (editWarnaList.length > 1) {
+    setEditWarnaList(editWarnaList.filter((_, i) => i !== index));
+  }
+};
+
+const handleEditUkuranChange = (index, value) => {
+  const updated = [...editUkuranList];
+  updated[index] = value;
+  setEditUkuranList(updated);
+};
+
+const addEditUkuran = () => {
+  setEditUkuranList([...editUkuranList, ""]);
+};
+
+const removeEditUkuran = (index) => {
+  if (editUkuranList.length > 1) {
+    setEditUkuranList(editUkuranList.filter((_, i) => i !== index));
+  }
+};
+
+  const handleDetailClick = async (produk) => {
+    try {
+      // Ambil data lengkap produk termasuk SKU
+      const response = await API.get(`/produk/${produk.id}`);
+      setSelectedProduk(response.data);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching produk detail:", error);
+      setSelectedProduk(produk);
+      setIsModalOpen(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -354,6 +500,7 @@ const removeEditKomponen = (index) => {
               <th>Status Produk</th>
               <th>Status HPP</th>
               <th>HPP</th>
+              <th>Jumlah SKU</th>
               <th>Aksi</th>
               <th>Detail</th>
 
@@ -403,6 +550,28 @@ const removeEditKomponen = (index) => {
 
 
               <td data-label="harga jasa : ">Rp. {produk.hpp}</td>
+
+              <td data-label="SKU : ">
+                {produk.skus && produk.skus.length > 0 ? (
+                  <div style={{ fontSize: '12px' }}>
+                    <div><strong>{produk.skus.length} SKU</strong></div>
+                    <div style={{ marginTop: '4px', color: '#666' }}>
+                      {produk.skus.slice(0, 3).map((sku, idx) => (
+                        <div key={idx} title={sku.sku}>
+                          {sku.sku}
+                        </div>
+                      ))}
+                      {produk.skus.length > 3 && (
+                        <div style={{ color: '#999', fontStyle: 'italic' }}>
+                          +{produk.skus.length - 3} lainnya...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <span>-</span>
+                )}
+              </td>
 
               <td data-label="">
                   <div className="action-card">  
@@ -560,6 +729,135 @@ const removeEditKomponen = (index) => {
         </select>
       </div>
 
+        {/* Warna dan Ukuran untuk SKU */}
+        <div className="form-group">
+          <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+          {warnaList.map((warna, index) => (
+            <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+              <select
+                value={warna || ""}
+                onChange={(e) => handleWarnaChange(index, e.target.value)}
+                required={index === 0}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  border: '1px solid #ddd', 
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Pilih Warna</option>
+                <option value="Merah">Merah</option>
+                <option value="Biru">Biru</option>
+                <option value="Hitam">Hitam</option>
+                <option value="Putih">Putih</option>
+                <option value="Abu-abu">Abu-abu</option>
+                <option value="Coklat">Coklat</option>
+                <option value="Krem">Krem</option>
+                <option value="Navy">Navy</option>
+                <option value="Maroon">Maroon</option>
+                <option value="Hijau">Hijau</option>
+                <option value="Kuning">Kuning</option>
+                <option value="Orange">Orange</option>
+                <option value="Pink">Pink</option>
+                <option value="Ungu">Ungu</option>
+              </select>
+              {warnaList.length > 1 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeWarna(index)}
+                  style={{ 
+                    padding: '10px 15px', 
+                    backgroundColor: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button" 
+            onClick={addWarna}
+            style={{ 
+              padding: '10px 20px', 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              marginTop: '5px'
+            }}
+          >
+            + Tambah Warna
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+          {ukuranList.map((ukuran, index) => (
+            <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+              <select
+                value={ukuran || ""}
+                onChange={(e) => handleUkuranChange(index, e.target.value)}
+                required={index === 0}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  border: '1px solid #ddd', 
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Pilih Ukuran</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="XXXL">XXXL</option>
+                <option value="All Size">All Size</option>
+              </select>
+              {ukuranList.length > 1 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeUkuran(index)}
+                  style={{ 
+                    padding: '10px 15px', 
+                    backgroundColor: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button" 
+            onClick={addUkuran}
+            style={{ 
+              padding: '10px 20px', 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              marginTop: '5px'
+            }}
+          >
+            + Tambah Ukuran
+          </button>
+        </div>
+
         {/* Komponen Dinamis */}
         <h3>Komponen Produk</h3>
         {komponenList.map((komp, index) => (
@@ -716,6 +1014,137 @@ const removeEditKomponen = (index) => {
           />
         </div>
 
+        {/* Warna dan Ukuran untuk SKU */}
+        <div className="form-group">
+          <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+          {editWarnaList.map((warna, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
+              <select
+                value={warna || ""}
+                onChange={(e) => handleEditWarnaChange(index, e.target.value)}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  border: '1px solid #ddd', 
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Pilih Warna</option>
+                <option value="Merah">Merah</option>
+                <option value="Biru">Biru</option>
+                <option value="Hitam">Hitam</option>
+                <option value="Putih">Putih</option>
+                <option value="Abu-abu">Abu-abu</option>
+                <option value="Coklat">Coklat</option>
+                <option value="Krem">Krem</option>
+                <option value="Navy">Navy</option>
+                <option value="Maroon">Maroon</option>
+                <option value="Hijau">Hijau</option>
+                <option value="Kuning">Kuning</option>
+                <option value="Orange">Orange</option>
+                <option value="Pink">Pink</option>
+                <option value="Ungu">Ungu</option>
+              </select>
+              {editWarnaList.length > 1 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeEditWarna(index)} 
+                  style={{ 
+                    padding: '10px 15px', 
+                    backgroundColor: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button" 
+            onClick={addEditWarna} 
+            style={{ 
+              marginTop: '5px', 
+              padding: '10px 20px', 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            + Tambah Warna
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+          {editUkuranList.map((ukuran, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
+              <select
+                value={ukuran || ""}
+                onChange={(e) => handleEditUkuranChange(index, e.target.value)}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  border: '1px solid #ddd', 
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Pilih Ukuran</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="XXXL">XXXL</option>
+                <option value="All Size">All Size</option>
+              </select>
+              {editUkuranList.length > 1 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeEditUkuran(index)} 
+                  style={{ 
+                    padding: '10px 15px', 
+                    backgroundColor: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button" 
+            onClick={addEditUkuran} 
+            style={{ 
+              marginTop: '5px', 
+              padding: '10px 20px', 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            + Tambah Ukuran
+          </button>
+        </div>
+
         {/* Komponen */}
         <h3>Edit Komponen Produk</h3>
         {editKomponenList.map((komp, index) => (
@@ -812,6 +1241,30 @@ const removeEditKomponen = (index) => {
                 <p><strong>Harga Jasa Aksesoris:</strong><span>  Rp. {selectedProduk.harga_jasa_aksesoris}</span></p>
                 <p><strong>Harga Overhead:</strong><span> Rp.  {selectedProduk.harga_overhead}</span></p>
                 <p><strong>Total Harga Komponen:</strong><span> Rp.  {selectedProduk.total_komponen}.00</span></p>
+<br></br>
+<h4>Detail SKU:</h4>
+            {selectedProduk.skus && selectedProduk.skus.length > 0 ? (
+              <table className="komponen-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Warna</th>
+                    <th>Ukuran</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedProduk.skus.map((sku, idx) => (
+                    <tr key={idx}>
+                      <td>{sku.sku}</td>
+                      <td>{sku.warna}</td>
+                      <td>{sku.ukuran}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Tidak ada data SKU untuk produk ini.</p>
+            )}
 <br></br>
 <h4>Detail Komponen:</h4>
         
