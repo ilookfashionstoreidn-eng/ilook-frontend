@@ -495,6 +495,7 @@ const HasilCutting = () => {
           berat_per_produk: beratPerProduk,
           status_perbandingan: statusPerbandingan?.status || statusPerbandingan,
           selisih_perbandingan: statusPerbandingan?.selisih || 0,
+          produk_sku_id: data.produkSkuId ? parseInt(data.produkSkuId) : null,
         };
       });
 
@@ -542,6 +543,7 @@ const HasilCutting = () => {
                   distribusiItem.detail = detailData.map((d) => ({
                     warna: d.warna,
                     jumlah_produk: parseInt(d.jumlah_produk) || 0,
+                    produk_sku_id: d.produk_sku_id ? parseInt(d.produk_sku_id) : null,
                   }));
                 }
               }
@@ -658,6 +660,7 @@ const HasilCutting = () => {
           inputDataObj[bahan.spk_cutting_bahan_id] = {
             jumlahLembar: bahan.jumlah_lembar !== null && bahan.jumlah_lembar !== undefined ? bahan.jumlah_lembar : "",
             jumlahProduk: bahan.jumlah_produk !== null && bahan.jumlah_produk !== undefined ? bahan.jumlah_produk : "",
+            produkSkuId: bahan.produk_sku_id ? bahan.produk_sku_id.toString() : "",
           };
         });
       }
@@ -685,6 +688,7 @@ const HasilCutting = () => {
             detail: (dist.detail || []).map((d) => ({
               warna: d.warna || "",
               jumlah_produk: d.jumlah_produk || "",
+              produk_sku_id: d.produk_sku_id ? d.produk_sku_id.toString() : "",
             })),
           }))
         );
@@ -802,7 +806,7 @@ const HasilCutting = () => {
     if (!newDistribusi[distribusiIndex].detail) {
       newDistribusi[distribusiIndex].detail = [];
     }
-    newDistribusi[distribusiIndex].detail.push({ warna: "", jumlah_produk: "" });
+    newDistribusi[distribusiIndex].detail.push({ warna: "", jumlah_produk: "", produk_sku_id: "" });
 
     // Hitung ulang total detail setelah tambah (jika ada detail yang sudah diisi)
     const totalDetail = newDistribusi[distribusiIndex].detail.reduce((total, item) => {
@@ -1575,6 +1579,7 @@ const HasilCutting = () => {
                         <th>Total Produk</th>
                         <th>Berat per Produk (KG)</th>
                         <th>Status Perbandingan</th>
+                        <th>Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1713,7 +1718,7 @@ const HasilCutting = () => {
                         })
                       ) : (
                         <tr>
-                          <td colSpan="10" style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                          <td colSpan="11" style={{ textAlign: "center", padding: "40px", color: "#999" }}>
                             {!selectedSpkId ? (
                               <div>
                                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
@@ -1745,7 +1750,7 @@ const HasilCutting = () => {
                             color: "white",
                           }}
                         >
-                          <td colSpan="9" style={{ textAlign: "right", padding: "16px", fontSize: "16px" }}>
+                          <td colSpan="10" style={{ textAlign: "right", padding: "16px", fontSize: "16px" }}>
                             Total Keseluruhan:
                           </td>
                           <td
@@ -2014,34 +2019,66 @@ const HasilCutting = () => {
                                         />
                                       </td>
                                       <td>
-                                        <button
-                                          onClick={() => handleHapusDetailDistribusi(index, detailIndex)}
-                                          style={{
-                                            padding: "6px 12px",
-                                            background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "8px",
-                                            cursor: "pointer",
-                                            fontSize: "12px",
-                                            fontWeight: "600",
-                                            transition: "all 0.3s ease",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "6px",
-                                          }}
-                                          onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = "scale(1.05)";
-                                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = "scale(1)";
-                                            e.currentTarget.style.boxShadow = "none";
-                                          }}
-                                        >
-                                          <i className="fas fa-trash"></i>
-                                          Hapus
-                                        </button>
+                                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                          <select
+                                            value={detail.produk_sku_id || ""}
+                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "produk_sku_id", e.target.value)}
+                                            className="modern-input"
+                                            style={{
+                                              flex: 1,
+                                              padding: "6px 10px",
+                                              fontSize: "12px",
+                                              border: "2px solid #e0e0e0",
+                                              borderRadius: "8px",
+                                              minWidth: "150px",
+                                            }}
+                                          >
+                                            <option value="">-- Pilih SKU --</option>
+                                            {spkDetail?.skus && spkDetail.skus.length > 0 ? (
+                                              spkDetail.skus.map((sku) => {
+                                                const namaProduk = (sku.nama_produk || "").toUpperCase();
+                                                const warna = (sku.warna || "").toUpperCase();
+                                                const ukuran = (sku.ukuran || "").toUpperCase();
+                                                const displayText = `${namaProduk} - ${warna} ${ukuran}`.trim();
+                                                return (
+                                                  <option key={sku.id} value={sku.id}>
+                                                    {displayText}
+                                                  </option>
+                                                );
+                                              })
+                                            ) : (
+                                              <option value="" disabled>Tidak ada SKU</option>
+                                            )}
+                                          </select>
+                                          <button
+                                            onClick={() => handleHapusDetailDistribusi(index, detailIndex)}
+                                            style={{
+                                              padding: "6px 12px",
+                                              background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
+                                              color: "white",
+                                              border: "none",
+                                              borderRadius: "8px",
+                                              cursor: "pointer",
+                                              fontSize: "12px",
+                                              fontWeight: "600",
+                                              transition: "all 0.3s ease",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: "6px",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.transform = "scale(1.05)";
+                                              e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.transform = "scale(1)";
+                                              e.currentTarget.style.boxShadow = "none";
+                                            }}
+                                          >
+                                            <i className="fas fa-trash"></i>
+                                            Hapus
+                                          </button>
+                                        </div>
                                       </td>
                                     </tr>
                                   ))}

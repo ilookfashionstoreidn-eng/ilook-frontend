@@ -221,7 +221,7 @@
 .gudang-produk-items-section {
   border: 2px solid #b3d9f2;
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px;
   background: #f8fcff;
 }
 
@@ -229,13 +229,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .gudang-produk-items-section-header label {
   font-weight: 600;
   color: #17457c;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .gudang-produk-btn-add-row {
@@ -260,28 +262,75 @@
 
 .gudang-produk-item-row {
   display: grid;
-  grid-template-columns: 1fr 120px 44px;
-  gap: 12px;
+  grid-template-columns: 2fr 2fr 100px 44px;
+  gap: 16px;
   align-items: end;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.gudang-produk-item-row:hover {
+  border-color: #b3d9f2;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .gudang-produk-item-row:last-of-type {
   margin-bottom: 0;
 }
 
+.gudang-produk-item-produk,
+.gudang-produk-item-sku,
+.gudang-produk-item-qty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gudang-produk-item-produk label,
+.gudang-produk-item-sku label,
+.gudang-produk-item-qty label {
+  font-weight: 600;
+  color: #555;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+.gudang-produk-item-produk select,
 .gudang-produk-item-sku select,
 .gudang-produk-item-qty input {
   padding: 10px 12px;
   border: 2px solid #b3d9f2;
   border-radius: 8px;
   font-size: 14px;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.gudang-produk-item-produk select:focus,
+.gudang-produk-item-sku select:focus,
+.gudang-produk-item-qty input:focus {
+  outline: none;
+  border-color: #0487d8;
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+}
+
+.gudang-produk-item-sku select:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .gudang-produk-item-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  padding-bottom: 0;
 }
 
 .gudang-produk-btn-icon-remove {
@@ -295,10 +344,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  margin-bottom: 0;
 }
 
 .gudang-produk-btn-icon-remove:hover:not(:disabled) {
   background: #ffcdd2;
+  transform: scale(1.05);
 }
 
 .gudang-produk-btn-icon-remove:disabled {
@@ -547,8 +600,13 @@
   }
 
   .gudang-produk-item-row {
-    grid-template-columns: 1fr 100px 40px;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .gudang-produk-item-actions {
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .gudang-produk-verify-row {

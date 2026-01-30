@@ -83,8 +83,6 @@ const SpkCmt = () => {
     pending: 0,
     completed: 0,
   });
-  const [skuList, setSkuList] = useState([]);
-
   const [newSpk, setNewSpk] = useState({
     source_type: "",
     source_id: "",
@@ -106,9 +104,6 @@ const SpkCmt = () => {
     // 🔴 JASA
     harga_per_jasa: "",
     jenis_harga_jasa: "per_barang",
-
-    // 🔴 SKU
-    sku_ids: [],
   });
 
   useEffect(() => {
@@ -153,13 +148,22 @@ const SpkCmt = () => {
       if (newSpk.source_type === "cutting") {
         response = await API.get(`/spk-cutting-distribusi/${newSpk.source_id}`);
       } else {
+        // Untuk jasa, gunakan endpoint /spk-jasa/{id}
         response = await API.get(`/spk-jasa/${newSpk.source_id}`);
       }
 
+      console.log("Preview response:", response.data); // Debug log
       setPreviewData(response.data?.data ?? response.data);
     } catch (error) {
       console.error("Error fetching preview:", error);
+      console.error("Error response:", error.response?.data); // Debug log
       setPreviewData(null);
+      // Tampilkan alert untuk user jika error
+      if (error.response?.status === 404) {
+        alert("Data SPK Jasa tidak ditemukan");
+      } else if (error.response?.data?.error) {
+        alert(`Error: ${error.response.data.error}`);
+      }
     }
   }, [newSpk.source_id, newSpk.source_type]);
 
@@ -380,22 +384,6 @@ const SpkCmt = () => {
     fetchProduks();
   }, []);
 
-  // Fetch SKU List
-  useEffect(() => {
-    const fetchSkus = async () => {
-      try {
-        const response = await API.get("/skus");
-        const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-        // Filter hanya SKU yang aktif
-        const activeSkus = data.filter((sku) => sku.is_active !== false);
-        setSkuList(activeSkus);
-      } catch (error) {
-        console.error("Gagal mengambil data SKU:", error);
-      }
-    };
-
-    fetchSkus();
-  }, []);
 
   // Ambil chat saat komponen pertama kali dirender
   useEffect(() => {
@@ -985,12 +973,6 @@ const SpkCmt = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi SKU
-    if (!newSpk.sku_ids || newSpk.sku_ids.length === 0) {
-      alert("SKU wajib dipilih minimal 1 SKU");
-      return;
-    }
-
     const formData = new FormData();
 
     formData.append("source_type", newSpk.source_type);
@@ -1013,13 +995,6 @@ const SpkCmt = () => {
     // 🔴 JASA - Parse dari format rupiah
     formData.append("harga_per_jasa", parseRupiah(newSpk.harga_per_jasa));
     formData.append("jenis_harga_jasa", newSpk.jenis_harga_jasa);
-
-    // 🔴 SKU - Kirim sebagai array
-    if (newSpk.sku_ids && newSpk.sku_ids.length > 0) {
-      newSpk.sku_ids.forEach((skuId) => {
-        formData.append("sku_ids[]", skuId);
-      });
-    }
 
     try {
       const response = await API.post("/spkcmt", formData, {
@@ -1044,7 +1019,6 @@ const SpkCmt = () => {
         jenis_harga_barang: "per_pcs",
         harga_per_jasa: "",
         jenis_harga_jasa: "per_barang",
-        sku_ids: [],
       });
       setPreviewData(null);
 
@@ -1182,7 +1156,6 @@ const SpkCmt = () => {
     setNewSpk({ 
       ...spk, 
       warna: spk.warna || [],
-      sku_ids: spk.skus ? spk.skus.map((s) => s.id) : [],
     });
     setShowForm(true); // Tampilkan form
   };
@@ -1635,11 +1608,22 @@ const SpkCmt = () => {
                         <FaSave size={13} />
                       </button>
                       {/* ✅ Tombol Download Barcode SKU */}
-                      {spk.skus && spk.skus.length > 0 && (
-                        <button onClick={() => downloadBarcodePdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download Barcode SKU" style={{ background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                          <FaBarcode size={13} />
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => downloadBarcodePdf(spk.id_spk)} 
+                        className="spkcmt-btn-icon spkcmt-btn-icon-download" 
+                        title="Download Barcode SKU" 
+                        style={{ 
+                          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", 
+                          minWidth: "30px", 
+                          minHeight: "30px", 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "center", 
+                          padding: "5px" 
+                        }}
+                      >
+                        <FaBarcode size={13} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -2216,7 +2200,6 @@ const SpkCmt = () => {
               jenis_harga_barang: "per_pcs",
               harga_per_jasa: "",
               jenis_harga_jasa: "per_barang",
-              sku_ids: [],
             });
             setPreviewData(null);
           }}
@@ -2243,7 +2226,6 @@ const SpkCmt = () => {
                     jenis_harga_barang: "per_pcs",
                     harga_per_jasa: "",
                     jenis_harga_jasa: "per_barang",
-                    sku_ids: [],
                   });
                   setPreviewData(null);
                 }}
@@ -2399,6 +2381,20 @@ const SpkCmt = () => {
                           <span>{previewData.tukang_jasa.nama}</span>
                         </div>
                       )}
+
+                      {/* SKU */}
+                      {Array.isArray(previewData.skus) && previewData.skus.length > 0 && (
+                        <div className="spkcmt-preview-item">
+                          <strong>SKU:</strong>
+                          <div className="spkcmt-preview-warna" style={{ marginTop: "8px" }}>
+                            {previewData.skus.map((sku, idx) => (
+                              <div key={idx} className="spkcmt-preview-warna-item" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600" }}>
+                                {sku.display || sku.sku}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2470,60 +2466,6 @@ const SpkCmt = () => {
                   </div>
                 </div>
 
-                {/* ================= SKU ================= */}
-                <div className="spkcmt-form-group">
-                  <label className="spkcmt-form-label">SKU *</label>
-                  <Select
-                    isMulti
-                    options={skuList.map((sku) => ({
-                      value: sku.id,
-                      label: sku.sku,
-                    }))}
-                    value={newSpk.sku_ids?.map((skuId) => {
-                      const sku = skuList.find((s) => s.id === skuId);
-                      return sku ? { value: sku.id, label: sku.sku } : null;
-                    }).filter(Boolean)}
-                    onChange={(selected) => {
-                      setNewSpk({
-                        ...newSpk,
-                        sku_ids: selected ? selected.map((s) => s.value) : [],
-                      });
-                    }}
-                    placeholder="Pilih SKU..."
-                    isSearchable
-                    isClearable
-                    noOptionsMessage={({ inputValue }) => {
-                      if (inputValue) return `Tidak ditemukan SKU "${inputValue}"`;
-                      return "Tidak ada SKU tersedia";
-                    }}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        minHeight: "40px",
-                        border: "1px solid #ddd",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        "&:hover": {
-                          borderColor: "#667eea",
-                        },
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 9999,
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: "#999",
-                      }),
-                    }}
-                  />
-                  {newSpk.sku_ids && newSpk.sku_ids.length > 0 && (
-                    <div style={{ marginTop: "8px", fontSize: "12px", color: "#667eea" }}>
-                      ✓ {newSpk.sku_ids.length} SKU dipilih
-                    </div>
-                  )}
-                </div>
-
                 <div className="spkcmt-form-actions">
                   <button type="submit" className="spkcmt-btn-submit">
                     <FaSave /> Simpan SPK CMT
@@ -2548,7 +2490,6 @@ const SpkCmt = () => {
                         jenis_harga_barang: "per_pcs",
                         harga_per_jasa: "",
                         jenis_harga_jasa: "per_barang",
-                        sku_ids: [],
                       });
                       setPreviewData(null);
                     }}
