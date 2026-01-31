@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import "./SpkCutting.css";
@@ -69,9 +69,16 @@ const SpkCutting = () => {
 
   const [selectedDetailSpk, setSelectedDetailSpk] = useState(null);
 
+  // ✅ OPTIMASI: Server-side pagination
   const [currentPage, setCurrentPage] = useState(1);
-
-  const itemsPerPage = 5;
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 15,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
 
   // State untuk SKU
   const [skuList, setSkuList] = useState([]);
@@ -139,11 +146,20 @@ const SpkCutting = () => {
     bagian: [],
   });
 
-  const fetchSpkCutting = async () => {
+  // ✅ OPTIMASI: Server-side pagination dengan search (menggunakan useCallback untuk menghindari infinite loop)
+  const fetchSpkCutting = useCallback(async (page = 1) => {
     try {
       setLoading(true);
 
-      const params = {};
+      const params = {
+        page,
+        per_page: 15, // Default 15 per page
+      };
+
+      // ✅ OPTIMASI: Search di backend
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
 
       if (statusFilter && statusFilter !== "all") {
         params.status = statusFilter;
@@ -179,25 +195,78 @@ const SpkCutting = () => {
 
       const response = await API.get("/spk_cutting", { params });
 
-      // Urutkan data berdasarkan ID descending (terbaru di atas)
+      // ✅ DEBUG: Log response untuk troubleshooting
+      console.log("API Response:", {
+        hasData: !!response.data.data,
+        dataLength: response.data.data?.length || 0,
+        hasPagination: !!response.data.pagination,
+        pagination: response.data.pagination,
+        hasSummary: !!response.data.summary,
+        fullResponse: response.data
+      });
 
-      const data = response.data.data || response.data;
+      // ✅ OPTIMASI: Data sudah di-sort dan di-paginate di backend
+      const data = response.data.data || [];
 
-      const sortedData = Array.isArray(data) ? data.sort((a, b) => b.id - a.id) : [];
+      if (!Array.isArray(data)) {
+        console.error("Data is not an array:", data);
+        setError("Format data tidak valid dari server");
+        setSpkCutting([]);
+        return;
+      }
 
-      setSpkCutting(sortedData);
+      setSpkCutting(data);
+
+      // ✅ OPTIMASI: Set pagination info dari backend dengan fallback
+      if (response.data.pagination) {
+        const paginationData = {
+          current_page: parseInt(response.data.pagination.current_page) || 1,
+          last_page: parseInt(response.data.pagination.last_page) || 1,
+          per_page: parseInt(response.data.pagination.per_page) || 15, // ✅ Fix: Convert to number
+          total: parseInt(response.data.pagination.total) || 0,
+          from: parseInt(response.data.pagination.from) || 0,
+          to: parseInt(response.data.pagination.to) || 0,
+        };
+        console.log("Setting pagination:", paginationData);
+        setPagination(paginationData);
+        setCurrentPage(parseInt(response.data.pagination.current_page) || 1);
+      } else {
+        // Fallback jika pagination tidak ada di response
+        console.warn("Pagination tidak ada di response, menggunakan fallback");
+        setPagination(prev => ({
+          ...prev,
+          total: data.length,
+          from: data.length > 0 ? 1 : 0,
+          to: data.length,
+          last_page: 1,
+        }));
+      }
 
       // Set summary jika ada
-
       if (response.data.summary) {
         setSummary(response.data.summary);
       }
     } catch (error) {
-      setError("Gagal mengambil data");
+      console.error("Error fetching SPK Cutting:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        fullError: error
+      });
+      setError(error.response?.data?.message || "Gagal mengambil data");
+      setSpkCutting([]);
+      setPagination({
+        current_page: 1,
+        last_page: 1,
+        per_page: 15,
+        total: 0,
+        from: 0,
+        to: 0,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
 
   // Update statusFilter dan jenisSpkFilter dari URL saat component mount atau URL berubah
   useEffect(() => {
@@ -212,9 +281,11 @@ const SpkCutting = () => {
     }
   }, [searchParams]);
 
+  // ✅ OPTIMASI: Initial load saat component mount
   useEffect(() => {
-    fetchSpkCutting();
-  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
+    fetchSpkCutting(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Hanya sekali saat mount
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -370,30 +441,36 @@ const SpkCutting = () => {
     }
   };
 
+  // ✅ OPTIMASI: Reset ke page 1 saat filter berubah, lalu fetch data
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, weeklyStart, weeklyEnd, dailyDate]);
+    fetchSpkCutting(1);
+  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, fetchSpkCutting]);
 
-  // === PAGINATION ===
+  // ✅ OPTIMASI: Debounce search untuk mengurangi request
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 1) {
+        fetchSpkCutting(1);
+      } else {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce
 
-  const filteredSpkCutting = spkCutting.filter(
-    (item) =>
-      item.id.toString().includes(searchTerm.toLowerCase()) ||
-      (item.id_spk_cutting || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.tukang_cutting?.nama_tukang_cutting || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.produk?.nama_produk || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage, fetchSpkCutting]);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
+  // ✅ OPTIMASI: Fetch data saat page berubah
+  useEffect(() => {
+    fetchSpkCutting(currentPage);
+  }, [currentPage, fetchSpkCutting]);
 
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
-  const currentItems = filteredSpkCutting.slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalPages = Math.ceil(filteredSpkCutting.length / itemsPerPage);
+  // ✅ OPTIMASI: Hapus client-side filtering - sekarang di backend
+  // Data sudah di-filter dan di-paginate di backend
+  const currentItems = spkCutting;
 
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= pagination.last_page) {
       setCurrentPage(page);
     }
   };
@@ -1522,27 +1599,101 @@ const SpkCutting = () => {
               </tbody>
             </table>
 
-            {/* Pagination */}
-
-            {totalPages > 1 && (
-              <div className="spk-cutting-pagination">
-                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
-
-                {[...Array(totalPages)].map((_, i) => {
-                  const page = i + 1;
-
-                  return (
-                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
-                      {page}
+            {/* ✅ OPTIMASI: Server-side Pagination - Tampilkan selalu jika ada data */}
+            {pagination.total > 0 && (
+              <div className="spk-cutting-pagination" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "20px",
+                padding: "16px",
+                background: "#f5f5f5",
+                borderRadius: "8px",
+                flexWrap: "wrap",
+                gap: "12px"
+              }}>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Menampilkan {pagination.from || 0} - {pagination.to || 0} dari {pagination.total.toLocaleString("id-ID")} data
+                </div>
+                
+                {pagination.last_page > 1 && (
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button 
+                      onClick={() => goToPage(currentPage - 1)} 
+                      disabled={currentPage === 1}
+                      style={{
+                        padding: "8px 16px",
+                        background: currentPage === 1 ? "#ccc" : "#0487d8",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== 1) {
+                          e.currentTarget.style.background = "#0369a1";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== 1) {
+                          e.currentTarget.style.background = "#0487d8";
+                          e.currentTarget.style.transform = "translateY(0)";
+                        }
+                      }}
+                    >
+                      <i className="fas fa-chevron-left" style={{ marginRight: "4px" }}></i>
+                      Sebelumnya
                     </button>
-                  );
-                })}
 
-                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                  Next
-                </button>
+                    <span style={{ 
+                      padding: "8px 16px", 
+                      background: "white", 
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      border: "1px solid #e0e0e0",
+                      minWidth: "150px",
+                      textAlign: "center"
+                    }}>
+                      Halaman {pagination.current_page} dari {pagination.last_page}
+                    </span>
+
+                    <button 
+                      onClick={() => goToPage(currentPage + 1)} 
+                      disabled={currentPage === pagination.last_page}
+                      style={{
+                        padding: "8px 16px",
+                        background: currentPage === pagination.last_page ? "#ccc" : "#0487d8",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: currentPage === pagination.last_page ? "not-allowed" : "pointer",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== pagination.last_page) {
+                          e.currentTarget.style.background = "#0369a1";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== pagination.last_page) {
+                          e.currentTarget.style.background = "#0487d8";
+                          e.currentTarget.style.transform = "translateY(0)";
+                        }
+                      }}
+                    >
+                      Selanjutnya
+                      <i className="fas fa-chevron-right" style={{ marginLeft: "4px" }}></i>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -1611,38 +1762,93 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group" style={{ width: "100%" }}>
                   <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
-                  <select
-                    multiple
-                    value={selectedSkuIds}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, (option) => option.value);
-                      setSelectedSkuIds(selected);
-                    }}
-                    required
-                    disabled={!newSpkCutting.produk_id || skuList.length === 0}
+                  <div
                     style={{
                       width: "100%",
                       minHeight: "120px",
-                      padding: "8px",
+                      maxHeight: "200px",
+                      padding: "12px",
                       fontSize: "14px",
                       border: "2px solid #e0e0e0",
                       borderRadius: "8px",
+                      background: !newSpkCutting.produk_id || skuList.length === 0 ? "#f5f5f5" : "white",
+                      overflowY: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
                     }}
                   >
                     {skuList.length > 0 ? (
                       skuList.map((sku) => (
-                        <option key={sku.id} value={sku.id.toString()}>
-                          {sku.sku} ({sku.warna} - {sku.ukuran})
-                        </option>
+                        <label
+                          key={sku.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            background: selectedSkuIds.includes(sku.id.toString()) ? "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)" : "transparent",
+                            border: selectedSkuIds.includes(sku.id.toString()) ? "1px solid #2196f3" : "1px solid transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!selectedSkuIds.includes(sku.id.toString())) {
+                              e.currentTarget.style.background = "#f5f5f5";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!selectedSkuIds.includes(sku.id.toString())) {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSkuIds.includes(sku.id.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSkuIds([...selectedSkuIds, sku.id.toString()]);
+                              } else {
+                                setSelectedSkuIds(selectedSkuIds.filter((id) => id !== sku.id.toString()));
+                              }
+                            }}
+                            disabled={!newSpkCutting.produk_id || skuList.length === 0}
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              cursor: "pointer",
+                              accentColor: "#2196f3",
+                            }}
+                          />
+                          <span
+                            style={{
+                              flex: 1,
+                              fontSize: "14px",
+                              color: "#333",
+                              fontWeight: selectedSkuIds.includes(sku.id.toString()) ? "600" : "400",
+                            }}
+                          >
+                            {sku.sku} ({sku.warna} - {sku.ukuran})
+                          </span>
+                        </label>
                       ))
                     ) : (
-                      <option value="" disabled>
+                      <div
+                        style={{
+                          padding: "20px",
+                          textAlign: "center",
+                          color: "#999",
+                          fontSize: "14px",
+                        }}
+                      >
                         {newSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
-                      </option>
+                      </div>
                     )}
-                  </select>
+                  </div>
                   <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                    Gunakan Ctrl/Cmd + Klik untuk memilih multiple SKU. Minimal pilih 1 SKU.
+                    Centang checkbox untuk memilih SKU. Minimal pilih 1 SKU.
                   </small>
                 </div>
               </div>
@@ -1967,38 +2173,93 @@ const SpkCutting = () => {
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group" style={{ width: "100%" }}>
                   <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
-                  <select
-                    multiple
-                    value={editSelectedSkuIds}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, (option) => option.value);
-                      setEditSelectedSkuIds(selected);
-                    }}
-                    required
-                    disabled={!editSpkCutting.produk_id || skuList.length === 0}
+                  <div
                     style={{
                       width: "100%",
                       minHeight: "120px",
-                      padding: "8px",
+                      maxHeight: "200px",
+                      padding: "12px",
                       fontSize: "14px",
                       border: "2px solid #e0e0e0",
                       borderRadius: "8px",
+                      background: !editSpkCutting.produk_id || skuList.length === 0 ? "#f5f5f5" : "white",
+                      overflowY: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
                     }}
                   >
                     {skuList.length > 0 ? (
                       skuList.map((sku) => (
-                        <option key={sku.id} value={sku.id.toString()}>
-                          {sku.sku} ({sku.warna} - {sku.ukuran})
-                        </option>
+                        <label
+                          key={sku.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            background: editSelectedSkuIds.includes(sku.id.toString()) ? "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)" : "transparent",
+                            border: editSelectedSkuIds.includes(sku.id.toString()) ? "1px solid #2196f3" : "1px solid transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!editSelectedSkuIds.includes(sku.id.toString())) {
+                              e.currentTarget.style.background = "#f5f5f5";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!editSelectedSkuIds.includes(sku.id.toString())) {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editSelectedSkuIds.includes(sku.id.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditSelectedSkuIds([...editSelectedSkuIds, sku.id.toString()]);
+                              } else {
+                                setEditSelectedSkuIds(editSelectedSkuIds.filter((id) => id !== sku.id.toString()));
+                              }
+                            }}
+                            disabled={!editSpkCutting.produk_id || skuList.length === 0}
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              cursor: "pointer",
+                              accentColor: "#2196f3",
+                            }}
+                          />
+                          <span
+                            style={{
+                              flex: 1,
+                              fontSize: "14px",
+                              color: "#333",
+                              fontWeight: editSelectedSkuIds.includes(sku.id.toString()) ? "600" : "400",
+                            }}
+                          >
+                            {sku.sku} ({sku.warna} - {sku.ukuran})
+                          </span>
+                        </label>
                       ))
                     ) : (
-                      <option value="" disabled>
+                      <div
+                        style={{
+                          padding: "20px",
+                          textAlign: "center",
+                          color: "#999",
+                          fontSize: "14px",
+                        }}
+                      >
                         {editSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
-                      </option>
+                      </div>
                     )}
-                  </select>
+                  </div>
                   <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                    Gunakan Ctrl/Cmd + Klik untuk memilih multiple SKU. Minimal pilih 1 SKU.
+                    Centang checkbox untuk memilih SKU. Minimal pilih 1 SKU.
                   </small>
                 </div>
               </div>
