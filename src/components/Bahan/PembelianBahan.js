@@ -1024,14 +1024,13 @@ const PembelianBahan = () => {
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Keterangan</th>
+                 
                   <th>SPK Bahan</th>
                   <th>Nama Bahan</th>
-                  <th>Satuan</th>
                   <th>Harga</th>
                   <th>Gudang</th>
                   <th>Pabrik</th>
-                  <th>Tanggal Diterima</th>
+                  <th>Tgl Diterima</th>
                   <th>Progress</th>
                   <th>Barcode</th>
                   <th>Aksi</th>
@@ -1041,28 +1040,19 @@ const PembelianBahan = () => {
                 {currentItems.map((b, index) => (
                   <tr key={b.id}>
                     <td>{indexOfFirstItem + index + 1}</td>
-                    <td>
-                      <span className={`pembelian-bahan-badge ${b.keterangan?.toLowerCase()}`}>{b.keterangan}</span>
-                    </td>
+                   
                     <td>
                       {b.spk ? (
                         <div>
-                          <div>ID: {b.spk.id}</div>
-                          <div style={{ fontSize: "12px", color: "#666" }}>
-                            Status: <span className={`pembelian-bahan-badge ${b.spk.status?.toLowerCase()}`}>{b.spk.status || "-"}</span>
-                          </div>
-                          {b.spk.lama_pemesanan !== null && b.spk.lama_pemesanan !== undefined && (
-                            <div style={{ fontSize: "12px", color: "#059669", marginTop: "4px", fontWeight: "500" }}>
-                              Lama Pemesanan: {b.spk.lama_pemesanan} hari
-                            </div>
-                          )}
+                          <div>{b.spk.id}</div>
+                       
                         </div>
                       ) : (
                         "-"
                       )}
                     </td>
                     <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
-                    <td>{getNamaById(bahanList, b.bahan_id, "satuan")}</td>
+                   
                     <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
                     <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                     <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
