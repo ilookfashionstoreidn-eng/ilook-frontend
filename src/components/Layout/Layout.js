@@ -227,16 +227,18 @@ const Layout = () => {
                       <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Bahan
                     </Link>
                   </li>
-                  <li>
-                    <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
-                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
-                    </Link>
-                  </li>
+
                   <li>
                     <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Pemesanan Bahan
                     </Link>
                   </li>
+                  <li>
+                    <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
+                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
+                    </Link>
+                  </li>
+                  
                   <li>
                     <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
                       <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Refund Bahan
