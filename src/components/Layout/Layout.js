@@ -158,6 +158,247 @@ const Layout = () => {
                 </li>
               </>
             )}
+
+             <li>
+                  <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
+                <FaBox className="icon" /> Aksesoris
+                    <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+                  </div>
+                  {isAksesorisOpen && (
+                <ul className="dropdown-menu show">
+                      <li>
+                        <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Data Aksesoris
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="pembelianA" className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianA")}>
+                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris Toko
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="petugas-c" className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`} onClick={() => handleMenuClick("petugas-c")}>
+                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris CMT
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
+            </li>
+
+
+             <li>
+              <div onClick={toggleHppMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "hpp" ? "active" : ""}`}>
+                <FaShoppingBag className="icon" /> Produk
+                <span className={`arrow ${isHppOpen ? "open" : ""}`}>{isHppOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isHppOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="hppProduk" className={`dropdown-link ${activeMenu === "hppProduk" ? "active" : ""}`} onClick={() => handleMenuClick("hppProduk")}>
+                      <FaShoppingBag className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hpp Produk
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+
+
+            
+          <li>
+              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang" ? "active" : ""}`}>
+                <FaWarehouse className="icon" /> Gudang Bahan
+                <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isGudangOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
+                      <FaBuilding className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pabrik
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="gudang" className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`} onClick={() => handleMenuClick("gudang")}>
+                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="bahan" className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} onClick={() => handleMenuClick("bahan")}>
+                      <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
+                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
+                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Pemesanan Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
+                      <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Refund Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="scan-bahan" className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("scan-bahan")}>
+                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-per-bahan" className={`dropdown-link ${activeMenu === "stok-per-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-per-bahan")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="scan-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "scan-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("scan-stok-bahan-keluar")}>
+                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Stok Bahan Keluar
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Stok Bahan Keluar
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pendapatan-pabrik" className={`dropdown-link ${activeMenu === "pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan-pabrik")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan Pabrik
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="history-pendapatan-pabrik" className={`dropdown-link ${activeMenu === "history-pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("history-pendapatan-pabrik")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan Pabrik
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+
+
+           
+            <li>
+              <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cutting" ? "active" : ""}`}>
+                <FaCut className="icon" /> Cutting
+                <span className={`arrow ${isCuttingOpen ? "open" : ""}`}>{isCuttingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isCuttingOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Cutting
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="tukangPola" className={`dropdown-link ${activeMenu === "tukangPola" ? "active" : ""}`} onClick={() => handleMenuClick("tukangPola")}>
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Pola
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="markeran" className={`dropdown-link ${activeMenu === "markeran" ? "active" : ""}`} onClick={() => handleMenuClick("markeran")}>
+                      <FaRuler className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Markeran Produk
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
+                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="hasilcutting" className={`dropdown-link ${activeMenu === "hasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("hasilcutting")}>
+                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="laporanhasil" className={`dropdown-link ${activeMenu === "laporanhasil" ? "active" : ""}`} onClick={() => handleMenuClick("laporanhasil")}>
+                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Hasil 
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="historyhasilcutting" className={`dropdown-link ${activeMenu === "historyhasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("historyhasilcutting")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hasil Cutting
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="historydistribusispk" className={`dropdown-link ${activeMenu === "historydistribusispk" ? "active" : ""}`} onClick={() => handleMenuClick("historydistribusispk")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Distribusi SPK
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="hutangc" className={`dropdown-link ${activeMenu === "hutangc" ? "active" : ""}`} onClick={() => handleMenuClick("hutangc")}>
+                      <FaCreditCard className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hutang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="cashboanc" className={`dropdown-link ${activeMenu === "cashboanc" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanc")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashboan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pendapatancutting" className={`dropdown-link ${activeMenu === "pendapatancutting" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatancutting")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pendapatanhistory" className={`dropdown-link ${activeMenu === "pendapatanhistory" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistory")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            <li>
+              <div onClick={toggleJasaMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "jasa" ? "active" : ""}`}>
+                <FaTools className="icon" /> Jasa
+                <span className={`arrow ${isJasaOpen ? "open" : ""}`}>{isJasaOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isJasaOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="tukangJasa" className={`dropdown-link ${activeMenu === "tukangJasa" ? "active" : ""}`} onClick={() => handleMenuClick("tukangJasa")}>
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Jasa
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="spkjasa" className={`dropdown-link ${activeMenu === "spkjasa" ? "active" : ""}`} onClick={() => handleMenuClick("spkjasa")}>
+                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Spk Jasa
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="hasiljasa" className={`dropdown-link ${activeMenu === "hasiljasa" ? "active" : ""}`} onClick={() => handleMenuClick("hasiljasa")}>
+                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil Jasa
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="cashboanjasa" className={`dropdown-link ${activeMenu === "cashboanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanjasa")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashboan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="hutangjasa" className={`dropdown-link ${activeMenu === "hutangjasa" ? "active" : ""}`} onClick={() => handleMenuClick("hutangjasa")}>
+                      <FaCreditCard className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hutang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pendapatanjasa" className={`dropdown-link ${activeMenu === "pendapatanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanjasa")}>
+                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="pendapatanhistoryjasa" className={`dropdown-link ${activeMenu === "pendapatanhistoryjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistoryjasa")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+
+
+            
             <li>
               <div onClick={toggleCmtMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cmt" ? "active" : ""}`}>
                 <FaTshirt className="icon" /> CMT
@@ -237,163 +478,33 @@ const Layout = () => {
                 </ul>
               )}
             </li>
-                <li>
-                  <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
-                <FaBox className="icon" /> Aksesoris
-                    <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-                  </div>
-                  {isAksesorisOpen && (
-                <ul className="dropdown-menu show">
-                      <li>
-                        <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
-                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Data Aksesoris
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="pembelianA" className={`dropdown-link ${activeMenu === "pembelianA" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianA")}>
-                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris Toko
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="petugas-c" className={`dropdown-link ${activeMenu === "petugas-c" ? "active" : ""}`} onClick={() => handleMenuClick("petugas-c")}>
-                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pembelian Aksesoris CMT
-                        </Link>
-                      </li>
-                    </ul>
-                  )}
-            </li>
-            <li>
-              <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cutting" ? "active" : ""}`}>
-                <FaCut className="icon" /> CUTTING
-                <span className={`arrow ${isCuttingOpen ? "open" : ""}`}>{isCuttingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+
+
+
+
+             <li>
+              <div onClick={toggleGudangProdukMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang-produk" ? "active" : ""}`}>
+                <FaShoppingBag className="icon" /> Gudang Produk
+                <span className={`arrow ${isGudangProdukOpen ? "open" : ""}`}>{isGudangProdukOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
-              {isCuttingOpen && (
+              {isGudangProdukOpen && (
                 <ul className="dropdown-menu show">
                   <li>
-                    <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
-                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Cutting
+                    <Link to="gudang-produk" className={`dropdown-link ${activeMenu === "gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("gudang-produk")}>
+                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk
                     </Link>
                   </li>
                   <li>
-                    <Link to="tukangPola" className={`dropdown-link ${activeMenu === "tukangPola" ? "active" : ""}`} onClick={() => handleMenuClick("tukangPola")}>
-                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Pola
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="markeran" className={`dropdown-link ${activeMenu === "markeran" ? "active" : ""}`} onClick={() => handleMenuClick("markeran")}>
-                      <FaRuler className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Markeran Produk
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
-                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="hasilcutting" className={`dropdown-link ${activeMenu === "hasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("hasilcutting")}>
-                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="laporanhasil" className={`dropdown-link ${activeMenu === "laporanhasil" ? "active" : ""}`} onClick={() => handleMenuClick("laporanhasil")}>
-                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Hasil 
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="historyhasilcutting" className={`dropdown-link ${activeMenu === "historyhasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("historyhasilcutting")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hasil Cutting
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="historydistribusispk" className={`dropdown-link ${activeMenu === "historydistribusispk" ? "active" : ""}`} onClick={() => handleMenuClick("historydistribusispk")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Distribusi SPK
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="hutangc" className={`dropdown-link ${activeMenu === "hutangc" ? "active" : ""}`} onClick={() => handleMenuClick("hutangc")}>
-                      <FaCreditCard className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hutang
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="cashboanc" className={`dropdown-link ${activeMenu === "cashboanc" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanc")}>
-                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashboan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pendapatancutting" className={`dropdown-link ${activeMenu === "pendapatancutting" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatancutting")}>
-                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pendapatanhistory" className={`dropdown-link ${activeMenu === "pendapatanhistory" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistory")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
+                    <Link to="stok-gudang-produk" className={`dropdown-link ${activeMenu === "stok-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-gudang-produk")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Produk
                     </Link>
                   </li>
                 </ul>
               )}
             </li>
 
-            <li>
-              <div onClick={toggleJasaMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "jasa" ? "active" : ""}`}>
-                <FaTools className="icon" /> JASA
-                <span className={`arrow ${isJasaOpen ? "open" : ""}`}>{isJasaOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-              </div>
-              {isJasaOpen && (
-                <ul className="dropdown-menu show">
-                  <li>
-                    <Link to="tukangJasa" className={`dropdown-link ${activeMenu === "tukangJasa" ? "active" : ""}`} onClick={() => handleMenuClick("tukangJasa")}>
-                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Jasa
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="spkjasa" className={`dropdown-link ${activeMenu === "spkjasa" ? "active" : ""}`} onClick={() => handleMenuClick("spkjasa")}>
-                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Spk Jasa
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="hasiljasa" className={`dropdown-link ${activeMenu === "hasiljasa" ? "active" : ""}`} onClick={() => handleMenuClick("hasiljasa")}>
-                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil Jasa
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="cashboanjasa" className={`dropdown-link ${activeMenu === "cashboanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanjasa")}>
-                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashboan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="hutangjasa" className={`dropdown-link ${activeMenu === "hutangjasa" ? "active" : ""}`} onClick={() => handleMenuClick("hutangjasa")}>
-                      <FaCreditCard className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hutang
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pendapatanjasa" className={`dropdown-link ${activeMenu === "pendapatanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanjasa")}>
-                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pendapatanhistoryjasa" className={`dropdown-link ${activeMenu === "pendapatanhistoryjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistoryjasa")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
 
-            <li>
-              <div onClick={toggleHppMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "hpp" ? "active" : ""}`}>
-                <FaShoppingBag className="icon" /> Produk
-                <span className={`arrow ${isHppOpen ? "open" : ""}`}>{isHppOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-              </div>
-              {isHppOpen && (
-                <ul className="dropdown-menu show">
-                  <li>
-                    <Link to="hppProduk" className={`dropdown-link ${activeMenu === "hppProduk" ? "active" : ""}`} onClick={() => handleMenuClick("hppProduk")}>
-                      <FaShoppingBag className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hpp Produk
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
+
 
             <li>
               <div onClick={togglePackingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "packing" ? "active" : ""}`}>
@@ -421,97 +532,8 @@ const Layout = () => {
               )}
             </li>
 
-            <li>
-              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang" ? "active" : ""}`}>
-                <FaWarehouse className="icon" /> Gudang
-                <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-              </div>
-              {isGudangOpen && (
-                <ul className="dropdown-menu show">
-                  <li>
-                    <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
-                      <FaBuilding className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pabrik
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="gudang" className={`dropdown-link ${activeMenu === "gudang" ? "active" : ""}`} onClick={() => handleMenuClick("gudang")}>
-                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="bahan" className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} onClick={() => handleMenuClick("bahan")}>
-                      <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
-                      <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
-                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Pemesanan Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
-                      <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Refund Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="scan-bahan" className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("scan-bahan")}>
-                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="stok-per-bahan" className={`dropdown-link ${activeMenu === "stok-per-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-per-bahan")}>
-                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Bahan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="scan-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "scan-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("scan-stok-bahan-keluar")}>
-                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Stok Bahan Keluar
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Stok Bahan Keluar
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="pendapatan-pabrik" className={`dropdown-link ${activeMenu === "pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan-pabrik")}>
-                      <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendapatan Pabrik
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="history-pendapatan-pabrik" className={`dropdown-link ${activeMenu === "history-pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("history-pendapatan-pabrik")}>
-                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan Pabrik
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
-
-            <li>
-              <div onClick={toggleGudangProdukMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang-produk" ? "active" : ""}`}>
-                <FaShoppingBag className="icon" /> Gudang Produk
-                <span className={`arrow ${isGudangProdukOpen ? "open" : ""}`}>{isGudangProdukOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
-              </div>
-              {isGudangProdukOpen && (
-                <ul className="dropdown-menu show">
-                  <li>
-                    <Link to="gudang-produk" className={`dropdown-link ${activeMenu === "gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("gudang-produk")}>
-                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="stok-gudang-produk" className={`dropdown-link ${activeMenu === "stok-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-gudang-produk")}>
-                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Produk
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
+            
+           
 
             <li style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.2)" }}>
               <button className="sidebar-link" onClick={handleLogout} style={{ color: "#ff6b6b" }}>
