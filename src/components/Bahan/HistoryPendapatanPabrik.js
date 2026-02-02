@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./HistoryPendapatanPabrik.css";
 import API from "../../api";
-import { FaHistory, FaEye, FaBuilding, FaMoneyBillWave } from "react-icons/fa";
+import { FaHistory, FaEye, FaBuilding, FaMoneyBillWave, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const HistoryPendapatanPabrik = () => {
   const [historyList, setHistoryList] = useState([]);
@@ -10,27 +10,54 @@ const HistoryPendapatanPabrik = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
 
   // Fetch history
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const res = await API.get("/pendapatan-pabrik/history/all");
-        if (res.data && res.data.success) {
-          setHistoryList(res.data.data || []);
-        } else {
-          setHistoryList(res.data || []);
-        }
-      } catch (e) {
-        setError("Gagal memuat riwayat pendapatan.");
-        console.error(e);
-      } finally {
-        setLoading(false);
+  const fetchHistory = async (page = 1) => {
+    try {
+      setLoading(true);
+      const res = await API.get("/pendapatan-pabrik/history/all", {
+        params: {
+          page: page,
+          search: searchTerm,
+          per_page: 10,
+        },
+      });
+
+      if (res.data && res.data.success) {
+        const data = res.data.data;
+        setHistoryList(data.data || []);
+        setPagination({
+          current_page: data.current_page,
+          last_page: data.last_page,
+          total: data.total,
+          from: data.from,
+          to: data.to,
+        });
+      } else {
+        setHistoryList([]);
       }
-    };
-    fetchHistory();
-  }, []);
+    } catch (e) {
+      setError("Gagal memuat riwayat pendapatan.");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Effect for search (debounced) and initial load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHistory(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Handle lihat detail
   const handleLihatDetail = (history) => {
@@ -59,14 +86,6 @@ const HistoryPendapatanPabrik = () => {
     });
   };
 
-  // Filter history
-  const filteredHistory = historyList.filter((h) => {
-    const namaPabrik = (h.nama_pabrik || "").toLowerCase();
-    const keterangan = (h.keterangan || "").toLowerCase();
-    const query = searchTerm.toLowerCase();
-    return namaPabrik.includes(query) || keterangan.includes(query);
-  });
-
   return (
     <div className="history-pendapatan-pabrik-page">
       <div className="history-pendapatan-pabrik-header">
@@ -92,64 +111,92 @@ const HistoryPendapatanPabrik = () => {
           <p className="history-pendapatan-pabrik-loading">Memuat data...</p>
         ) : error ? (
           <p className="history-pendapatan-pabrik-error">{error}</p>
-        ) : filteredHistory.length === 0 ? (
+        ) : historyList.length === 0 ? (
           <p className="history-pendapatan-pabrik-loading">Belum ada riwayat pendapatan</p>
         ) : (
-          <table className="history-pendapatan-pabrik-table">
-            <thead>
-              <tr>
-                <th>NO</th>
-                <th>ID</th>
-                <th>NAMA PABRIK</th>
-                <th>TANGGAL BAYAR</th>
-                <th>TANGGAL JATUH TEMPO</th>
-                <th>TOTAL BAYAR</th>
-                <th>JUMLAH PEMBELIAN</th>
-                <th>KETERANGAN</th>
-                <th style={{ textAlign: "center" }}>AKSI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.map((history, index) => (
-                <tr key={history.id}>
-                  <td>{index + 1}</td>
-                  <td>
-                    <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-info">
-                      #{history.id}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <FaBuilding style={{ color: "#0487d8", fontSize: "18px" }} />
-                      <span>{history.nama_pabrik}</span>
-                    </div>
-                  </td>
-                  <td>{formatDate(history.tanggal_bayar)}</td>
-                  <td>{formatDate(history.tanggal_jatuh_tempo) || "-"}</td>
-                  <td>
-                    <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-success">
-                      {formatRupiah(history.total_bayar)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-primary">
-                      {history.jumlah_pembelian} item
-                    </span>
-                  </td>
-                  <td>{history.keterangan || "-"}</td>
-                  <td>
-                    <button
-                      className="history-pendapatan-pabrik-btn-icon view"
-                      onClick={() => handleLihatDetail(history)}
-                      title="Lihat Detail"
-                    >
-                      <FaEye /> Detail
-                    </button>
-                  </td>
+          <>
+            <table className="history-pendapatan-pabrik-table">
+              <thead>
+                <tr>
+                  <th>NO</th>
+                  <th>ID</th>
+                  <th>NAMA PABRIK</th>
+                  <th>TANGGAL BAYAR</th>
+                  <th>TANGGAL JATUH TEMPO</th>
+                  <th>TOTAL BAYAR</th>
+                  <th>JUMLAH PEMBELIAN</th>
+                  <th>KETERANGAN</th>
+                  <th style={{ textAlign: "center" }}>AKSI</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {historyList.map((history, index) => (
+                  <tr key={history.id}>
+                    <td>{(pagination.current_page - 1) * 10 + index + 1}</td>
+                    <td>
+                      <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-info">
+                        #{history.id}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <FaBuilding style={{ color: "#0487d8", fontSize: "18px" }} />
+                        <span>{history.nama_pabrik}</span>
+                      </div>
+                    </td>
+                    <td>{formatDate(history.tanggal_bayar)}</td>
+                    <td>{formatDate(history.tanggal_jatuh_tempo) || "-"}</td>
+                    <td>
+                      <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-success">
+                        {formatRupiah(history.total_bayar)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="history-pendapatan-pabrik-badge history-pendapatan-pabrik-badge-primary">
+                        {history.jumlah_pembelian} item
+                      </span>
+                    </td>
+                    <td>{history.keterangan || "-"}</td>
+                    <td>
+                      <button
+                        className="history-pendapatan-pabrik-btn-icon view"
+                        onClick={() => handleLihatDetail(history)}
+                        title="Lihat Detail"
+                      >
+                        <FaEye /> Detail
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            <div className="history-pendapatan-pabrik-pagination">
+              <span className="history-pendapatan-pabrik-pagination-info">
+                Menampilkan {pagination.from} - {pagination.to} dari {pagination.total} data
+              </span>
+              <div className="history-pendapatan-pabrik-pagination-buttons">
+                <button
+                  disabled={pagination.current_page === 1}
+                  onClick={() => fetchHistory(pagination.current_page - 1)}
+                  className="history-pendapatan-pabrik-pagination-btn"
+                >
+                  <FaChevronLeft /> Sebelumnya
+                </button>
+                <span className="history-pendapatan-pabrik-pagination-page">
+                  Halaman {pagination.current_page}
+                </span>
+                <button
+                  disabled={pagination.current_page === pagination.last_page}
+                  onClick={() => fetchHistory(pagination.current_page + 1)}
+                  className="history-pendapatan-pabrik-pagination-btn"
+                >
+                  Selanjutnya <FaChevronRight />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

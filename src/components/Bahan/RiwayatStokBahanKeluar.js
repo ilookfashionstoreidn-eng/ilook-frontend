@@ -10,6 +10,8 @@ const RiwayatStokBahanKeluar = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [totalData, setTotalData] = useState(0);
+  const [perPage, setPerPage] = useState(20);
   const [searchSpkCuttingId, setSearchSpkCuttingId] = useState("");
   const [tanggalMulai, setTanggalMulai] = useState("");
   const [tanggalAkhir, setTanggalAkhir] = useState("");
@@ -22,6 +24,7 @@ const RiwayatStokBahanKeluar = () => {
 
       const params = {
         page: currentPage,
+        per_page: perPage
       };
 
       if (searchSpkCuttingId && searchSpkCuttingId.trim() !== "") {
@@ -42,64 +45,18 @@ const RiwayatStokBahanKeluar = () => {
       const response = await API.get("/stok-bahan-keluar", { params });
 
       if (response.data.data) {
-        let filteredData = response.data.data;
-
-        // Client-side filtering sebagai backup untuk memastikan hanya data di tanggal yang dipilih ditampilkan
-        if (filterAktif && (tanggalMulai || tanggalAkhir)) {
-          filteredData = filteredData.filter((item) => {
-            // Ambil tanggal dari scanned_at atau created_at
-            const dateString = item.scanned_at || item.created_at;
-            if (!dateString) return false;
-
-            try {
-              const scanDate = new Date(dateString);
-              if (isNaN(scanDate.getTime())) return false;
-
-              // Format tanggal untuk perbandingan: YYYY-MM-DD
-              const itemYear = scanDate.getFullYear();
-              const itemMonth = String(scanDate.getMonth() + 1).padStart(2, "0");
-              const itemDay = String(scanDate.getDate()).padStart(2, "0");
-              const itemDateStr = `${itemYear}-${itemMonth}-${itemDay}`;
-
-              if (tanggalMulai) {
-                const startDateStr = tanggalMulai; // Format: YYYY-MM-DD
-                if (itemDateStr < startDateStr) {
-                  return false;
-                }
-              }
-
-              if (tanggalAkhir) {
-                const endDateStr = tanggalAkhir; // Format: YYYY-MM-DD
-                if (itemDateStr > endDateStr) {
-                  return false;
-                }
-              }
-
-              return true;
-            } catch (e) {
-              return false;
-            }
-          });
-        }
-
-        // Set data yang sudah difilter
-        setData(filteredData);
-
-        // Jika filter aktif dan tidak ada data, reset pagination
-        if (filterAktif && filteredData.length === 0) {
-          setCurrentPage(1);
-          setLastPage(1);
-        } else {
-          // Gunakan pagination dari backend
-          setCurrentPage(response.data.current_page);
-          setLastPage(response.data.last_page);
-        }
+        // Data sudah difilter dari backend, langsung gunakan
+        setData(response.data.data);
+        
+        // Gunakan pagination dari backend
+        setCurrentPage(response.data.current_page);
+        setLastPage(response.data.last_page);
+        setTotalData(response.data.total);
       } else {
         setData([]);
-        if (filterAktif) {
-          setCurrentPage(1);
-          setLastPage(1);
-        }
+        setCurrentPage(1);
+        setLastPage(1);
+        setTotalData(0);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Gagal mengambil data riwayat stok bahan keluar");
@@ -108,11 +65,12 @@ const RiwayatStokBahanKeluar = () => {
       if (filterAktif) {
         setCurrentPage(1);
         setLastPage(1);
+        setTotalData(0);
       }
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchSpkCuttingId, filterAktif, tanggalMulai, tanggalAkhir]);
+  }, [currentPage, perPage, searchSpkCuttingId, filterAktif, tanggalMulai, tanggalAkhir]);
 
   useEffect(() => {
     fetchData();
@@ -146,6 +104,11 @@ const RiwayatStokBahanKeluar = () => {
     setCurrentPage(page);
   };
 
+  const handlePerPageChange = (e) => {
+    setPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset ke halaman 1 saat mengubah perPage
+  };
+
   return (
     <div className="riwayat-stok-page">
       <div className="riwayat-stok-header">
@@ -159,9 +122,7 @@ const RiwayatStokBahanKeluar = () => {
         <div className="riwayat-stok-filter-header">
           <div className="riwayat-stok-search-bar">
             <input type="text" placeholder="Scan / masukkan SPK Cutting ID..." value={searchSpkCuttingId} onChange={(e) => setSearchSpkCuttingId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch(e)} />
-            <button className="riwayat-stok-btn-primary" onClick={handleSearch} disabled={loading}>
-              {loading ? "Loading..." : "Cari SPK Cutting"}
-            </button>
+           
           </div>
         </div>
 
@@ -232,7 +193,7 @@ const RiwayatStokBahanKeluar = () => {
               <tbody>
                 {data.map((item, index) => (
                   <tr key={item.id}>
-                    <td>{(currentPage - 1) * 20 + index + 1}</td>
+                    <td>{(currentPage - 1) * perPage + index + 1}</td>
                     <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID") : "-"}</td>
                     <td>{item.spk_cutting?.id_spk_cutting || "-"}</td>
                     <td>{item.spk_cutting?.produk?.nama_produk || "-"}</td>
@@ -247,19 +208,35 @@ const RiwayatStokBahanKeluar = () => {
             </table>
 
             {/* Pagination */}
-            {lastPage > 1 && (
-              <div className="riwayat-stok-pagination">
-                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
-                <span style={{ padding: "10px", color: "#17457c", fontWeight: 600 }}>
-                  Halaman {currentPage} dari {lastPage}
-                </span>
-                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage}>
-                  Next
-                </button>
+            <div className="riwayat-stok-pagination-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+              <div className="riwayat-stok-pagination-info">
+                <span>Total Data: {totalData}</span>
+                <select 
+                  value={perPage} 
+                  onChange={handlePerPageChange}
+                  style={{ marginLeft: '10px', padding: '5px', borderRadius: '4px', border: '1px solid #ddd' }}
+                >
+                  <option value={10}>10 per halaman</option>
+                  <option value={20}>20 per halaman</option>
+                  <option value={50}>50 per halaman</option>
+                  <option value={100}>100 per halaman</option>
+                </select>
               </div>
-            )}
+
+              {lastPage > 1 && (
+                <div className="riwayat-stok-pagination">
+                  <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                    Previous
+                  </button>
+                  <span style={{ padding: "10px", color: "#17457c", fontWeight: 600 }}>
+                    Halaman {currentPage} dari {lastPage}
+                  </span>
+                  <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage}>
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

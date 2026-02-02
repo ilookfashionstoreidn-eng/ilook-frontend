@@ -1031,7 +1031,6 @@ const PembelianBahan = () => {
                   <th>Gudang</th>
                   <th>Pabrik</th>
                   <th>Tgl Diterima</th>
-                  <th>Progress</th>
                   <th>Barcode</th>
                   <th>Aksi</th>
                 </tr>
@@ -1057,28 +1056,7 @@ const PembelianBahan = () => {
                     <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                     <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
                     <td>{b.tanggal_kirim}</td>
-                    <td>
-                      {b.progress !== undefined ? (
-                        <div>
-                          <div style={{ fontSize: "12px", marginBottom: "4px" }}>
-                            {b.total_rol_dikirim || 0} / {b.total_rol_spk || 0} rol
-                          </div>
-                          <div style={{ width: "100px", height: "8px", backgroundColor: "#e5e7eb", borderRadius: "4px", overflow: "hidden" }}>
-                            <div
-                              style={{
-                                width: `${Math.min(b.progress || 0, 100)}%`,
-                                height: "100%",
-                                backgroundColor: b.progress >= 100 ? "#10b981" : b.progress >= 50 ? "#3b82f6" : "#f59e0b",
-                                transition: "width 0.3s ease",
-                              }}
-                            />
-                          </div>
-                          <div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{b.progress?.toFixed(1) || 0}%</div>
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+                   
                     <td>
                       <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
                         <FaDownload />

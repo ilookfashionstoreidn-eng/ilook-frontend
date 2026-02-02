@@ -278,7 +278,7 @@ const PendapatanPabrik = () => {
                 <th>NO</th>
                 <th>NAMA PABRIK</th>
                 <th>TOTAL HUTANG</th>
-                <th style={{ textAlign: "center" }}>AKSI</th>
+                <th style={{ textAlign: "right" }}>AKSI</th>
               </tr>
             </thead>
             <tbody>
@@ -297,7 +297,7 @@ const PendapatanPabrik = () => {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                       <button
                         className="pendapatan-pabrik-btn-icon view"
                         onClick={() => handleLihatDetail(pabrik)}

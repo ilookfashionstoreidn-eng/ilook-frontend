@@ -5,6 +5,7 @@ import { FaUndo, FaSearch, FaTimes } from "react-icons/fa";
 
 const RefundBahan = () => {
   const [pembelianList, setPembelianList] = useState([]);
+  const [pembelianMeta, setPembelianMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [selectedPembelian, setSelectedPembelian] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ const RefundBahan = () => {
   const [pabrikList, setPabrikList] = useState([]);
   const [gudangList, setGudangList] = useState([]);
   const [returnList, setReturnList] = useState([]);
+  const [returnMeta, setReturnMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [loadingReturnList, setLoadingReturnList] = useState(false);
   const [activeTab, setActiveTab] = useState("return"); // "pembelian" atau "return"
 
@@ -31,22 +33,43 @@ const RefundBahan = () => {
   const [loadingReturn, setLoadingReturn] = useState(false);
 
   useEffect(() => {
-    fetchAllData();
-    fetchReturnList();
-  }, []);
+    if (activeTab === "pembelian") {
+      fetchAllData(1, searchTerm);
+    } else {
+      fetchReturnList(1, searchTerm);
+    }
+  }, [activeTab]);
 
-  const fetchAllData = async () => {
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (activeTab === "pembelian") {
+        fetchAllData(1, searchTerm);
+      } else {
+        fetchReturnList(1, searchTerm);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const fetchAllData = async (page = 1, search = "") => {
     try {
       setLoading(true);
       const [resPembelian, resPabrik, resGudang] = await Promise.all([
-        API.get("/pembelian-bahan"),
+        API.get("/pembelian-bahan", { params: { page, per_page: 10, search } }),
         API.get("/pabrik"),
         API.get("/gudang"),
       ]);
 
-      let dataBahan = Array.isArray(resPembelian.data.data) ? resPembelian.data.data : resPembelian.data.data?.data || [];
-      dataBahan = dataBahan.sort((a, b) => b.id - a.id);
-      setPembelianList(dataBahan);
+      const data = resPembelian.data?.data?.data || [];
+      const meta = resPembelian.data?.data || {};
+
+      setPembelianList(data);
+      setPembelianMeta({
+        current_page: meta.current_page || 1,
+        last_page: meta.last_page || 1,
+        total: meta.total || 0
+      });
 
       setPabrikList(Array.isArray(resPabrik.data) ? resPabrik.data : resPabrik.data?.data || []);
       setGudangList(Array.isArray(resGudang.data) ? resGudang.data : resGudang.data?.data || []);
@@ -57,12 +80,19 @@ const RefundBahan = () => {
     }
   };
 
-  const fetchReturnList = async () => {
+  const fetchReturnList = async (page = 1, search = "") => {
     try {
       setLoadingReturnList(true);
-      const res = await API.get("/return-bahan");
-      const returns = res.data?.data || [];
-      setReturnList(returns.sort((a, b) => new Date(b.tanggal_return) - new Date(a.tanggal_return)));
+      const res = await API.get("/return-bahan", { params: { page, per_page: 10, search } });
+      const returns = res.data?.data?.data || [];
+      const meta = res.data?.data || {};
+      
+      setReturnList(returns);
+      setReturnMeta({
+        current_page: meta.current_page || 1,
+        last_page: meta.last_page || 1,
+        total: meta.total || 0
+      });
     } catch (e) {
       console.error("Gagal memuat data return:", e);
     } finally {
@@ -110,6 +140,15 @@ const RefundBahan = () => {
     setShowForm(true);
   };
 
+  const getMaxRolls = () => {
+    if (!selectedPembelian) return 0;
+    const totalBeli = selectedPembelian.warna 
+      ? selectedPembelian.warna.reduce((acc, curr) => acc + (curr.jumlah_rol || 0), 0)
+      : 0;
+    const totalSudahReturn = selectedPembelian.returns?.total_rol_returned || 0;
+    return Math.max(0, totalBeli - totalSudahReturn);
+  };
+  
   const handleReturnFormChange = (e) => {
     const { name, value } = e.target;
     setReturnForm((prev) => ({ ...prev, [name]: value }));
@@ -129,6 +168,12 @@ const RefundBahan = () => {
 
     if (returnForm.tipe_return === "refund" && !returnForm.total_refund) {
       alert("Total refund wajib diisi untuk tipe refund");
+      return;
+    }
+
+    const maxRolls = getMaxRolls();
+    if (parseInt(returnForm.jumlah_rol) > maxRolls) {
+      alert(`Jumlah rol tidak boleh melebihi sisa yang tersedia (${maxRolls} rol).`);
       return;
     }
 
@@ -165,7 +210,10 @@ const RefundBahan = () => {
         setActiveTab("return"); // Switch ke tab return setelah submit
       }
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.error || "Gagal mencatat return/refund";
+      let msg = err.response?.data?.message || err.response?.data?.error || "Gagal mencatat return/refund";
+      if (err.response?.data?.errors) {
+        msg += "\n\n" + Object.values(err.response.data.errors).flat().join("\n");
+      }
       alert(msg);
     } finally {
       setLoadingReturn(false);
@@ -181,14 +229,7 @@ const RefundBahan = () => {
     }).format(angka);
   };
 
-  const filteredPembelian = pembelianList.filter((item) => {
-    const term = (searchTerm || "").toLowerCase();
-    return (
-      (item.keterangan || "").toLowerCase().includes(term) ||
-      (item.no_surat_jalan || "").toLowerCase().includes(term) ||
-      (item.spk?.id?.toString() || "").includes(term)
-    );
-  });
+  const filteredPembelian = pembelianList;
 
 
   return (
@@ -200,24 +241,7 @@ const RefundBahan = () => {
           </div>
           <h1>Refund Bahan</h1>
         </div>
-        <button
-          onClick={() => setActiveTab("pembelian")}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#f59e0b",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-          }}
-        >
-          <FaUndo /> Pilih Pembelian untuk Refund
-        </button>
+        
       </div>
 
       {/* Tabs */}
@@ -261,7 +285,6 @@ const RefundBahan = () => {
       <div className="pembelian-bahan-table-container">
         <div className="pembelian-bahan-filter-header">
           <div className="pembelian-bahan-search-bar">
-            <FaSearch style={{ marginRight: "8px", color: "#666" }} />
             <input
               type="text"
               placeholder="Cari keterangan, no surat jalan, atau SPK..."
@@ -296,7 +319,7 @@ const RefundBahan = () => {
               <tbody>
                 {filteredPembelian.map((item, index) => (
                   <tr key={item.id}>
-                    <td>{index + 1}</td>
+                    <td>{(pembelianMeta.current_page - 1) * 10 + index + 1}</td>
                     <td>
                       <span className={`pembelian-bahan-badge ${item.keterangan?.toLowerCase()}`}>
                         {item.keterangan}
@@ -306,11 +329,7 @@ const RefundBahan = () => {
                       {item.spk ? (
                         <div>
                           <div>ID: {item.spk.id}</div>
-                          <div style={{ fontSize: "12px", color: "#666" }}>
-                            Status: <span className={`pembelian-bahan-badge ${item.spk.status?.toLowerCase()}`}>
-                              {item.spk.status || "-"}
-                            </span>
-                          </div>
+                         
                         </div>
                       ) : (
                         "-"
@@ -337,6 +356,24 @@ const RefundBahan = () => {
                 ))}
               </tbody>
             </table>
+            {/* Pagination Controls Pembelian */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px", gap: "8px", alignItems: "center" }}>
+              <button
+                disabled={pembelianMeta.current_page === 1}
+                onClick={() => fetchAllData(pembelianMeta.current_page - 1, searchTerm)}
+                style={{ padding: "6px 12px", cursor: "pointer", opacity: pembelianMeta.current_page === 1 ? 0.5 : 1 }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: "14px" }}>Halaman {pembelianMeta.current_page} dari {pembelianMeta.last_page}</span>
+              <button
+                disabled={pembelianMeta.current_page === pembelianMeta.last_page}
+                onClick={() => fetchAllData(pembelianMeta.current_page + 1, searchTerm)}
+                style={{ padding: "6px 12px", cursor: "pointer", opacity: pembelianMeta.current_page === pembelianMeta.last_page ? 0.5 : 1 }}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -368,7 +405,7 @@ const RefundBahan = () => {
               <tbody>
                 {returnList.map((ret, index) => (
                   <tr key={ret.id}>
-                    <td>{index + 1}</td>
+                    <td>{(returnMeta.current_page - 1) * 10 + index + 1}</td>
                     <td>{ret.pembelian_bahan_id || "-"}</td>
                     <td>
                       <span style={{
@@ -440,14 +477,14 @@ const RefundBahan = () => {
                           <button
                             onClick={() => handleUpdateReturnStatus(ret.id, "completed")}
                             style={{
-                              padding: "4px 8px",
-                              fontSize: "11px",
-                              backgroundColor: "#3b82f6",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "4px",
-                              cursor: "pointer"
-                            }}
+                                padding: "4px 8px",
+                                fontSize: "11px",
+                                backgroundColor: "#3b82f6",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer"
+                              }}
                           >
                             Complete
                           </button>
@@ -458,6 +495,24 @@ const RefundBahan = () => {
                 ))}
               </tbody>
             </table>
+            {/* Pagination Controls Return */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px", gap: "8px", alignItems: "center" }}>
+              <button
+                disabled={returnMeta.current_page === 1}
+                onClick={() => fetchReturnList(returnMeta.current_page - 1, searchTerm)}
+                style={{ padding: "6px 12px", cursor: "pointer", opacity: returnMeta.current_page === 1 ? 0.5 : 1 }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: "14px" }}>Halaman {returnMeta.current_page} dari {returnMeta.last_page}</span>
+              <button
+                disabled={returnMeta.current_page === returnMeta.last_page}
+                onClick={() => fetchReturnList(returnMeta.current_page + 1, searchTerm)}
+                style={{ padding: "6px 12px", cursor: "pointer", opacity: returnMeta.current_page === returnMeta.last_page ? 0.5 : 1 }}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -510,14 +565,27 @@ const RefundBahan = () => {
               </div>
 
               <div className="pembelian-bahan-form-group">
-                <label>Jumlah Rol *</label>
+                <label>Jumlah Rol * (Sisa: {getMaxRolls()})</label>
                 <input
                   type="number"
                   name="jumlah_rol"
                   value={returnForm.jumlah_rol}
-                  onChange={handleReturnFormChange}
+                  onChange={(e) => {
+                    e.target.setCustomValidity("");
+                    handleReturnFormChange(e);
+                  }}
                   min="1"
+                  max={getMaxRolls()}
                   required
+                  onInvalid={(e) => {
+                    if (e.target.validity.rangeOverflow) {
+                      e.target.setCustomValidity(`Jumlah tidak boleh melebihi sisa ${getMaxRolls()} rol`);
+                    } else if (e.target.validity.rangeUnderflow) {
+                      e.target.setCustomValidity('Jumlah minimal 1 rol');
+                    } else if (e.target.validity.valueMissing) {
+                      e.target.setCustomValidity('Jumlah rol wajib diisi');
+                    }
+                  }}
                 />
               </div>
 
