@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react"
 import "../../Jahit/Penjahit.css";
+import "../../Jahit/SpkCmt.css";
 import API from "../../../api"; 
-import {FaInfoCircle, FaPlus, FaEdit, } from 'react-icons/fa';
+import { FaPlus, FaSearch } from 'react-icons/fa';
 
 const TukangCutting = () => {
   const [tukangCutting, setTukangCutting] = useState([]);
@@ -97,68 +98,68 @@ const filteredTukangCutting = tukangCutting.filter((item) =>
 
   
   return (
-   <div>
-     <div className="penjahit-container">
-      <h1>Data Tukang Cutting</h1>
+   <div className="spkcmt-container">
+     <div className="spkcmt-header">
+      <h1>✂️ Data Tukang Cutting</h1>
     </div>
 
-    <div className="table-container">
-        <div className="filter-header1">
+    <div className="spkcmt-filters">
         <button 
-        onClick={() => setShowForm(true)}>
-          Tambah
+          className="spkcmt-btn-primary"
+          onClick={() => setShowForm(true)}
+        >
+          <FaPlus /> Tambah Tukang Cutting
         </button>
-        <div className="search-bar1">
+        <div className="spkcmt-search">
+          <FaSearch className="spkcmt-search-icon" />
           <input
             type="text"
-            placeholder="Cari nama penjahit..."
+            placeholder="Cari nama tukang cutting..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          </div>
-          
-      </div>
+        </div>
+    </div>
       
-        <div className="table-container">
-        <table className="penjahit-table">
+    <div className="spkcmt-table-container">
+        <table className="spkcmt-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>Nama Penjahit</th>
+              <th>Nama Tukang Cutting</th>
               <th>Kontak</th>
-              <th>bank</th>
+              <th>Bank</th>
               <th>No Rekening</th>
               <th>Alamat</th>
-         
-            
-            
             </tr>
           </thead>
           <tbody>
             {filteredTukangCutting.map((tc) => (
               <tr key={tc.id}>
-                <td data-label="Id Penjahit : ">{tc.id}</td>
-                <td data-label="Nama Penjahit : ">{tc.nama_tukang_cutting}</td>
-                <td data-label="Kontak : ">{tc.kontak}</td>
-                <td data-label="Bank : ">{tc.bank}</td>
-                <td data-label="No rekening : ">{tc.no_rekening}</td>
-                <td data-label="alamat : ">{tc.alamat}</td>
-              
+                <td>{tc.id}</td>
+                <td><strong>{tc.nama_tukang_cutting}</strong></td>
+                <td>{tc.kontak}</td>
+                <td>{tc.bank}</td>
+                <td>{tc.no_rekening}</td>
+                <td>{tc.alamat}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        </div>
+    </div>
 
 
     {/* Modal Form */}
         {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h2>Tambah Tukang Cutting  </h2>
+            <div className="modal-header">
+              <h2>Tambah Tukang Cutting</h2>
+              <button className="close-btn" onClick={() => setShowForm(false)}>&times;</button>
+            </div>
             <form onSubmit={handleFormSubmit} className="modern-form">
               <div className="form-group">
-                <label>Nama tukang:</label>
+                <label>Nama Tukang:</label>
                 <input
                   type="text"
                   name="nama_tukang_cutting"
@@ -206,34 +207,26 @@ const filteredTukangCutting = tukangCutting.filter((item) =>
 
               <div className="form-group">
                 <label>Alamat:</label>
-                <input
-                  type="text"
+                <textarea
                   name="alamat"
                   value={newTukangCutting.alamat}
                   onChange={handleInputChange}
                   placeholder="Masukkan Alamat"
                   required
+                  rows="3"
                 />
               </div>
 
             <div className="form-actions">
-                <button type="submit" className="btn btn-submit">
+                <button type="submit" className="spkcmt-btn-primary" style={{ width: '100%' }}>
                   Simpan
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-cancel"
-                  onClick={() => setShowForm(false)}
-                >
-                  Batal
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-        </div>
-</div>
+    </div>
   );
 };
 export default TukangCutting

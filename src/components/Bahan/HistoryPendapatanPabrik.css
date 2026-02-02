@@ -102,6 +102,56 @@
   letter-spacing: 0.5px;
 }
 
+/* Pagination */
+.history-pendapatan-pabrik-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.history-pendapatan-pabrik-pagination-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.history-pendapatan-pabrik-pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-pendapatan-pabrik-pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #17457c;
+  transition: all 0.2s;
+}
+
+.history-pendapatan-pabrik-pagination-btn:hover:not(:disabled) {
+  background: #f0f8ff;
+  border-color: #0487d8;
+  color: #0487d8;
+}
+
+.history-pendapatan-pabrik-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.history-pendapatan-pabrik-pagination-page {
+  font-weight: 600;
+  color: #17457c;
+}
+
 .history-pendapatan-pabrik-table tbody tr {
   border-bottom: 1px solid #e5e7eb;
   transition: all 0.2s ease;
