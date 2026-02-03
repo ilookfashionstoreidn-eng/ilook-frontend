@@ -245,10 +245,10 @@ const CashboanCutting = () => {
           <table className="cashboan-cutting-table">
             <thead>
               <tr>
-                <th>NAMA TUKANG CUTTING</th>
-                <th>JUMLAH CASHBON</th>
-                <th>STATUS PEMBAYARAN</th>
-                <th>AKSI</th>
+                <th>Nama Tukang Cutting</th>
+                <th>Jumlah Cashbon</th>
+                <th>Status Pembayaran</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -259,7 +259,7 @@ const CashboanCutting = () => {
                     <span className="cashboan-cutting-price">{formatRupiahDisplay(c.jumlah_cashboan || 0)}</span>
                   </td>
                   <td>
-                    <span className={`cashboan-cutting-status ${c.status_pembayaran || "belum lunas"}`}>{c.status_pembayaran || "belum lunas"}</span>
+                    <span className={`cashboan-cutting-status ${(c.status_pembayaran || "belum lunas").replace(/\s+/g, "-")}`}>{c.status_pembayaran || "belum lunas"}</span>
                   </td>
                   <td>
                     <div className="cashboan-cutting-actions">
@@ -373,66 +373,106 @@ const CashboanCutting = () => {
       )}
 
       {selectedDetailCashbon && (
-        <div
-          className="cashboan-cutting-modal"
-          onClick={() => {
-            setSelectedDetailCashbon(null);
-            setLogHistory([]);
-          }}
-        >
-          <div className="cashboan-cutting-modal-content cashboan-cutting-modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <div className="cashboan-cutting-modal-header">
-              <h2>Detail Cashbon - {selectedDetailCashbon.tukang_cutting?.nama_tukang_cutting || selectedDetailCashbon.nama_tukang_cutting}</h2>
-              <button
-                className="cashboan-cutting-modal-close"
-                onClick={() => {
-                  setSelectedDetailCashbon(null);
-                  setLogHistory([]);
-                }}
-              >
+        <div className="cashboan-cutting-detail-modal" onClick={() => setSelectedDetailCashbon(null)}>
+          <div className="cashboan-cutting-detail-card" onClick={(e) => e.stopPropagation()}>
+            <div className="cashboan-cutting-detail-header">
+              <h3>Detail Cashbon</h3>
+              <button className="cashboan-cutting-modal-close" onClick={() => setSelectedDetailCashbon(null)}>
                 <FaTimes />
               </button>
             </div>
-            <div className="cashboan-cutting-modal-body">
+            <div className="cashboan-cutting-detail-body">
               <div className="cashboan-cutting-detail-info">
-                <p>
-                  <strong>ID Cashbon:</strong> {selectedDetailCashbon.id}
-                </p>
-                <p>
-                  <strong>Jumlah Cashbon:</strong> {formatRupiahDisplay(selectedDetailCashbon.jumlah_cashboan || 0)}
-                </p>
-                <p>
-                  <strong>Status Pembayaran:</strong> <span className={`cashboan-cutting-status ${selectedDetailCashbon.status_pembayaran || "belum lunas"}`}>{selectedDetailCashbon.status_pembayaran || "belum lunas"}</span>
-                </p>
+                <div className="cashboan-cutting-detail-item">
+                  <strong>ID Cashbon</strong>
+                  <span>{selectedDetailCashbon.id}</span>
+                </div>
+                <div className="cashboan-cutting-detail-item">
+                  <strong>Nama Tukang Cutting</strong>
+                  <span>{selectedDetailCashbon.tukang_cutting?.nama_tukang_cutting || selectedDetailCashbon.nama_tukang_cutting}</span>
+                </div>
+                <div className="cashboan-cutting-detail-item">
+                  <strong>Jumlah Cashbon</strong>
+                  <span>{formatRupiahDisplay(selectedDetailCashbon.jumlah_cashboan || 0)}</span>
+                </div>
+                <div className="cashboan-cutting-detail-item">
+                  <strong>Status Pembayaran</strong>
+                  <span className={`cashboan-cutting-status ${(selectedDetailCashbon.status_pembayaran || "belum lunas").replace(/\s+/g, "-")}`}>{selectedDetailCashbon.status_pembayaran || "belum lunas"}</span>
+                </div>
+                {selectedDetailCashbon.tanggal_cashboan && (
+                  <div className="cashboan-cutting-detail-item">
+                    <strong>Tanggal Cashbon</strong>
+                    <span>{new Date(selectedDetailCashbon.tanggal_cashboan).toLocaleDateString("id-ID")}</span>
+                  </div>
+                )}
               </div>
 
               <div className="cashboan-cutting-history-section">
-                <h3>Log History</h3>
+                <h4>Log History</h4>
+                <select
+                  className="cashboan-cutting-filter-select"
+                  value={selectedJenisPerubahan}
+                  onChange={(e) => {
+                    setSelectedJenisPerubahan(e.target.value);
+                    if (selectedDetailCashbon.id) {
+                      fetchHistory(selectedDetailCashbon.id, e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Semua</option>
+                  <option value="penambahan">Penambahan</option>
+                  <option value="pengurangan">Pengurangan</option>
+                </select>
+
                 {logHistory.length > 0 ? (
-                  <table className="cashboan-cutting-history-table">
-                    <thead>
-                      <tr>
-                        <th>Tanggal Perubahan</th>
-                        <th>Jenis Perubahan</th>
-                        <th>Nominal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logHistory.map((history, index) => (
-                        <tr key={index}>
-                          <td>{new Date(history.tanggal_perubahan).toLocaleDateString("id-ID")}</td>
-                          <td>{history.jenis_perubahan}</td>
-                          <td>{formatRupiahDisplay(history.perubahan_cashboan || 0)}</td>
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="cashboan-cutting-history-table">
+                      <thead>
+                        <tr>
+                          <th>Tanggal Perubahan</th>
+                          <th>Jenis Perubahan</th>
+                          <th>Nominal</th>
+                          <th>Bukti Transfer</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {logHistory.map((history, index) => (
+                          <tr key={index}>
+                            <td>
+                              {new Date(history.tanggal_perubahan).toLocaleDateString("id-ID", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td>
+                              <span className={`cashboan-cutting-status ${history.jenis_perubahan === "penambahan" ? "belum-lunas" : "lunas"}`}>{history.jenis_perubahan}</span>
+                            </td>
+                            <td>
+                              <span className="cashboan-cutting-price">{formatRupiahDisplay(history.perubahan_cashboan || 0)}</span>
+                            </td>
+                            <td>
+                              {history.bukti_transfer ? (
+                                <a href={`${process.env.REACT_APP_FILE_URL}/storage/${history.bukti_transfer}`} target="_blank" rel="noopener noreferrer">
+                                  Lihat Bukti
+                                </a>
+                              ) : (
+                                <span style={{ color: "#94a3b8" }}>Tidak ada</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
-                  <p className="cashboan-cutting-no-history">Tidak ada log history.</p>
+                  <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px 0" }}>Tidak ada log history.</p>
                 )}
               </div>
             </div>
-            <div className="cashboan-cutting-modal-footer">
+            <div className="cashboan-cutting-detail-footer">
               <button
                 className="cashboan-cutting-btn-close"
                 onClick={() => {

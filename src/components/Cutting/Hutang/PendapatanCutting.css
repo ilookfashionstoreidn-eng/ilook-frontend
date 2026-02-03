@@ -147,7 +147,6 @@
 .pendapatan-cutting-table-wrapper {
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
 }
 
 .pendapatan-cutting-table {
@@ -157,18 +156,18 @@
 }
 
 .pendapatan-cutting-table thead {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .pendapatan-cutting-table th {
   padding: 16px;
   text-align: left;
   font-weight: 600;
-  color: #374151;
+  color: white;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #e5e7eb;
 }
 
 .pendapatan-cutting-table tbody tr {

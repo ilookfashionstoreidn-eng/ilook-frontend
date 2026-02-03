@@ -517,3 +517,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Pagination */
+.distribusi-history-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+}
+
+.distribusi-history-pagination-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.distribusi-history-pagination-button:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.distribusi-history-pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.distribusi-history-pagination-info {
+  color: #667eea;
+  font-weight: 600;
+}
