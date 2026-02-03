@@ -1,37 +1,74 @@
 import React, { useState, useEffect } from "react";
+import "../../Jahit/Penjahit.css";
 import "./SpkDistribusiHistory.css";
 import API from "../../../api";
+import { FaSearch, FaEye, FaTimes, FaCalendarAlt } from "react-icons/fa";
 
 const SpkDistribusiHistory = () => {
   const [distribusiList, setDistribusiList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    per_page: 10,
+  });
+
   const [selectedDistribusi, setSelectedDistribusi] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Fetch history data
-  useEffect(() => {
-    const fetchHistory = async () => {
-      setLoading(true);
-      try {
-        const response = await API.get("/spk-cutting-distribusi/history");
-        if (response.data && response.data.data) {
-          setDistribusiList(response.data.data || []);
-        }
-      } catch (error) {
-        console.error("Gagal mengambil history distribusi SPK:", error);
-      } finally {
-        setLoading(false);
+  const fetchHistory = async (page = 1, search = "") => {
+    setLoading(true);
+    try {
+      const response = await API.get(`/spk-cutting-distribusi/history?page=${page}&q=${search}`);
+      if (response.data && response.data.data) {
+        setDistribusiList(response.data.data);
+        setPagination(response.data.meta || {
+          current_page: 1,
+          last_page: 1,
+          total: 0,
+          per_page: 10,
+        });
       }
-    };
+    } catch (error) {
+      console.error("Gagal mengambil history distribusi SPK:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchHistory();
-  }, []);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchHistory(1, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.last_page) {
+      fetchHistory(newPage, searchQuery);
+    }
+  };
 
   // Handle lihat detail
-  const handleLihatDetail = (distribusi) => {
-    setSelectedDistribusi(distribusi);
+  const handleLihatDetail = async (distribusiId) => {
+    setDetailLoading(true);
     setShowDetailModal(true);
+    setSelectedDistribusi(null); // Reset previous data
+    try {
+      const response = await API.get(`/spk-cutting-distribusi/${distribusiId}/history`);
+      if (response.data) {
+        setSelectedDistribusi(response.data);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil detail history:", error);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   // Format tanggal
@@ -40,48 +77,12 @@ const SpkDistribusiHistory = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID", {
       day: "2-digit",
-      month: "long",
+      month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
   };
-
-  // Get tipe badge class
-  const getTipeBadgeClass = (tipe) => {
-    switch (tipe) {
-      case "cutting":
-        return "distribusi-history-badge-cutting";
-      case "jasa":
-        return "distribusi-history-badge-jasa";
-      case "cmt":
-        return "distribusi-history-badge-cmt";
-      default:
-        return "distribusi-history-badge-default";
-    }
-  };
-
-  // Get tipe label
-  const getTipeLabel = (tipe) => {
-    switch (tipe) {
-      case "cutting":
-        return "CUTTING";
-      case "jasa":
-        return "JASA";
-      case "cmt":
-        return "CMT";
-      default:
-        return tipe?.toUpperCase() || "-";
-    }
-  };
-
-  // Filter data berdasarkan search kode seri atau SPK Cutting ID
-  const filteredDistribusiList = distribusiList.filter((distribusi) => {
-    const kodeSeri = (distribusi.kode_seri || "").toLowerCase();
-    const spkCuttingId = (distribusi.spk_cutting_id || "").toString().toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return kodeSeri.includes(query) || spkCuttingId.includes(query);
-  });
 
   return (
     <div className="distribusi-history-container">
@@ -94,17 +95,17 @@ const SpkDistribusiHistory = () => {
 
       <div className="distribusi-history-table-card">
         {/* Search */}
-        <div className="distribusi-history-form-group" style={{ marginBottom: "16px" }}>
-          <label className="distribusi-history-form-label">🔍 Cari Kode Seri atau SPK Cutting ID</label>
+        <div className="distribusi-history-form-group">
+          <label className="distribusi-history-form-label">🔍 Cari Kode Seri</label>
           <div className="distribusi-history-form-input-wrapper">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ketik kode seri atau SPK Cutting ID untuk mencari..."
+              placeholder="Cari Kode Seri atau SPK Cutting ID..."
               className="distribusi-history-form-input"
             />
-            <i className="fas fa-search distribusi-history-form-search-icon"></i>
+            <FaSearch className="distribusi-history-form-search-icon" />
           </div>
         </div>
 
@@ -113,60 +114,79 @@ const SpkDistribusiHistory = () => {
             <div className="distribusi-history-loading-spinner"></div>
             <p className="distribusi-history-loading-text">Memuat data...</p>
           </div>
-        ) : filteredDistribusiList.length > 0 ? (
-          <table className="penjahit-table">
-            <thead>
-              <tr>
-                <th>NO</th>
-                <th>KODE SERI</th>
-                <th>SPK CUTTING ID</th>
-                <th>JUMLAH PRODUK</th>
-                <th>TOTAL HISTORY</th>
-                <th>AKSI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDistribusiList.map((distribusi, index) => (
-                <tr key={distribusi.distribusi_id} className="distribusi-history-table-row">
-                  <td className="distribusi-history-table-no">{index + 1}</td>
-                  <td className="distribusi-history-table-kode">
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <i className="fas fa-barcode" style={{ color: "#667eea", fontSize: "16px" }}></i>
-                      <span>{distribusi.kode_seri || "-"}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="distribusi-history-badge distribusi-history-badge-info">
-                      {distribusi.spk_cutting_id || "-"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="distribusi-history-badge distribusi-history-badge-success">
-                      {distribusi.jumlah_produk?.toLocaleString("id-ID") || "0"} produk
-                    </span>
-                  </td>
-                  <td>
-                    <span className="distribusi-history-badge distribusi-history-badge-primary">
-                      {distribusi.history?.length || 0} event
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                      <button
-                        onClick={() => handleLihatDetail(distribusi)}
-                        className="distribusi-history-action-button distribusi-history-action-button-info"
-                        style={{ position: "relative" }}
-                      >
-                        <i className="fas fa-eye"></i>
-                        Lihat Timeline
-                        <i className="fas fa-chevron-down" style={{ marginLeft: "8px", fontSize: "10px" }}></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        ) : distribusiList.length > 0 ? (
+          <>
+            <div className="table-responsive">
+              <table className="penjahit-table">
+                <thead>
+                  <tr>
+                    <th>NO</th>
+                    <th>KODE SERI</th>
+                    <th>SPK CUTTING ID</th>
+                    <th>JUMLAH PRODUK</th>
+                    <th>TOTAL HISTORY</th>
+                    <th>AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {distribusiList.map((distribusi, index) => (
+                    <tr key={distribusi.distribusi_id} className="distribusi-history-table-row">
+                      <td className="distribusi-history-table-no">{((pagination?.current_page || 1) - 1) * (pagination?.per_page || 10) + index + 1}</td>
+                      <td>
+                        <div className="distribusi-history-table-kode">
+                          {distribusi.kode_seri || "-"}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="distribusi-history-badge distribusi-history-badge-info">
+                          {distribusi.spk_cutting_id || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="distribusi-history-badge distribusi-history-badge-success">
+                          {distribusi.jumlah_produk?.toLocaleString("id-ID") || "0"} produk
+                        </span>
+                      </td>
+                      <td>
+                        <span className="distribusi-history-badge distribusi-history-badge-primary">
+                          {distribusi.history?.length || 0} event
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleLihatDetail(distribusi.distribusi_id)}
+                          className="distribusi-history-action-button distribusi-history-action-button-info"
+                        >
+                          <FaEye /> Lihat Timeline
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="distribusi-history-pagination">
+              <button
+                className="distribusi-history-pagination-button"
+                disabled={(pagination?.current_page || 1) === 1}
+                onClick={() => handlePageChange((pagination?.current_page || 1) - 1)}
+              >
+                Previous
+              </button>
+              <span className="distribusi-history-pagination-info">
+                Page {pagination?.current_page || 1} of {pagination?.last_page || 1}
+              </span>
+              <button
+                className="distribusi-history-pagination-button"
+                disabled={(pagination?.current_page || 1) === (pagination?.last_page || 1)}
+                onClick={() => handlePageChange((pagination?.current_page || 1) + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </>
         ) : (
           <div className="distribusi-history-empty-state">
             <div className="distribusi-history-empty-state-icon">📜</div>
@@ -177,140 +197,94 @@ const SpkDistribusiHistory = () => {
       </div>
 
       {/* Modal Detail Timeline */}
-      {showDetailModal && selectedDistribusi && (
+      {showDetailModal && (
         <div className="distribusi-history-modal-overlay" onClick={() => setShowDetailModal(false)}>
           <div
             className="distribusi-history-modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "90%", width: "1200px" }}
           >
-            {/* Header Modal */}
             <div className="distribusi-history-modal-header">
               <h2 className="distribusi-history-modal-title">
-                📋 Timeline History - {selectedDistribusi.kode_seri || `Distribusi ID: ${selectedDistribusi.distribusi_id}`}
+                📋 Timeline History
               </h2>
               <button onClick={() => setShowDetailModal(false)} className="distribusi-history-modal-close-button">
-                <i className="fas fa-times"></i>
-                Tutup
+                <FaTimes /> Tutup
               </button>
             </div>
 
-            {/* Content Modal */}
             <div className="distribusi-history-modal-body">
-              {/* Info Distribusi */}
-              <div className="distribusi-history-info-card">
-                <div className="distribusi-history-info-grid">
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">Kode Seri</div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.kode_seri || "-"}</div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">SPK Cutting ID</div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.spk_cutting_id || "-"}</div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">Jumlah Produk</div>
-                    <div className="distribusi-history-info-value">
-                      {selectedDistribusi.jumlah_produk?.toLocaleString("id-ID") || "0"} produk
-                    </div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">Total Event</div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.history?.length || 0} event</div>
-                  </div>
+              {detailLoading ? (
+                <div className="distribusi-history-loading-container">
+                  <div className="distribusi-history-loading-spinner"></div>
+                  <p className="distribusi-history-loading-text">Memuat timeline...</p>
                 </div>
-              </div>
-
-              {/* Info Tambahan */}
-              <div className="distribusi-history-info-card distribusi-history-additional-info-card">
-                <div className="distribusi-history-info-grid">
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">
-                      <i className="fas fa-user-secret" style={{ marginRight: "6px" }}></i>
-                      Nama CMT
-                    </div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_cmt || "-"}</div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">
-                      <i className="fas fa-user-tie" style={{ marginRight: "6px" }}></i>
-                      Nama Tukang Jasa
-                    </div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_jasa || "-"}</div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">
-                      <i className="fas fa-cut" style={{ marginRight: "6px" }}></i>
-                      Nama Tukang Cutting
-                    </div>
-                    <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_cutting || "-"}</div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">
-                      <i className="fas fa-industry" style={{ marginRight: "6px" }}></i>
-                      Bahan dari Pabrik
-                    </div>
-                    <div className="distribusi-history-info-value distribusi-history-info-value-long">
-                      {selectedDistribusi.bahan_pabrik || "-"}
-                    </div>
-                  </div>
-                  <div className="distribusi-history-info-item">
-                    <div className="distribusi-history-info-label">
-                      <i className="fas fa-warehouse" style={{ marginRight: "6px" }}></i>
-                      Bahan dari Gudang
-                    </div>
-                    <div className="distribusi-history-info-value distribusi-history-info-value-long">
-                      {selectedDistribusi.bahan_gudang || "-"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline */}
-              {selectedDistribusi.history && selectedDistribusi.history.length > 0 ? (
-                <div className="distribusi-history-timeline-container">
-                  <h3 className="distribusi-history-timeline-title">Timeline History</h3>
-                  <div className="distribusi-history-timeline">
-                    {selectedDistribusi.history.map((item, index) => (
-                      <div key={index} className="distribusi-history-timeline-item">
-                        <div className="distribusi-history-timeline-marker">
-                          <div className={`distribusi-history-timeline-icon ${getTipeBadgeClass(item.tipe)}`}>
-                            {item.tipe === "cutting" && <i className="fas fa-cut"></i>}
-                            {item.tipe === "jasa" && <i className="fas fa-tools"></i>}
-                            {item.tipe === "cmt" && <i className="fas fa-tshirt"></i>}
-                          </div>
-                          {index < selectedDistribusi.history.length - 1 && <div className="distribusi-history-timeline-line"></div>}
-                        </div>
-                        <div className="distribusi-history-timeline-content">
-                          <div className="distribusi-history-timeline-header">
-                            <span className={`distribusi-history-badge ${getTipeBadgeClass(item.tipe)}`}>
-                              {getTipeLabel(item.tipe)}
-                            </span>
-                            <span className="distribusi-history-timeline-time">{formatDate(item.waktu)}</span>
-                          </div>
-                          <div className="distribusi-history-timeline-status">
-                            <strong>Status:</strong> {item.status || "-"}
-                          </div>
-                          {item.keterangan && (
-                            <div className="distribusi-history-timeline-keterangan">
-                              <strong>Keterangan:</strong> {item.keterangan}
-                            </div>
-                          )}
-                          {item.ref_id && (
-                            <div className="distribusi-history-timeline-ref">
-                              <strong>Ref ID:</strong> {item.ref_id}
-                            </div>
-                          )}
-                        </div>
+              ) : selectedDistribusi ? (
+                <>
+                  <div className="distribusi-history-info-card">
+                    <div className="distribusi-history-info-grid">
+                      <div className="distribusi-history-info-item">
+                        <div className="distribusi-history-info-label">Kode Seri</div>
+                        <div className="distribusi-history-info-value">{selectedDistribusi.kode_seri}</div>
                       </div>
-                    ))}
+                      <div className="distribusi-history-info-item">
+                        <div className="distribusi-history-info-label">Tukang Cutting</div>
+                        <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_cutting || "-"}</div>
+                      </div>
+                      <div className="distribusi-history-info-item">
+                        <div className="distribusi-history-info-label">Tukang Jasa</div>
+                        <div className="distribusi-history-info-value">{selectedDistribusi.nama_tukang_jasa || "-"}</div>
+                      </div>
+                      <div className="distribusi-history-info-item">
+                        <div className="distribusi-history-info-label">CMT</div>
+                        <div className="distribusi-history-info-value">{selectedDistribusi.nama_cmt || "-"}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  <h3 className="distribusi-history-timeline-title">Timeline Events</h3>
+                  <div className="distribusi-history-timeline">
+                    {selectedDistribusi.history && selectedDistribusi.history.length > 0 ? (
+                      selectedDistribusi.history.map((item, idx) => (
+                        <div key={idx} className="distribusi-history-timeline-item">
+                          <div className="distribusi-history-timeline-marker">
+                            <div
+                              className="distribusi-history-timeline-icon"
+                              style={{
+                                backgroundColor: item.tipe === "cutting" ? "#4299e1" : item.tipe === "jasa" ? "#ecc94b" : "#48bb78",
+                              }}
+                            >
+                            </div>
+                            {idx !== selectedDistribusi.history.length - 1 && <div className="distribusi-history-timeline-line"></div>}
+                          </div>
+                          <div className="distribusi-history-timeline-content">
+                            <div className="distribusi-history-timeline-header">
+                              <span
+                                className={`distribusi-history-badge distribusi-history-badge-${
+                                  item.tipe === "cutting" ? "cutting" : item.tipe === "jasa" ? "jasa" : "cmt"
+                                }`}
+                                style={{ textTransform: "uppercase" }}
+                              >
+                                {item.tipe}
+                              </span>
+                              <span className="distribusi-history-timeline-time">
+                                <FaCalendarAlt style={{ marginRight: "5px" }} />
+                                {formatDate(item.waktu)}
+                              </span>
+                            </div>
+                            <div className="distribusi-history-timeline-status">
+                              <strong>{item.status}</strong>
+                            </div>
+                            {item.keterangan && <div className="distribusi-history-timeline-keterangan">"{item.keterangan}"</div>}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p style={{ color: "#718096", fontStyle: "italic" }}>Tidak ada event history.</p>
+                    )}
+                  </div>
+                </>
               ) : (
-                <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                  <i className="fas fa-info-circle" style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}></i>
-                  <p>Tidak ada history untuk distribusi ini</p>
-                </div>
+                <p className="error-text">Gagal memuat data detail.</p>
               )}
             </div>
           </div>

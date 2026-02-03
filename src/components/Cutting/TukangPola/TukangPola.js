@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import "./TukangPola.css";
+import "../../Jahit/Penjahit.css";
+import "../../Jahit/SpkCmt.css";
 import API from "../../../api";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaTimes, FaUser } from "react-icons/fa";
+import { FaPlus, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 
 const TukangPola = () => {
   const [tukangPola, setTukangPola] = useState([]);
@@ -92,19 +93,16 @@ const TukangPola = () => {
   const filteredTukangPola = tukangPola.filter((item) => item.nama.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="tukang-pola-page">
+    <div className="spkcmt-container">
       {/* Header */}
-      <div className="tukang-pola-header">
-        <div className="tukang-pola-header-icon">
-          <FaUser />
-        </div>
-        <h1>Data Tukang Pola</h1>
+      <div className="spkcmt-header">
+        <h1>✂️ Data Tukang Pola</h1>
       </div>
 
-      {/* Action Bar */}
-      <div className="tukang-pola-action-bar">
+      {/* Filters */}
+      <div className="spkcmt-filters">
         <button
-          className="tukang-pola-btn-add"
+          className="spkcmt-btn-primary"
           onClick={() => {
             setEditingId(null);
             setFormData({ nama: "" });
@@ -113,26 +111,29 @@ const TukangPola = () => {
         >
           <FaPlus /> Tambah Tukang Pola
         </button>
-        <div className="tukang-pola-search-container">
-          <FaSearch className="tukang-pola-search-icon" />
-          <input type="text" className="tukang-pola-search-input" placeholder="Cari nama tukang pola..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <div className="spkcmt-search">
+          <FaSearch className="spkcmt-search-icon" />
+          <input
+            type="text"
+            placeholder="Cari nama tukang pola..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="tukang-pola-table-container">
+      <div className="spkcmt-table-container">
         {loading ? (
-          <div className="tukang-pola-loading">Memuat data...</div>
+          <div className="loading">Memuat data...</div>
         ) : error ? (
-          <div className="tukang-pola-error">{error}</div>
+          <div className="error">{error}</div>
         ) : filteredTukangPola.length === 0 ? (
-          <div className="tukang-pola-empty">
-            <div className="tukang-pola-empty-icon">📋</div>
+          <div className="empty-state">
             <p>Tidak ada data tukang pola</p>
-            {searchTerm && <p style={{ fontSize: "14px", marginTop: "8px" }}>Coba gunakan kata kunci lain</p>}
           </div>
         ) : (
-          <table className="tukang-pola-table">
+          <table className="spkcmt-table">
             <thead>
               <tr>
                 <th>No</th>
@@ -144,13 +145,21 @@ const TukangPola = () => {
               {filteredTukangPola.map((tp, index) => (
                 <tr key={tp.id}>
                   <td>{index + 1}</td>
-                  <td>{tp.nama}</td>
+                  <td><strong>{tp.nama}</strong></td>
                   <td>
-                    <div className="tukang-pola-action-buttons">
-                      <button className="tukang-pola-btn-edit" onClick={() => handleEdit(tp)}>
+                    <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        className="spkcmt-btn-primary" 
+                        style={{ padding: '5px 10px', fontSize: '12px' }}
+                        onClick={() => handleEdit(tp)}
+                      >
                         <FaEdit /> Edit
                       </button>
-                      <button className="tukang-pola-btn-delete" onClick={() => handleDelete(tp.id)}>
+                      <button 
+                        className="spkcmt-btn-primary" 
+                        style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#dc3545' }}
+                        onClick={() => handleDelete(tp.id)}
+                      >
                         <FaTrash /> Hapus
                       </button>
                     </div>
@@ -164,27 +173,28 @@ const TukangPola = () => {
 
       {/* Modal Form */}
       {showForm && (
-        <div className="tukang-pola-modal-overlay" onClick={handleCancel}>
-          <div className="tukang-pola-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="tukang-pola-modal-header">
-              <h2 className="tukang-pola-modal-title">
-                <FaUser /> {editingId ? "Edit Tukang Pola" : "Tambah Tukang Pola"}
-              </h2>
-              <button className="tukang-pola-modal-close" onClick={handleCancel}>
-                <FaTimes />
-              </button>
+        <div className="modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>{editingId ? "Edit Tukang Pola" : "Tambah Tukang Pola"}</h2>
+              <button className="close-btn" onClick={handleCancel}>&times;</button>
             </div>
-            <form onSubmit={handleFormSubmit}>
-              <div className="tukang-pola-form-group">
-                <label className="tukang-pola-form-label">Nama Tukang Pola</label>
-                <input type="text" name="nama" className="tukang-pola-form-input" value={formData.nama} onChange={handleInputChange} placeholder="Masukkan nama tukang pola" required autoFocus />
+            <form onSubmit={handleFormSubmit} className="modern-form">
+              <div className="form-group">
+                <label>Nama Tukang Pola:</label>
+                <input
+                  type="text"
+                  name="nama"
+                  value={formData.nama}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan nama tukang pola"
+                  required
+                  autoFocus
+                />
               </div>
 
-              <div className="tukang-pola-form-actions">
-                <button type="button" className="tukang-pola-btn-cancel" onClick={handleCancel}>
-                  Batal
-                </button>
-                <button type="submit" className="tukang-pola-btn-submit">
+              <div className="form-actions">
+                <button type="submit" className="spkcmt-btn-primary" style={{ width: '100%' }}>
                   {editingId ? "Update" : "Simpan"}
                 </button>
               </div>
