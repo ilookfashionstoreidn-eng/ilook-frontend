@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./Packing.css";
 import "../Jahit/Penjahit.css";
 import API from "../../api";
-import { FaBarcode, FaCheck, FaTimes } from "react-icons/fa";
+import { FaBarcode, FaCheck,FaQrcode, FaTimes } from "react-icons/fa";
 import { useRef } from "react";
 
 const Packing = () => {
@@ -266,8 +266,12 @@ const handleSearchOrder = async () => {
 
   return (
     <div>
-    <div className="penjahit-container">
-      <h1>Packing Scan</h1>
+   <div className="seri-page">
+         <div className="seri-header">
+           <div className="seri-header-icon">
+             <FaQrcode />
+           </div>
+           <h1>Scan Packing</h1>
     </div>
 
     <div className="tracking-card">
@@ -466,6 +470,8 @@ const handleSearchOrder = async () => {
       )}
     </div>
      </div>
+     </div>
+
 
   );
 };

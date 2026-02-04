@@ -100,8 +100,8 @@ const KodeSeriBelumDikerjakan = () => {
   const filteredCount = getFilteredCount(typeFilter);
 
   return (
-    <div className="kode-seri-wrapper">
-      <div className="kode-seri-header">
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
         <h1>Kode Seri Belum Dikerjakan</h1>
       </div>
 

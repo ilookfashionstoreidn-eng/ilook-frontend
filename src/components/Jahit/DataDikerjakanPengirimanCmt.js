@@ -434,10 +434,9 @@ const DataDikerjakanPengirimanCmt = () => {
     };
 
     return (
-        <div className="data-dikerjakan-container">
-            {/* Header */}
-            <div className="data-dikerjakan-header">
-                <h1>Data Yang Dikerjakan dan Pengiriman CMT</h1>
+        <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋Data Yang Dikerjakan dan Pengiriman CMT</h1>
             </div>
 
             {/* KPI SUMMARY Section */}

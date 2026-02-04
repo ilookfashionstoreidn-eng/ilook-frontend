@@ -140,12 +140,9 @@ const Sku = () => {
   };
 
   return (
-    <div className="sku-page">
-      <div className="sku-header">
-        <div className="sku-header-icon">
-          <FaBarcode />
-        </div>
-        <h1>Master SKU</h1>
+    <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data SKU</h1>
       </div>
 
       <div className="sku-table-container">

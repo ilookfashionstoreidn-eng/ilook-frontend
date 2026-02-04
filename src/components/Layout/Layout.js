@@ -423,11 +423,7 @@ const Layout = () => {
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
                     </Link>
                   </li>
-                  <li>
-                    <Link to="kinerja2" className={`dropdown-link ${activeMenu === "kinerja2" ? "active" : ""}`} onClick={() => handleMenuClick("kinerja2")}>
-                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Kinerja
-                    </Link>
-                  </li>
+                  
                   {role !== "penjahit" && (
                     <>
                       <li>

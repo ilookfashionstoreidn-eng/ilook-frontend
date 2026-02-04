@@ -191,8 +191,9 @@ const Penjahit = () => {
   
   return (
     <div>
-     <div className="penjahit-container">
-      <h1>Data CMT</h1>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data CMT</h1>
     </div>
 
     <div className="table-container">
@@ -512,6 +513,7 @@ const Penjahit = () => {
   </div>
 )}
         </div>
+</div>|
 </div>
   );
 };
