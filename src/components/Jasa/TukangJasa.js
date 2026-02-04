@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import "../Jahit/Penjahit.css";
 import API from "../../api"; 
-import {FaInfoCircle, FaPlus, FaEdit, } from 'react-icons/fa';
+import {FaInfoCircle, FaPlus, FaEdit,FaClipboardCheck } from 'react-icons/fa';
 
 const TukangJasa = () => {
   const [tukangJasa, setTukangJasa] = useState([]);
@@ -93,10 +93,14 @@ const TukangJasa = () => {
 };
 
  return (
-   <div>
-     <div className="penjahit-container">
-      <h1>Data Tukang Jasa</h1>
-    </div>
+  
+    <div className="hasil-jasa-page">
+          <div className="hasil-jasa-header">
+            <div className="hasil-jasa-header-icon">
+              <FaClipboardCheck />
+            </div>
+            <h1>Data Tukang Jasa</h1>
+          </div>
 
     <div className="table-container">
         <div className="filter-header1">

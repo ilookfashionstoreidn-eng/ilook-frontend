@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import "../Jahit/Penjahit.css";
 import API from "../../api"; 
-import {FaInfoCircle,FaFileExcel, FaCalendarAlt } from 'react-icons/fa';
+import {FaInfoCircle,FaFileExcel,FaQrcode, FaCalendarAlt } from 'react-icons/fa';
 import dayjs from "dayjs";
 
 const Logs = () => {
@@ -165,8 +165,12 @@ console.log(formatted); // 26-11-2025
 
  return (
    <div>
-     <div className="penjahit-container">
-      <h1>logs Order</h1>
+     <div className="seri-page">
+      <div className="seri-header">
+        <div className="seri-header-icon">
+          <FaQrcode />
+        </div>
+        <h1>Logs Packing</h1>
     </div>
 
      <div className="table-container">
@@ -402,6 +406,7 @@ console.log(formatted); // 26-11-2025
      </div>
   )}
 
+</div>
 </div>
   );
 };
