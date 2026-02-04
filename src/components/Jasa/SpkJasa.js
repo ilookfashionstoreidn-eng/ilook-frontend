@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "./SpkJasa.css";
 import API from "../../api";
-import { FaTimes, FaPlus, FaEdit, FaCheck, FaBoxOpen } from "react-icons/fa";
+import { FaTimes, FaPlus, FaEdit, FaCheck, FaBoxOpen, FaSearch } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Helper hook untuk debounce
 function useDebounce(value, delay) {
@@ -106,6 +109,7 @@ const SpkJasa = () => {
     } catch (error) {
       console.error("Error fetching SPK Jasa:", error);
       setError("Gagal mengambil data");
+      toast.error("Gagal mengambil data");
     } finally {
       setLoading(false);
     }
@@ -188,7 +192,7 @@ const SpkJasa = () => {
     e.preventDefault();
 
     if (!newSpkJasa.spk_cutting_distribusi_id) {
-      alert("Silakan pilih Distribusi Seri terlebih dahulu");
+      toast.warn("Silakan pilih Distribusi Seri terlebih dahulu");
       return;
     }
 
@@ -207,12 +211,12 @@ const SpkJasa = () => {
         await API.post(`/SpkJasa/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("SPK Jasa berhasil diperbarui!");
+        toast.success("SPK Jasa berhasil diperbarui!");
       } else {
         await API.post("/SpkJasa", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("SPK Jasa berhasil ditambahkan!");
+        toast.success("SPK Jasa berhasil ditambahkan!");
       }
 
       // Refresh data & stats
@@ -221,7 +225,7 @@ const SpkJasa = () => {
       handleCloseModal();
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.message || "Terjadi kesalahan.");
+      toast.error(error.response?.data?.message || "Terjadi kesalahan.");
     }
   };
 
@@ -258,12 +262,12 @@ const SpkJasa = () => {
       await API.patch(`/spk-jasa/${id}/status-pengambilan`, {
         status: newStatus,
       });
-      alert("Status berhasil diperbarui");
+      toast.success("Status berhasil diperbarui");
       fetchSpkJasa(); // Refresh list
       fetchStatistics(); // Refresh stats
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.message || "Gagal update status.");
+      toast.error(error.response?.data?.message || "Gagal update status.");
     }
   };
 
@@ -287,7 +291,6 @@ const SpkJasa = () => {
       setSelectedDistribusiId(distribusiId);
       setEditingId(id);
       
-      // Pre-fill search input dengan kode seri yang ada (perlu data tambahan dari API show sebenernya, tapi kita coba set basic dulu)
       if(data.kode_seri) {
           setSearchDistribusi(data.kode_seri); 
       }
@@ -295,7 +298,7 @@ const SpkJasa = () => {
       setShowForm(true);
     } catch (error) {
       console.error("Error fetching detail:", error);
-      alert("Gagal mengambil data edit");
+      toast.error("Gagal mengambil data edit");
     }
   };
 
@@ -341,55 +344,86 @@ const SpkJasa = () => {
       return <span className={`status-badge ${statusMap[status] || ""}`}>{label}</span>;
   };
 
+  const SkeletonTable = () => (
+    <>
+      {[...Array(8)].map((_, i) => (
+        <tr key={i} className="skeleton-row">
+          <td><div className="skeleton skeleton-cell" /></td>
+          <td><div className="skeleton skeleton-text" /></td>
+          <td><div className="skeleton skeleton-text" /></td>
+          <td><div className="skeleton skeleton-text" style={{ width: '60%' }} /></td>
+          <td><div className="skeleton skeleton-cell" /></td>
+          <td><div className="skeleton skeleton-text" /></td>
+          <td><div className="skeleton skeleton-text" /></td>
+          <td><div className="skeleton skeleton-cell" style={{ width: '80px', margin: '0 auto' }} /></td>
+          <td><div className="skeleton skeleton-cell" style={{ width: '100px', margin: '0 auto' }} /></td>
+        </tr>
+      ))}
+    </>
+  );
+
   return (
-    <div className="spk-jasa-container">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="spk-jasa-container"
+    >
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      
       <div className="spk-jasa-header">
         <h1>Data SPK Jasa</h1>
       </div>
 
       <div className="spk-jasa-actions">
-        <button className="btn-tambah" onClick={() => setShowForm(true)}>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="btn-tambah" 
+          onClick={() => setShowForm(true)}
+        >
           <FaPlus style={{ marginRight: "8px" }} />
           Tambah SPK Jasa
-        </button>
+        </motion.button>
         <div className="search-wrapper">
+          <FaSearch className="search-icon" />
           <input 
             type="text" 
             placeholder="Cari ID, Tukang, Seri..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
           />
+          {searchTerm && (
+            <button className="search-clear-btn" onClick={() => setSearchTerm("")}>
+              <FaTimes />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Status Cards (Sekarang Ringan & Cepat) */}
+      {/* Status Cards */}
       <div className="status-cards-container">
-        <div className={`status-card ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>
-          <div className="status-card-icon">📊</div>
-          <div className="status-card-content">
-            <div className="status-card-label">Total SPK Jasa</div>
-            <div className="status-card-value">{stats.total}</div>
-          </div>
-        </div>
-        <div className={`status-card ${statusFilter === "belum_diambil" ? "active" : ""}`} onClick={() => setStatusFilter("belum_diambil")}>
-          <div className="status-card-icon">⏳</div>
-          <div className="status-card-content">
-            <div className="status-card-label">Belum Diambil</div>
-            <div className="status-card-value">{stats.belum_diambil}</div>
-          </div>
-        </div>
-        <div className={`status-card ${statusFilter === "sudah_diambil" ? "active" : ""}`} onClick={() => setStatusFilter("sudah_diambil")}>
-          <div className="status-card-icon">✅</div>
-          <div className="status-card-content">
-            <div className="status-card-label">Sudah Diambil</div>
-            <div className="status-card-value">{stats.sudah_diambil}</div>
-          </div>
-        </div>
+        {[
+          { key: "all", label: "Total SPK Jasa", icon: "📊", value: stats.total },
+          { key: "belum_diambil", label: "Belum Diambil", icon: "⏳", value: stats.belum_diambil },
+          { key: "sudah_diambil", label: "Sudah Diambil", icon: "✅", value: stats.sudah_diambil }
+        ].map((card) => (
+          <motion.div 
+            key={card.key}
+            whileHover={{ y: -5 }}
+            className={`status-card ${statusFilter === card.key ? "active" : ""}`} 
+            onClick={() => setStatusFilter(card.key)}
+          >
+            <div className="status-card-icon">{card.icon}</div>
+            <div className="status-card-content">
+              <div className="status-card-label">{card.label}</div>
+              <div className="status-card-value">{card.value}</div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {loading ? (
-        <div className="loading-state">Memuat data...</div>
-      ) : error ? (
+      {error ? (
         <div className="error-state">{error}</div>
       ) : (
         <div className="table-wrapper">
@@ -408,7 +442,9 @@ const SpkJasa = () => {
               </tr>
             </thead>
             <tbody>
-              {spkJasa.length === 0 ? (
+              {loading ? (
+                <SkeletonTable />
+              ) : spkJasa.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="empty-state">Tidak ada data</td>
                 </tr>
@@ -419,7 +455,12 @@ const SpkJasa = () => {
                   const nomor = (pagination.current_page - 1) * pagination.per_page + index + 1;
                   
                   return (
-                    <tr key={spk.id}>
+                    <motion.tr 
+                      key={spk.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
                       <td>{nomor}</td>
                       <td>{spk.tukang_jasa?.nama || "-"}</td>
                       <td>{distribusi.kode_seri || "-"}</td>
@@ -434,22 +475,22 @@ const SpkJasa = () => {
                       <td>{getStatusBadge(spk.status_pengambilan)}</td>
                       <td>
                         <div className="action-buttons">
-                          <button className="btn-edit" onClick={() => handleEditClick(spk.id)} title="Edit">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="btn-edit" onClick={() => handleEditClick(spk.id)} title="Edit">
                             <FaEdit /> <span>Edit</span>
-                          </button>
+                          </motion.button>
                           {spk.status_pengambilan === 'belum_diambil' && (
-                              <button className="btn-ambil" onClick={() => handleStatusUpdate(spk.id, 'sudah_diambil')} title="Ambil Barang">
+                              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="btn-ambil" onClick={() => handleStatusUpdate(spk.id, 'sudah_diambil')} title="Ambil Barang">
                                 <FaBoxOpen /> <span>Ambil</span>
-                              </button>
+                              </motion.button>
                           )}
                            {spk.status_pengambilan === 'sudah_diambil' && (
-                              <button className="btn-selesai" onClick={() => handleStatusUpdate(spk.id, 'selesai')} title="Tandai Selesai">
+                              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="btn-selesai" onClick={() => handleStatusUpdate(spk.id, 'selesai')} title="Tandai Selesai">
                                 <FaCheck /> <span>Selesai</span>
-                              </button>
+                              </motion.button>
                           )}
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
@@ -476,96 +517,120 @@ const SpkJasa = () => {
       )}
 
       {/* Modal Form */}
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>{editingId ? "Edit SPK Jasa" : "Tambah SPK Jasa"}</h2>
-              <button className="close-button" onClick={handleCloseModal}><FaTimes /></button>
-            </div>
-            <form onSubmit={handleFormSubmit}>
-              <div className="form-group">
-                <label>Tukang Jasa</label>
-                <select name="tukang_jasa_id" value={newSpkJasa.tukang_jasa_id} onChange={handleInputChange} required>
-                  <option value="">Pilih Tukang Jasa</option>
-                  {tukangList.map((t) => (
-                    <option key={t.id} value={t.id}>{t.nama}</option>
-                  ))}
-                </select>
+      <AnimatePresence>
+        {showForm && (
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="modal-content"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="modal-header">
+                <h2>{editingId ? "Edit SPK Jasa" : "Tambah SPK Jasa"}</h2>
+                <button className="close-button" onClick={handleCloseModal}><FaTimes /></button>
               </div>
-
-              {/* Async Search Dropdown Distribusi */}
-              <div className="form-group searchable-select-wrapper">
-                <label>Cari Distribusi Seri (Ketik Kode/Produk)</label>
-                <input
-                  type="text"
-                  placeholder="Ketik untuk mencari..."
-                  value={searchDistribusi}
-                  onChange={(e) => {
-                      setSearchDistribusi(e.target.value);
-                      setShowDistribusiDropdown(true);
-                  }}
-                  onFocus={() => setShowDistribusiDropdown(true)}
-                />
-                {showDistribusiDropdown && distribusiOptions.length > 0 && (
-                  <ul className="dropdown-list">
-                    {distribusiOptions.map((option) => (
-                      <li key={option.id} onClick={() => handleDistribusiSelect(option)}>
-                        <strong>{option.kode_seri}</strong> - {option.produk} (Jml: {option.jumlah_produk})
-                      </li>
+              <form onSubmit={handleFormSubmit}>
+                <div className="form-group">
+                  <label>Tukang Jasa</label>
+                  <select name="tukang_jasa_id" value={newSpkJasa.tukang_jasa_id} onChange={handleInputChange} required>
+                    <option value="">Pilih Tukang Jasa</option>
+                    {tukangList.map((t) => (
+                      <option key={t.id} value={t.id}>{t.nama}</option>
                     ))}
-                  </ul>
-                )}
-              </div>
-
-              {previewData && (
-                <div className="preview-section">
-                   <p><strong>Produk:</strong> {previewData.produk}</p>
-                   <p><strong>Jumlah Total:</strong> {previewData.jumlah}</p>
-                   <div className="preview-colors">
-                       {previewData.jumlah_per_warna && previewData.jumlah_per_warna.map((jpw, idx) => (
-                           <span key={idx} className="color-tag">{jpw.warna}: {jpw.jumlah}</span>
-                       ))}
-                   </div>
-                </div>
-              )}
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Deadline</label>
-                  <input type="date" name="deadline" value={newSpkJasa.deadline} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Tanggal Ambil (Opsional)</label>
-                  <input type="date" name="tanggal_ambil" value={newSpkJasa.tanggal_ambil} onChange={handleInputChange} />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Harga (Rp)</label>
-                  <input type="text" name="harga" value={newSpkJasa.hargaDisplay} onChange={handleInputChange} placeholder="Contoh: 15000" />
-                </div>
-                <div className="form-group">
-                  <label>Satuan Harga</label>
-                  <select name="opsi_harga" value={newSpkJasa.opsi_harga} onChange={handleInputChange}>
-                    <option value="pcs">Per Pcs</option>
-                    <option value="lusin">Per Lusin</option>
                   </select>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Foto Referensi (Opsional)</label>
-                <input type="file" name="foto" onChange={handleInputChange} accept="image/*" />
-              </div>
+                {/* Async Search Dropdown Distribusi */}
+                <div className="form-group searchable-select-wrapper">
+                  <label>Cari Distribusi Seri (Ketik Kode/Produk)</label>
+                  <input
+                    type="text"
+                    placeholder="Ketik untuk mencari..."
+                    value={searchDistribusi}
+                    onChange={(e) => {
+                        setSearchDistribusi(e.target.value);
+                        setShowDistribusiDropdown(true);
+                    }}
+                    onFocus={() => setShowDistribusiDropdown(true)}
+                  />
+                  {showDistribusiDropdown && distribusiOptions.length > 0 && (
+                    <ul className="dropdown-list">
+                      {distribusiOptions.map((option) => (
+                        <li key={option.id} onClick={() => handleDistribusiSelect(option)}>
+                          <strong>{option.kode_seri}</strong> - {option.produk} (Jml: {option.jumlah_produk})
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
-              <button type="submit" className="btn-submit">{editingId ? "Simpan Perubahan" : "Buat SPK Jasa"}</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                {previewData && (
+                  <motion.div 
+                    className="preview-section"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                  >
+                     <p><strong>Produk:</strong> {previewData.produk}</p>
+                     <p><strong>Jumlah Total:</strong> {previewData.jumlah}</p>
+                     <div className="preview-colors">
+                         {previewData.jumlah_per_warna && previewData.jumlah_per_warna.map((jpw, idx) => (
+                             <span key={idx} className="color-tag">{jpw.warna}: {jpw.jumlah}</span>
+                         ))}
+                     </div>
+                  </motion.div>
+                )}
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Deadline</label>
+                    <input type="date" name="deadline" value={newSpkJasa.deadline} onChange={handleInputChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Tanggal Ambil (Opsional)</label>
+                    <input type="date" name="tanggal_ambil" value={newSpkJasa.tanggal_ambil} onChange={handleInputChange} />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Harga (Rp)</label>
+                    <input type="text" name="harga" value={newSpkJasa.hargaDisplay} onChange={handleInputChange} placeholder="Contoh: 15000" />
+                  </div>
+                  <div className="form-group">
+                    <label>Satuan Harga</label>
+                    <select name="opsi_harga" value={newSpkJasa.opsi_harga} onChange={handleInputChange}>
+                      <option value="pcs">Per Pcs</option>
+                      <option value="lusin">Per Lusin</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Foto Referensi (Opsional)</label>
+                  <input type="file" name="foto" onChange={handleInputChange} accept="image/*" />
+                </div>
+
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit" 
+                  className="btn-submit"
+                >
+                  {editingId ? "Simpan Perubahan" : "Buat SPK Jasa"}
+                </motion.button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
