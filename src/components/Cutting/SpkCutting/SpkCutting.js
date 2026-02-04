@@ -146,19 +146,26 @@ const SpkCutting = () => {
     bagian: [],
   });
 
-  // ✅ OPTIMASI: Server-side pagination dengan search (menggunakan useCallback untuk menghindari infinite loop)
+  // Ref untuk search term agar tidak memicu re-creation fetchSpkCutting
+  const searchTermRef = React.useRef(searchTerm);
+  
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
+
+  // ✅ OPTIMASI: Server-side pagination dengan search (Stabil dengan useRef)
   const fetchSpkCutting = useCallback(async (page = 1) => {
     try {
       setLoading(true);
 
       const params = {
         page,
-        per_page: 15, // Default 15 per page
+        per_page: 15,
       };
 
-      // ✅ OPTIMASI: Search di backend
-      if (searchTerm) {
-        params.search = searchTerm;
+      // Gunakan nilai dari ref
+      if (searchTermRef.current) {
+        params.search = searchTermRef.current;
       }
 
       if (statusFilter && statusFilter !== "all") {
@@ -447,18 +454,21 @@ const SpkCutting = () => {
     fetchSpkCutting(1);
   }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, fetchSpkCutting]);
 
-  // ✅ OPTIMASI: Debounce search untuk mengurangi request
+  // ✅ OPTIMASI: Debounce search yang BENAR
+  // Hanya reset ke halaman 1 saat search term berubah, jangan dengarkan currentPage di sini
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (currentPage === 1) {
-        fetchSpkCutting(1);
-      } else {
+      // Jika halaman bukan 1, reset ke 1 (ini akan memicu useEffect pagination di bawah)
+      if (currentPage !== 1) {
         setCurrentPage(1);
+      } else {
+        // Jika sudah halaman 1, kita perlu fetch manual karena useEffect pagination tidak akan trigger
+        fetchSpkCutting(1);
       }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [searchTerm, currentPage, fetchSpkCutting]);
+  }, [searchTerm]); // HANYA dijalankan saat searchTerm berubah
 
   // ✅ OPTIMASI: Fetch data saat page berubah
   useEffect(() => {
