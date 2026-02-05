@@ -14,8 +14,8 @@ const GudangProduk = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [newItem, setNewItem] = useState({
-    items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [] }],
+    const [newItem, setNewItem] = useState({
+    items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }],
   });
 
   const [verifyItems, setVerifyItems] = useState([]);
@@ -120,7 +120,7 @@ const GudangProduk = () => {
   const addItemRow = () => {
     setNewItem((prev) => ({
       ...prev,
-      items: [...prev.items, { produk_id: "", sku_id: "", qty: 1, skuList: [] }],
+      items: [...prev.items, { produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }],
     }));
   };
 
@@ -132,7 +132,7 @@ const GudangProduk = () => {
   };
 
   const resetForm = () => {
-    setNewItem({ items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [] }] });
+    setNewItem({ items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }] });
     setShowForm(false);
   };
 
@@ -142,6 +142,7 @@ const GudangProduk = () => {
       .map((item) => ({
         sku_id: parseInt(item.sku_id, 10),
         qty: Math.max(1, parseInt(item.qty, 10) || 1),
+        sku_rak: item.sku_rak || "",
       }))
       .filter((item) => item.sku_id > 0);
 
@@ -286,7 +287,9 @@ const GudangProduk = () => {
                       <div className="gudang-produk-detail-list">
                         {(row.details || []).map((detail, idx) => (
                           <div key={idx} className="gudang-produk-detail-item">
-                            <strong>{detail.sku?.sku || "-"}</strong>: {detail.qty_acuan || 0} pcs
+                            <strong>{detail.sku?.sku || "-"}</strong>
+                            {detail.sku_rak && <span className="gudang-produk-rak-info"> (Rak: {detail.sku_rak})</span>}
+                            : {detail.qty_acuan || 0} pcs
                             {detail.verifikasi && (
                               <span className="gudang-produk-verifikasi-info">
                                 {" "}
@@ -364,6 +367,15 @@ const GudangProduk = () => {
                           </option>
                         ))}
                       </select>
+                    </div>
+                    <div className="gudang-produk-form-group gudang-produk-item-rak">
+                      <label>Rak</label>
+                      <input
+                        type="text"
+                        value={item.sku_rak || ""}
+                        onChange={(e) => handleItemChange(idx, "sku_rak", e.target.value)}
+                        placeholder="Contoh: RAK-01"
+                      />
                     </div>
                     <div className="gudang-produk-form-group gudang-produk-item-qty">
                       <label>Qty</label>

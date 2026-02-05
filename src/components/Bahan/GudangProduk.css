@@ -262,21 +262,22 @@
 
 .gudang-produk-item-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 100px 44px;
+  grid-template-columns: 3fr 3fr 1.5fr 100px 44px;
   gap: 16px;
   align-items: end;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   padding: 16px;
   background: white;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease;
 }
 
 .gudang-produk-item-row:hover {
   border-color: #b3d9f2;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 
 .gudang-produk-item-row:last-of-type {
@@ -285,6 +286,7 @@
 
 .gudang-produk-item-produk,
 .gudang-produk-item-sku,
+.gudang-produk-item-rak,
 .gudang-produk-item-qty {
   display: flex;
   flex-direction: column;
@@ -293,6 +295,7 @@
 
 .gudang-produk-item-produk label,
 .gudang-produk-item-sku label,
+.gudang-produk-item-rak label,
 .gudang-produk-item-qty label {
   font-weight: 600;
   color: #555;
@@ -302,22 +305,27 @@
 
 .gudang-produk-item-produk select,
 .gudang-produk-item-sku select,
+.gudang-produk-item-rak input,
 .gudang-produk-item-qty input {
-  padding: 10px 12px;
-  border: 2px solid #b3d9f2;
+  padding: 10px 14px;
+  border: 1px solid #d1e3f0;
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s ease;
   width: 100%;
   font-family: inherit;
+  background-color: #fcfdfe;
+  height: 44px;
 }
 
 .gudang-produk-item-produk select:focus,
 .gudang-produk-item-sku select:focus,
+.gudang-produk-item-rak input:focus,
 .gudang-produk-item-qty input:focus {
   outline: none;
   border-color: #0487d8;
-  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
 }
 
 .gudang-produk-item-sku select:disabled {
@@ -334,18 +342,18 @@
 }
 
 .gudang-produk-btn-icon-remove {
-  background: #ffebee;
-  color: #c62828;
+  background: #fff5f5;
+  color: #e53935;
   border: 1px solid #ffcdd2;
-  padding: 10px;
+  padding: 0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
+  width: 44px;
+  height: 44px;
   margin-bottom: 0;
 }
 
@@ -613,4 +621,11 @@
     grid-template-columns: 1fr;
     gap: 8px;
   }
+}
+
+.gudang-produk-rak-info {
+  color: #1976d2;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 4px;
 }
