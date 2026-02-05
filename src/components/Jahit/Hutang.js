@@ -207,9 +207,9 @@ const Hutang = () => {
   };
 
   return (
-    <div className="hutang-container">
-      <div className="hutang-header">
-        <h1>Daftar Hutang</h1>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Hutang</h1>
       </div>
       <div className="hutang-table-container">
         <div className="hutang-filter-header">

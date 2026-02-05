@@ -75,8 +75,9 @@ const Deadline = () => {
   
   return ( 
     <div>
-    <div className="penjahit-container">
-      <h1>Log Deadlines</h1>
+    <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Log Deadlines </h1>
     </div>
     <div className="table-container">
       <div className="filter-header">
@@ -134,6 +135,7 @@ const Deadline = () => {
             Next ▶
           </button>
         </div>
+</div>
 </div>
 </div>
 

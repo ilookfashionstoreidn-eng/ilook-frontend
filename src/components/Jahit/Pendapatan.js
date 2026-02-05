@@ -674,10 +674,9 @@ const Pendapatan = () => {
   };
 
   return (
-    <div className="pendapatan-container">
-      <div className="pendapatan-header">
-        <FaMoneyBillWave style={{ fontSize: "32px", color: "#0369a1" }} />
-        <h1>Daftar Pendapatan</h1>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Pendapatan</h1>
       </div>
 
       <div className="pendapatan-filter-card">

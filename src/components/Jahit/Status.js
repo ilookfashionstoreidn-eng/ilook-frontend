@@ -74,8 +74,9 @@ const Status = () => {
 
   return (
     <div>
-        <div className="penjahit-container">
-          <h1>Log Status</h1>
+        <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Log Status</h1>
         </div>
         <div className="table-container">
           <div className="filter-header">
@@ -133,6 +134,7 @@ const Status = () => {
             Next ▶
           </button>
         </div>
+    </div>
     </div>
     </div>
 

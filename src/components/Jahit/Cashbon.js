@@ -245,9 +245,9 @@ const Cashbon = () => {
   });
 
   return (
-    <div className="cashbon-container">
-      <div className="cashbon-header">
-        <h1>Daftar Cashbon</h1>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Cashbon</h1>
         <div className="cashbon-actions">
           <div className="cashbon-filter">
             <select

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./CashboanJasa.css";
 import API from "../../api";
-import { FaPlus, FaInfoCircle, FaSearch, FaTimes } from "react-icons/fa";
+import { FaPlus, FaInfoCircle, FaSearch,FaClipboardCheck, FaTimes } from "react-icons/fa";
 
 const CashboanJasa = () => {
   const [cashbons, setCashbons] = useState([]);
@@ -251,11 +251,14 @@ const CashboanJasa = () => {
   });
 
   return (
-    <div className="cashboan-jasa-container">
-      <div className="cashboan-jasa-header">
-        <div className="cashboan-jasa-header-icon">💵</div>
-        <h1>Daftar Cashbon Jasa</h1>
-      </div>
+     <div className="hasil-jasa-page">
+              <div className="hasil-jasa-header">
+                <div className="hasil-jasa-header-icon">
+                  <FaClipboardCheck />
+                </div>
+                <h1>Data Cashbon</h1>
+              </div>
+    
 
       <div className="cashboan-jasa-filter-container">
         <div className="cashboan-jasa-search-wrapper">
