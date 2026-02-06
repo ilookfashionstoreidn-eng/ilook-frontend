@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import "../Jahit/Penjahit.css";
 import API from "../../api"; 
-import { FaPlus, FaInfoCircle,  } from 'react-icons/fa';
+import { FaPlus, FaInfoCircle, FaClipboardCheck  } from 'react-icons/fa';
 
 const HistoryPendapatanJasa = () => {
  const [pendapatansCutting, setPendapatansCutting] = useState([]);
@@ -28,9 +28,14 @@ const HistoryPendapatanJasa = () => {
 
 return (
       <div>
-      <div className="penjahit-container">
-        <h1>Data Pendapatan </h1>
-      </div>
+       <div className="hasil-jasa-page">
+          <div className="hasil-jasa-header">
+            <div className="hasil-jasa-header-icon">
+              <FaClipboardCheck />
+            </div>
+            <h1>Data History Pendapatan </h1>
+          </div>
+
   
       <div className="table-container">
           
@@ -71,6 +76,7 @@ return (
   
   
   
+          </div>
           </div>
           </div>
          

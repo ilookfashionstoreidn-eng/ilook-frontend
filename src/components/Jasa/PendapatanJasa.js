@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./PendapatanJasa.css";
 import API from "../../api";
-import { FaTimes, FaMoneyBillWave, FaCalendarAlt, FaDownload } from "react-icons/fa";
+import { FaTimes, FaMoneyBillWave, FaClipboardCheck, FaCalendarAlt, FaDownload } from "react-icons/fa";
 
 const PendapatanJasa = () => {
   const [pendapatans, setPendapatans] = useState([]);
@@ -348,13 +348,14 @@ const PendapatanJasa = () => {
   const filteredPendapatans = pendapatans;
 
   return (
-    <div className="pendapatan-jasa-page">
-      <div className="pendapatan-jasa-header">
-        <div className="pendapatan-jasa-header-icon">
-          <FaMoneyBillWave />
-        </div>
-        <h1>Daftar Pendapatan Jasa</h1>
-      </div>
+     <div className="hasil-jasa-page">
+          <div className="hasil-jasa-header">
+            <div className="hasil-jasa-header-icon">
+              <FaClipboardCheck />
+            </div>
+            <h1>Data Pendapatan </h1>
+          </div>
+
 
       <div className="pendapatan-jasa-table-container">
         <div className="pendapatan-jasa-filter-container">

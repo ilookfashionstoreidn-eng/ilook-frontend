@@ -457,9 +457,9 @@ const Pengiriman = () => {
   };
 
   return (
-    <div className="pengiriman-wrapper">
-      <div className="pengiriman-header">
-        <h1>Daftar Pengiriman</h1>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Daftar Pengiriman</h1>
       </div>
 
       <div className="pengiriman-filters">
