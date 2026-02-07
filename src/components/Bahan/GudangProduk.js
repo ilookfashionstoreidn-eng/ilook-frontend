@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./GudangProduk.css";
 import API from "../../api";
-import { FaPlus, FaCheck, FaWarehouse, FaTrash } from "react-icons/fa";
+import { FaPlus, FaCheck, FaWarehouse, FaTrash, FaImage } from "react-icons/fa";
+import CreatableSelect from 'react-select/creatable';
 
 const GudangProduk = () => {
   const [items, setItems] = useState([]);
   const [produkList, setProdukList] = useState([]);
+  const [rakOptions, setRakOptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showVerifyForm, setShowVerifyForm] = useState(false);
@@ -15,7 +17,7 @@ const GudangProduk = () => {
   const [submitting, setSubmitting] = useState(false);
 
     const [newItem, setNewItem] = useState({
-    items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }],
+    items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "", foto: null }],
   });
 
   const [verifyItems, setVerifyItems] = useState([]);
@@ -23,6 +25,7 @@ const GudangProduk = () => {
   useEffect(() => {
     fetchData();
     fetchProdukList();
+    fetchRakOptions();
   }, []);
 
   const fetchData = async () => {
@@ -47,6 +50,17 @@ const GudangProduk = () => {
       setProdukList(data.filter((produk) => produk.status_produk !== 'nonaktif'));
     } catch (e) {
       console.error("Gagal memuat data produk:", e);
+    }
+  };
+
+  const fetchRakOptions = async () => {
+    try {
+      const res = await API.get("/gudang-produk/rak-options");
+      if (Array.isArray(res.data)) {
+        setRakOptions(res.data.map(rak => ({ value: rak, label: rak })));
+      }
+    } catch (e) {
+      console.error("Gagal memuat data rak:", e);
     }
   };
 
@@ -120,7 +134,7 @@ const GudangProduk = () => {
   const addItemRow = () => {
     setNewItem((prev) => ({
       ...prev,
-      items: [...prev.items, { produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }],
+      items: [...prev.items, { produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "", foto: null }],
     }));
   };
 
@@ -132,7 +146,7 @@ const GudangProduk = () => {
   };
 
   const resetForm = () => {
-    setNewItem({ items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "" }] });
+    setNewItem({ items: [{ produk_id: "", sku_id: "", qty: 1, skuList: [], sku_rak: "", foto: null }] });
     setShowForm(false);
   };
 
@@ -143,6 +157,7 @@ const GudangProduk = () => {
         sku_id: parseInt(item.sku_id, 10),
         qty: Math.max(1, parseInt(item.qty, 10) || 1),
         sku_rak: item.sku_rak || "",
+        foto: item.foto,
       }))
       .filter((item) => item.sku_id > 0);
 
@@ -153,8 +168,19 @@ const GudangProduk = () => {
 
     try {
       setSubmitting(true);
-      const payload = { items: validItems };
-      const res = await API.post("/gudang-produk", payload);
+      const formData = new FormData();
+      validItems.forEach((item, index) => {
+        formData.append(`items[${index}][sku_id]`, item.sku_id);
+        formData.append(`items[${index}][qty]`, item.qty);
+        formData.append(`items[${index}][sku_rak]`, item.sku_rak);
+        if (item.foto) {
+          formData.append(`items[${index}][foto]`, item.foto);
+        }
+      });
+
+      const res = await API.post("/gudang-produk", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       alert(res.data?.message || "Data gudang produk berhasil disimpan (draft)");
       resetForm();
       fetchData();
@@ -337,55 +363,134 @@ const GudangProduk = () => {
                 </div>
                 {newItem.items.map((item, idx) => (
                   <div key={idx} className="gudang-produk-item-row">
-                    <div className="gudang-produk-form-group gudang-produk-item-produk">
-                      <label>Produk</label>
-                      <select
-                        value={item.produk_id}
-                        onChange={(e) => handleItemChange(idx, "produk_id", e.target.value)}
-                        required
-                      >
-                        <option value="">Pilih Produk</option>
-                        {produkList.map((produk) => (
-                          <option key={produk.id} value={produk.id}>
-                            {produk.nama_produk}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="gudang-produk-form-group gudang-produk-item-sku">
-                      <label>SKU</label>
-                      <select
-                        value={item.sku_id}
-                        onChange={(e) => handleItemChange(idx, "sku_id", e.target.value)}
-                        required
-                        disabled={!item.produk_id}
-                      >
-                        <option value="">{item.produk_id ? "Pilih SKU" : "Pilih Produk terlebih dahulu"}</option>
-                        {(item.skuList || []).map((sku) => (
-                          <option key={sku.id} value={sku.id}>
-                            {sku.display_text || sku.sku}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="gudang-produk-form-group gudang-produk-item-rak">
-                      <label>Rak</label>
-                      <input
-                        type="text"
-                        value={item.sku_rak || ""}
-                        onChange={(e) => handleItemChange(idx, "sku_rak", e.target.value)}
-                        placeholder="Contoh: RAK-01"
-                      />
-                    </div>
-                    <div className="gudang-produk-form-group gudang-produk-item-qty">
-                      <label>Qty</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.qty}
-                        onChange={(e) => handleItemChange(idx, "qty", e.target.value)}
-                        required
-                      />
+                    <div className="gudang-produk-item-row-content">
+                      <div className="gudang-produk-form-group gudang-produk-item-produk">
+                        <label>Produk</label>
+                        <select
+                          value={item.produk_id}
+                          onChange={(e) => handleItemChange(idx, "produk_id", e.target.value)}
+                          required
+                        >
+                          <option value="">Pilih Produk</option>
+                          {produkList.map((produk) => (
+                            <option key={produk.id} value={produk.id}>
+                              {produk.nama_produk}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="gudang-produk-form-group gudang-produk-item-sku">
+                        <label>SKU</label>
+                        <select
+                          value={item.sku_id}
+                          onChange={(e) => handleItemChange(idx, "sku_id", e.target.value)}
+                          required
+                          disabled={!item.produk_id}
+                        >
+                          <option value="">{item.produk_id ? "Pilih SKU" : "Pilih Produk terlebih dahulu"}</option>
+                          {(item.skuList || []).map((sku) => (
+                            <option key={sku.id} value={sku.id}>
+                              {sku.display_text || sku.sku}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="gudang-produk-form-group gudang-produk-item-rak">
+                        <label>Rak</label>
+                        <CreatableSelect
+                          isClearable
+                          onChange={(newValue) => handleItemChange(idx, "sku_rak", newValue ? newValue.value : "")}
+                          options={rakOptions}
+                          value={item.sku_rak ? { value: item.sku_rak, label: item.sku_rak } : null}
+                          placeholder="Pilih atau Ketik Rak..."
+                          formatCreateLabel={(inputValue) => `Buat baru: "${inputValue}"`}
+                          menuPlacement="auto"
+                          styles={{
+                              control: (base, state) => ({
+                                  ...base,
+                                  borderColor: state.isFocused ? '#0487d8' : '#d1e3f0',
+                                  borderRadius: '10px',
+                                  minHeight: '44px',
+                                  fontSize: '14px',
+                                  backgroundColor: '#fcfdfe',
+                                  boxShadow: state.isFocused ? '0 0 0 4px rgba(4, 135, 216, 0.1)' : 'none',
+                                  '&:hover': {
+                                      borderColor: '#0487d8'
+                                  }
+                              }),
+                              menu: (base) => ({
+                                  ...base,
+                                  zIndex: 9999
+                              }),
+                              option: (base, state) => ({
+                                  ...base,
+                                  backgroundColor: state.isSelected ? '#0487d8' : state.isFocused ? '#e3f2fd' : 'white',
+                                  color: state.isSelected ? 'white' : '#333',
+                                  cursor: 'pointer'
+                              })
+                          }}
+                        />
+                      </div>
+                      <div className="gudang-produk-form-group gudang-produk-item-qty">
+                        <label>Qty</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.qty}
+                          onChange={(e) => handleItemChange(idx, "qty", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="gudang-produk-form-group gudang-produk-item-foto">
+                        <label>Foto</label>
+                        <input
+                          type="file"
+                          id={`file-${idx}`}
+                          className="gudang-produk-input-file"
+                          accept="image/*"
+                          onChange={(e) => handleItemChange(idx, "foto", e.target.files[0])}
+                        />
+                        <label htmlFor={`file-${idx}`} className="gudang-produk-btn-upload">
+                          <FaImage /> {item.foto ? "Ganti" : "Upload"}
+                        </label>
+                        
+                        {item.foto ? (
+                          <div className="gudang-produk-preview-container">
+                               <img 
+                                  src={URL.createObjectURL(item.foto)} 
+                                  alt="Preview" 
+                                  className="gudang-produk-preview-img" 
+                               />
+                          </div>
+                        ) : (
+                           item.produk_id && (
+                               <div className="gudang-produk-preview-container">
+                                   {(() => {
+                                       const p = produkList.find(x => x.id == item.produk_id);
+                                       if (p && p.gambar_produk) {
+                                           const imgUrl = p.gambar_produk.startsWith('http') 
+                                              ? p.gambar_produk 
+                                              : `http://localhost:8000/storage/${p.gambar_produk}`;
+                                              
+                                           return (
+                                              <img 
+                                                  src={imgUrl} 
+                                                  alt="Produk" 
+                                                  className="gudang-produk-preview-img default" 
+                                                  title="Gambar Produk Default"
+                                                  onError={(e) => {
+                                                      e.target.onerror = null;
+                                                      e.target.src = "https://via.placeholder.com/60?text=No+Img";
+                                                  }}
+                                              />
+                                           );
+                                       }
+                                       return <span className="gudang-produk-no-img">-</span>;
+                                   })()}
+                               </div>
+                           )
+                        )}
+                      </div>
                     </div>
                     <div className="gudang-produk-item-actions">
                       <button
