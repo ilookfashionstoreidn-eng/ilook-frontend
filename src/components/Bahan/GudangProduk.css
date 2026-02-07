@@ -261,17 +261,17 @@
 }
 
 .gudang-produk-item-row {
-  display: grid;
-  grid-template-columns: 3fr 3fr 1.5fr 100px 44px;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  align-items: end;
-  margin-bottom: 12px;
-  padding: 16px;
+  margin-bottom: 20px;
+  padding: 24px;
   background: white;
   border-radius: 12px;
   border: 1px solid #eef2f6;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .gudang-produk-item-row:hover {
@@ -280,32 +280,35 @@
   transform: translateY(-2px);
 }
 
-.gudang-produk-item-row:last-of-type {
-  margin-bottom: 0;
+.gudang-produk-item-row-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .gudang-produk-item-produk,
-.gudang-produk-item-sku,
-.gudang-produk-item-rak,
-.gudang-produk-item-qty {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.gudang-produk-item-sku {
+  grid-column: span 1;
 }
 
-.gudang-produk-item-produk label,
-.gudang-produk-item-sku label,
-.gudang-produk-item-rak label,
-.gudang-produk-item-qty label {
-  font-weight: 600;
-  color: #555;
-  font-size: 13px;
-  margin-bottom: 0;
+.gudang-produk-item-rak,
+.gudang-produk-item-qty {
+  grid-column: span 1;
+}
+
+.gudang-produk-item-foto {
+  grid-column: span 2;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 16px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
 }
 
 .gudang-produk-item-produk select,
 .gudang-produk-item-sku select,
-.gudang-produk-item-rak input,
 .gudang-produk-item-qty input {
   padding: 10px 14px;
   border: 1px solid #d1e3f0;
@@ -320,25 +323,67 @@
 
 .gudang-produk-item-produk select:focus,
 .gudang-produk-item-sku select:focus,
-.gudang-produk-item-rak input:focus,
 .gudang-produk-item-qty input:focus {
   outline: none;
   border-color: #0487d8;
-  background-color: #fff;
-  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
 }
 
-.gudang-produk-item-sku select:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-  opacity: 0.7;
+.gudang-produk-item-foto label:first-child {
+  min-width: 80px;
+}
+
+.gudang-produk-input-file {
+  display: none;
+}
+
+.gudang-produk-btn-upload {
+  cursor: pointer;
+  padding: 0 20px;
+  background: white;
+  border: 2px dashed #b3d9f2;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #0487d8;
+  font-weight: 600;
+  width: auto;
+  min-width: 140px;
+  transition: all 0.2s;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.gudang-produk-btn-upload:hover {
+  background: #f0f8ff;
+  border-color: #0487d8;
+}
+
+.gudang-produk-preview-container {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  width: auto;
+  margin-top: 0;
+}
+
+.gudang-produk-preview-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .gudang-produk-item-actions {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 0;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  margin-top: 0;
 }
 
 .gudang-produk-btn-icon-remove {
@@ -352,19 +397,31 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 0;
+  width: 36px;
+  height: 36px;
 }
 
-.gudang-produk-btn-icon-remove:hover:not(:disabled) {
-  background: #ffcdd2;
-  transform: scale(1.05);
-}
-
-.gudang-produk-btn-icon-remove:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+@media (max-width: 768px) {
+  .gudang-produk-item-row-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .gudang-produk-item-produk,
+  .gudang-produk-item-sku,
+  .gudang-produk-item-rak,
+  .gudang-produk-item-qty,
+  .gudang-produk-item-foto {
+    grid-column: span 1;
+  }
+  
+  .gudang-produk-item-foto {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .gudang-produk-btn-upload {
+    width: 100%;
+  }
 }
 
 /* Verify Section */
@@ -455,7 +512,7 @@
   background: white;
   border-radius: 20px;
   padding: 35px;
-  max-width: 700px;
+  max-width: 900px; /* Increased width for better form layout */
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
