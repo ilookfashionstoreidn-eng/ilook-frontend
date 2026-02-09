@@ -229,7 +229,7 @@
 }
 
 .stok-gudang-produk-table thead th {
-  padding: 16px 20px;
+  padding: 12px 10px; /* Reduced padding */
   color: #475569;
   font-weight: 600;
   font-size: 13px;
@@ -252,6 +252,13 @@
 
 .stok-gudang-produk-table tbody tr:last-child {
   border-bottom: none;
+}
+
+.stok-gudang-produk-table tbody td {
+  padding: 10px 16px; /* Reduced padding */
+  font-size: 14px;
+  color: #333;
+  vertical-align: middle;
 }
 
 .stok-gudang-produk-produk-header:hover {

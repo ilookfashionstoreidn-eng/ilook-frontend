@@ -358,13 +358,9 @@ const StokGudangProduk = () => {
                           </td>
                           <td>
                               {produk.all_raks && produk.all_raks.length > 0 ? (
-                                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                      {produk.all_raks.map((rak, rIdx) => (
-                                          <span key={rIdx} className="stok-gudang-produk-rak-badge">
-                                            {rak.rak} <span style={{ opacity: 0.8, fontSize: '0.9em' }}>({rak.qty})</span>
-                                          </span>
-                                      ))}
-                                  </div>
+                                  <span style={{ fontSize: "14px", color: "#334155" }}>
+                                      {produk.all_raks.map(r => r.rak).join(', ')}
+                                  </span>
                               ) : <span style={{ color: "#aaa", fontSize: "12px" }}>-</span>}
                           </td>
                           <td>
@@ -406,13 +402,9 @@ const StokGudangProduk = () => {
                             </td>
                             <td>
                                   {sku.raks && sku.raks.length > 0 ? (
-                                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                          {sku.raks.map((rak, rIdx) => (
-                                              <span key={rIdx} className="stok-gudang-produk-rak-badge sku-level">
-                                                {rak.rak} <span style={{ opacity: 0.8 }}>({rak.qty})</span>
-                                              </span>
-                                          ))}
-                                      </div>
+                                      <span style={{ fontSize: "13px", color: "#64748b" }}>
+                                          {sku.raks.map(r => r.rak).join(', ')}
+                                      </span>
                                   ) : <span style={{ color: "#ccc", fontSize: "11px" }}>-</span>}
                             </td>
                             <td>
@@ -471,15 +463,11 @@ const StokGudangProduk = () => {
                       
                       <div className="sgp-grid-raks">
                         {produk.all_raks && produk.all_raks.length > 0 ? (
-                          produk.all_raks.slice(0, 3).map((rak, idx) => (
-                            <span key={idx} className="stok-gudang-produk-rak-badge">
-                              {rak.rak} ({rak.qty})
-                            </span>
-                          ))
+                          <span style={{ fontSize: "13px", color: "#64748b" }}>
+                            {produk.all_raks.slice(0, 3).map(r => r.rak).join(', ')}
+                            {produk.all_raks.length > 3 && ', ...'}
+                          </span>
                         ) : <span style={{ color: "#aaa", fontSize: "12px" }}>Belum ada rak</span>}
-                        {produk.all_raks && produk.all_raks.length > 3 && (
-                          <span className="stok-gudang-produk-rak-badge">+{produk.all_raks.length - 3}</span>
-                        )}
                       </div>
                     </div>
                     <div className="sgp-grid-footer">
@@ -550,10 +538,8 @@ const StokGudangProduk = () => {
                  </div>
                  <div className="sgp-stat-item" style={{ textAlign: 'left' }}>
                     <span className="sgp-stat-label">Lokasi Rak</span>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                      {modal.selectedItem.all_raks?.map((r, i) => (
-                        <span key={i} className="stok-gudang-produk-rak-badge">{r.rak} ({r.qty})</span>
-                      ))}
+                    <div style={{ marginTop: '4px', color: '#334155' }}>
+                      {modal.selectedItem.all_raks?.map(r => r.rak).join(', ')}
                     </div>
                  </div>
               </div>
@@ -577,10 +563,8 @@ const StokGudangProduk = () => {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span className="stok-gudang-produk-qty">{sku.qty} pcs</span>
-                        <div style={{ marginTop: '4px', display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
-                           {sku.raks?.map((r, i) => (
-                             <span key={i} className="stok-gudang-produk-rak-badge sku-level" style={{ fontSize: '10px' }}>{r.rak} ({r.qty})</span>
-                           ))}
+                        <div style={{ marginTop: '4px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>
+                           {sku.raks?.map(r => r.rak).join(', ')}
                         </div>
                       </div>
                     </div>
