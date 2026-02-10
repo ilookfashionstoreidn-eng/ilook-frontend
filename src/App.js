@@ -66,6 +66,7 @@ import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyPr
 import Sku from "./components/Jahit/Sku";
 import GudangProduk from "./components/Bahan/GudangProduk";
 import StokGudangProduk from "./components/Bahan/StokGudangProduk";
+import PickingQueue from "./components/Bahan/PickingQueue";
 
 const App = () => {
   return (
@@ -138,6 +139,7 @@ const App = () => {
           <Route path="sku" element={<Sku />} />
           <Route path="gudang-produk" element={<GudangProduk />} />
           <Route path="stok-gudang-produk" element={<StokGudangProduk />} />
+          <Route path="picking-queue" element={<PickingQueue />} />
 
         </Route>
       </Routes>

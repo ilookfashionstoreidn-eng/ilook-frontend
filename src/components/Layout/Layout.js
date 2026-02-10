@@ -497,6 +497,11 @@ const Layout = () => {
                       <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Produk
                     </Link>
                   </li>
+                  <li>
+                    <Link to="picking-queue" className={`dropdown-link ${activeMenu === "picking-queue" ? "active" : ""}`} onClick={() => handleMenuClick("picking-queue")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Picking Queue
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>

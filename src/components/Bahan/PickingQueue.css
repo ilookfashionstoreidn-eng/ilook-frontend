@@ -1,0 +1,67 @@
+.picking-queue-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.picking-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.picking-table th,
+.picking-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.picking-table th {
+    background-color: #f1f1f1;
+    font-weight: 600;
+    color: #555;
+}
+
+.picking-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.btn-mark-picked {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.btn-mark-picked:hover {
+    background-color: #218838;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 18px;
+    color: #666;
+}
