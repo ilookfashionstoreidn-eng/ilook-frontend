@@ -11,6 +11,59 @@
     margin-bottom: 20px;
 }
 
+.batch-pick-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.batch-pick-form {
+    max-width: 500px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.form-control {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.btn-batch-process {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-batch-process:hover {
+    background-color: #0056b3;
+}
+
+.btn-batch-process:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 .table-responsive {
     overflow-x: auto;
     background: white;
