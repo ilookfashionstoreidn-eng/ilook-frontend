@@ -102,6 +102,8 @@ const PickingQueue = () => {
             return skuA.localeCompare(skuB);
         });
 
+        
+
         const tableData = sortedEntries.map(([sku, qty], index) => [
             index + 1,
             sku,
