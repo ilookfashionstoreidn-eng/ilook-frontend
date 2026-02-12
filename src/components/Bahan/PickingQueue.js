@@ -81,11 +81,33 @@ const PickingQueue = () => {
         doc.text(`Total SKU: ${Object.keys(summary).length}`, 14, 36);
 
         // Table Data
-        const tableData = Object.entries(summary).map(([sku, qty], index) => [
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+        const sortedEntries = Object.entries(summary).sort((a, b) => {
+            const skuA = a[0];
+            const skuB = b[0];
+
+            const sizeA = skuA.split(' ').pop().toUpperCase();
+            const sizeB = skuB.split(' ').pop().toUpperCase();
+
+            const indexA = sizeOrder.indexOf(sizeA);
+            const indexB = sizeOrder.indexOf(sizeB);
+
+            // kalau dua-duanya punya size → bandingkan size
+            if (indexA !== -1 && indexB !== -1) {
+                return indexA - indexB;
+            }
+
+            // kalau tidak ada size → balik ke alfabet
+            return skuA.localeCompare(skuB);
+        });
+
+        const tableData = sortedEntries.map(([sku, qty], index) => [
             index + 1,
             sku,
             qty
         ]);
+
 
         // Generate Table
         doc.autoTable({
