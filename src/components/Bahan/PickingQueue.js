@@ -58,7 +58,7 @@ const PickingQueue = () => {
             // Generate PDF
             generatePdf(response.data.summary, response.data.processed_orders, response.data.timestamp);
             
-            setBatchCount("");
+            setBatchCount(""); 
             fetchOrders();
         } catch (error) {
             console.error("Error batch picking:", error);
