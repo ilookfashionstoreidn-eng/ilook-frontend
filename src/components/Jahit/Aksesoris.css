@@ -550,7 +550,7 @@
   font-size: 12px;
   font-weight: 600;
   background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-  color: white;
+  color: white; 
 }
 
 .aksesoris-stok-badge.low {
