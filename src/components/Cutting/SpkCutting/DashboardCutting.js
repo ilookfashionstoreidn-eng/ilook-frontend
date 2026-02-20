@@ -55,6 +55,9 @@ const DashboardCutting = () => {
   const [performanceError, setPerformanceError] = useState(null);
   const [performanceRange, setPerformanceRange] = useState("today");
   const [performanceFilterOpen, setPerformanceFilterOpen] = useState(false);
+  const [incomeList, setIncomeList] = useState([]);
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [incomeError, setIncomeError] = useState(null);
   const [cuttingStats, setCuttingStats] = useState({
     weekly_target: 50000,
     weekly_total: 0,
@@ -171,29 +174,58 @@ const DashboardCutting = () => {
       setPerformanceLoading(true);
       setPerformanceError(null);
       const range = getRangeForType(performanceRange);
-      const response = await API.get("/pendapatan/mingguan/cutting", {
-        params: {
-          start_date: range.start,
-          end_date: range.end,
-        },
+      const params = {
+        per_page: 500,
+      };
+
+      if (performanceRange === "today") {
+        params.daily_date = range.start;
+      } else {
+        params.weekly_start = range.start;
+        params.weekly_end = range.end;
+      }
+
+      const response = await API.get("/hasil_cutting", {
+        params,
       });
-      const raw = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-      const sorted = raw
+
+      const raw = response.data?.data || [];
+
+      const grouped = {};
+
+      raw.forEach((item) => {
+        const tukangId = item.tukang_cutting_id || "unknown";
+        const nama = item.nama_tukang_cutting || "-";
+        const spkId = item.spk_cutting_id;
+        const totalProdukItem = item.total_produk || 0;
+
+        if (!grouped[tukangId]) {
+          grouped[tukangId] = {
+            tukang_cutting_id: tukangId,
+            nama_tukang_cutting: nama,
+            spk_ids: new Set(),
+            total_produk: 0,
+          };
+        }
+
+        if (spkId) {
+          grouped[tukangId].spk_ids.add(spkId);
+        }
+        grouped[tukangId].total_produk += totalProdukItem;
+      });
+
+      const aggregated = Object.values(grouped)
         .map((item) => ({
-          ...item,
-          jumlah_spk: item.jumlah_spk ?? item.jumlah_pengiriman ?? 0,
-          total_produk: item.total_produk ?? 0,
-          total_transfer:
-            item.total_transfer ??
-            item.total_pendapatan ??
-            0,
+          tukang_cutting_id: item.tukang_cutting_id,
+          nama_tukang_cutting: item.nama_tukang_cutting,
+          jumlah_spk: item.spk_ids.size,
+          total_produk: item.total_produk,
         }))
-        .filter((item) => item.total_transfer > 0)
-        .sort((a, b) => b.total_transfer - a.total_transfer)
+        .filter((item) => item.jumlah_spk > 0 && item.total_produk > 0)
+        .sort((a, b) => b.total_produk - a.total_produk)
         .slice(0, 4);
-      setPerformance(sorted);
+
+      setPerformance(aggregated);
     } catch (err) {
       setPerformanceError("Gagal memuat performa tukang cutting");
       setPerformance([]);
@@ -222,6 +254,42 @@ const DashboardCutting = () => {
     }
   };
 
+  const fetchIncomeWeekly = async () => {
+    try {
+      setIncomeLoading(true);
+      setIncomeError(null);
+      const range = getRangeForType("week");
+
+      const response = await API.get("/pendapatan/mingguan/cutting", {
+        params: {
+          start_date: range.start,
+          end_date: range.end,
+        },
+      });
+
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      const sorted = data
+        .map((item) => ({
+          tukang_cutting_id: item.tukang_cutting_id,
+          nama_tukang_cutting: item.nama_tukang_cutting ?? "-",
+          total_transfer: item.total_transfer ?? 0,
+        }))
+        .filter((item) => item.total_transfer > 0)
+        .sort((a, b) => b.total_transfer - a.total_transfer)
+        .slice(0, 4);
+
+      setIncomeList(sorted);
+    } catch (err) {
+      setIncomeError("Gagal memuat pendapatan tukang cutting");
+      setIncomeList([]);
+    } finally {
+      setIncomeLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
     fetchCuttingStats();
@@ -232,6 +300,10 @@ const DashboardCutting = () => {
     fetchPerformance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [performanceRange]);
+
+  useEffect(() => {
+    fetchIncomeWeekly();
+  }, []);
 
   const totalSpk = summary.all || 0;
   const totalBelum = summary.belum_diambil?.count || 0;
@@ -792,7 +864,6 @@ const DashboardCutting = () => {
                     <th>Tukang</th>
                     <th>SPK</th>
                     <th>Total Pcs</th>
-                    <th>Pendapatan</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -850,18 +921,74 @@ const DashboardCutting = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="performance-income-cell">
-                          <span className="performance-income-positive">
-                            {formatRupiah(
-                              item.total_transfer
-                            )}
-                          </span>
-                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+            )}
+          </div>
+        </div>
+        <div className="cutting-card cutting-card-income">
+          <div className="cutting-card-header performance-header-row">
+            <span className="cutting-card-label">Pendapatan Tukang</span>
+            <div className="performance-filter-pill income-filter-pill">
+              <span>Minggu Ini</span>
+            </div>
+          </div>
+          {incomeError && (
+            <div className="cutting-dashboard-error performance-error">
+              <span>{incomeError}</span>
+            </div>
+          )}
+          <div className="income-list-wrapper">
+            {incomeLoading ? (
+              <div className="cutting-empty-text">
+                Memuat pendapatan tukang
+              </div>
+            ) : incomeList.length === 0 ? (
+              <div className="cutting-empty-text">
+                Belum ada data pendapatan minggu ini
+              </div>
+            ) : (
+              <ul className="income-list">
+                {incomeList.map((item, index) => {
+                  const name = item.nama_tukang_cutting || "-";
+                  const initial =
+                    name && name.trim().length > 0
+                      ? name.trim().charAt(0).toUpperCase()
+                      : "?";
+
+                  const colorClass =
+                    index === 0
+                      ? "income-amount-green"
+                      : index === 1
+                      ? "income-amount-blue"
+                      : index === 2
+                      ? "income-amount-orange"
+                      : "income-amount-red";
+
+                  return (
+                    <li
+                      key={item.tukang_cutting_id || index}
+                      className="income-item"
+                    >
+                      <span className="income-rank">{index + 1}.</span>
+                      <div className="income-user">
+                        <div className="income-avatar">
+                          <span>{initial}</span>
+                        </div>
+                        <span className="income-name">{name}</span>
+                      </div>
+                      <span
+                        className={`income-amount ${colorClass}`}
+                      >
+                        {formatRupiah(item.total_transfer)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
         </div>

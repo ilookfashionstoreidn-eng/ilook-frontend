@@ -409,14 +409,24 @@
 
 .cutting-performance-section {
   margin-top: 24px;
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
 }
 
 .cutting-card-performance {
   padding-top: 18px;
   padding-bottom: 20px;
-  max-width: 980px;
-  margin: 0 auto;
+  flex: 3;
+  max-width: none;
+  margin: 0;
   position: relative;
+}
+
+.cutting-card-income {
+  flex: 2;
+  margin: 0;
+  max-width: 420px;
 }
 
 .performance-header-row {
@@ -434,6 +444,11 @@
   font-weight: 600;
   color: #4f46e5;
   cursor: pointer;
+}
+
+.income-filter-pill {
+  background: #eef2ff;
+  border-color: #c7d2fe;
 }
 
 .performance-filter-dropdown {
@@ -591,6 +606,78 @@
   color: #111827;
 }
 
+.income-list-wrapper {
+  margin-top: 4px;
+}
+
+.income-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+}
+
+.income-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px;
+}
+
+.income-rank {
+  width: 18px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.income-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.income-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.income-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.income-amount {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.income-amount-green {
+  color: #16a34a;
+}
+
+.income-amount-blue {
+  color: #2563eb;
+}
+
+.income-amount-orange {
+  color: #ea580c;
+}
+
+.income-amount-red {
+  color: #dc2626;
+}
+
 .performance-income-cell {
   text-align: right;
   min-width: 140px;
@@ -615,6 +702,14 @@
 
   .cutting-card-status {
     grid-column: span 2;
+  }
+
+  .cutting-performance-section {
+    flex-direction: column;
+  }
+
+  .cutting-card-income {
+    max-width: none;
   }
 }
 
