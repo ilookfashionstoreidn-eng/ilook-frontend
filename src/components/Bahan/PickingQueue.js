@@ -140,7 +140,7 @@ const PickingQueue = () => {
             <div className="batch-pick-section">
                 <form onSubmit={handleBatchPick} className="batch-pick-form">
                     <div className="form-group">
-                        <label htmlFor="batchCount">Ambil Order Teratas:</label>
+                        <label htmlFor="batchCount">Ambiil Order Teratas:</label>
                         <div className="input-group">
                             <input
                                 type="number"
