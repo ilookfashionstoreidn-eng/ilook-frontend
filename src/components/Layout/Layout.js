@@ -288,6 +288,12 @@ const Layout = () => {
               </div>
               {isCuttingOpen && (
                 <ul className="dropdown-menu show">
+                   <li>
+                    <Link to="dashboardCutting" className={`dropdown-link ${activeMenu === "dashboardCutting" ? "active" : ""}`} onClick={() => handleMenuClick("dashboardCutting")}>
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Dasboard Cutting
+                    </Link>
+                  </li>
+                  
                   <li>
                     <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
                       <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Cutting
