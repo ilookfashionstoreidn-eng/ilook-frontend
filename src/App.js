@@ -68,6 +68,7 @@ import GudangProduk from "./components/Bahan/GudangProduk";
 import StokGudangProduk from "./components/Bahan/StokGudangProduk";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
+import DashboardJasa from "./components/Jasa/DashboardJasa";
 
 const App = () => {
   return (
@@ -113,6 +114,7 @@ const App = () => {
           <Route path="pendapatancutting" element={<PendapatanCutting />} />
           <Route path="pendapatanhistory" element={<HistoryPendapatanCutting />} />
           <Route path="markeran" element={<MarkeranProduk />} />
+          <Route path="dashboard-jasa" element={<DashboardJasa />} />
           <Route path="tukangJasa" element={<TukangJasa />} />
           <Route path="spkjasa" element={<SpkJasa />} />
           <Route path="hasiljasa" element={<HasilJasa />} />
