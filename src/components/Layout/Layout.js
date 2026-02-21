@@ -366,6 +366,11 @@ const Layout = () => {
               {isJasaOpen && (
                 <ul className="dropdown-menu show">
                   <li>
+                    <Link to="dashboard-jasa" className={`dropdown-link ${activeMenu === "dashboard-jasa" ? "active" : ""}`} onClick={() => handleMenuClick("dashboard-jasa")}>
+                      <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Dashboard Jasa
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="tukangJasa" className={`dropdown-link ${activeMenu === "tukangJasa" ? "active" : ""}`} onClick={() => handleMenuClick("tukangJasa")}>
                       <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Jasa
                     </Link>

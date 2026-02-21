@@ -242,7 +242,7 @@ const Bahan = () => {
                         <FaTrash />
                       </button>
                     </td>
-                  </tr>
+                  </tr>   
                 ))}
               </tbody>
             </table>
