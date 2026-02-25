@@ -417,6 +417,11 @@ const Layout = () => {
               {isCmtOpen && (
                 <ul className="dropdown-menu show">
                   <li>
+                    <Link to="dashboard-cmt" className={`dropdown-link ${activeMenu === "dashboard-cmt" ? "active" : ""}`} onClick={() => handleMenuClick("dashboard-cmt")}>
+                      <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Dashboard CMT
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="penjahit" className={`dropdown-link ${activeMenu === "penjahit" ? "active" : ""}`} onClick={() => handleMenuClick("penjahit")}>
                       <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> CMT
                     </Link>
