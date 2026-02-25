@@ -16,6 +16,7 @@ import Deadline from "./components/Jahit/Deadline";
 import Status from "./components/Jahit/Status";
 import Kinerja from "./components/Jahit/Kinerja";
 import Kinerja2 from "./components/Jahit/Kinerja2";
+import DashboardCmt from "./components/Jahit/DashboardCmt";
 import DataDikerjakanPengirimanCmt from "./components/Jahit/DataDikerjakanPengirimanCmt";
 import Produk from "./components/Jahit/Produk";
 import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan";
@@ -83,6 +84,7 @@ const App = () => {
           <Route path="penjahit" element={<Penjahit />} />
           <Route path="kode-seri-belum-dikerjakan" element={<KodeSeriBelumDikerjakan />} />
           <Route path="spk" element={<Spk />} />
+          <Route path="dashboard-cmt" element={<DashboardCmt />} />
           <Route path="spkcmt" element={<SpkCmt />} />
           <Route path="pengiriman" element={<Pengiriman />} />
           <Route path="hutang" element={<Hutang />} />
