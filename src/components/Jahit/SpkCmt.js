@@ -12,7 +12,7 @@ import Select from "react-select";
 const SpkCmt = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [spkCmtData, setSpkCmtData] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -64,6 +64,7 @@ const SpkCmt = () => {
   const [selectedSisaHari, setSelectedSisaHari] = useState("");
   const [distribusiList, setDistribusiList] = useState([]);
   const [spkJasaList, setSpkJasaList] = useState([]);
+  const [aksesorisList, setAksesorisList] = useState([]);
   const [previewData, setPreviewData] = useState(null);
   const [showLogDeadline, setShowLogDeadline] = useState(false);
   const [logDeadline, setLogDeadline] = useState([]);
@@ -93,7 +94,7 @@ const SpkCmt = () => {
     catatan: "",
 
     markeran: "",
-    aksesoris: "",
+    aksesoris: [],
     handtag: "",
     merek: "",
 
@@ -263,7 +264,7 @@ const SpkCmt = () => {
     const statusFromUrl = searchParams.get("status");
     const deadlineStatusFromUrl = searchParams.get("deadline_status");
     const kirimMingguIniFromUrl = searchParams.get("kirim_minggu_ini");
-    
+
     if (statusFromUrl) {
       setSelectedStatus(statusFromUrl);
     }
@@ -273,7 +274,7 @@ const SpkCmt = () => {
     if (kirimMingguIniFromUrl) {
       setKirimMingguIniFilter(kirimMingguIniFromUrl);
     }
-    
+
     // Reset currentPage ke 1 ketika filter berubah
     setCurrentPage(1);
   }, [searchParams]);
@@ -312,7 +313,7 @@ const SpkCmt = () => {
           kategori_produk: selectedKategori || undefined,
           sisa_hari: selectedSisaHari || undefined,
         };
-        
+
         // Tambahkan filter baru jika ada
         if (deadlineStatusFromUrl) {
           params.deadline_status = deadlineStatusFromUrl;
@@ -382,6 +383,19 @@ const SpkCmt = () => {
     };
 
     fetchProduks();
+  }, []);
+
+  useEffect(() => {
+    const fetchAksesoris = async () => {
+      try {
+        const response = await API.get("/aksesoris?all=1");
+        setAksesorisList(response.data || []);
+      } catch (error) {
+        console.error("Gagal mengambil data aksesoris:", error);
+      }
+    };
+
+    fetchAksesoris();
   }, []);
 
 
@@ -909,12 +923,14 @@ const SpkCmt = () => {
     console.log("Mengupdate SPK dengan ID:", id);
     const formData = new FormData();
 
-    // Tambahkan semua data kecuali 'warna'
+    // Tambahkan semua data kecuali 'warna', 'aksesoris', 'jenis_harga_jasa'
     Object.keys(newSpk).forEach((key) => {
-      if (key !== "warna" && key !== "jenis_harga_jasa") {
+      if (key !== "warna" && key !== "aksesoris" && key !== "jenis_harga_jasa") {
         formData.append(key, newSpk[key]);
       }
     });
+
+    formData.append("aksesoris", JSON.stringify(newSpk.aksesoris || []));
 
     // Menambahkan warna ke FormData dengan format array
     newSpk.warna.forEach((warna, index) => {
@@ -928,7 +944,7 @@ const SpkCmt = () => {
 
     console.log("Jenis harga jasa yang dikirim:", newSpk.jenis_harga_jasa);
 
-    formData.append("_method", "PUT"); 
+    formData.append("_method", "PUT");
 
     for (let pair of formData.entries()) {
       console.log(pair[0] + ": " + pair[1]);
@@ -984,7 +1000,7 @@ const SpkCmt = () => {
     formData.append("catatan", newSpk.catatan);
 
     formData.append("markeran", newSpk.markeran);
-    formData.append("aksesoris", newSpk.aksesoris);
+    formData.append("aksesoris", JSON.stringify(newSpk.aksesoris || []));
     formData.append("handtag", newSpk.handtag);
     formData.append("merek", newSpk.merek);
 
@@ -1012,7 +1028,7 @@ const SpkCmt = () => {
         keterangan: "",
         catatan: "",
         markeran: "",
-        aksesoris: "",
+        aksesoris: [],
         handtag: "",
         merek: "",
         harga_barang_dasar: "",
@@ -1051,7 +1067,7 @@ const SpkCmt = () => {
     }
   };
 
-  
+
   const downloadBarcodePdf = async (id) => {
     try {
       const response = await API.get(`/spk-cmt/${id}/barcode-pdf`, {
@@ -1153,9 +1169,21 @@ const SpkCmt = () => {
   const handleEditClick = (spk) => {
     console.log("SPK yang diedit:", spk); // Debugging
     setSelectedSpk(spk);
-    setNewSpk({ 
-      ...spk, 
+
+    let parseAksesoris = [];
+    if (spk.aksesoris) {
+      try {
+        parseAksesoris = JSON.parse(spk.aksesoris);
+        if (!Array.isArray(parseAksesoris)) parseAksesoris = [];
+      } catch (e) {
+        parseAksesoris = [];
+      }
+    }
+
+    setNewSpk({
+      ...spk,
       warna: spk.warna || [],
+      aksesoris: parseAksesoris,
     });
     setShowForm(true); // Tampilkan form
   };
@@ -1608,18 +1636,18 @@ const SpkCmt = () => {
                         <FaSave size={13} />
                       </button>
                       {/* ✅ Tombol Download Barcode SKU */}
-                      <button 
-                        onClick={() => downloadBarcodePdf(spk.id_spk)} 
-                        className="spkcmt-btn-icon spkcmt-btn-icon-download" 
-                        title="Download Barcode SKU" 
-                        style={{ 
-                          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", 
-                          minWidth: "30px", 
-                          minHeight: "30px", 
-                          display: "flex", 
-                          alignItems: "center", 
-                          justifyContent: "center", 
-                          padding: "5px" 
+                      <button
+                        onClick={() => downloadBarcodePdf(spk.id_spk)}
+                        className="spkcmt-btn-icon spkcmt-btn-icon-download"
+                        title="Download Barcode SKU"
+                        style={{
+                          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                          minWidth: "30px",
+                          minHeight: "30px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "5px"
                         }}
                       >
                         <FaBarcode size={13} />
@@ -2041,10 +2069,10 @@ const SpkCmt = () => {
                   <span>
                     {selectedSpk.created_at
                       ? new Date(selectedSpk.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                       : "–"}
                   </span>
                 </div>
@@ -2053,10 +2081,10 @@ const SpkCmt = () => {
                   <span>
                     {selectedSpk.deadline
                       ? new Date(selectedSpk.deadline).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                       : "–"}
                   </span>
                 </div>
@@ -2088,7 +2116,19 @@ const SpkCmt = () => {
                 </div>
                 <div className="spkcmt-detail-item">
                   <strong>Aksesoris</strong>
-                  <span>{selectedSpk.aksesoris || "–"}</span>
+                  <span>
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(selectedSpk.aksesoris);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                          return parsed.map((item) => `${item.nama} (${item.jumlah} ${item.satuan})`).join(", ");
+                        }
+                        return selectedSpk.aksesoris || "–";
+                      } catch (e) {
+                        return selectedSpk.aksesoris || "–";
+                      }
+                    })()}
+                  </span>
                 </div>
                 <div className="spkcmt-detail-item">
                   <strong>Catatan</strong>
@@ -2193,7 +2233,7 @@ const SpkCmt = () => {
               keterangan: "",
               catatan: "",
               markeran: "",
-              aksesoris: "",
+              aksesoris: [],
               handtag: "",
               merek: "",
               harga_barang_dasar: "",
@@ -2219,7 +2259,7 @@ const SpkCmt = () => {
                     keterangan: "",
                     catatan: "",
                     markeran: "",
-                    aksesoris: "",
+                    aksesoris: [],
                     handtag: "",
                     merek: "",
                     harga_barang_dasar: "",
@@ -2429,6 +2469,68 @@ const SpkCmt = () => {
                   <textarea className="spkcmt-form-textarea" value={newSpk.catatan} onChange={(e) => setNewSpk({ ...newSpk, catatan: e.target.value })} />
                 </div>
 
+                {/* ================= AKSESORIS ================= */}
+                <div className="spkcmt-form-group">
+                  <label className="spkcmt-form-label">Aksesoris</label>
+                  {Array.isArray(newSpk.aksesoris) && newSpk.aksesoris.map((item, index) => (
+                    <div key={index} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
+                      <div style={{ flex: 1 }}>
+                        <Select
+                          options={aksesorisList.map((a) => ({
+                            value: a.nama_aksesoris,
+                            label: a.nama_aksesoris,
+                            satuan: a.satuan || ""
+                          }))}
+                          value={item.nama ? { value: item.nama, label: item.nama } : null}
+                          onChange={(selectedOption) => {
+                            const newAksesoris = [...newSpk.aksesoris];
+                            newAksesoris[index].nama = selectedOption ? selectedOption.value : "";
+                            if (selectedOption && selectedOption.satuan) {
+                              newAksesoris[index].satuan = selectedOption.satuan;
+                            }
+                            setNewSpk({ ...newSpk, aksesoris: newAksesoris });
+                          }}
+                          placeholder="Pilih Aksesoris..."
+                          isClearable
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              height: "40px",
+                              minHeight: "40px",
+                              borderRadius: "8px",
+                              borderColor: "#e2e8f0",
+                              boxShadow: "none",
+                              "&:hover": { borderColor: "#cbd5e1" }
+                            }),
+                            menu: (base) => ({ ...base, zIndex: 9999 })
+                          }}
+                        />
+                      </div>
+                      <input type="number" className="spkcmt-form-input" placeholder="Jumlah" value={item.jumlah} style={{ width: "100px" }} onChange={(e) => {
+                        const newAksesoris = [...newSpk.aksesoris];
+                        newAksesoris[index].jumlah = e.target.value;
+                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
+                      }} required />
+                      <input type="text" className="spkcmt-form-input" placeholder="Satuan (Pcs, dsb)" value={item.satuan} style={{ width: "120px" }} onChange={(e) => {
+                        const newAksesoris = [...newSpk.aksesoris];
+                        newAksesoris[index].satuan = e.target.value;
+                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
+                      }} required />
+                      <button type="button" className="spkcmt-btn-cancel" onClick={() => {
+                        const newAksesoris = newSpk.aksesoris.filter((_, i) => i !== index);
+                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
+                      }} style={{ padding: "8px 12px", minWidth: "fit-content", alignSelf: "center", marginBottom: "0" }}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" className="spkcmt-btn-primary" onClick={() => {
+                    setNewSpk({ ...newSpk, aksesoris: [...(newSpk.aksesoris || []), { nama: "", jumlah: "", satuan: "" }] });
+                  }} style={{ width: "fit-content", padding: "8px 12px", marginTop: "5px", paddingLeft: "15px", paddingRight: "15px" }}>
+                    <FaPlus style={{ marginRight: "5px" }} /> Tambah Aksesoris
+                  </button>
+                </div>
+
                 {/* ================= ATRIBUT ================= */}
 
                 {/* ================= HARGA BARANG ================= */}
@@ -2483,7 +2585,7 @@ const SpkCmt = () => {
                         keterangan: "",
                         catatan: "",
                         markeran: "",
-                        aksesoris: "",
+                        aksesoris: [],
                         handtag: "",
                         merek: "",
                         harga_barang_dasar: "",
