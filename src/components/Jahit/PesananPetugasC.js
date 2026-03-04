@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./PesananPetugasC.css";
 import API from "../../api";
 import { FaPlus, FaClock, FaShoppingCart, FaUser, FaUserTie, FaBox, FaCheckCircle, FaListAlt } from "react-icons/fa";
@@ -19,6 +19,8 @@ const PesananPetugasC = () => {
   const [spkCmtList, setSpkCmtList] = useState([]);
   const [aksesorisList, setAksesorisList] = useState([]);
   const [barcodeInput, setBarcodeInput] = useState("");
+  const barcodeDebounceRef = useRef(null);
+  const barcodeInputRef = useRef("");
 
   const [newData, setNewData] = useState({
     spk_cmt_id: "",
@@ -30,19 +32,21 @@ const PesananPetugasC = () => {
     bukti_nota: null,
   });
 
+  const fetchPage = async (page) => {
+    try {
+      setLoading(true);
+      const response = await API.get(`petugas-c?page=${page}`);
+      setPetugasC(response.data);
+      setError(null);
+    } catch (error) {
+      setError("Gagal mengambil data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPetugasC = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/petugas-c");
-        setPetugasC(response.data);
-      } catch (error) {
-        setError("Gagal mengambil data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPetugasC();
+    fetchPage(1);
   }, []);
 
   const handleOpenModal = (item) => {
@@ -79,10 +83,7 @@ const PesananPetugasC = () => {
       console.log("Pesanan berhasil disimpan:", response.data);
       alert("Pesanan berhasil disimpan!");
 
-      setPetugasC((prev) => ({
-        ...prev,
-        data: [...(prev.data || []), response.data],
-      }));
+      await fetchPage(1);
 
       setNewData({
         spk_cmt_id: "",
@@ -234,6 +235,7 @@ const PesananPetugasC = () => {
 
       console.log("Verifikasi berhasil disimpan:", response.data);
       alert("Verifikasi berhasil disimpan!");
+      await fetchPage(1);
 
       // reset
       setNewDataPetugasD({
@@ -256,27 +258,46 @@ const PesananPetugasC = () => {
     }
   };
 
-  const handleBarcodeScan = async () => {
-    const scanned = barcodeInput.trim();
+  const handleBarcodeScan = async (overrideValue) => {
+    // Gunakan override value (dari debounce) atau baca dari ref (selalu terkini)
+    const scanned = (overrideValue || barcodeInputRef.current).trim();
     if (!scanned) return;
 
     try {
       // Cek barcode ke backend
       const res = await API.get(`/cek-barcode/${scanned}`);
-      const aksesorisScan = res.data.aksesoris_id;
+      const aksesorisScan = Number(res.data.aksesoris_id);
 
       // Ambil daftar aksesoris valid dari pesanan
-      const aksesorisValid = selectedPesanan.detail_pesanan.map((dp) => dp.aksesoris_id);
+      const aksesorisValid = selectedPesanan.detail_pesanan.map((dp) =>
+        Number(dp.aksesoris_id ?? dp.aksesoris?.id)
+      );
+
+      console.log("Barcode scanned:", scanned);
+      console.log("Aksesoris dari barcode (ID):", aksesorisScan);
+      console.log("Aksesoris valid dalam pesanan:", aksesorisValid);
 
       // Jika barcode bukan aksesoris yang dipesan
       if (!aksesorisValid.includes(aksesorisScan)) {
         alert("❌ Barcode ini untuk aksesoris yang berbeda dari pesanan!");
         setBarcodeInput("");
+        barcodeInputRef.current = "";
+        return;
+      }
+
+      // Cek apakah status barcode masih tersedia
+      if (res.data.barcode_status && res.data.barcode_status !== "tersedia") {
+        alert("⚠️ Barcode ini sudah pernah dipakai (status: " + res.data.barcode_status + ")");
+        setBarcodeInput("");
+        barcodeInputRef.current = "";
         return;
       }
     } catch (error) {
-      alert("❌ Barcode tidak ditemukan di stok aksesoris!");
+      const errMsg = error.response?.data?.message || "Barcode tidak ditemukan di stok aksesoris";
+      console.error("Cek barcode error:", error.response?.status, errMsg);
+      alert("❌ " + errMsg);
       setBarcodeInput("");
+      barcodeInputRef.current = "";
       return;
     }
 
@@ -292,21 +313,11 @@ const PesananPetugasC = () => {
       }));
     }
 
-    setBarcodeInput(""); // reset
+    setBarcodeInput("");
+    barcodeInputRef.current = "";
   };
 
-  const fetchPage = async (page) => {
-    try {
-      setLoading(true);
-      const response = await API.get(`petugas-c?page=${page}`);
-      setPetugasC(response.data);
-      setError(null);
-    } catch (error) {
-      setError("Gagal mengambil data");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Filter dan sort data
   const [searchTerm, setSearchTerm] = useState("");
@@ -336,7 +347,12 @@ const PesananPetugasC = () => {
             <FaPlus /> Tambah Pesanan
           </button>
           <div className="pesanan-petugas-c-search-bar">
-            <input type="text" placeholder="Cari nama petugas, penjahit, atau ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Cari petugas, penjahit, atau ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -346,19 +362,21 @@ const PesananPetugasC = () => {
           <div className="pesanan-petugas-c-error">{error}</div>
         ) : sortedData.length === 0 ? (
           <div className="pesanan-petugas-c-empty-state">
-            <div className="pesanan-petugas-c-empty-state-icon">📦</div>
-            <p>Tidak ada data pesanan aksesoris</p>
+            <div className="pesanan-petugas-c-empty-state-icon">
+              <FaBox />
+            </div>
+            <p>Tidak ada data pesanan aksesoris ditemukan</p>
           </div>
         ) : (
           <div className="pesanan-petugas-c-table-wrapper">
             <table className="pesanan-petugas-c-table">
               <thead>
                 <tr>
-                  <th>No</th>
+                  <th>No.</th>
                   <th>Nama Petugas</th>
                   <th>Kode Seri SPK CMT</th>
-                  <th>Penjahit</th>
-                  <th>Jumlah Barang</th>
+                  <th style={{ textAlign: "center" }}>Penjahit</th>
+                  <th style={{ textAlign: "right" }}>Jumlah</th>
                   <th>Total Harga</th>
                   <th>Waktu</th>
                   <th>Pesanan</th>
@@ -609,17 +627,35 @@ const PesananPetugasC = () => {
                 className="verif-input"
                 placeholder="Scan barcode di sini..."
                 value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setBarcodeInput(val);
+                  barcodeInputRef.current = val;
+
+                  // Auto-enter debounce
+                  if (barcodeDebounceRef.current) {
+                    clearTimeout(barcodeDebounceRef.current);
+                  }
+                  if (val.trim()) {
+                    const capturedVal = val; // capture value langsung
+                    barcodeDebounceRef.current = setTimeout(() => {
+                      handleBarcodeScan(capturedVal);
+                    }, 300);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
+                    if (barcodeDebounceRef.current) {
+                      clearTimeout(barcodeDebounceRef.current);
+                    }
                     handleBarcodeScan();
                   }
                 }}
                 autoFocus
               />
 
-              <small className="hint-text">Arahkan scanner ke input ini dan tekan Enter setelah scan.</small>
+              <small className="hint-text">Arahkan scanner ke input ini — barcode akan otomatis diproses.</small>
             </div>
 
             {/* PROGRESS */}
