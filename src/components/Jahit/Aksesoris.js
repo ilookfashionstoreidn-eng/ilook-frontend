@@ -13,7 +13,7 @@ const Aksesoris = () => {
   const [showCustomJenisAksesoris, setShowCustomJenisAksesoris] = useState(false);
   const [editAksesoris, setEditAksesoris] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
-const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);
 
   const [newAksesoris, setNewAksesoris] = useState({
     nama_aksesoris: "",
@@ -53,36 +53,36 @@ const [page, setPage] = useState(1);
     }
   };
 
-const fetchAksesoris = async (page = 1) => {
-  try {
-    setLoading(true);
-    const response = await API.get("/aksesoris?page=" + page);
-    setAksesoris(response.data);
-  } catch (error) {
-    setError("Gagal mengambil data");
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchAksesoris = async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await API.get("/aksesoris?page=" + page);
+      setAksesoris(response.data);
+    } catch (error) {
+      setError("Gagal mengambil data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  fetchAksesoris(page);
-}, [page]);
-
-
-
-const fetchPage = (newPage) => {
-  if (newPage >= 1 && newPage <= aksesoris.last_page) {
-    setPage(newPage);
-  }
-};
+  useEffect(() => {
+    fetchAksesoris(page);
+  }, [page]);
 
 
-const sortedAksesoris = [...(aksesoris.data || [])].sort((a, b) => b.id - a.id);
 
-const filteredAksesoris = sortedAksesoris.filter((item) =>
-  item.nama_aksesoris.toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const fetchPage = (newPage) => {
+    if (newPage >= 1 && newPage <= aksesoris.last_page) {
+      setPage(newPage);
+    }
+  };
+
+
+  const sortedAksesoris = [...(aksesoris.data || [])].sort((a, b) => b.id - a.id);
+
+  const filteredAksesoris = sortedAksesoris.filter((item) =>
+    item.nama_aksesoris.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
 
   const handleFormSubmit = async (e) => {
@@ -121,9 +121,9 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
       alert("Produk berhasil ditambahkan!");
 
       setAksesoris((prev) => ({
-      ...prev,
-          data: [...prev.data, response.data], // ← untuk create, bukan map()
-        }));
+        ...prev,
+        data: [...prev.data, response.data], // ← untuk create, bukan map()
+      }));
 
 
 
@@ -163,7 +163,7 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
       satuan: item.satuan,
       harga_jual: item.harga_jual,
       jumlah_per_satuan: item.jumlah_per_satuan,
-      foto: item.foto, 
+      foto: item.foto,
     });
 
     setShowEditForm(true);
@@ -192,12 +192,12 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
         },
       });
 
-     setAksesoris((prev) => ({
-      ...prev,
-      data: prev.data.map((a) =>
-        a.id === editAksesoris.id ? response.data : a
-      ),
-    }));
+      setAksesoris((prev) => ({
+        ...prev,
+        data: prev.data.map((a) =>
+          a.id === editAksesoris.id ? response.data : a
+        ),
+      }));
       alert("Aksesoris diperbarui!");
       setShowEditForm(false);
     } catch (error) {
@@ -238,34 +238,40 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
           </button>
 
           <div className="aksesoris-search-bar">
-            <input type="text" placeholder="Cari nama aksesoris..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Cari aksesoris..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
         {loading ? (
-          <div className="aksesoris-loading">Memuat data...</div>
+          <div className="aksesoris-loading">Memuat data aksesoris...</div>
         ) : error ? (
           <div className="aksesoris-error">{error}</div>
         ) : filteredAksesoris.length === 0 ? (
           <div className="aksesoris-empty-state">
-            <div className="aksesoris-empty-state-icon">📦</div>
-            <p>Tidak ada data aksesoris</p>
+            <div className="aksesoris-empty-state-icon">
+              <FaBox />
+            </div>
+            <p>Tidak ada data aksesoris ditemukan</p>
           </div>
         ) : (
           <div className="aksesoris-table-wrapper">
             <table className="aksesoris-table">
               <thead>
                 <tr>
-                  <th>Nomor</th>
+                  <th>No.</th>
                   <th>Nama Aksesoris</th>
-                  <th>Jenis Aksesoris</th>
-                  <th>Satuan</th>
-                  <th>Jumlah / Satuan</th>
-                  <th>Harga Jual</th>
-                  <th>Harga per Biji</th>
-                  <th>Jumlah Stok</th>
-                  <th>Foto Aksesoris</th>
-                  <th>Aksi</th>
+                  <th>Jenis</th>
+                  <th>Isi / Satuan</th>
+                  <th>Harga (Pack)</th>
+                  <th>Harga / Pcs</th>
+                  <th>Stok</th>
+                  <th>Foto</th>
+                  <th style={{ textAlign: "center" }}>Aksi</th>
                 </tr>
               </thead>
 
@@ -273,27 +279,37 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
                 {aksesoris.data && aksesoris.data.map((aksesoris, index) => (
                   <tr key={aksesoris.id}>
                     <td>{index + 1}</td>
-                    <td>{aksesoris.nama_aksesoris}</td>
+                    <td style={{ fontWeight: 500 }}>{aksesoris.nama_aksesoris}</td>
                     <td>{aksesoris.jenis_aksesoris}</td>
-                    <td>{aksesoris.satuan}</td>
                     <td>{aksesoris.jumlah_per_satuan}</td>
                     <td>
                       <span className="aksesoris-price">
-                        Rp{" "}
-                        {Number(aksesoris.harga_jual).toLocaleString("id-ID", {
-                          minimumFractionDigits: 2,
-                        })}
+                        Rp {Number(aksesoris.harga_jual).toLocaleString("id-ID")}
                       </span>
                     </td>
                     <td>
-                      Rp {Number(aksesoris.harga_per_biji).toLocaleString("id-ID", {
-                        minimumFractionDigits: 2
-                      })}
+                      <span className="aksesoris-price" style={{ color: "#6B7280" }}>
+                        Rp {Number(aksesoris.harga_per_biji).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </span>
                     </td>
                     <td>
-                      <span className={`aksesoris-stok-badge ${aksesoris.jumlah_stok === 0 ? "out" : aksesoris.jumlah_stok < 10 ? "low" : ""}`}>{aksesoris.jumlah_stok}</span>
+                      <span className={`aksesoris-stok-badge ${aksesoris.jumlah_stok === 0 ? "out" : aksesoris.jumlah_stok < 10 ? "low" : ""}`}>
+                        {aksesoris.jumlah_stok} {aksesoris.satuan}
+                      </span>
                     </td>
-                    <td>{aksesoris.foto_aksesoris ? <img src={`${process.env.REACT_APP_API_URL}/storage/${aksesoris.foto_aksesoris}`} alt="Foto Aksesoris" className="aksesoris-image" /> : "-"}</td>
+                    <td>
+                      {aksesoris.foto_aksesoris ? (
+                        <img
+                          src={`${process.env.REACT_APP_API_URL}/storage/${aksesoris.foto_aksesoris}`}
+                          alt={aksesoris.nama_aksesoris}
+                          className="aksesoris-image"
+                        />
+                      ) : (
+                        <div className="aksesoris-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: 20 }}>
+                          <FaBox />
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <div className="aksesoris-action-card">
                         <button className="aksesoris-btn-icon" onClick={() => handleEdit(aksesoris)} title="Edit">
@@ -306,29 +322,29 @@ const filteredAksesoris = sortedAksesoris.filter((item) =>
               </tbody>
             </table>
 
-          {aksesoris.data?.length > 0 && (
-  <div className="pembelian-aksesoris-pagination">
-    <button
-      disabled={page === 1}
-      onClick={() => fetchPage(page - 1)}
-    >
-      ← Prev
-    </button>
+            {aksesoris.data?.length > 0 && (
+              <div className="pembelian-aksesoris-pagination">
+                <button
+                  disabled={page === 1}
+                  onClick={() => fetchPage(page - 1)}
+                >
+                  ← Prev
+                </button>
 
-    <span>
-      Halaman {aksesoris.current_page} / {aksesoris.last_page}
-    </span>
+                <span>
+                  Halaman {aksesoris.current_page} / {aksesoris.last_page}
+                </span>
 
-    <button
-      disabled={page === aksesoris.last_page}
-      onClick={() => fetchPage(page + 1)}
-    >
-      Next →
-    </button>
-  </div>
-)}
+                <button
+                  disabled={page === aksesoris.last_page}
+                  onClick={() => fetchPage(page + 1)}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
 
-      </div>
+          </div>
         )}
       </div>
       {/* Modal Form */}

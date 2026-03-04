@@ -1,538 +1,428 @@
 /* ===================================
-   PESANAN PETUGAS C (PEMBELIAN AKSESORIS CMT) - MODERN UI
-   Premium Blue Gradient Theme
+   PESANAN PETUGAS C (PEMBELIAN AKSESORIS CMT) - PREMIUM UI
+   Clean, Minimal, Professional
    =================================== */
 
-/* Container */
+:root {
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --bg-page: #F3F4F6;
+  --bg-card: #FFFFFF;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --border: #E5E7EB;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
 .pesanan-petugas-c-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  padding: 20px;
+  background: var(--bg-page);
+  padding: 2rem;
+  font-family: var(--font-sans);
+  color: var(--text-main);
 }
 
-/* Header Section */
 .pesanan-petugas-c-header {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  padding: 30px 40px;
-  border-radius: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 24px rgba(4, 135, 216, 0.3);
   display: flex;
   align-items: center;
-  gap: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.pesanan-petugas-c-header::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .pesanan-petugas-c-header-icon {
-  font-size: 48px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 18px;
-  border-radius: 15px;
+  background: var(--bg-card);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  font-size: 1.25rem;
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
 .pesanan-petugas-c-header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 1.75rem;
   font-weight: 700;
-  letter-spacing: -0.5px;
-  z-index: 1;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  color: var(--text-main);
+  letter-spacing: -0.025em;
 }
 
-/* Table Container */
 .pesanan-petugas-c-table-container {
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
 }
 
-/* Filter Header */
 .pesanan-petugas-c-filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 1rem;
 }
 
 .pesanan-petugas-c-btn-add {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
+  background: var(--primary);
+  color: #fff;
   border: none;
-  padding: 14px 28px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(4, 135, 216, 0.3);
+  gap: 0.5rem;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
 }
 
 .pesanan-petugas-c-btn-add:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(4, 135, 216, 0.4);
-}
-
-.pesanan-petugas-c-btn-add:active {
+  background: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .pesanan-petugas-c-search-bar {
-  position: relative;
   flex: 1;
-  max-width: 400px;
+  max-width: 320px;
+  position: relative;
 }
 
 .pesanan-petugas-c-search-bar input {
   width: 100%;
-  padding: 14px 20px 14px 45px;
-  border: 2px solid #e0e7ef;
-  border-radius: 12px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
+  padding: 0.625rem 1rem 0.625rem 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-main);
+  transition: all 0.2s;
+  background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' /%3E%3C/svg%3E") no-repeat 0.75rem center/1.25rem;
+  box-sizing: border-box;
 }
 
 .pesanan-petugas-c-search-bar input:focus {
   outline: none;
-  border-color: #0487d8;
-  background: white;
-  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  background-color: var(--bg-card);
 }
 
-.pesanan-petugas-c-search-bar::before {
-  content: "🔍";
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 18px;
-  z-index: 1;
-}
-
-/* Table Wrapper */
 .pesanan-petugas-c-table-wrapper {
   overflow-x: auto;
-  border-radius: 15px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 }
 
 .pesanan-petugas-c-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  table-layout: auto;
+  border-collapse: collapse;
+  white-space: nowrap;
+  table-layout: auto !important;
+  min-width: max-content;
 }
 
 .pesanan-petugas-c-table thead {
-  background: linear-gradient(135deg, #17457c 0%, #0487d8 100%);
-  color: white;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--border);
 }
 
-.pesanan-petugas-c-table thead th {
-  padding: 18px 16px;
+.pesanan-petugas-c-table th {
+  padding: 1rem 1.25rem;
   text-align: left;
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 13px;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: none;
-  white-space: nowrap;
-}
-
-/* Set lebar kolom berdasarkan konten */
-.pesanan-petugas-c-table thead th:nth-child(1),
-.pesanan-petugas-c-table tbody td:nth-child(1) {
-  width: 60px;
-  min-width: 60px;
-  text-align: center;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(2),
-.pesanan-petugas-c-table tbody td:nth-child(2) {
-  width: auto;
-  min-width: 150px;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(3),
-.pesanan-petugas-c-table tbody td:nth-child(3) {
-  width: auto;
-  min-width: 150px;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(4),
-.pesanan-petugas-c-table tbody td:nth-child(4) {
-  width: auto;
-  min-width: 120px;
-  text-align: center;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(5),
-.pesanan-petugas-c-table tbody td:nth-child(5) {
-  width: auto;
-  min-width: 140px;
-  text-align: right;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(6),
-.pesanan-petugas-c-table tbody td:nth-child(6) {
-  width: auto;
-  min-width: 180px;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(7),
-.pesanan-petugas-c-table tbody td:nth-child(7) {
-  width: auto;
-  min-width: 160px;
-}
-
-.pesanan-petugas-c-table thead th:nth-child(8),
-.pesanan-petugas-c-table tbody td:nth-child(8) {
-  width: auto;
-  min-width: 150px;
+  letter-spacing: 0.05em;
+  white-space: nowrap !important;
 }
 
 .pesanan-petugas-c-table tbody tr {
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s;
 }
 
 .pesanan-petugas-c-table tbody tr:hover {
-  background: #f8f9ff;
-  transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(4, 135, 216, 0.1);
+  background-color: #f9fafb;
 }
 
 .pesanan-petugas-c-table tbody tr:last-child {
   border-bottom: none;
 }
 
-.pesanan-petugas-c-table tbody td {
-  padding: 18px 16px;
-  font-size: 14px;
-  color: #333;
+.pesanan-petugas-c-table td {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-main);
   vertical-align: middle;
-  word-wrap: break-word;
+  white-space: nowrap !important;
 }
 
-/* Kolom tertentu yang perlu wrap */
-.pesanan-petugas-c-table tbody td:nth-child(2),
-.pesanan-petugas-c-table tbody td:nth-child(3) {
-  white-space: normal;
-}
-
-/* Status Badges */
 .pesanan-petugas-c-status-badge {
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 0.25rem;
 }
 
 .pesanan-petugas-c-status-badge.pending {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  background-color: #fef08a;
+  color: #854d0e;
 }
 
 .pesanan-petugas-c-status-badge.verified {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  background-color: #dcfce7;
+  color: #166534;
 }
 
 .pesanan-petugas-c-status-badge.completed {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  background-color: #e0e7ff;
+  color: #3730a3;
 }
 
-/* Action Buttons */
 .pesanan-petugas-c-btn-detail {
-  background: transparent;
-  color: #0487d8;
-  border: 2px solid #0487d8;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
+  background: white;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
+  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .pesanan-petugas-c-btn-detail:hover {
-  background: #0487d8;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .pesanan-petugas-c-btn-verify {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 13px;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.375rem;
 }
 
 .pesanan-petugas-c-btn-verify:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  background: #059669;
 }
 
-/* Price Display */
 .pesanan-petugas-c-price {
   font-weight: 600;
-  color: #0487d8;
-  font-size: 14px;
+  color: var(--text-main);
 }
 
-/* Pagination */
 .pesanan-petugas-c-pagination {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-top: 30px;
-  padding: 20px;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
 }
 
 .pesanan-petugas-c-pagination button {
+  padding: 0.5rem 1rem;
   background: white;
-  border: 2px solid #e0e7ef;
-  color: #17457c;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-main);
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 100px;
+  transition: all 0.2s;
 }
 
 .pesanan-petugas-c-pagination button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border-color: transparent;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .pesanan-petugas-c-pagination button:disabled {
-  background: #f3f4f6;
-  color: #9ca3af;
-  border-color: #e5e7eb;
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.6;
+  background: #f9fafb;
 }
 
 .pesanan-petugas-c-pagination span {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #17457c;
-  background: #f8f9fa;
-  border-radius: 10px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }
 
-/* Modal */
 .pesanan-petugas-c-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-  animation: fadeIn 0.3s ease;
+  z-index: 50;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
 .pesanan-petugas-c-modal-content {
-  background: white;
-  border-radius: 20px;
-  padding: 35px;
-  max-width: 800px;
-  width: 90%;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.4s ease;
-  position: relative;
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(50px);
     opacity: 0;
+    transform: translateY(20px) scale(0.98);
   }
+
   to {
-    transform: translateY(0);
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
 .pesanan-petugas-c-modal-content h2,
 .pesanan-petugas-c-modal-content h3 {
-  margin: 0 0 25px 0;
-  color: #17457c;
-  font-size: 24px;
-  font-weight: 700;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e0e7ef;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.5rem;
 }
 
 .pesanan-petugas-c-modal-content table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
 }
 
-.pesanan-petugas-c-modal-content table thead {
-  background: linear-gradient(135deg, #17457c 0%, #0487d8 100%);
-  color: white;
-}
-
-.pesanan-petugas-c-modal-content table th,
-.pesanan-petugas-c-modal-content table td {
-  padding: 12px;
+.pesanan-petugas-c-modal-content table thead th {
+  padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #e0e7ef;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-muted);
 }
 
-.pesanan-petugas-c-modal-content table tbody tr:hover {
-  background: #f8f9ff;
+.pesanan-petugas-c-modal-content table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
 }
 
 .pesanan-petugas-c-modal-close {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  background: white;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+  transition: all 0.2s;
+  display: block;
+  margin-left: auto;
 }
 
 .pesanan-petugas-c-modal-close:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
-/* Form Styles */
 .pesanan-petugas-c-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 
 .pesanan-petugas-c-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin-bottom: 1.25rem;
 }
 
 .pesanan-petugas-c-form-group label {
-  font-weight: 600;
-  color: #17457c;
-  font-size: 14px;
-  margin-bottom: 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
 }
 
 .pesanan-petugas-c-form-group input,
 .pesanan-petugas-c-form-group select {
-  padding: 14px 18px;
-  border: 2px solid #e0e7ef;
-  border-radius: 12px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-main);
+  background: var(--bg-card);
+  transition: all 0.2s;
+  box-sizing: border-box;
   font-family: inherit;
 }
 
 .pesanan-petugas-c-form-group input:focus,
 .pesanan-petugas-c-form-group select:focus {
   outline: none;
-  border-color: #0487d8;
-  background: white;
-  box-shadow: 0 0 0 4px rgba(4, 135, 216, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.pesanan-petugas-c-form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
 }
 
 .pesanan-petugas-c-form-group input[readonly],
@@ -542,55 +432,75 @@
   cursor: not-allowed;
 }
 
-/* Detail Item Styles */
 .pesanan-petugas-c-detail-item {
-  background: #f8f9fa;
-  border: 2px solid #e0e7ef;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
-}
-
-.pesanan-petugas-c-detail-item:hover {
-  border-color: #0487d8;
-  background: #f0f7ff;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .pesanan-petugas-c-detail-row {
   display: grid;
   grid-template-columns: 2fr 1fr auto;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: end;
 }
 
 .pesanan-petugas-c-detail-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.25rem;
 }
 
 .pesanan-petugas-c-detail-field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #17457c;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .pesanan-petugas-c-detail-field input,
 .pesanan-petugas-c-detail-field select {
-  padding: 10px 14px;
-  border: 2px solid #e0e7ef;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: white;
+  padding: 0.5rem;
 }
 
-.pesanan-petugas-c-detail-field input:focus,
-.pesanan-petugas-c-detail-field select:focus {
-  outline: none;
-  border-color: #0487d8;
-  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+.pesanan-petugas-c-btn-remove {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: max-content;
+}
+
+.pesanan-petugas-c-btn-remove:hover {
+  background: #fecaca;
+}
+
+.pesanan-petugas-c-btn-add-detail {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px dashed #a5b4fc;
+  padding: 0.625rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.pesanan-petugas-c-btn-add-detail:hover {
+  background: #c7d2fe;
 }
 
 /* Buttons */
@@ -689,112 +599,45 @@
   transform: translateY(-2px);
 }
 
-/* Loading & Empty States */
-.pesanan-petugas-c-loading {
+/* State (Loading, Empty, Error) */
+.pesanan-petugas-c-loading,
+.pesanan-petugas-c-error {
   text-align: center;
-  padding: 60px 20px;
-  color: #6b7280;
-  font-size: 16px;
+  padding: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.pesanan-petugas-c-error {
+  color: #DC2626;
+  background: #FEF2F2;
+  border-radius: var(--radius-md);
+  border: 1px solid #FCA5A5;
 }
 
 .pesanan-petugas-c-empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #6b7280;
+  padding: 4rem 2rem;
 }
 
 .pesanan-petugas-c-empty-state-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  opacity: 0.5;
+  font-size: 3rem;
+  color: var(--border);
+  margin-bottom: 1rem;
 }
 
-.pesanan-petugas-c-error {
-  text-align: center;
-  padding: 20px;
-  background: #fee2e2;
-  color: #dc2626;
-  border-radius: 12px;
-  margin: 20px 0;
+.pesanan-petugas-c-empty-state p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .pesanan-petugas-c-page {
-    padding: 15px;
-  }
-
-  .pesanan-petugas-c-header {
-    padding: 20px;
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .pesanan-petugas-c-header h1 {
-    font-size: 24px;
+    padding: 1rem;
   }
 
   .pesanan-petugas-c-table-container {
-    padding: 15px;
+    padding: 1rem;
   }
-
-  .pesanan-petugas-c-table {
-    font-size: 12px;
-  }
-
-  .pesanan-petugas-c-table thead th,
-  .pesanan-petugas-c-table tbody td {
-    padding: 12px 8px;
-  }
-
-  .pesanan-petugas-c-filter-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pesanan-petugas-c-search-bar {
-    max-width: 100%;
-  }
-
-  .pesanan-petugas-c-modal-content {
-    padding: 20px;
-    width: 95%;
-  }
-
-  .pesanan-petugas-c-detail-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .pesanan-petugas-c-form-actions {
-    flex-direction: column;
-  }
-
-  .pesanan-petugas-c-form-actions button {
-    width: 100%;
-  }
-}
-
-/* Scrollbar Styling */
-.pesanan-petugas-c-table-wrapper::-webkit-scrollbar,
-.pesanan-petugas-c-modal-content::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-track,
-.pesanan-petugas-c-modal-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-thumb,
-.pesanan-petugas-c-modal-content::-webkit-scrollbar-thumb {
-  background: #0487d8;
-  border-radius: 10px;
-}
-
-.pesanan-petugas-c-table-wrapper::-webkit-scrollbar-thumb:hover,
-.pesanan-petugas-c-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #17457c;
 }
