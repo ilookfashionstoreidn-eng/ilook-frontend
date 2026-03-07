@@ -99,8 +99,8 @@ const TukangJasa = () => {
             <div className="hasil-jasa-header-icon">
               <FaClipboardCheck />
             </div>
-            <h1>Data Tukang Jasa</h1>
-          </div>
+            <h1>Data Tukang Jasa </h1>
+          </div>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
     <div className="table-container">
         <div className="filter-header1">
