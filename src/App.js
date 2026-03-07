@@ -23,6 +23,7 @@ import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan"
 
 import HistoryPendapatan from "./components/Jahit/HistoryPendapatan";
 import Aksesoris from "./components/Jahit/Aksesoris";
+import ResetStokAksesoris from "./components/Jahit/ResetStokAksesoris";
 import PembelianAksesoris from "./components/Jahit/PembelianAksesoris";
 import PembelianBAksesoris from "./components/Jahit/PembelianBAksesoris";
 import { StokAksesoris } from "./components/Jahit/StokAksesoris";
@@ -101,6 +102,7 @@ const App = () => {
           <Route path="produk" element={<Produk />} />
           <Route path="historyPendapatan" element={<HistoryPendapatan />} />
           <Route path="aksesoris" element={<Aksesoris />} />
+          <Route path="resetstok" element={<ResetStokAksesoris />} />
           <Route path="pembelianA" element={<PembelianAksesoris />} />
           <Route path="pembelianB" element={<PembelianBAksesoris />} />
           <Route path="stok-aksesoris" element={<StokAksesoris />} />
