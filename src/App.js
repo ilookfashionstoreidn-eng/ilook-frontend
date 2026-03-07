@@ -23,6 +23,7 @@ import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan"
 
 import HistoryPendapatan from "./components/Jahit/HistoryPendapatan";
 import Aksesoris from "./components/Jahit/Aksesoris";
+import ResetStokAksesoris from "./components/Jahit/ResetStokAksesoris";
 import PembelianAksesoris from "./components/Jahit/PembelianAksesoris";
 import PembelianBAksesoris from "./components/Jahit/PembelianBAksesoris";
 import { StokAksesoris } from "./components/Jahit/StokAksesoris";
@@ -70,6 +71,8 @@ import StokGudangProduk from "./components/Bahan/StokGudangProduk";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
+import QCLolos from "./components/QC/QCLolos";
+import QCReject from "./components/QC/QCReject";
 
 const App = () => {
   return (
@@ -99,6 +102,7 @@ const App = () => {
           <Route path="produk" element={<Produk />} />
           <Route path="historyPendapatan" element={<HistoryPendapatan />} />
           <Route path="aksesoris" element={<Aksesoris />} />
+          <Route path="resetstok" element={<ResetStokAksesoris />} />
           <Route path="pembelianA" element={<PembelianAksesoris />} />
           <Route path="pembelianB" element={<PembelianBAksesoris />} />
           <Route path="stok-aksesoris" element={<StokAksesoris />} />
@@ -145,7 +149,9 @@ const App = () => {
           <Route path="sku" element={<Sku />} />
           <Route path="gudang-produk" element={<GudangProduk />} />
           <Route path="stok-gudang-produk" element={<StokGudangProduk />} />
-          <Route path="picking-queue" elem0                       ent={<PickingQueue />} />
+          <Route path="picking-queue" element={<PickingQueue />} />
+          <Route path="qc-lolos" element={<QCLolos />} />
+          <Route path="qc-reject" element={<QCReject />} />
 
         </Route>
       </Routes>
@@ -154,3 +160,5 @@ const App = () => {
 };
 
 export default App;
+
+
