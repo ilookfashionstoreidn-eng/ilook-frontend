@@ -47,6 +47,7 @@ const Layout = () => {
   const [activeMenu, setActiveMenu] = useState("home");
   const [role, setRole] = useState("");
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
+  const [isQcOpen, setIsQcOpen] = useState(false);
 
   const navigate = useNavigate();
   const handleLogout = useCallback(async () => {
@@ -119,6 +120,10 @@ const Layout = () => {
     setIsGudangProdukOpen(!isGudangProdukOpen);
   };
 
+  const toggleQcMenu = () => {
+    setIsQcOpen(!isQcOpen);
+  };
+
   const handleMenuClick = (menu) => {
     setActiveMenu(menu);
     setIsSidebarOpen(false);
@@ -158,6 +163,29 @@ const Layout = () => {
                 </li>
               </>
             )}
+
+            {/* ── Quality Control ── */}
+            <li>
+              <div onClick={toggleQcMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "qc" || activeMenu === "qc-lolos" || activeMenu === "qc-reject") ? "active" : ""}`}>
+                <FaClipboardCheck className="icon" /> Quality Control
+                <span className={`arrow ${isQcOpen ? "open" : ""}`}>{isQcOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isQcOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="/qc-lolos" className={`dropdown-link ${activeMenu === "qc-lolos" ? "active" : ""}`} onClick={() => handleMenuClick("qc-lolos")}>
+                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> QC Lolos
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/qc-reject" className={`dropdown-link ${activeMenu === "qc-reject" ? "active" : ""}`} onClick={() => handleMenuClick("qc-reject")}>
+                      <FaTimes className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#ff6b6b" }} /> QC Reject
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
 
              <li>
                   <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
@@ -518,10 +546,6 @@ const Layout = () => {
                 </ul>
               )}
             </li>
-
-
-
-
             <li>
               <div onClick={togglePackingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "packing" ? "active" : ""}`}>
                 <FaBoxOpen className="icon" /> Packing
