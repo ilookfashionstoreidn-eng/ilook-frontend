@@ -70,6 +70,8 @@ import StokGudangProduk from "./components/Bahan/StokGudangProduk";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
+import QCLolos from "./components/QC/QCLolos";
+import QCReject from "./components/QC/QCReject";
 
 const App = () => {
   return (
@@ -146,6 +148,8 @@ const App = () => {
           <Route path="gudang-produk" element={<GudangProduk />} />
           <Route path="stok-gudang-produk" element={<StokGudangProduk />} />
           <Route path="picking-queue" element={<PickingQueue />} />
+          <Route path="qc-lolos" element={<QCLolos />} />
+          <Route path="qc-reject" element={<QCReject />} />
 
         </Route>
       </Routes>
@@ -154,3 +158,5 @@ const App = () => {
 };
 
 export default App;
+
+
