@@ -193,7 +193,7 @@ const Layout = () => {
 
             {/* ── Sample ── */}
             <li>
-              <div onClick={toggleSampleMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "tukang-sample" || activeMenu === "spk-sample") ? "active" : ""}`}>
+              <div onClick={toggleSampleMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "tukang-sample" || activeMenu === "spk-sample" || activeMenu === "summary-spk-sample") ? "active" : ""}`}>
                 <FaLayerGroup className="icon" /> Management Sample
                 <span className={`arrow ${isSampleOpen ? "open" : ""}`}>{isSampleOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
@@ -207,6 +207,11 @@ const Layout = () => {
                   <li>
                     <Link to="/spk-sample" className={`dropdown-link ${activeMenu === "spk-sample" ? "active" : ""}`} onClick={() => handleMenuClick("spk-sample")}>
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Sample
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/summary-spk-sample" className={`dropdown-link ${activeMenu === "summary-spk-sample" ? "active" : ""}`} onClick={() => handleMenuClick("summary-spk-sample")}>
+                      <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Summary SPK Sample
                     </Link>
                   </li>
                 </ul>
