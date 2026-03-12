@@ -14,6 +14,7 @@ const Seri = () => {
   const [newSeri, setNewSeri] = useState({
     nomor_seri: "",
     sku: "",
+    jumlah: "1",
   });
 
   const fetchSeri = async (page = 1) => {
@@ -61,25 +62,25 @@ const Seri = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Data yang dikirim:", newSeri.nomor_seri);
-
     const formData = new FormData();
     formData.append("nomor_seri", newSeri.nomor_seri);
     formData.append("sku", newSeri.sku);
+    formData.append("jumlah", newSeri.jumlah);
 
     try {
-      const response = await API.post("/seri", formData, {
+      await API.post("/seri", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
       alert("Seri berhasil ditambahkan!");
-      await fetchSeri(currentPage); // Refresh data
+      await fetchSeri(currentPage);
       setShowForm(false);
       setNewSeri({
         nomor_seri: "",
         sku: "",
+        jumlah: "1",
       });
     } catch (error) {
       console.error("Error:", error.response?.data?.message || error.message);
@@ -89,16 +90,14 @@ const Seri = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
     setNewSeri((prev) => ({
       ...prev,
-      [name]: value.toUpperCase(),
+      [name]: name === "jumlah" ? value.replace(/\D/g, "") : value.toUpperCase(),
     }));
   };
 
-  // Filter dan sort data
   const filteredData = seri.filter((item) => (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.sku ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || item.id?.toString().includes(searchTerm));
-
-  // Sort data berdasarkan ID descending (yang baru di atas)
   const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
 
   return (
@@ -180,7 +179,6 @@ const Seri = () => {
         )}
       </div>
 
-      {/* Modal Form */}
       {showForm && (
         <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <div className="seri-modal-content">
@@ -200,6 +198,13 @@ const Seri = () => {
                   <FaBarcode /> SKU:
                 </label>
                 <input type="text" name="sku" value={newSeri.sku} onChange={handleInputChange} placeholder="Masukkan SKU" required />
+              </div>
+
+              <div className="seri-form-group">
+                <label>
+                  <FaHashtag /> Jumlah Print:
+                </label>
+                <input type="number" min="1" name="jumlah" value={newSeri.jumlah} onChange={handleInputChange} placeholder="Masukkan jumlah print" required />
               </div>
 
               <div className="seri-form-actions">

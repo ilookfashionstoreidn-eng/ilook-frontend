@@ -75,6 +75,7 @@ import QCLolos from "./components/QC/QCLolos";
 import QCReject from "./components/QC/QCReject";
 import TukangSample from "./components/Sample/TukangSample";
 import SPKSample from "./components/Sample/SPKSample";
+import SummarySPKSample from "./components/Sample/SummarySPKSample";
 
 const App = () => {
   return (
@@ -156,6 +157,7 @@ const App = () => {
           <Route path="qc-reject" element={<QCReject />} />
           <Route path="tukang-sample" element={<TukangSample />} />
           <Route path="spk-sample" element={<SPKSample />} />
+          <Route path="summary-spk-sample" element={<SummarySPKSample />} />
 
         </Route>
       </Routes>

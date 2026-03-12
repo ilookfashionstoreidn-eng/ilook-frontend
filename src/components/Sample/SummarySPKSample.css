@@ -1,0 +1,120 @@
+.summary-spk-container {
+  padding: 30px 26px 42px;
+  background: radial-gradient(circle at 12% 2%, rgba(11, 75, 156, 0.08), transparent 34%), linear-gradient(180deg, #f7fbff 0%, #edf3f9 100%);
+  color: #0b1b34;
+  min-height: 100vh;
+  font-family: "Inter", "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+
+.summary-spk-header-box {
+  background-color: #ffffff;
+  border: 1px solid #dbe6f3;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0b4b9c;
+  box-shadow: 0 4px 12px rgba(12, 35, 70, 0.05);
+}
+
+.summary-spk-icon {
+  font-size: 24px;
+  color: #0b4b9c;
+}
+
+.summary-spk-table-wrapper {
+  background-color: #ffffff !important;
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(12, 35, 70, 0.08);
+  border: 1px solid #dbe6f3;
+  overflow-x: auto;
+}
+
+.summary-spk-table,
+.summary-spk-table thead,
+.summary-spk-table tbody,
+.summary-spk-table tfoot,
+.summary-spk-table tr {
+  background-color: transparent !important;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.summary-spk-table th {
+  text-align: left;
+  padding: 16px 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5f7697 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #c4d4e8 !important;
+  background-color: #f6faff !important;
+}
+
+.summary-spk-table td {
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #0b1b34 !important;
+  border-bottom: 1px solid #dbe6f3;
+  vertical-align: middle;
+  background-color: #ffffff !important;
+}
+
+.summary-spk-table tbody tr:hover td {
+  background-color: #f4f7fb !important;
+}
+
+.summary-spk-table tbody tr:last-child td {
+  border-bottom: 1px solid #c4d4e8; /* Thicker border before footer */
+}
+
+/* Pill for counts */
+.summary-spk-value-box {
+  background-color: #eaf3ff;
+  color: #1b5fbf;
+  padding: 8px 16px;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 90px;
+  border: 1px solid #bbd8ff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* Red/Green circles */
+.summary-spk-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.urgent-circle {
+  background-color: #b42318;
+  box-shadow: 0 0 8px rgba(180, 35, 24, 0.2);
+}
+
+.normal-circle {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
+/* Footer / Total Row */
+.summary-spk-table tfoot td {
+  background-color: #f6faff !important;
+  font-size: 0.88rem;
+  color: #0b4b9c !important;
+  font-weight: 800;
+  border-bottom: none;
+  padding: 18px 16px;
+}
