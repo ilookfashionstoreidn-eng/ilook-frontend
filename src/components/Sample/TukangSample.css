@@ -1,0 +1,425 @@
+:root {
+  --ts-bg-root: #edf3f9;
+  --ts-bg-surface: #ffffff;
+  --ts-bg-soft: #f4f7fb;
+  --ts-bg-brand: #0b4b9c;
+  --ts-bg-brand-2: #0f2f68;
+
+  --ts-border-soft: #dbe6f3;
+  --ts-border-strong: #c4d4e8;
+
+  --ts-text-main: #0b1b34;
+  --ts-text-subtle: #31435e;
+  --ts-text-muted: #5f7697;
+
+  --ts-success: #0f8b58;
+  --ts-success-soft: #e9fbf3;
+  --ts-success-border: #b7efcf;
+
+  --ts-danger: #b42318;
+  --ts-danger-soft: #fff1f0;
+
+  --ts-radius-sm: 8px;
+  --ts-radius-md: 12px;
+  --ts-radius-lg: 16px;
+
+  --ts-shadow-sm: 0 4px 12px rgba(12, 35, 70, 0.05);
+  --ts-shadow-md: 0 12px 24px rgba(12, 35, 70, 0.08);
+}
+
+.ts-container {
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 30px 26px 42px;
+  background:
+    radial-gradient(circle at 12% 2%, rgba(11, 75, 156, 0.08), transparent 34%),
+    linear-gradient(180deg, #f7fbff 0%, var(--ts-bg-root) 100%);
+  font-family: "Inter", "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  color: var(--ts-text-main);
+}
+
+.ts-header {
+  margin-bottom: 24px;
+}
+
+.ts-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ts-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ts-bg-brand-2);
+}
+
+.ts-subtitle {
+  margin: 4px 0 0;
+  color: var(--ts-text-subtle);
+  font-size: 0.95rem;
+}
+
+.ts-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ts-btn-primary {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: var(--ts-radius-sm);
+  background: linear-gradient(135deg, var(--ts-bg-brand) 0%, var(--ts-bg-brand-2) 100%);
+  color: #fff;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: var(--ts-shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.ts-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(11, 75, 156, 0.2);
+}
+
+.ts-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  background: var(--ts-bg-surface);
+  padding: 12px 16px;
+  border-radius: var(--ts-radius-md);
+  border: 1px solid var(--ts-border-soft);
+  box-shadow: var(--ts-shadow-sm);
+}
+
+.ts-search-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.ts-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ts-text-muted);
+}
+
+.ts-search-input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--ts-border-strong);
+  border-radius: var(--ts-radius-sm);
+  padding: 0 16px 0 36px;
+  font-size: 0.88rem;
+  transition: all 0.2s;
+}
+
+.ts-search-input:focus {
+  outline: none;
+  border-color: #3a79d1;
+  box-shadow: 0 0 0 3px rgba(58, 121, 209, 0.15);
+}
+
+.ts-table-section {
+  background: var(--ts-bg-surface);
+  border-radius: var(--ts-radius-lg);
+  border: 1px solid var(--ts-border-soft);
+  box-shadow: var(--ts-shadow-md);
+  overflow: hidden;
+}
+
+.ts-table-container {
+  overflow-x: auto;
+}
+
+.ts-data-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.ts-data-table th {
+  background: #f6faff;
+  border-bottom: 1px solid var(--ts-border-strong);
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--ts-text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.ts-data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ts-border-soft);
+  vertical-align: middle;
+  color: var(--ts-text-main);
+}
+
+.ts-data-table tbody tr:hover {
+  background: var(--ts-bg-soft);
+}
+
+.ts-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ts-table-id {
+  color: var(--ts-text-muted);
+  font-family: monospace;
+  font-size: 0.82rem;
+}
+
+.ts-table-name {
+  font-weight: 600;
+  color: var(--ts-bg-brand-2);
+}
+
+/* Actions */
+.ts-action-group {
+  display: flex;
+  gap: 8px;
+}
+
+.ts-btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ts-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ts-btn-edit {
+  background: #fff;
+  color: #0c57c4;
+  border-color: #c0dafd;
+}
+.ts-btn-edit:hover {
+  background: #ecf5ff;
+}
+
+.ts-btn-delete {
+  background: #fff;
+  color: var(--ts-danger);
+  border-color: #f0bbb7;
+}
+.ts-btn-delete:hover {
+  background: var(--ts-danger-soft);
+}
+
+/* Empty State */
+.ts-empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--ts-text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ts-empty-state h3 {
+  margin: 0;
+  color: var(--ts-text-main);
+  font-size: 1.1rem;
+}
+.ts-empty-state p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+}
+
+/* Modal styling matching ERP */
+.ts-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(11, 27, 52, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ts-modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 460px;
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-md);
+  padding: 24px;
+  animation: tsModalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tsModalIn {
+  from { transform: translateY(20px) scale(0.96); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.ts-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.ts-modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--ts-text-main);
+}
+
+.ts-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--ts-text-muted);
+  cursor: pointer;
+}
+.ts-modal-close:hover {
+  color: var(--ts-danger);
+}
+
+.ts-form-group {
+  margin-bottom: 16px;
+}
+
+.ts-form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ts-text-subtle);
+}
+
+.ts-form-input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--ts-border-strong);
+  border-radius: var(--ts-radius-sm);
+  padding: 0 14px;
+  font-size: 0.9rem;
+  color: var(--ts-text-main);
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.ts-form-input:focus {
+  outline: none;
+  border-color: #3a79d1;
+  box-shadow: 0 0 0 3px rgba(58, 121, 209, 0.15);
+}
+
+.ts-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.ts-btn-secondary {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--ts-radius-sm);
+  background: #fff;
+  color: var(--ts-text-main);
+  border: 1px solid var(--ts-border-strong);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ts-btn-secondary:hover {
+  background: var(--ts-bg-soft);
+}
+
+/* Delete Modal Specific */
+.ts-modal-delete {
+  max-width: 400px;
+}
+
+.ts-modal-header.borderless {
+  margin-bottom: 0px;
+  justify-content: center;
+  position: relative;
+}
+
+.ts-modal-header.borderless .ts-modal-close {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.ts-delete-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ts-danger-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 4px solid #fff8f8;
+}
+
+.ts-delete-icon-large {
+  font-size: 1.6rem;
+  color: var(--ts-danger);
+}
+
+.ts-modal-body.center-text {
+  text-align: center;
+}
+
+.ts-delete-desc {
+  color: var(--ts-text-subtle);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+.ts-form-actions.center-actions {
+  justify-content: center;
+  margin-top: 28px;
+  width: 100%;
+}
+
+.ts-form-actions.center-actions button {
+  flex: 1;
+}
+
+.ts-btn-danger {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--ts-radius-sm);
+  background: var(--ts-danger);
+  color: #fff;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(180, 35, 24, 0.15);
+}
+
+.ts-btn-danger:hover {
+  background: #9d1c12;
+  transform: translateY(-1px);
+}

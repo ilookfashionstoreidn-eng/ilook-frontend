@@ -73,6 +73,8 @@ import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
 import QCLolos from "./components/QC/QCLolos";
 import QCReject from "./components/QC/QCReject";
+import TukangSample from "./components/Sample/TukangSample";
+import SPKSample from "./components/Sample/SPKSample";
 
 const App = () => {
   return (
@@ -152,6 +154,8 @@ const App = () => {
           <Route path="picking-queue" element={<PickingQueue />} />
           <Route path="qc-lolos" element={<QCLolos />} />
           <Route path="qc-reject" element={<QCReject />} />
+          <Route path="tukang-sample" element={<TukangSample />} />
+          <Route path="spk-sample" element={<SPKSample />} />
 
         </Route>
       </Routes>
@@ -160,5 +164,6 @@ const App = () => {
 };
 
 export default App;
+
 
 
