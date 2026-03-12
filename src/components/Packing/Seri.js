@@ -8,6 +8,8 @@ const Seri = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -74,8 +76,9 @@ const Seri = () => {
         },
       });
 
-      alert("Seri berhasil ditambahkan!");
       await fetchSeri(currentPage);
+      setSuccessMessage("Data seri berhasil ditambahkan.");
+      setShowSuccessModal(true);
       setShowForm(false);
       setNewSeri({
         nomor_seri: "",
@@ -125,7 +128,7 @@ const Seri = () => {
           <div className="seri-error">{error}</div>
         ) : sortedData.length === 0 ? (
           <div className="seri-empty-state">
-            <div className="seri-empty-state-icon">📦</div>
+            <div className="seri-empty-state-icon">-</div>
             <p>Tidak ada data seri</p>
           </div>
         ) : (
@@ -167,17 +170,33 @@ const Seri = () => {
         {sortedData.length > 0 && (
           <div className="seri-pagination">
             <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1)}>
-              ← Prev
+              Prev
             </button>
             <span>
               Halaman {currentPage} / {lastPage}
             </span>
             <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1)}>
-              Next →
+              Next
             </button>
           </div>
         )}
       </div>
+
+      {showSuccessModal && (
+        <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowSuccessModal(false)}>
+          <div className="seri-modal-content">
+            <h2>
+              <FaCheckCircle /> Berhasil
+            </h2>
+            <p>{successMessage}</p>
+            <div className="seri-form-actions">
+              <button type="button" className="seri-btn-submit" onClick={() => setShowSuccessModal(false)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
