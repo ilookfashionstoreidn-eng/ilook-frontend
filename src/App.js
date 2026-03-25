@@ -76,6 +76,7 @@ import QCReject from "./components/QC/QCReject";
 import TukangSample from "./components/Sample/TukangSample";
 import SPKSample from "./components/Sample/SPKSample";
 import SummarySPKSample from "./components/Sample/SummarySPKSample";
+import Blank from "./components/Blank/Blank";
 
 const App = () => {
   return (
@@ -111,7 +112,7 @@ const App = () => {
           <Route path="stok-aksesoris" element={<StokAksesoris />} />
           <Route path="petugas-c" element={<PesananPetugasC />} />
           <Route path="petugas-d" element={<PesananPetugasD />} />
-             n    <Route path="dashboardCutting" element={<DashboardCutting />} />
+          <Route path="dashboardCutting" element={<DashboardCutting />} />
           <Route path="tukangCutting" element={<TukangCutting />} />
           <Route path="tukangPola" element={<TukangPola />} />
           <Route path="spkcutting" element={<SpkCutting />} />
@@ -158,6 +159,7 @@ const App = () => {
           <Route path="tukang-sample" element={<TukangSample />} />
           <Route path="spk-sample" element={<SPKSample />} />
           <Route path="summary-spk-sample" element={<SummarySPKSample />} />
+          <Route path="blank" element={<Blank />} />
 
         </Route>
       </Routes>
