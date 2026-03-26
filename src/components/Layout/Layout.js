@@ -150,7 +150,12 @@ const Layout = () => {
       {/* Sidebar */}
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
-          <h3>ILOOK FASHION</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "24px", height: "24px", background: "#4f46e5", borderRadius: "6px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff" }}>
+              <FaLayerGroup size={12} />
+            </div>
+            <h3>ILOOK SYSTEM</h3>
+          </div>
         </div>
         <nav className="sidebar-menu">
           <ul>
