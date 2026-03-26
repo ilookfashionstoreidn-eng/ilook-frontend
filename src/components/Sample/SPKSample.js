@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./SPKSample.css";
 import API from "../../api";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiSearch,
   FiPlus,
@@ -19,6 +20,7 @@ import {
   FiUserPlus,
   FiUser,
   FiPhone,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -361,48 +363,67 @@ const SPKSample = () => {
   };
 
   return (
-    <div className="spk-sample-container">
+    <div className="ts-page spk-sample-page">
       <ToastContainer position="top-right" autoClose={2600} hideProgressBar theme="light" />
 
-      <div className="spk-sample-header">
-        <div>
-          <h1 className="spk-sample-title">Management SPK Sample</h1>
-          <p className="spk-sample-subtitle">Daftar SPK Sample dengan detail dan dokumentasi foto.</p>
-        </div>
-      </div>
+      <div className="ts-shell">
+        <section className="ts-content">
+          <header className="ts-topbar">
+            <div className="ts-title-group">
+              <div className="ts-brand-icon">
+                <FiLayers size={24} color="#fff" />
+              </div>
+              <div className="ts-brand-text">
+                <h1>SPK Sample</h1>
+                <p>Manajemen dan pencatatan document request SPK Sample</p>
+              </div>
+            </div>
 
-      <div className="spk-sample-toolbar">
-        <div className="spk-sample-search-wrap">
-          <FiSearch className="spk-sample-search-icon" />
-          <input
-            type="text"
-            className="spk-sample-search-input"
-            placeholder="Cari nama, kategori, status, atau status proses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="spk-sample-toolbar-actions">
-          <button className="spk-sample-btn-primary" onClick={openAddModal}>
-            <FiPlus /> Tambah SPK Sample
-          </button>
-        </div>
-      </div>
+            <div className="ts-actions">
+              <div className="ts-search-bar">
+                <FiSearch className="ts-search-icon-inside" />
+                <input
+                  type="text"
+                  placeholder="Cari SPK sample..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+          </header>
 
-      <div className="spk-sample-table-wrap">
-        <table className="spk-sample-table">
+          <main className="ts-main">
+            <motion.div 
+               className="ts-table-card"
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, type: "spring" }}
+            >
+              <div className="ts-table-header">
+                <div>
+                  <h3>Daftar SPK Sample</h3>
+                  <p>Total SPK terdaftar: {filteredData.length}</p>
+                </div>
+                <button className="ts-btn-primary" onClick={openAddModal}>
+                  <FiPlus size={18} /> Tambah SPK Sample
+                </button>
+              </div>
+
+      <div className="ts-table-container">
+        <div className="spk-sample-scroll-x">
+        <table className="ts-modern-table">
           <thead>
             <tr>
-              <th style={{ width: "60px" }}>NO</th>
-              <th>Nama Sample</th>
-              <th>Foto</th>
-              <th>Urgensi</th>
-              <th>Status Proses</th>
-              <th>Tahap Proses</th>
-              <th>Lama Pengerjaan</th>
-              <th>tgl SPK Turun</th>
-              <th>Nama tukang sample</th>
-              <th style={{ textAlign: "right", width: "140px" }}>Aksi</th>
+              <th style={{ minWidth: "60px", textAlign: "center" }}>No</th>
+              <th style={{ minWidth: "200px", paddingLeft: "24px" }}>Nama Sample</th>
+              <th style={{ minWidth: "100px" }}>Foto</th>
+              <th style={{ minWidth: "120px" }}>Urgensi</th>
+              <th style={{ minWidth: "220px" }}>Status Proses</th>
+              <th style={{ minWidth: "200px" }}>Tahap Proses</th>
+              <th style={{ minWidth: "180px" }}>Lama Pengerjaan</th>
+              <th style={{ minWidth: "160px" }}>Tgl SPK Turun</th>
+              <th style={{ minWidth: "240px" }}>Nama Tukang Sample</th>
+              <th style={{ minWidth: "180px", textAlign: "right", paddingRight: "24px" }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -416,9 +437,16 @@ const SPKSample = () => {
               </tr>
             ) : filteredData.length > 0 ? (
               filteredData.map((item, index) => (
-                <tr key={item.id}>
-                  <td><span className="spk-sample-muted">{index + 1}</span></td>
-                  <td><strong>{item.nama_sample || "-"}</strong></td>
+                <motion.tr 
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ delay: index * 0.05 }}
+                  layout
+                >
+                  <td className="text-muted font-mono" style={{ textAlign: "center" }}>{index + 1}</td>
+                  <td className="font-semibold text-accent" style={{ paddingLeft: "24px" }}>{item.nama_sample || "-"}</td>
                   <td>
                     {item.foto ? (
                       <img className="spk-sample-photo" src={getFotoUrl(item.foto)} alt={item.nama_sample || "Foto sample"} />
@@ -478,23 +506,23 @@ const SPKSample = () => {
                       <span className="spk-sample-muted spk-sample-unassigned">Belum ditentukan</span>
                     )}
                   </td>
-                  <td style={{ textAlign: "right" }}>
-                    <div className="spk-sample-action-group">
-                      <button className="spk-sample-btn-icon spk-sample-btn-view" onClick={() => openDetailModal(item)} title="Detail">
+                  <td style={{ textAlign: "right", paddingRight: "24px" }}>
+                    <div className="actions-cell">
+                      <button className="action-btn view" onClick={() => openDetailModal(item)} title="Detail">
                         <FiEye />
                       </button>
-                      <button className="spk-sample-btn-icon spk-sample-btn-assign" onClick={() => openAssignModal(item)} title="Tetapkan Tukang Pola">
+                      <button className="action-btn assign" onClick={() => openAssignModal(item)} title="Tetapkan Tukang Pola">
                         <FiUserPlus />
                       </button>
-                      <button className="spk-sample-btn-icon spk-sample-btn-edit" onClick={() => openEditModal(item)} title="Edit">
+                      <button className="action-btn edit" onClick={() => openEditModal(item)} title="Edit">
                         <FiEdit2 />
                       </button>
-                      <button className="spk-sample-btn-icon spk-sample-btn-delete" onClick={() => openDeleteModal(item)} title="Hapus">
+                      <button className="action-btn delete" onClick={() => openDeleteModal(item)} title="Hapus">
                         <FiTrash2 />
                       </button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))
             ) : (
               <tr>
@@ -509,17 +537,30 @@ const SPKSample = () => {
             )}
           </tbody>
         </table>
+        </div>
+      </div>
+          </motion.div>
+          </main>
+        </section>
       </div>
 
+      <AnimatePresence>
       {showForm && (
-        <div className="spk-sample-modal-overlay">
-          <div className="spk-sample-modal-content spk-sample-modal-pro">
-            <div className="spk-sample-modal-topbar">
+        <div className="ts-modal-overlay">
+          <motion.div className="ts-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeFormModal}/>
+          <motion.div 
+            className="ts-modal-box spk-sample-modal spk-sample-modal-form" style={{ maxWidth: "980px" }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <div className="ts-modal-top">
               <div>
                 <h2>{isEdit ? "Edit SPK Sample" : "Tambah SPK Sample"}</h2>
                 <p>Isi informasi utama di sebelah kiri dan unggah foto referensi di panel kanan.</p>
               </div>
-              <button className="spk-sample-modal-close" onClick={closeFormModal}>
+              <button className="close-btn" onClick={closeFormModal}>
                 <FiX />
               </button>
             </div>
@@ -616,51 +657,69 @@ const SPKSample = () => {
                 </div>
               </aside>
 
-              <div className="spk-sample-form-actions spk-sample-form-actions-pro">
-                <button type="button" className="spk-sample-btn-secondary" onClick={closeFormModal}>
+              <div className="spk-sample-form-actions-pro">
+                <button type="button" className="ts-btn-secondary" onClick={closeFormModal}>
                   Batal
                 </button>
-                <button type="submit" className="spk-sample-btn-primary" disabled={submitting}>
-                  {submitting ? "Menyimpan..." : "Simpan"}
+                <button type="submit" className="ts-btn-primary" disabled={submitting}>
+                  <FiCheckCircle size={18}/> {submitting ? "Menyimpan..." : "Simpan Data"}
                 </button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {showDeleteModal && selectedItem && (
-        <div className="spk-sample-modal-overlay">
-          <div className="spk-sample-modal-delete">
-            <div className="spk-sample-modal-delete-header">
-              <div className="spks-delete-icon-wrapper">
-                <FiTrash2 className="spks-delete-icon-large" />
+        <div className="ts-modal-overlay">
+          <motion.div className="ts-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDeleteModal}/>
+          <motion.div 
+            className="ts-modal-box small-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <div className="ts-modal-top borderless center-header">
+              <div className="danger-icon-wrap">
+                <FiTrash2 size={28} />
               </div>
-              <button className="spk-sample-modal-close" onClick={closeDeleteModal}><FiX /></button>
+              <button className="close-btn absolute-right" onClick={closeDeleteModal}><FiX /></button>
             </div>
-            <div className="spks-modal-body-center">
+            <div className="ts-modal-form center-text pt-0">
               <h2>Hapus SPK Sample?</h2>
-              <p className="spks-delete-desc">
-                Yakin ingin menghapus data <strong>{selectedItem.nama_sample}</strong>? Tindakan ini tidak dapat dibatalkan.
+              <p className="delete-desc">
+                Yakin ingin menghapus <strong>{selectedItem.nama_sample}</strong>? Tindakan ini tidak dapat dibatalkan.
               </p>
             </div>
-            <div className="spks-form-actions-center">
-              <button className="spk-sample-btn-secondary" onClick={closeDeleteModal}>Batal</button>
-              <button className="spk-sample-btn-danger" onClick={handleDelete}>Ya, Hapus Data</button>
+            <div className="ts-modal-bottom evenly">
+              <button className="ts-btn-secondary flex-1" onClick={closeDeleteModal}>Batal</button>
+              <button className="ts-btn-danger flex-1" onClick={handleDelete}>Ya, Hapus</button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {showDetailModal && selectedItem && (
-        <div className="spk-sample-modal-overlay">
-          <div className="spk-sample-modal-content spk-sample-modal-pro">
-            <div className="spk-sample-modal-topbar">
+        <div className="ts-modal-overlay">
+          <motion.div className="ts-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDetailModal}/>
+          <motion.div 
+            className="ts-modal-box spk-sample-modal spk-sample-modal-detail" style={{ maxWidth: "980px" }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <div className="ts-modal-top">
               <div>
                 <h2>Detail SPK Sample</h2>
                 <p>Informasi detail dan dokumentasi foto referensi.</p>
               </div>
-              <button className="spk-sample-modal-close" onClick={closeDetailModal}><FiX /></button>
+              <button className="close-btn" onClick={closeDetailModal}><FiX /></button>
             </div>
 
             <div className="spk-sample-detail-layout">
@@ -738,21 +797,31 @@ const SPKSample = () => {
               </div>
             </div>
 
-            <div className="spk-sample-form-actions spk-sample-form-actions-pro">
-              <button className="spk-sample-btn-primary spk-sample-btn-block" onClick={closeDetailModal}>Tutup Halaman Detail</button>
+            <div className="spk-sample-form-actions-pro">
+              <button className="ts-btn-primary flex-1 spk-sample-full-btn" onClick={closeDetailModal}>Tutup Halaman Detail</button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
+
+      <AnimatePresence>
       {showAssignModal && selectedItem && (
-        <div className="spk-sample-modal-overlay">
-          <div className="spk-sample-modal-assign">
-            <div className="spk-sample-modal-topbar">
+        <div className="ts-modal-overlay">
+          <motion.div className="ts-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeAssignModal}/>
+          <motion.div 
+            className="ts-modal-box spk-sample-modal spk-sample-modal-assign" style={{ maxWidth: "520px" }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <div className="ts-modal-top">
               <div>
                 <h2>Tetapkan Tukang Pola</h2>
                 <p>Pilih tukang pola untuk <strong>{selectedItem.nama_sample}</strong></p>
               </div>
-              <button className="spk-sample-modal-close" onClick={closeAssignModal}><FiX /></button>
+              <button className="close-btn" onClick={closeAssignModal}><FiX /></button>
             </div>
 
             <div className="spk-sample-assign-body">
@@ -804,15 +873,16 @@ const SPKSample = () => {
               </div>
             </div>
 
-            <div className="spk-sample-form-actions spk-sample-assign-footer">
-              <button className="spk-sample-btn-secondary" onClick={closeAssignModal}>Batal</button>
-              <button className="spk-sample-btn-primary" onClick={handleAssignTukang} disabled={assigning}>
-                {assigning ? "Menyimpan..." : "Tetapkan Tukang"}
+            <div className="spk-sample-form-actions-pro">
+              <button className="ts-btn-secondary" onClick={closeAssignModal}>Batal</button>
+              <button className="ts-btn-primary" onClick={handleAssignTukang} disabled={assigning}>
+                <FiCheckCircle size={18}/> {assigning ? "Menyimpan..." : "Tetapkan"}
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
     </div>
   );
 };

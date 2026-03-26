@@ -77,6 +77,7 @@ import TukangSample from "./components/Sample/TukangSample";
 import SPKSample from "./components/Sample/SPKSample";
 import SummarySPKSample from "./components/Sample/SummarySPKSample";
 import Blank from "./components/Blank/Blank";
+import Blank2 from "./components/Blank2/Blank2";
 
 const App = () => {
   return (
@@ -160,6 +161,7 @@ const App = () => {
           <Route path="spk-sample" element={<SPKSample />} />
           <Route path="summary-spk-sample" element={<SummarySPKSample />} />
           <Route path="blank" element={<Blank />} />
+          <Route path="blank2" element={<Blank2 />} />
 
         </Route>
       </Routes>

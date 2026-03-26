@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import {
   FiActivity,
   FiAlertTriangle,
+  FiBell,
   FiCalendar,
   FiCheckCircle,
   FiClock,
   FiPackage,
   FiScissors,
+  FiSearch,
   FiTruck,
   FiTrendingUp,
   FiUsers,
@@ -132,10 +134,60 @@ const LaporanDailyProduksi = () => {
     </div>
   );
 
-  if (loading) return renderSkeleton();
+  const renderTopbar = () => (
+    <header className="ldp-topbar">
+      <div className="ldp-title-group">
+        <div className="ldp-brand-icon">
+          <FiActivity />
+        </div>
+        <div className="ldp-brand-text">
+          <h1 className="ldp-title">Laporan Daily Produksi</h1>
+          <p className="ldp-subtitle">Ringkasan kerja cutting dan CMT per tanggal produksi.</p>
+        </div>
+      </div>
+      <div className="ldp-topbar-actions">
+        <div className="ldp-sync-pill">
+          <FiCheckCircle />
+          Update Otomatis
+        </div>
+        <div className="ldp-date-control">
+          <FiCalendar />
+          <input
+            type="date"
+            className="ldp-date-input"
+            value={tanggal}
+            onChange={(e) => setTanggal(e.target.value)}
+          />
+        </div>
+        <button className="ldp-icon-btn" type="button" aria-label="Search">
+          <FiSearch />
+        </button>
+        <button className="ldp-icon-btn" type="button" aria-label="Notification">
+          <FiBell />
+          <span className="ldp-icon-badge">3</span>
+        </button>
+        <div className="ldp-avatar" aria-hidden="true" />
+      </div>
+    </header>
+  );
+
+  const wrapLayout = (content) => (
+    <div className="ldp-page">
+      <div className="ldp-shell">
+        <section className="ldp-content">
+          {renderTopbar()}
+          <main className="ldp-main">
+            {content}
+          </main>
+        </section>
+      </div>
+    </div>
+  );
+
+  if (loading) return wrapLayout(renderSkeleton());
 
   if (error) {
-    return (
+    return wrapLayout(
       <div className="ldp-container">
         <div className="ldp-feedback-card">
           <div className="ldp-feedback-icon"><FiAlertTriangle /></div>
@@ -149,24 +201,8 @@ const LaporanDailyProduksi = () => {
     );
   }
 
-  return (
+  return wrapLayout(
     <div className="ldp-container">
-      <div className="ldp-header">
-        <div>
-          <h1 className="ldp-title">Laporan Daily Produksi</h1>
-          <p className="ldp-subtitle">Ringkasan kerja cutting dan CMT per tanggal produksi.</p>
-        </div>
-        <div className="ldp-date-control">
-          <FiCalendar />
-          <input
-            type="date"
-            className="ldp-date-input"
-            value={tanggal}
-            onChange={(e) => setTanggal(e.target.value)}
-          />
-        </div>
-      </div>
-
       {!laporanData ? (
         <div className="ldp-feedback-card">
           <div className="ldp-feedback-icon"><FiActivity /></div>
