@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import API from "../../api";
 import "./SummarySPKSample.css";
-import { FiMonitor } from "react-icons/fi";
+import { FiMonitor, FiLayers, FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
 
 const kategoriList = [
   "SET CELANA PANJANG",
@@ -89,11 +89,68 @@ const SummarySPKSample = () => {
     return { totalPola, totalCutting, totalJahit, totalPreLaunch, totalLaunch };
   }, [getStats]);
 
+  const totalKategoriAktif = useMemo(
+    () => getStats.filter((row) => row.polaCount + row.cuttingCount + row.jahitCount + row.preLaunchCount + row.launchCount > 0).length,
+    [getStats]
+  );
+
+  const totalUrgentKategori = useMemo(
+    () => getStats.filter((row) => row.urgentStatus === "urgent").length,
+    [getStats]
+  );
+
+  const totalNormalKategori = useMemo(
+    () => getStats.filter((row) => row.urgentStatus === "normal").length,
+    [getStats]
+  );
+
   return (
-    <div className="summary-spk-container">
+    <div className="summary-spk-page">
+      <div className="summary-spk-shell">
+        <section className="summary-spk-content">
+      <div className="summary-spk-container">
+      <header className="summary-spk-topbar">
+        <div className="summary-spk-title-group">
+          <div className="summary-spk-brand-icon"><FiMonitor /></div>
+          <div>
+            <h1>Summary SPK Sample</h1>
+            <p>Ringkasan kategori sample berdasarkan proses pola, cutting, jahit, pre launching, dan launching.</p>
+          </div>
+        </div>
+      </header>
+
+      <section className="summary-spk-kpi-grid">
+        <article className="summary-spk-kpi-card">
+          <div className="summary-spk-kpi-head">
+            <span className="summary-spk-kpi-icon"><FiLayers /></span>
+            <span>Kategori Aktif</span>
+          </div>
+          <strong>{totalKategoriAktif}</strong>
+          <small>dari {kategoriList.length} kategori</small>
+        </article>
+
+        <article className="summary-spk-kpi-card">
+          <div className="summary-spk-kpi-head">
+            <span className="summary-spk-kpi-icon"><FiAlertTriangle /></span>
+            <span>Kategori Urgent</span>
+          </div>
+          <strong>{totalUrgentKategori}</strong>
+          <small>butuh prioritas</small>
+        </article>
+
+        <article className="summary-spk-kpi-card">
+          <div className="summary-spk-kpi-head">
+            <span className="summary-spk-kpi-icon"><FiCheckCircle /></span>
+            <span>Kategori Normal</span>
+          </div>
+          <strong>{totalNormalKategori}</strong>
+          <small>status stabil</small>
+        </article>
+      </section>
+
       <div className="summary-spk-header-box">
         <FiMonitor className="summary-spk-icon" />
-        <span>Daftar Jumlah Kategori Sample On Process (Pola, Cutting & Jahit), Pre Launching dan Launching !</span>
+        <span>Daftar jumlah kategori sample on process (pola, cutting, jahit), pre launching, dan launching.</span>
       </div>
 
       <div className="summary-spk-table-wrapper">
@@ -148,6 +205,9 @@ const SummarySPKSample = () => {
             </tr>
           </tfoot>
         </table>
+      </div>
+    </div>
+        </section>
       </div>
     </div>
   );
