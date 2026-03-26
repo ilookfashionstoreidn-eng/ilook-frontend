@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react"
-import "../Jahit/Penjahit.css";
+import React, { useEffect, useRef, useState } from "react";
+import "./Logs.css";
 import API from "../../api"; 
-import {FaInfoCircle,FaFileExcel,FaQrcode, FaCalendarAlt } from 'react-icons/fa';
+import { FaFileExcel, FaQrcode } from "react-icons/fa";
+import { FiCheckCircle, FiLayers, FiSearch, FiUser } from "react-icons/fi";
 import dayjs from "dayjs";
 
 const Logs = () => {
@@ -21,6 +22,7 @@ const Logs = () => {
   const [kasirList, setKasirList] = useState([]);
   const [performedBy, setPerformedBy] = useState("");
   const [kasirSummary, setKasirSummary] = useState([]);
+  const tableScrollRef = useRef(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -153,160 +155,142 @@ useEffect(() => {
     .catch(err => console.log(err));
 }, []);
 
-const inputDate = "2025-11-26T10:36:08.000000Z";
-const date = new Date(inputDate);
-
-const formatted =
-  date.getDate().toString().padStart(2, "0") + "-" +
-  (date.getMonth() + 1).toString().padStart(2, "0") + "-" +
-  date.getFullYear();
-
-console.log(formatted); // 26-11-2025
+  const totalKasirAktif = kasirSummary.length;
+  const scrollTable = (direction) => {
+    if (!tableScrollRef.current) return;
+    const amount = direction === "left" ? -320 : 320;
+    tableScrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+  };
 
  return (
-   <div>
-     <div className="seri-page">
-      <div className="seri-header">
-        <div className="seri-header-icon">
-          <FaQrcode />
-        </div>
-        <h1>Logs Packing</h1>
-    </div>
-
-     <div className="table-container">
- 
-         <div className="logs-container">
-      
-
-      <div className="filter-container">
-        <div className="filter-group">
-          
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <label>
-            -
-          </label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-         <input
-              type="text"
-              placeholder="Cari Tracking Number..."
-              value={tracking}
-              onChange={(e) => setTracking(e.target.value)}
-              className="input-tracking"
-          />
-
-          
-          {/* ✅ Dropdown status */}
-          <select 
-          value={status} 
-          onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Semua Status</option>
-            <option value="READY_TO_SHIP">READY_TO_SHIP</option>
-            <option value="PAID">PAID</option>
-            <option value="SHIPPING">SHIPPING</option>
-            <option value="DELIVERED">DELIVERED</option>
-            <option value="CANCELLED">CANCELLED</option>
-          </select>
-
-
-          <select 
-            value={performedBy}
-            onChange={(e) => setPerformedBy(e.target.value)}
-          >
-            <option value=""> Semua Kasir </option>
-            {kasirList.map(u => (
-              <option key={u.name} value={u.name}>{u.name}</option>
-            ))}
-          </select>
-
-      
-          <button
-                onClick={handleExport}
-                className="btn-export"
-                disabled={exporting}
-              >
-              <FaFileExcel style={{ marginRight: 6 }} />
-              {exporting ? "Mengunduh..." : "Export Excel"}
-          </button>
-
-      
-
-
-          <button onClick={handleFilter} className="btn-summary">
-            Tampilkan
-          </button>
-        </div>
-        
-      </div>
-
-  
-      <div className="summary-cards">
-        <div className="card-summary card-blue">
-          <h3>Total Pesanan</h3>
-          <p>{loadingSummary ? "..." : summary?.total_order || 0}</p>
-        </div>
-
-        <div className="card-summary card-green">
-          <h3>Total Produk</h3>
-          <p>{loadingSummary ? "..." : summary?.total_items || 0}</p>
-        </div>
-
-        <div className="card-summary card-orange">
-          <h3>Total Pendapatan Kotor</h3>
-          <p>
-            {loadingSummary
-              ? "..."
-              : `Rp ${parseFloat(summary?.total_amount || 0).toLocaleString(
-                  "id-ID"
-                )}`}
-          </p>
-        </div>
-
-       <div className="card-summary card-white">
-          {kasirSummary.length === 0 ? (
-            <div className="kasir-empty">
-              Tidak ada data kasir
+   <div className="pklog-page">
+    <div className="pklog-shell">
+      <section className="pklog-content">
+        <header className="pklog-topbar">
+          <div className="pklog-title-group">
+            <div className="pklog-brand-icon"><FaQrcode /></div>
+            <div>
+              <h1>Logs Packing</h1>
+              <p>Audit log proses packing, performa kasir, dan monitoring status order.</p>
             </div>
-          ) : (
-            <table className="kasir-table">
-              <thead>
-                <tr>
-                  <th>Kasir</th>
-                  <th>Pesanan</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kasirSummary.map((item) => (
-                  <tr key={item.performed_by}>
-                    <td>{item.performed_by}</td>
-                    <td>{item.total_orders}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+          </div>
+        </header>
 
+        <main className="pklog-main">
+          <section className="pklog-card pklog-filter-card">
+            <div className="pklog-filter-row">
+              <div className="pklog-filter-dates">
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <span className="pklog-dash">-</span>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
 
-      </div>
-      </div>
+              <div className="pklog-filter-search">
+                <input
+                  type="text"
+                  placeholder="Cari Tracking Number..."
+                  value={tracking}
+                  onChange={(e) => setTracking(e.target.value)}
+                  className="pklog-input-tracking"
+                />
+              </div>
 
+              <div className="pklog-filter-selects">
+                <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="">Semua Status</option>
+                  <option value="READY_TO_SHIP">READY_TO_SHIP</option>
+                  <option value="PAID">PAID</option>
+                  <option value="SHIPPING">SHIPPING</option>
+                  <option value="DELIVERED">DELIVERED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
 
-      <div className="summary-cards">
-       
-      </div>
+                <select value={performedBy} onChange={(e) => setPerformedBy(e.target.value)}>
+                  <option value="">Semua Kasir</option>
+                  {kasirList.map((u) => (
+                    <option key={u.name} value={u.name}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
 
+              <div className="pklog-filter-actions">
+                <button onClick={handleExport} className="pklog-btn pklog-btn-export" disabled={exporting}>
+                  <FaFileExcel />
+                  {exporting ? "Mengunduh..." : "Export Excel"}
+                </button>
 
-      </div>
-        <div className="table-container">
-        <table className="penjahit-table">
+                <button onClick={handleFilter} className="pklog-btn pklog-btn-primary">
+                  Tampilkan
+                </button>
+              </div>
+            </div>
+            {error && <div className="pklog-error">{error}</div>}
+          </section>
+
+          <section className="pklog-kpi-grid">
+            <article className="pklog-kpi-card">
+              <div className="pklog-kpi-head"><FiLayers /> Total Pesanan</div>
+              <strong>{loadingSummary ? "..." : summary?.total_order || 0}</strong>
+              <small>order pada rentang tanggal</small>
+            </article>
+            <article className="pklog-kpi-card">
+              <div className="pklog-kpi-head"><FiCheckCircle /> Total Produk</div>
+              <strong>{loadingSummary ? "..." : summary?.total_items || 0}</strong>
+              <small>item berhasil dipacking</small>
+            </article>
+            <article className="pklog-kpi-card">
+              <div className="pklog-kpi-head"><FiSearch /> Total Pendapatan</div>
+              <strong>
+                {loadingSummary
+                  ? "..."
+                  : `Rp ${parseFloat(summary?.total_amount || 0).toLocaleString("id-ID")}`}
+              </strong>
+              <small>akumulasi gross amount</small>
+            </article>
+            <article className="pklog-kpi-card">
+              <div className="pklog-kpi-head"><FiUser /> Kasir Aktif</div>
+              <strong>{totalKasirAktif}</strong>
+              <small>kasir tercatat dalam periode</small>
+            </article>
+          </section>
+
+          <section className="pklog-card pklog-kasir-card">
+            <h3>Ringkasan Kasir</h3>
+            {kasirSummary.length === 0 ? (
+              <div className="pklog-empty">Tidak ada data kasir</div>
+            ) : (
+              <div className="pklog-kasir-wrap">
+                <table className="pklog-kasir-table">
+                  <thead>
+                    <tr>
+                      <th>Kasir</th>
+                      <th>Pesanan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kasirSummary.map((item) => (
+                      <tr key={item.performed_by}>
+                        <td>{item.performed_by}</td>
+                        <td>{item.total_orders}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="pklog-card pklog-table-card">
+            <div className="pklog-table-tools">
+              <span>Geser tabel untuk melihat semua kolom</span>
+              <div className="pklog-table-tools-btns">
+                <button type="button" onClick={() => scrollTable("left")}>Geser Kiri</button>
+                <button type="button" onClick={() => scrollTable("right")}>Geser Kanan</button>
+              </div>
+            </div>
+            <div className="pklog-table-wrap" ref={tableScrollRef}>
+              <div className="pklog-table-inner">
+        <table className="pklog-table">
           <thead>
             <tr>
               <th>Tracking Number</th>
@@ -323,32 +307,44 @@ console.log(formatted); // 26-11-2025
             </tr>
           </thead>
           <tbody>
+            {loading && (
+              <tr>
+                <td colSpan={8} className="pklog-empty">Memuat data...</td>
+              </tr>
+            )}
+            {!loading && logs.length === 0 && (
+              <tr>
+                <td colSpan={8} className="pklog-empty">Tidak ada data log pada filter ini.</td>
+              </tr>
+            )}
             {logs.map((tc) => (
               <tr key={tc.id}>
-                <td data-label="tracking number : ">{tc.order?.tracking_number}</td>
-                <td data-label="Kasir : ">{tc.performed_by}</td>
-                <td data-label="Total : ">{tc.order?.total_items}</td>
-                <td data-label="Total : ">Rp. {tc.order?.total_amount}</td>
-               <td data-label="tanggal : ">
+                <td>{tc.order?.tracking_number}</td>
+                <td>{tc.performed_by}</td>
+                <td>{tc.order?.total_items}</td>
+                <td>Rp. {tc.order?.total_amount}</td>
+               <td>
                   {dayjs(tc.created_at).format("DD-MM-YYYY")}
                 </td>
 
-                <td data-label="Nomor Seri : ">
+                <td>
                 {tc.order?.items
                   ?.flatMap((it) => it.serials?.map((s) => s.serial_number))
                   .join(", ")}
 
                                 </td>
-                <td data-label="Status : ">{tc.order?.status}</td>
-                 <td data-label="No Seri:">
-                  <button className="link-button blue" onClick={() => handleOpenModal(tc)}>
-                    Detail Nomor Seri
-                  </button>
-                </td>
+                <td>{tc.order?.status}</td>
+                  <td>
+                    <button className="pklog-btn-detail" onClick={() => handleOpenModal(tc)}>
+                    Detail
+                    </button>
+                  </td>
               </tr>
             ))}
           </tbody>
         </table>
+              </div>
+            </div>
         <div className="pagination">
 
         <button
@@ -373,15 +369,16 @@ console.log(formatted); // 26-11-2025
           Next
         </button>
       </div>
-    </div>
+          </section>
 
 
  {showModal && selectedLogs && (
-       <div className="modal-pengiriman">
-    <div className="modal-content-pengiriman">
+       <div className="pklog-modal-overlay">
+    <div className="pklog-modal-content">
          
             <h3>Detail Nomor Seri - ID Logs #{selectedLogs.id}</h3>
-            <table>
+            <div className="pklog-modal-table-wrap">
+            <table className="pklog-modal-table">
               <thead>
                 <tr>
                   <th>SKU</th>
@@ -401,14 +398,17 @@ console.log(formatted); // 26-11-2025
 
               </tbody>
             </table>
-            <button onClick={handleCloseModal}>Tutup</button>
+            </div>
+            <button className="pklog-btn pklog-btn-primary" onClick={handleCloseModal}>Tutup</button>
           </div>
      </div>
   )}
 
-</div>
-</div>
+        </main>
+      </section>
+    </div>
+   </div>
   );
 };
 
-export default Logs
+export default Logs;

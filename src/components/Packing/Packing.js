@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import "./Packing.css";
-import "../Jahit/Penjahit.css";
 import API from "../../api";
-import { FaBarcode, FaCheck,FaQrcode, FaTimes } from "react-icons/fa";
+import { FaBarcode, FaCheck, FaQrcode } from "react-icons/fa";
 import { useRef } from "react";
+import { FiCheckCircle, FiPackage, FiSearch } from "react-icons/fi";
 
 const Packing = () => {
  const [trackingNumber, setTrackingNumber] = useState("");
@@ -265,18 +265,29 @@ const handleSearchOrder = async () => {
   
 
   return (
-    <div>
-   <div className="seri-page">
-         <div className="seri-header">
-           <div className="seri-header-icon">
-             <FaQrcode />
-           </div>
-           <h1>Scan Packing</h1>
-    </div>
+    <div className="pk-page">
+      <div className="pk-shell">
+        <section className="pk-content">
+          <header className="pk-topbar">
+            <div className="pk-title-group">
+              <div className="pk-brand-icon">
+                <FaQrcode />
+              </div>
+              <div>
+                <h1>Packing Validation</h1>
+                <p>Scan tracking, verifikasi barcode SKU, dan finalisasi order packing.</p>
+              </div>
+            </div>
+          </header>
 
-    <div className="tracking-card">
-   
-      <div className="tracking-input-wrapper">
+          <main className="pk-main">
+            <section className="pk-card pk-search-card">
+              <div className="pk-search-head">
+                <h2>Cari Order</h2>
+                <span>Masukkan tracking number untuk memulai proses packing</span>
+              </div>
+
+              <div className="tracking-input-wrapper">
         <input
           type="text"
           placeholder="Scan / masukkan Tracking Number..."
@@ -293,20 +304,40 @@ const handleSearchOrder = async () => {
           >
           {loading ? "Loading..." : "Cari Order"}
         </button>
-     
-      {message && <div className="packing-message">{message}</div>}
-  </div>
-     
+              </div>
+
+              {message && <div className="packing-message">{message}</div>}
+            </section>
+
       {order && (
-        <div className="order-section">
+        <>
+          <section className="pk-kpi-grid">
+            <article className="pk-kpi-card">
+              <div className="pk-kpi-head"><FiPackage /> Total Produk</div>
+              <strong>{order.total_qty}</strong>
+              <small>item dalam order</small>
+            </article>
+            <article className="pk-kpi-card">
+              <div className="pk-kpi-head"><FiCheckCircle /> Progress Scan</div>
+              <strong>{scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0)} / {scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0)}</strong>
+              <small>total scanned / ordered</small>
+            </article>
+            <article className="pk-kpi-card">
+              <div className="pk-kpi-head"><FiSearch /> Customer</div>
+              <strong>{order.customer_name}</strong>
+              <small>{order.customer_phone}</small>
+            </article>
+          </section>
+
+          <section className="pk-card order-section">
           <h2>Order #{order.order_number}</h2>
-          <p>
+          <p className="pk-order-meta">
             <strong>Nama Customer:</strong> {order.customer_name} <br />
             <strong>No. HP:</strong> {order.customer_phone}  <br />
-             <strong>Total Produk:</strong> {order.total_qty}
-
+            <strong>Total Produk:</strong> {order.total_qty}
           </p>
 
+          <div className="pk-table-wrap">
           <table className="packing-table">
             <thead>
               <tr>
@@ -416,6 +447,7 @@ const handleSearchOrder = async () => {
               ))}
             </tbody>
           </table>
+          </div>
 
 
 
@@ -466,11 +498,13 @@ const handleSearchOrder = async () => {
               Batal
             </button>
           </div>
-        </div>
+          </section>
+        </>
       )}
+          </main>
+        </section>
+      </div>
     </div>
-     </div>
-     </div>
 
 
   );

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./Seri.css";
 import API from "../../api";
-import { FaPlus, FaQrcode, FaBarcode, FaDownload, FaHashtag, FaCheckCircle } from "react-icons/fa";
+import { 
+  FiSearch, FiPlus, FiDownload, FiHash,
+  FiBox, FiX, FiCheckCircle, FiLayers, FiDatabase, FiFilter, FiGrid
+} from "react-icons/fi";
 
 const Seri = () => {
   const [seri, setSeri] = useState([]);
@@ -13,6 +16,7 @@ const Seri = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  
   const [newSeri, setNewSeri] = useState({
     nomor_seri: "",
     sku: "",
@@ -93,151 +97,241 @@ const Seri = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     setNewSeri((prev) => ({
       ...prev,
       [name]: name === "jumlah" ? value.replace(/\D/g, "") : value.toUpperCase(),
     }));
   };
 
-  const filteredData = seri.filter((item) => (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.sku ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || item.id?.toString().includes(searchTerm));
+  const filteredData = seri.filter((item) => 
+    (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (item.sku ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.id?.toString().includes(searchTerm)
+  );
+  
   const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
+  const totalRows = seri.length;
+  const visibleRows = sortedData.length;
+  const isFiltering = searchTerm.trim().length > 0;
 
   return (
     <div className="seri-page">
-      <div className="seri-header">
-        <div className="seri-header-icon">
-          <FaQrcode />
-        </div>
-        <h1>Data Seri</h1>
-      </div>
-
-      <div className="seri-table-container">
-        <div className="seri-filter-header">
-          <button className="seri-btn-add" onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah Seri
-          </button>
-          <div className="seri-search-bar">
-            <input type="text" placeholder="Cari nomor seri, SKU, atau ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="seri-loading">Memuat data...</div>
-        ) : error ? (
-          <div className="seri-error">{error}</div>
-        ) : sortedData.length === 0 ? (
-          <div className="seri-empty-state">
-            <div className="seri-empty-state-icon">-</div>
-            <p>Tidak ada data seri</p>
-          </div>
-        ) : (
-          <div className="seri-table-wrapper">
-            <table className="seri-table">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Nomor Seri</th>
-                  <th>SKU</th>
-                  <th>Download</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((item, index) => (
-                  <tr key={item.id}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <strong style={{ color: "#0487d8" }}>{item.nomor_seri}</strong>
-                    </td>
-                    <td>
-                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FaBarcode style={{ color: "#0487d8" }} />
-                        {item.sku}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="seri-btn-download" onClick={() => downloadQR(item.id, item.nomor_seri)}>
-                        <FaDownload /> Download QR
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {sortedData.length > 0 && (
-          <div className="seri-pagination">
-            <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1)}>
-              Prev
-            </button>
-            <span>
-              Halaman {currentPage} / {lastPage}
-            </span>
-            <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1)}>
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-
-      {showSuccessModal && (
-        <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowSuccessModal(false)}>
-          <div className="seri-modal-content">
-            <h2>
-              <FaCheckCircle /> Berhasil
-            </h2>
-            <p>{successMessage}</p>
-            <div className="seri-form-actions">
-              <button type="button" className="seri-btn-submit" onClick={() => setShowSuccessModal(false)}>
-                OK
-              </button>
+      <header className="seri-topbar">
+            <div className="seri-title-group">
+              <div className="brand-icon">
+                <FiBox size={24} color="#fff" />
+              </div>
+              <div className="brand-text">
+                 <h1>Data Seri Directory</h1>
+                 <p>Manajemen nomor seri dan referensi SKU produk</p>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+            
+            <div className="seri-actions">
+              <div className="search-bar">
+                <input 
+                  type="text" 
+                  placeholder="Cari nomor seri, SKU produk..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          </header>
+
+          <main className="seri-main">
+            <section className="seri-kpi-grid">
+              <article className="seri-kpi-card">
+                <div className="kpi-icon"><FiDatabase size={16} /></div>
+                <div>
+                  <p>Total Seri (Halaman)</p>
+                  <h3>{totalRows}</h3>
+                </div>
+              </article>
+              <article className="seri-kpi-card">
+                <div className="kpi-icon"><FiFilter size={16} /></div>
+                <div>
+                  <p>Hasil Pencarian</p>
+                  <h3>{visibleRows}</h3>
+                </div>
+              </article>
+              <article className="seri-kpi-card">
+                <div className="kpi-icon"><FiGrid size={16} /></div>
+                <div>
+                  <p>Posisi Halaman</p>
+                  <h3>{currentPage} / {lastPage}</h3>
+                </div>
+              </article>
+            </section>
+
+            <div className="table-card">
+              <div className="table-header">
+                <div>
+                  <h3>Semua Data Seri</h3>
+                  <p>
+                    Monitoring nomor seri produk dan referensi SKU
+                    {isFiltering ? ` - menampilkan ${visibleRows} hasil dari filter` : ` - ${totalRows} data pada halaman ini`}
+                  </p>
+                </div>
+                <button className="btn-primary" onClick={() => setShowForm(true)}>
+                   <FiPlus size={18} /> Tambah Seri Baru
+                </button>
+              </div>
+
+              <div className="table-container">
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '80px', textAlign: 'center' }}>No</th>
+                      <th style={{ paddingLeft: '24px' }}>Nomor Seri</th>
+                      <th>Informasi SKU</th>
+                      <th className="text-right" style={{ paddingRight: '24px' }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                      {loading ? (
+                        <tr className="empty-row">
+                            <td colSpan="4" className="empty-state">Memuat data seri...</td>
+                        </tr>
+                      ) : error ? (
+                        <tr className="empty-row">
+                            <td colSpan="4" className="empty-state text-accent">{error}</td>
+                        </tr>
+                      ) : sortedData.map((item, index) => (
+                        <tr key={item.id}>
+                          <td className="text-muted font-mono" style={{ textAlign: 'center' }}>
+                             {index + 1}
+                          </td>
+                          <td style={{ paddingLeft: '24px' }}>
+                            <div className="serial-pill">
+                              <span className="status-dot-sm"></span>
+                              <span className="font-semibold text-accent">{item.nomor_seri}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="sku-inline">
+                                <FiLayers className="text-muted" />
+                                <span className="sku-chip">{item.sku}</span>
+                            </span>
+                          </td>
+                          <td className="text-right" style={{ paddingRight: '24px' }}>
+                             <button className="btn-download-blue" onClick={() => downloadQR(item.id, item.nomor_seri)}>
+                                <FiDownload /> Unduh QR
+                             </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {!loading && sortedData.length === 0 && !error && (
+                      <tr className="empty-row">
+                        <td colSpan="4" className="empty-state">
+                          Tidak ada data seri yang sesuai dengan kata kunci "{searchTerm}".
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {!loading && sortedData.length > 0 && (
+                <div className="seri-pagination">
+                  <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1)}>
+                    Sebelumnya
+                  </button>
+                  <span>
+                    Halaman {currentPage} dari {lastPage}
+                  </span>
+                  <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1)}>
+                    Selanjutnya
+                  </button>
+                </div>
+              )}
+            </div>
+      </main>
 
       {showForm && (
-        <div className="seri-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
-          <div className="seri-modal-content">
-            <h2>
-              <FaPlus /> Tambah Seri dan SKU
-            </h2>
-            <form onSubmit={handleFormSubmit} className="seri-form">
-              <div className="seri-form-group">
-                <label>
-                  <FaHashtag /> Nomor Seri:
-                </label>
-                <input type="text" name="nomor_seri" value={newSeri.nomor_seri} onChange={handleInputChange} placeholder="Masukkan nomor seri" required />
-              </div>
-
-              <div className="seri-form-group">
-                <label>
-                  <FaBarcode /> SKU:
-                </label>
-                <input type="text" name="sku" value={newSeri.sku} onChange={handleInputChange} placeholder="Masukkan SKU" required />
-              </div>
-
-              <div className="seri-form-group">
-                <label>
-                  <FaHashtag /> Jumlah Print:
-                </label>
-                <input type="number" min="1" name="jumlah" value={newSeri.jumlah} onChange={handleInputChange} placeholder="Masukkan jumlah print" required />
-              </div>
-
-              <div className="seri-form-actions">
-                <button type="submit" className="seri-btn-submit">
-                  <FaCheckCircle /> Simpan
-                </button>
-                <button type="button" className="seri-btn-cancel" onClick={() => setShowForm(false)}>
-                  Batal
+          <div className="modal-overlay">
+            <div className="modal-backdrop" onClick={() => setShowForm(false)} />
+            <div className="modal-content">
+              <div className="modal-header">
+                <div>
+                  <h2>Tambah Seri dan SKU Baru</h2>
+                  <p>Masukkan detail untuk pembuatan nomor seri logistik</p>
+                </div>
+                <button type="button" className="close-btn" onClick={() => setShowForm(false)}>
+                  <FiX size={20} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleFormSubmit} className="modal-form">
+                <div className="form-group">
+                  <label><FiHash /> Nomor Seri Unik</label>
+                  <input 
+                    type="text" 
+                    name="nomor_seri" 
+                    required 
+                    placeholder="Contoh: AL-01" 
+                    value={newSeri.nomor_seri}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label><FiLayers /> SKU Referensi</label>
+                    <input 
+                      type="text" 
+                      name="sku" 
+                      required 
+                      placeholder="Contoh: SET Karina"
+                      value={newSeri.sku}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Jumlah Print</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      name="jumlah"
+                      value={newSeri.jumlah}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Batal</button>
+                  <button type="submit" className="btn-primary">
+                    <FiCheckCircle size={18} /> Simpan Data
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {showSuccessModal && (
+          <div className="modal-overlay">
+            <div className="modal-backdrop" onClick={() => setShowSuccessModal(false)} />
+            <div className="modal-content modal-content-compact">
+              <div className="success-wrap">
+                <div className="success-icon-wrap">
+                    <FiCheckCircle size={40} />
+                </div>
+                <h2 className="success-title">Berhasil Disimpan</h2>
+                <p className="success-text">{successMessage}</p>
+                <button 
+                  type="button" 
+                  className="btn-primary success-btn"
+                  onClick={() => setShowSuccessModal(false)}>
+                  Tutup dan Lanjutkan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
