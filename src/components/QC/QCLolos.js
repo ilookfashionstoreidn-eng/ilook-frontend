@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "./QCLolos.css";
 
 import {
+  FiBell,
   FiCheckCircle,
   FiBox,
   FiSearch,
@@ -409,22 +410,33 @@ const QCLolos = () => {
   const bottomSpacerHeight = Math.max(0, (totalRows - endIndex) * ROW_HEIGHT);
 
   return (
+    <div className="qc-page">
+      <div className="qc-shell">
+        <section className="qc-content">
     <div className="qc-container">
       <ToastContainer position="top-right" autoClose={2600} hideProgressBar theme="light" />
 
       <header className="qc-header">
         <div className="qc-header-content">
           <div className="qc-title-wrapper">
-            <h1 className="qc-title">QC Lolos</h1>
-            <p className="qc-subtitle">
-              Scan-first workspace untuk operator QC.
-            </p>
-            <div className="qc-shortcut-row">
-              <span className="qc-shortcut-pill"><FiCommand /> Esc: Keluar Scan</span>
-              <span className="qc-shortcut-pill"><FiCommand /> Ctrl+Z: Undo Cepat</span>
+            <div className="qc-brand-icon"><FiCheckCircle /></div>
+            <div className="qc-title-block">
+              <h1 className="qc-title">QC Lolos</h1>
+              <p className="qc-subtitle">
+                Scan-first workspace untuk operator QC.
+              </p>
+              <div className="qc-shortcut-row">
+                <span className="qc-shortcut-pill"><FiCommand /> Esc: Keluar Scan</span>
+                <span className="qc-shortcut-pill"><FiCommand /> Ctrl+Z: Undo Cepat</span>
+              </div>
             </div>
           </div>
           <div className="qc-header-actions">
+            <button className="qc-icon-btn" type="button" aria-label="Notifikasi">
+              <FiBell />
+              <span className="qc-icon-badge">3</span>
+            </button>
+            <div className="qc-avatar" aria-hidden="true" />
             <button
               className="qc-btn-ghost"
               onClick={() => refreshData(page)}
@@ -780,6 +792,9 @@ const QCLolos = () => {
           </div>
         </div>
       </section>
+    </div>
+        </section>
+      </div>
     </div>
   );
 };

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react";
 import "./TukangSample.css";
 import API from "../../api"; 
-import { FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
-import { FiUserPlus, FiSearch, FiEdit2, FiTrash2, FiUsers, FiX } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  FiSearch, FiPlus, FiEdit2, FiTrash2, FiUsers, FiX, FiCheckCircle, FiUser
+} from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -46,14 +48,12 @@ const TukangSample = () => {
    
     try {
         if (isEdit && formData.id) {
-            // Optimistic Update: Edit
             setTukangSample(prev => 
                 prev.map(item => item.id === formData.id ? { ...item, ...payload } : item)
             );
             await API.put(`/tukang-sample/${formData.id}`, payload);
             toast.success("Tukang Sample berhasil diperbarui!");
         } else {
-            // Optimistic Update: Add (Fake ID temporarily until refetch)
             const tempId = Date.now();
             setTukangSample(prev => [{ id: tempId, ...payload }, ...prev]);
             await API.post("/tukang-sample", payload);
@@ -61,9 +61,9 @@ const TukangSample = () => {
         }
 
         closeModal();
-        fetchTukangSample(); // Refetch to get actual DB generated IDs & order
+        fetchTukangSample(); 
     } catch (error) {
-        fetchTukangSample(); // Revert on error
+        fetchTukangSample(); 
         toast.error(error.response?.data?.message || "Terjadi kesalahan saat menyimpan tukang sample.");
     }
   };
@@ -78,7 +78,6 @@ const TukangSample = () => {
 
       const deletedId = itemToDelete.id;
       
-      // Optimistic Update: Delete
       setTukangSample(prev => prev.filter(item => item.id !== deletedId));
       closeDeleteModal();
 
@@ -86,7 +85,7 @@ const TukangSample = () => {
           await API.delete(`/tukang-sample/${deletedId}`);
           toast.success("Data berhasil dihapus!");
       } catch(err) {
-          fetchTukangSample(); // Revert on error
+          fetchTukangSample(); 
           toast.error("Gagal menghapus data.");
       }
   }
@@ -129,166 +128,207 @@ const TukangSample = () => {
   };
 
   return (
-   <div className="ts-container">
-    <ToastContainer position="top-right" autoClose={2600} hideProgressBar theme="light" />
+    <div className="ts-page">
+      <ToastContainer position="top-right" autoClose={2600} hideProgressBar theme="colored" />
 
-     <div className="ts-header">
-       <div className="ts-header-content">
-         <div>
-           <h1 className="ts-title">Management Tukang Sample</h1>
-           <p className="ts-subtitle">Kelola database profil dan kontak tukang sample ILOOK.</p>
-         </div>
-       </div>
-     </div>
-
-     <div className="ts-toolbar">
-        <div className="ts-search-wrapper">
-          <FiSearch className="ts-search-icon" />
-          <input
-            type="text"
-            className="ts-search-input"
-            placeholder="Cari nama tukang sample..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="ts-toolbar-actions">
-          <button 
-            className="ts-btn-primary"
-            onClick={() => setShowForm(true)}
-          >
-            <FiUserPlus /> Tambah Tukang
-          </button>
-        </div>
-    </div>
-      
-    <div className="ts-table-section">
-      <div className="ts-table-container">
-          <table className="ts-data-table">
-            <thead>
-              <tr>
-                <th style={{ width: '80px' }}>No.</th>
-                <th>Nama Lengkap</th>
-                <th>Nomor HP</th>
-                <th style={{ textAlign: "right", width: '120px' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTukangSample.length > 0 ? (
-                filteredTukangSample.map((ts, index) => (
-                  <tr key={ts.id}>
-                    <td><span className="ts-table-id">{index + 1}</span></td>
-                    <td><span className="ts-table-name">{ts.nama_tukang_sample}</span></td>
-                    <td>{ts.nomor_hp || <span className="text-muted">-</span>}</td>
-                    <td style={{ textAlign: "right" }}>
-                        <div className="ts-action-group" style={{ justifyContent: 'flex-end' }}>
-                          <button 
-                              className="ts-btn-icon ts-btn-edit" 
-                              onClick={() => openEditModal(ts)}
-                              title="Edit"
-                          >
-                              <FiEdit2 />
-                          </button>
-                          <button 
-                              className="ts-btn-icon ts-btn-delete" 
-                              onClick={() => confirmDelete(ts)}
-                              title="Hapus"
-                          >
-                              <FiTrash2 />
-                          </button>
-                        </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4">
-                    <div className="ts-empty-state">
-                      {loading ? (
-                        <p>Memuat data...</p>
-                      ) : (
-                        <>
-                          <FiUsers style={{ fontSize: '2.5rem', marginBottom: '10px' }} />
-                          <h3>Tidak ada data</h3>
-                          <p>Belum ada rekaman tukang sample yang tersimpan.</p>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-      </div>
-    </div>
-
-    {/* Modal Form */}
-        {showForm && (
-        <div className="ts-modal-overlay">
-          <div className="ts-modal-content">
-            <div className="ts-modal-header">
-              <h2 className="ts-modal-title">{isEdit ? "Edit Tukang Sample" : "Tambah Baru"}</h2>
-              <button className="ts-modal-close" onClick={closeModal}><FiX /></button>
+      <div className="ts-shell">
+        <section className="ts-content">
+          <header className="ts-topbar">
+            <div className="ts-title-group">
+              <div className="ts-brand-icon">
+                <FiUser size={24} color="#fff" />
+              </div>
+              <div className="ts-brand-text">
+                 <h1>Tukang Sample</h1>
+                 <p>Manajemen data profil dan kontak Tukang Sample ILOOK</p>
+              </div>
             </div>
-            <form onSubmit={handleFormSubmit}>
-              <div className="ts-form-group">
-                <label className="ts-form-label">Nama Tukang Sample <span style={{color: 'var(--ts-danger)'}}>*</span></label>
-                <input
-                  type="text"
-                  name="nama_tukang_sample"
-                  className="ts-form-input"
-                  value={formData.nama_tukang_sample}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan nama lengkap"
-                  required
+            
+            <div className="ts-actions">
+              <div className="ts-search-bar">
+                <FiSearch className="ts-search-icon-inside" />
+                <input 
+                  type="text" 
+                  placeholder="Cari nama tukang..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="ts-form-group">
-                <label className="ts-form-label">Nomor Kontak (HP)</label>
-                <input
-                  type="text"
-                  name="nomor_hp"
-                  className="ts-form-input"
-                  value={formData.nomor_hp}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: 08123456789"
-                />
-              </div>
+            </div>
+          </header>
 
-            <div className="ts-form-actions">
-                <button type="button" className="ts-btn-secondary" onClick={closeModal}>Batal</button>
-                <button type="submit" className="ts-btn-primary">
-                  Simpan Data
+          <main className="ts-main">
+            <motion.div 
+               className="ts-table-card"
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, type: "spring" }}
+            >
+              <div className="ts-table-header">
+                <div>
+                  <h3>Daftar Tukang Sample</h3>
+                  <p>Total data tersimpan: {tukangSample.length} tukang</p>
+                </div>
+                <button className="ts-btn-primary" onClick={() => setShowForm(true)}>
+                   <FiPlus size={18} /> Tambah Data
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* Modal Hapus */}
-      {showDeleteModal && itemToDelete && (
-        <div className="ts-modal-overlay">
-          <div className="ts-modal-content ts-modal-delete">
-            <div className="ts-modal-header borderless">
-              <div className="ts-delete-icon-wrapper">
-                <FiTrash2 className="ts-delete-icon-large" />
+              <div className="ts-table-container">
+                <table className="ts-modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '80px', textAlign: 'center' }}>No</th>
+                      <th style={{ paddingLeft: '24px' }}>Nama Lengkap</th>
+                      <th>Nomor Handphone</th>
+                      <th className="text-right" style={{ paddingRight: '24px' }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {filteredTukangSample.length > 0 ? (
+                        filteredTukangSample.map((ts, index) => (
+                          <motion.tr 
+                            key={ts.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ delay: index * 0.05 }}
+                            layout
+                          >
+                            <td className="text-muted font-mono" style={{ textAlign: 'center' }}>
+                               {index + 1}
+                            </td>
+                            <td className="font-semibold text-accent" style={{ paddingLeft: '24px' }}>{ts.nama_tukang_sample}</td>
+                            <td className="text-muted">{ts.nomor_hp || '-'}</td>
+                            <td className="text-right actions-cell" style={{ paddingRight: '24px' }}>
+                               <button className="action-btn edit" title="Edit" onClick={() => openEditModal(ts)}>
+                                 <FiEdit2 />
+                               </button>
+                               <button className="action-btn delete" title="Hapus" onClick={() => confirmDelete(ts)}>
+                                 <FiTrash2 />
+                               </button>
+                            </td>
+                          </motion.tr>
+                        ))
+                      ) : (
+                        <tr className="empty-row">
+                          <td colSpan="4" className="empty-state">
+                            {loading ? "Memuat data..." : `Tidak ada data ditemukan untuk "${searchTerm}"`}
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
               </div>
-              <button className="ts-modal-close" onClick={closeDeleteModal}><FiX /></button>
-            </div>
-            <div className="ts-modal-body center-text">
-              <h2 className="ts-modal-title">Hapus Data Tukang?</h2>
-              <p className="ts-delete-desc">
-                Apakah Anda yakin ingin menghapus data atas nama <strong>{itemToDelete.nama_tukang_sample}</strong>? Tindakan ini tidak dapat dibatalkan.
-              </p>
-            </div>
-            <div className="ts-form-actions center-actions">
-              <button type="button" className="ts-btn-secondary" onClick={closeDeleteModal}>Batal</button>
-              <button type="button" className="ts-btn-danger" onClick={handleDelete}>Ya, Hapus Data</button>
-            </div>
+            </motion.div>
+          </main>
+        </section>
+      </div>
+
+      <AnimatePresence>
+        {showForm && (
+          <div className="ts-modal-overlay">
+            <motion.div 
+              className="ts-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeModal}
+            />
+            <motion.div 
+              className="ts-modal-box"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <div className="ts-modal-top">
+                <div>
+                  <h2>{isEdit ? "Edit Tukang Sample" : "Tambah Tukang Sample"}</h2>
+                  <p>Masukkan informasi profil dengan lengkap.</p>
+                </div>
+                <button type="button" className="close-btn" onClick={closeModal}><FiX size={20} /></button>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="ts-modal-form">
+                <div className="ts-field-group">
+                  <label>Nama Lengkap <span className="text-danger">*</span></label>
+                  <input 
+                    type="text" 
+                    name="nama_tukang_sample" 
+                    required 
+                    placeholder="Contoh: Budi Santoso" 
+                    value={formData.nama_tukang_sample}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                
+                <div className="ts-field-group">
+                  <label>Nomor Kontak (HP)</label>
+                  <input 
+                    type="text" 
+                    name="nomor_hp" 
+                    placeholder="Contoh: 081234567890"
+                    value={formData.nomor_hp}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="ts-modal-bottom">
+                  <button type="button" className="ts-btn-secondary" onClick={closeModal}>Batal</button>
+                  <button type="submit" className="ts-btn-primary">
+                    <FiCheckCircle size={18} /> Simpan Data
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDeleteModal && itemToDelete && (
+          <div className="ts-modal-overlay">
+            <motion.div 
+              className="ts-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeDeleteModal}
+            />
+            <motion.div 
+              className="ts-modal-box small-modal"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <div className="ts-modal-top borderless center-header">
+                <button type="button" className="close-btn absolute-right" onClick={closeDeleteModal}><FiX size={20} /></button>
+                <div className="danger-icon-wrap">
+                  <FiTrash2 size={28} />
+                </div>
+              </div>
+
+              <div className="ts-modal-form center-text pt-0">
+                <h2>Hapus Data Tukang?</h2>
+                <p className="delete-desc">
+                  Apakah Anda yakin ingin menghapus <strong>{itemToDelete.nama_tukang_sample}</strong> dari database? Tindakan ini tidak dapat dikembalikan.
+                </p>
+
+                <div className="ts-modal-bottom evenly">
+                  <button type="button" className="ts-btn-secondary flex-1" onClick={closeDeleteModal}>Batal</button>
+                  <button type="button" className="ts-btn-danger flex-1" onClick={handleDelete}>
+                    Ya, Hapus
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
