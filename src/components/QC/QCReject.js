@@ -243,11 +243,19 @@ const QCReject = () => {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar theme="light" />
 
       <header className="qcr-header">
-        <div>
-          <h1 className="qcr-title">QC Reject</h1>
-          <p className="qcr-subtitle">
-            Tambahkan data reject per nomor seri dan SKU, lalu pantau rekapnya dalam tabel grouped.
-          </p>
+        <div className="qcr-header-copy">
+          <div className="qcr-module-pill">ERP Module - Quality Control</div>
+          <div className="qcr-title-wrapper">
+            <div className="qcr-brand-icon">
+              <FiAlertTriangle />
+            </div>
+            <div className="qcr-title-block">
+              <h1 className="qcr-title">QC Reject</h1>
+              <p className="qcr-subtitle">
+                Tambahkan data reject per nomor seri dan SKU, lalu pantau rekapnya dalam tabel grouped.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="qcr-header-actions">
@@ -369,7 +377,10 @@ const QCReject = () => {
 
       <section className="qcr-table-section">
         <div className="qcr-table-header">
-          <h2>Data Reject (Grouped Nomor Seri + SKU)</h2>
+          <div className="qcr-table-title-wrap">
+            <h2>Data Reject (Grouped Nomor Seri + SKU)</h2>
+            <span className="qcr-table-meta">{filteredRows.length.toLocaleString()} baris</span>
+          </div>
           <div className="qcr-search-box">
             <FiSearch />
             <input
@@ -394,7 +405,7 @@ const QCReject = () => {
                 <tr>
                   <th>No</th>
                   <th>Nomor Seri</th>
-                  <th>SKU</th>
+                  <th>Informasi SKU</th>
                   <th>Total Reject</th>
                   <th>Total Input</th>
                   <th>Terakhir Input</th>
@@ -404,8 +415,18 @@ const QCReject = () => {
                 {filteredRows.map((row, index) => (
                   <tr key={`${row.nomor_seri}-${row.sku}`}>
                     <td>{index + 1}</td>
-                    <td><code>{row.nomor_seri}</code></td>
-                    <td><code>{row.sku}</code></td>
+                    <td>
+                      <div className="qcr-seri-cell">
+                        <span className="qcr-seri-dot" />
+                        <span className="qcr-seri-text">{row.nomor_seri}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="qcr-sku-cell">
+                        <FiLayers className="qcr-sku-icon" />
+                        <span className="qcr-sku-pill">{row.sku}</span>
+                      </div>
+                    </td>
                     <td>{Number(row.total_jumlah).toLocaleString()}</td>
                     <td>{Number(row.total_input).toLocaleString()}</td>
                     <td>{formatDate(row.last_input)}</td>

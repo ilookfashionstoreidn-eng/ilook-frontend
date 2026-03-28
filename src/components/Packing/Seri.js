@@ -251,11 +251,11 @@ const Seri = () => {
       {showForm && (
           <div className="modal-overlay">
             <div className="modal-backdrop" onClick={() => setShowForm(false)} />
-            <div className="modal-content">
+            <div className="modal-content modal-form-layout">
               <div className="modal-header">
-                <div>
+                <div className="modal-title-wrap">
                   <h2>Tambah Seri dan SKU Baru</h2>
-                  <p>Masukkan detail untuk pembuatan nomor seri logistik</p>
+                  <p>Lengkapi data berikut untuk membuat nomor seri baru.</p>
                 </div>
                 <button type="button" className="close-btn" onClick={() => setShowForm(false)}>
                   <FiX size={20} />
@@ -264,7 +264,12 @@ const Seri = () => {
 
               <form onSubmit={handleFormSubmit} className="modal-form">
                 <div className="form-group">
-                  <label><FiHash /> Nomor Seri Unik</label>
+                  <label>
+                    <span className="label-content">
+                      <FiHash size={14} />
+                      <span>Nomor Seri Unik</span>
+                    </span>
+                  </label>
                   <input 
                     type="text" 
                     name="nomor_seri" 
@@ -277,7 +282,12 @@ const Seri = () => {
                 
                 <div className="form-row">
                   <div className="form-group">
-                    <label><FiLayers /> SKU Referensi</label>
+                    <label>
+                      <span className="label-content">
+                        <FiLayers size={14} />
+                        <span>SKU Referensi</span>
+                      </span>
+                    </label>
                     <input 
                       type="text" 
                       name="sku" 
