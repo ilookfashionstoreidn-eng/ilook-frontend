@@ -422,9 +422,7 @@ const QCLolos = () => {
             <div className="qc-brand-icon"><FiCheckCircle /></div>
             <div className="qc-title-block">
               <h1 className="qc-title">QC Lolos</h1>
-              <p className="qc-subtitle">
-                Scan-first workspace untuk operator QC.
-              </p>
+              
               <div className="qc-shortcut-row">
                 <span className="qc-shortcut-pill"><FiCommand /> Esc: Keluar Scan</span>
                 <span className="qc-shortcut-pill"><FiCommand /> Ctrl+Z: Undo Cepat</span>
@@ -499,10 +497,7 @@ const QCLolos = () => {
               {loading ? "Memproses..." : "Proses"}
             </button>
           </form>
-          <p className="qc-scan-helper">
-            Saat mode scan aktif, satu barcode akan auto-submit dalam milidetik setelah scanner selesai mengirim data.
-          </p>
-
+         
           {pendingUndo && quickUndoSeconds > 0 && (
             <div className="qc-quick-undo">
               <span>
@@ -611,7 +606,6 @@ const QCLolos = () => {
         <div className="qc-table-header">
           <div>
             <h2 className="qc-table-title">Riwayat Scan QC Lolos</h2>
-            <p className="qc-table-subtitle">Server-side pagination, filter debounce, dan virtualized rows aktif.</p>
           </div>
 
           <div className="qc-table-tools">

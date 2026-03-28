@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./HppProduk.css";
 import API from "../../api";
 import { FaInfoCircle, FaPlus, FaEdit, FaTimes, FaFilePdf } from "react-icons/fa";
+import { FiBox } from "react-icons/fi";
 
 const HppProduk = () => {
   const [produks, setProduks] = useState([]);
@@ -16,6 +17,8 @@ const HppProduk = () => {
   const [total, setTotal] = useState(0);
   const [showCustomJenis, setShowCustomJenis] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [addModalTab, setAddModalTab] = useState("info");
+  const [editModalTab, setEditModalTab] = useState("info");
   const [selectedProduk, setSelectedProduk] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editKomponenList, setEditKomponenList] = useState([]);
@@ -58,6 +61,119 @@ const HppProduk = () => {
   const [ukuranList, setUkuranList] = useState([""]);
   const [editWarnaList, setEditWarnaList] = useState([""]);
   const [editUkuranList, setEditUkuranList] = useState([""]);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
+
+  const extractCurrencyDigits = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+
+    if (/^\d+(\.\d+)?$/.test(raw)) {
+      return String(Math.floor(Number(raw)));
+    }
+
+    const cleaned = raw.replace(/[^\d.,]/g, "");
+
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
+      return cleaned.split(",")[0].replace(/\./g, "");
+    }
+
+    if (/^\d+,\d+$/.test(cleaned)) {
+      return cleaned.split(",")[0];
+    }
+
+    if (/^\d+\.\d+$/.test(cleaned)) {
+      return cleaned.split(".")[0];
+    }
+
+    return cleaned.replace(/\D/g, "");
+  };
+
+  const formatRupiahDisplay = (value) => {
+    const digits = extractCurrencyDigits(value);
+    if (!digits) return "";
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const formatRupiahValue = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return "0";
+    return parsed.toLocaleString("id-ID", { maximumFractionDigits: 0 });
+  };
+
+  const showFeedback = (type, title, message) => {
+    setFeedbackModal({ open: true, type, title, message });
+  };
+
+  const closeFeedback = () => {
+    setFeedbackModal((prev) => ({ ...prev, open: false }));
+  };
+
+  const getApiErrorMessage = (error, fallbackMessage) => {
+    const serverMessage = error?.response?.data?.message;
+    const validationErrors = error?.response?.data?.errors;
+
+    if (validationErrors && typeof validationErrors === "object") {
+      const firstError = Object.values(validationErrors)?.[0];
+      if (Array.isArray(firstError) && firstError.length > 0) {
+        return firstError[0];
+      }
+    }
+
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      if (serverMessage.toLowerCase().includes("duplicate entry")) {
+        return "Kombinasi SKU sudah ada. Cek kembali warna dan ukuran agar tidak duplikat.";
+      }
+      return serverMessage;
+    }
+
+    return fallbackMessage;
+  };
+
+  const normalizeSkuValue = (value) => String(value ?? "").trim().toUpperCase();
+
+  const findDuplicateSkuCombination = (warnaSource, ukuranSource) => {
+    const warnaNormalized = (warnaSource || [])
+      .map(normalizeSkuValue)
+      .filter(Boolean);
+    const ukuranNormalized = (ukuranSource || [])
+      .map(normalizeSkuValue)
+      .filter(Boolean);
+
+    if (!warnaNormalized.length || !ukuranNormalized.length) {
+      return null;
+    }
+
+    const pairSet = new Set();
+
+    for (const warna of warnaNormalized) {
+      for (const ukuran of ukuranNormalized) {
+        const key = `${warna}__${ukuran}`;
+        if (pairSet.has(key)) {
+          return { warna, ukuran };
+        }
+        pairSet.add(key);
+      }
+    }
+
+    return null;
+  };
+
+  const handleCurrencyChange = (mode, field, value) => {
+    const digitsOnly = extractCurrencyDigits(value);
+
+    if (mode === "new") {
+      setNewProduk((prev) => ({ ...prev, [field]: digitsOnly }));
+      return;
+    }
+
+    setEditProduk((prev) => ({ ...prev, [field]: digitsOnly }));
+  };
+
   const addKomponen = () => {
     setKomponenList([
       ...komponenList,
@@ -133,8 +249,24 @@ const HppProduk = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openAddModal = () => {
+    setAddModalTab("info");
+    setShowForm(true);
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    const duplicatePair = findDuplicateSkuCombination(warnaList, ukuranList);
+    if (duplicatePair) {
+      showFeedback(
+        "warning",
+        "Kombinasi SKU Duplikat",
+        `Kombinasi warna ${duplicatePair.warna} dan ukuran ${duplicatePair.ukuran} terdeteksi lebih dari sekali.`
+      );
+      setAddModalTab("sku");
+      return;
+    }
 
     const formData = new FormData();
 
@@ -187,8 +319,7 @@ const HppProduk = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      alert("Produk berhasil ditambahkan!");
+      showFeedback("success", "Berhasil", "Produk berhasil ditambahkan.");
 
       // Refresh data dengan pagination
       const refreshResponse = await API.get(`/produk`, {
@@ -231,14 +362,26 @@ const HppProduk = () => {
       setWarnaList([""]);
       setUkuranList([""]);
       setShowForm(false);
+      setAddModalTab("info");
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan produk.");
+      showFeedback("error", "Gagal Menyimpan", getApiErrorMessage(error, "Terjadi kesalahan saat menyimpan produk."));
     }
   };
 
   const handleFormUpdate = async (e) => {
     e.preventDefault();
+
+    const duplicatePair = findDuplicateSkuCombination(editWarnaList, editUkuranList);
+    if (duplicatePair) {
+      showFeedback(
+        "warning",
+        "Kombinasi SKU Duplikat",
+        `Kombinasi warna ${duplicatePair.warna} dan ukuran ${duplicatePair.ukuran} terdeteksi lebih dari sekali.`
+      );
+      setEditModalTab("sku");
+      return;
+    }
 
     const formData = new FormData();
 
@@ -297,8 +440,7 @@ const HppProduk = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      alert("Produk berhasil diperbarui!");
+      showFeedback("success", "Berhasil", "Produk berhasil diperbarui.");
 
       // Refresh data dengan pagination
       const refreshResponse = await API.get(`/produk`, {
@@ -316,9 +458,10 @@ const HppProduk = () => {
       setTotal(refreshResponse.data.total || 0);
 
       setShowEditForm(false);
+      setEditModalTab("info");
     } catch (error) {
       console.error("Update error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat update produk.");
+      showFeedback("error", "Gagal Memperbarui", getApiErrorMessage(error, "Terjadi kesalahan saat update produk."));
     }
   };
 
@@ -431,6 +574,7 @@ const HppProduk = () => {
       setEditUkuranList([""]);
     }
 
+    setEditModalTab("info");
     setShowEditForm(true);
   };
 
@@ -502,6 +646,7 @@ const HppProduk = () => {
 
   const handleCancelEdit = () => {
     setShowEditForm(false);
+    setEditModalTab("info");
   };
   const handleJenisChange = (e) => {
     const value = e.target.value;
@@ -598,7 +743,7 @@ const HppProduk = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      alert("Gagal mengunduh PDF. Silakan coba lagi.");
+      showFeedback("error", "Download Gagal", "Gagal mengunduh PDF. Silakan coba lagi.");
     }
   };
 
@@ -606,144 +751,140 @@ const HppProduk = () => {
   const totalUrgent = produks.filter((p) => p.kategori_produk === "Urgent").length;
   const totalFix = produks.filter((p) => p.status_produk === "Fix").length;
   const avgHpp = produks.length > 0 ? produks.reduce((sum, p) => sum + (parseFloat(p.hpp) || 0), 0) / produks.length : 0;
+  const isFiltering = Boolean(searchTerm || selectedKategori || selectedStatus);
+  const visibleRows = produks.length;
 
   return (
     <div className="hpp-container">
-      <div className="hpp-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
-          <div>
-            <h1>📦 Data Produk</h1>
-            <p style={{ margin: "8px 0 0 0", color: "#666", fontSize: "14px" }}>Kelola data produk dan HPP dengan mudah</p>
-          </div>
-          {!loading && produks.length > 0 && (
-            <div className="hpp-stats">
-              <div className="hpp-stat-item">
-                <div className="hpp-stat-value">{total}</div>
-                <div className="hpp-stat-label">Total Produk</div>
-              </div>
-              <div className="hpp-stat-item">
-                <div className="hpp-stat-value" style={{ color: "#f5576c" }}>
-                  {totalUrgent}
-                </div>
-                <div className="hpp-stat-label">Urgent</div>
-              </div>
-              <div className="hpp-stat-item">
-                <div className="hpp-stat-value" style={{ color: "#28a745" }}>
-                  {totalFix}
-                </div>
-                <div className="hpp-stat-label">Fix</div>
-              </div>
-              <div className="hpp-stat-item">
-                <div className="hpp-stat-value" style={{ color: "#6685eaff" }}>
-                  Rp. {avgHpp.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
-                </div>
-                <div className="hpp-stat-label">Rata-rata HPP</div>
-              </div>
+      <header className="hpp-header">
+        <div className="hpp-header-top">
+          <div className="hpp-title-group">
+            <div className="hpp-brand-icon">
+              <FiBox />
             </div>
-          )}
+            <div className="hpp-title-wrap">
+              <div className="hpp-module-pill">Product Module</div>
+              <h1>Data Produk</h1>
+              <p className="hpp-header-subtitle">Manajemen produk, HPP, dan komponen produksi</p>
+            </div>
+          </div>
+          <div className="hpp-search-wrap">
+            <input type="text" className="hpp-search-input" placeholder="Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            {searchTerm && (
+              <button
+                className="hpp-search-clear"
+                onClick={() => setSearchTerm("")}
+                title="Hapus pencarian"
+              >
+                x
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="hpp-filter-section">
-        <button className="hpp-btn-primary" onClick={() => setShowForm(true)}>
-          <FaPlus /> Tambah Produk
-        </button>
-        <div style={{ flex: 1, minWidth: "250px", position: "relative" }}>
-          <input type="text" className="hpp-search-input" placeholder="🔍 Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              style={{
-                position: "absolute",
-                right: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#999",
-                fontSize: "18px",
-                padding: "4px",
-              }}
-              title="Hapus pencarian"
-            >
-              ×
+      <main className="hpp-main">
+        <section className="hpp-stats">
+          <article className="hpp-stat-item">
+            <div className="hpp-stat-label">Total Produk</div>
+            <div className="hpp-stat-value">{total}</div>
+          </article>
+          <article className="hpp-stat-item">
+            <div className="hpp-stat-label">Produk Urgent</div>
+            <div className="hpp-stat-value hpp-stat-value-danger">{totalUrgent}</div>
+          </article>
+          <article className="hpp-stat-item">
+            <div className="hpp-stat-label">Status Fix</div>
+            <div className="hpp-stat-value hpp-stat-value-success">{totalFix}</div>
+          </article>
+          <article className="hpp-stat-item">
+            <div className="hpp-stat-label">Rata-rata HPP</div>
+            <div className="hpp-stat-value hpp-stat-value-info">
+              Rp. {formatRupiahValue(avgHpp)}
+            </div>
+          </article>
+        </section>
+
+        <section className="hpp-table-wrapper">
+          <div className="hpp-table-header">
+            <div>
+              <h3>Semua Data Produk</h3>
+              <p>{isFiltering ? `Menampilkan ${visibleRows} data sesuai filter` : `Menampilkan ${visibleRows} data pada halaman ini`}</p>
+            </div>
+            <button className="hpp-btn-primary" onClick={openAddModal}>
+              <FaPlus /> Tambah Produk
             </button>
-          )}
-        </div>
-        <div style={{ position: "relative" }}>
-          <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="hpp-filter-select">
-            <option value="">📊 Semua Status Produk</option>
-            <option value="Urgent">🔴 Urgent</option>
-            <option value="Normal">🔵 Normal</option>
-          </select>
-          {selectedKategori && (
-            <span className="hpp-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
-              {selectedKategori} ×
-            </span>
-          )}
-        </div>
-        <div style={{ position: "relative" }}>
-          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="hpp-filter-select">
-            <option value="">📋 Semua Status HPP</option>
-            <option value="sementara">⏳ Sementara</option>
-            <option value="fix">✅ Fix</option>
-            <option value="bermasalah">⚠️ Bermasalah</option>
-          </select>
-          {selectedStatus && (
-            <span className="hpp-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
-              {selectedStatus === "sementara" ? "Sementara" : selectedStatus === "fix" ? "Fix" : "Bermasalah"} ×
-            </span>
-          )}
-        </div>
-      </div>
+          </div>
+
+          <div className="hpp-filter-section">
+            <div className="hpp-filter-wrap">
+              <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="hpp-filter-select">
+                <option value="">Semua Status Produk</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Normal">Normal</option>
+              </select>
+              {selectedKategori && (
+                <span className="hpp-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
+                  {selectedKategori} x
+                </span>
+              )}
+            </div>
+            <div className="hpp-filter-wrap">
+              <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="hpp-filter-select">
+                <option value="">Semua Status HPP</option>
+                <option value="sementara">Sementara</option>
+                <option value="fix">Fix</option>
+                <option value="bermasalah">Bermasalah</option>
+              </select>
+              {selectedStatus && (
+                <span className="hpp-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
+                  {selectedStatus === "sementara" ? "Sementara" : selectedStatus === "fix" ? "Fix" : "Bermasalah"} x
+                </span>
+              )}
+            </div>
+          </div>
 
       {loading ? (
         <div className="hpp-loading">
           <div className="hpp-spinner"></div>
-          <div style={{ marginTop: "16px", fontSize: "16px", color: "#667eea", fontWeight: "600" }}>Memuat data produk...</div>
-          <div style={{ marginTop: "8px", fontSize: "14px", color: "#999" }}>Mohon tunggu sebentar</div>
+          <div className="hpp-loading-title">Memuat data produk...</div>
+          <div className="hpp-loading-subtitle">Mohon tunggu sebentar</div>
         </div>
       ) : error ? (
         <div className="hpp-empty-state">
-          <div className="hpp-empty-icon" style={{ fontSize: "64px", marginBottom: "16px" }}>
-            ⚠️
-          </div>
-          <h3 style={{ margin: "0 0 8px 0", color: "#dc3545", fontSize: "20px" }}>Terjadi Kesalahan</h3>
-          <p style={{ margin: "0 0 20px 0", color: "#666" }}>{error}</p>
+          <div className="hpp-empty-icon">!</div>
+          <h3 className="hpp-empty-title error">Terjadi Kesalahan</h3>
+          <p className="hpp-empty-text">{error}</p>
           <button className="hpp-btn-primary" onClick={() => window.location.reload()}>
             Muat Ulang Halaman
           </button>
         </div>
       ) : produks.length === 0 ? (
         <div className="hpp-empty-state">
-          <div className="hpp-empty-icon" style={{ fontSize: "64px", marginBottom: "16px" }}>
-            📭
-          </div>
-          <h3 style={{ margin: "0 0 8px 0", color: "#667eea", fontSize: "20px" }}>Belum Ada Data Produk</h3>
-          <p style={{ margin: "0 0 8px 0", color: "#666" }}>{searchTerm || selectedKategori || selectedStatus ? "Tidak ada produk yang sesuai dengan filter yang Anda pilih" : "Mulai dengan menambahkan produk pertama Anda"}</p>
+          <div className="hpp-empty-icon">-</div>
+          <h3 className="hpp-empty-title">Belum Ada Data Produk</h3>
+          <p className="hpp-empty-text">{searchTerm || selectedKategori || selectedStatus ? "Tidak ada produk yang sesuai dengan filter yang Anda pilih" : "Mulai dengan menambahkan produk pertama Anda"}</p>
           {(searchTerm || selectedKategori || selectedStatus) && (
             <button
-              className="hpp-btn-secondary"
+              className="hpp-btn-secondary hpp-empty-cta"
               onClick={() => {
                 setSearchTerm("");
                 setSelectedKategori("");
                 setSelectedStatus("");
               }}
-              style={{ marginTop: "16px" }}
             >
               Hapus Filter
             </button>
           )}
           {!searchTerm && !selectedKategori && !selectedStatus && (
-            <button className="hpp-btn-primary" onClick={() => setShowForm(true)} style={{ marginTop: "16px" }}>
+            <button className="hpp-btn-primary hpp-empty-cta" onClick={openAddModal}>
               <FaPlus /> Tambah Produk Pertama
             </button>
           )}
         </div>
       ) : (
         <>
-          <div className="hpp-table-wrapper">
+          <div className="hpp-table-scroll">
             <table className="hpp-table">
               <thead>
                 <tr>
@@ -792,7 +933,7 @@ const HppProduk = () => {
                         )}
                       </td>
                       <td>
-                        <strong style={{ color: "#667eea" }}>Rp. {produk.hpp?.toLocaleString("id-ID") || "0"}</strong>
+                        <strong className="hpp-hpp-value">Rp. {formatRupiahValue(produk.hpp)}</strong>
                       </td>
                       <td>
                         <div className="hpp-action-buttons">
@@ -802,7 +943,7 @@ const HppProduk = () => {
                           <button className="hpp-btn-icon info" onClick={() => handleDetailClick(produk)} title="Detail Produk">
                             <FaInfoCircle />
                           </button>
-                          <button className="hpp-btn-icon" style={{ background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)" }} onClick={() => handleDownloadPdf(produk.id)} title="Download PDF">
+                          <button className="hpp-btn-icon danger" onClick={() => handleDownloadPdf(produk.id)} title="Download PDF">
                             <FaFilePdf />
                           </button>
                         </div>
@@ -818,36 +959,65 @@ const HppProduk = () => {
           {lastPage > 1 && (
             <div className="hpp-pagination">
               <button className="hpp-pagination-btn" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} title="Halaman Sebelumnya">
-                ← Sebelumnya
+                Sebelumnya
               </button>
 
               <div className="hpp-pagination-info">
                 <span>
                   Halaman {currentPage} dari {lastPage}
                 </span>
-                <span style={{ marginLeft: "12px", color: "#666" }}>(Total: {total} data)</span>
+                <span className="hpp-pagination-total">(Total: {total} data)</span>
               </div>
 
               <button className="hpp-pagination-btn" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage} title="Halaman Selanjutnya">
-                Selanjutnya →
+                Selanjutnya
               </button>
             </div>
           )}
         </>
       )}
+        </section>
+      </main>
 
       {/* Modal Form Tambah */}
       {showForm && (
-        <div className="hpp-modal-overlay" onClick={() => setShowForm(false)}>
+        <div
+          className="hpp-modal-overlay"
+          onClick={() => {
+            setShowForm(false);
+            setAddModalTab("info");
+          }}
+        >
           <div className="hpp-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="hpp-modal-header">
-              <h2>➕ Tambah Produk</h2>
-              <button className="hpp-modal-close" onClick={() => setShowForm(false)} type="button">
+              <h2>Tambah Produk</h2>
+              <button
+                className="hpp-modal-close"
+                onClick={() => {
+                  setShowForm(false);
+                  setAddModalTab("info");
+                }}
+                type="button"
+              >
                 <FaTimes />
               </button>
             </div>
             <div className="hpp-modal-body">
-              <form onSubmit={handleFormSubmit}>
+              <form onSubmit={handleFormSubmit} className="hpp-modal-form">
+                <div className="hpp-modal-tabs">
+                  <button type="button" className={`hpp-modal-tab ${addModalTab === "info" ? "active" : ""}`} onClick={() => setAddModalTab("info")}>
+                    Informasi Produk
+                  </button>
+                  <button type="button" className={`hpp-modal-tab ${addModalTab === "sku" ? "active" : ""}`} onClick={() => setAddModalTab("sku")}>
+                    SKU
+                  </button>
+                  <button type="button" className={`hpp-modal-tab ${addModalTab === "komponen" ? "active" : ""}`} onClick={() => setAddModalTab("komponen")}>
+                    Komponen
+                  </button>
+                </div>
+
+                {addModalTab === "info" && (
+                  <>
                 {/* Jenis Produk */}
                 <div className="hpp-form-group">
                   <label>Jenis Produk</label>
@@ -858,7 +1028,7 @@ const HppProduk = () => {
                     <option value="Celana">Celana</option>
                     <option value="custom">Lainnya...</option>
                   </select>
-                  {showCustomJenis && <input type="text" name="jenis_produk" className="hpp-form-input" style={{ marginTop: "12px" }} placeholder="Masukkan jenis produk baru" value={newProduk.jenis_produk} onChange={handleInputChange} />}
+                  {showCustomJenis && <input type="text" name="jenis_produk" className="hpp-form-input hpp-inline-input" placeholder="Masukkan jenis produk baru" value={newProduk.jenis_produk} onChange={handleInputChange} />}
                 </div>
 
                 {/* Nama Produk */}
@@ -872,9 +1042,9 @@ const HppProduk = () => {
                   <label>Gambar Produk</label>
                   <input type="file" name="gambar_produk" className="hpp-form-input" onChange={handleFileChange} accept="image/*" />
                   {newProduk.gambar_produk && !(newProduk.gambar_produk instanceof File) && (
-                    <div>
-                      <p>Gambar Saat Ini:</p>
-                      <img src={`${process.env.REACT_APP_API_URL}/storage/${newProduk.gambar_produk}`} alt="Gambar Produk" width="100" />
+                    <div className="hpp-form-image-preview">
+                      <p>Gambar Saat Ini</p>
+                      <img src={`${process.env.REACT_APP_API_URL}/storage/${newProduk.gambar_produk}`} alt="Gambar Produk" />
                     </div>
                   )}
                 </div>
@@ -882,22 +1052,66 @@ const HppProduk = () => {
                 {/* Harga Jasa & Overhead */}
                 <div className="hpp-form-group">
                   <label>Harga Jasa Cutting</label>
-                  <input type="number" name="harga_jasa_cutting" className="hpp-form-input" value={newProduk.harga_jasa_cutting} onChange={handleInputChange} placeholder="Masukkan harga jasa cutting" />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_cutting"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(newProduk.harga_jasa_cutting)}
+                      onChange={(e) => handleCurrencyChange("new", "harga_jasa_cutting", e.target.value)}
+                      placeholder="Masukkan harga jasa cutting"
+                    />
+                  </div>
                 </div>
 
                 <div className="hpp-form-group">
                   <label>Harga Jasa CMT</label>
-                  <input type="number" name="harga_jasa_cmt" className="hpp-form-input" value={newProduk.harga_jasa_cmt} onChange={handleInputChange} placeholder="Masukkan harga jasa CMT" />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_cmt"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(newProduk.harga_jasa_cmt)}
+                      onChange={(e) => handleCurrencyChange("new", "harga_jasa_cmt", e.target.value)}
+                      placeholder="Masukkan harga jasa CMT"
+                    />
+                  </div>
                 </div>
 
                 <div className="hpp-form-group">
                   <label>Harga Jasa Aksesoris</label>
-                  <input type="number" name="harga_jasa_aksesoris" className="hpp-form-input" value={newProduk.harga_jasa_aksesoris} onChange={handleInputChange} placeholder="Masukkan harga jasa aksesoris" />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_aksesoris"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(newProduk.harga_jasa_aksesoris)}
+                      onChange={(e) => handleCurrencyChange("new", "harga_jasa_aksesoris", e.target.value)}
+                      placeholder="Masukkan harga jasa aksesoris"
+                    />
+                  </div>
                 </div>
 
                 <div className="hpp-form-group">
                   <label>Harga Overhead</label>
-                  <input type="number" name="harga_overhead" className="hpp-form-input" value={newProduk.harga_overhead} onChange={handleInputChange} placeholder="Masukkan harga overhead" />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_overhead"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(newProduk.harga_overhead)}
+                      onChange={(e) => handleCurrencyChange("new", "harga_overhead", e.target.value)}
+                      placeholder="Masukkan harga overhead"
+                    />
+                  </div>
                 </div>
 
                 <div className="hpp-form-group">
@@ -908,12 +1122,16 @@ const HppProduk = () => {
                     <option value="Urgent">Urgent</option>
                   </select>
                 </div>
+                  </>
+                )}
 
                 {/* Warna dan Ukuran untuk SKU */}
+                {addModalTab === "sku" && (
+                  <>
                 <div className="hpp-form-group">
-                  <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+                  <label>Warna Produk <span className="hpp-required">*</span></label>
                   {warnaList.map((warna, index) => (
-                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                    <div key={index} className="hpp-dynamic-row">
                       <select
                         className="hpp-form-select"
                         value={warna || ""}
@@ -947,27 +1165,15 @@ const HppProduk = () => {
                       )}
                     </div>
                   ))}
-                  <button 
-                    type="button" 
-                    onClick={addWarna}
-                    style={{ 
-                      padding: '10px 20px', 
-                      backgroundColor: '#6c757d', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      marginTop: '5px'
-                    }}
-                  >
+                  <button type="button" onClick={addWarna} className="hpp-btn-add-inline">
                     + Tambah Warna
                   </button>
                 </div>
 
                 <div className="hpp-form-group">
-                  <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+                  <label>Ukuran Produk <span className="hpp-required">*</span></label>
                   {ukuranList.map((ukuran, index) => (
-                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                    <div key={index} className="hpp-dynamic-row">
                       <select
                         className="hpp-form-select"
                         value={ukuran || ""}
@@ -995,26 +1201,17 @@ const HppProduk = () => {
                       )}
                     </div>
                   ))}
-                  <button 
-                    type="button" 
-                    onClick={addUkuran}
-                    style={{ 
-                      padding: '10px 20px', 
-                      backgroundColor: '#6c757d', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      marginTop: '5px'
-                    }}
-                  >
+                  <button type="button" onClick={addUkuran} className="hpp-btn-add-inline">
                     + Tambah Ukuran
                   </button>
                 </div>
+                  </>
+                )}
 
                 {/* Komponen Produk */}
+                {addModalTab === "komponen" && (
                 <div className="hpp-komponen-section">
-                  <h3>🔧 Komponen Produk</h3>
+                  <h3>Komponen Produk</h3>
 
                   {komponenList.map((komp, index) => (
                     <div key={index} className="hpp-komponen-row">
@@ -1043,7 +1240,7 @@ const HppProduk = () => {
                           <option value="">Pilih Bahan</option>
                           {bahanList.map((b) => (
                             <option key={b.id} value={b.id}>
-                              {b.nama_bahan} — Rp {b.harga} ({b.satuan})
+                              {b.nama_bahan} - Rp {b.harga} ({b.satuan})
                             </option>
                           ))}
                         </select>
@@ -1065,14 +1262,17 @@ const HppProduk = () => {
                           <option value="">Pilih Aksesoris</option>
                           {aksesorisList.map((a) => (
                             <option key={a.id} value={a.id}>
-                              {a.nama_aksesoris} — Rp {a.harga_per_biji}/pcs
+                              {a.nama_aksesoris} - Rp {a.harga_per_biji}/pcs
                             </option>
                           ))}
                         </select>
                       )}
 
                       {/* Harga (Auto) */}
-                      <input type="number" placeholder="Harga" value={komp.harga_bahan} readOnly />
+                      <div className="hpp-price-input-wrap">
+                        <span className="hpp-price-prefix">Rp.</span>
+                        <input type="text" className="hpp-input-with-prefix" placeholder="Harga" value={formatRupiahDisplay(komp.harga_bahan)} readOnly />
+                      </div>
 
                       {/* Jumlah */}
                       <input type="number" min="0.0001" step="0.0001" placeholder="Jumlah" value={komp.jumlah_bahan} onChange={(e) => handleKomponenChange(index, "jumlah_bahan", e.target.value)} required />
@@ -1088,7 +1288,7 @@ const HppProduk = () => {
 
                       {/* Hapus */}
                       <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeKomponen(index)}>
-                        🗑️ Hapus
+                        Hapus
                       </button>
                     </div>
                   ))}
@@ -1097,13 +1297,21 @@ const HppProduk = () => {
                     <FaPlus /> Tambah Komponen
                   </button>
                 </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="hpp-form-actions">
                   <button type="submit" className="hpp-btn-submit">
-                    💾 Simpan
+                    Simpan
                   </button>
-                  <button type="button" className="hpp-btn-cancel" onClick={() => setShowForm(false)}>
+                  <button
+                    type="button"
+                    className="hpp-btn-cancel"
+                    onClick={() => {
+                      setShowForm(false);
+                      setAddModalTab("info");
+                    }}
+                  >
                     Batal
                   </button>
                 </div>
@@ -1118,13 +1326,27 @@ const HppProduk = () => {
         <div className="hpp-modal-overlay" onClick={handleCancelEdit}>
           <div className="hpp-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="hpp-modal-header">
-              <h2>✏️ Edit Produk</h2>
+              <h2>Edit Produk</h2>
               <button className="hpp-modal-close" onClick={handleCancelEdit} type="button">
                 <FaTimes />
               </button>
             </div>
             <div className="hpp-modal-body">
-              <form onSubmit={handleFormUpdate}>
+              <form onSubmit={handleFormUpdate} className="hpp-modal-form">
+                <div className="hpp-modal-tabs">
+                  <button type="button" className={`hpp-modal-tab ${editModalTab === "info" ? "active" : ""}`} onClick={() => setEditModalTab("info")}>
+                    Informasi Produk
+                  </button>
+                  <button type="button" className={`hpp-modal-tab ${editModalTab === "sku" ? "active" : ""}`} onClick={() => setEditModalTab("sku")}>
+                    SKU
+                  </button>
+                  <button type="button" className={`hpp-modal-tab ${editModalTab === "komponen" ? "active" : ""}`} onClick={() => setEditModalTab("komponen")}>
+                    Komponen
+                  </button>
+                </div>
+
+                {editModalTab === "info" && (
+                  <>
                 <div className="hpp-form-group">
                   <label>Nama Produk</label>
                   <input type="text" name="nama_produk" className="hpp-form-input" value={editProduk.nama_produk} onChange={handleInputChange} placeholder="Nama Produk" />
@@ -1154,7 +1376,7 @@ const HppProduk = () => {
                   <input type="file" className="hpp-form-input" accept="image/*" onChange={handleFileChange} />
                   {editProduk.gambar_produk && !(editProduk.gambar_produk instanceof File) && (
                     <div className="hpp-form-image-preview">
-                      <p style={{ marginBottom: "8px", fontSize: "13px", color: "#666" }}>Gambar Saat Ini:</p>
+                      <p>Gambar Saat Ini</p>
                       <img src={`${process.env.REACT_APP_API_URL}/storage/${editProduk.gambar_produk}`} alt="Gambar Produk" />
                     </div>
                   )}
@@ -1163,19 +1385,59 @@ const HppProduk = () => {
                 {/* Harga Jasa */}
                 <div className="hpp-form-group">
                   <label>Harga Jasa Cutting</label>
-                  <input type="number" name="harga_jasa_cutting" className="hpp-form-input" value={editProduk.harga_jasa_cutting} onChange={handleInputChange} />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_cutting"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(editProduk.harga_jasa_cutting)}
+                      onChange={(e) => handleCurrencyChange("edit", "harga_jasa_cutting", e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="hpp-form-group">
                   <label>Harga Jasa CMT</label>
-                  <input type="number" name="harga_jasa_cmt" className="hpp-form-input" value={editProduk.harga_jasa_cmt} onChange={handleInputChange} />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_cmt"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(editProduk.harga_jasa_cmt)}
+                      onChange={(e) => handleCurrencyChange("edit", "harga_jasa_cmt", e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="hpp-form-group">
                   <label>Harga Jasa Aksesoris</label>
-                  <input type="number" name="harga_jasa_aksesoris" className="hpp-form-input" value={editProduk.harga_jasa_aksesoris} onChange={handleInputChange} />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_jasa_aksesoris"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(editProduk.harga_jasa_aksesoris)}
+                      onChange={(e) => handleCurrencyChange("edit", "harga_jasa_aksesoris", e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="hpp-form-group">
                   <label>Harga Overhead</label>
-                  <input type="number" name="harga_overhead" className="hpp-form-input" value={editProduk.harga_overhead} onChange={handleInputChange} />
+                  <div className="hpp-price-input-wrap">
+                    <span className="hpp-price-prefix">Rp.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="harga_overhead"
+                      className="hpp-form-input hpp-input-with-prefix"
+                      value={formatRupiahDisplay(editProduk.harga_overhead)}
+                      onChange={(e) => handleCurrencyChange("edit", "harga_overhead", e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="hpp-form-group">
@@ -1187,12 +1449,16 @@ const HppProduk = () => {
                     <option value="Bermasalah">Bermasalah</option>
                   </select>
                 </div>
+                  </>
+                )}
 
                 {/* Warna dan Ukuran untuk SKU */}
+                {editModalTab === "sku" && (
+                  <>
                 <div className="hpp-form-group">
-                  <label>Warna Produk <span style={{ color: 'red' }}>*</span></label>
+                  <label>Warna Produk <span className="hpp-required">*</span></label>
                   {editWarnaList.map((warna, index) => (
-                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                    <div key={index} className="hpp-dynamic-row">
                       <select
                         className="hpp-form-select"
                         value={warna || ""}
@@ -1225,27 +1491,15 @@ const HppProduk = () => {
                       )}
                     </div>
                   ))}
-                  <button 
-                    type="button" 
-                    onClick={addEditWarna}
-                    style={{ 
-                      padding: '10px 20px', 
-                      backgroundColor: '#6c757d', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      marginTop: '5px'
-                    }}
-                  >
+                  <button type="button" onClick={addEditWarna} className="hpp-btn-add-inline">
                     + Tambah Warna
                   </button>
                 </div>
 
                 <div className="hpp-form-group">
-                  <label>Ukuran Produk <span style={{ color: 'red' }}>*</span></label>
+                  <label>Ukuran Produk <span className="hpp-required">*</span></label>
                   {editUkuranList.map((ukuran, index) => (
-                    <div key={index} style={{ display: 'flex', marginBottom: '10px', gap: '10px' }}>
+                    <div key={index} className="hpp-dynamic-row">
                       <select
                         className="hpp-form-select"
                         value={ukuran || ""}
@@ -1272,26 +1526,17 @@ const HppProduk = () => {
                       )}
                     </div>
                   ))}
-                  <button 
-                    type="button" 
-                    onClick={addEditUkuran}
-                    style={{ 
-                      padding: '10px 20px', 
-                      backgroundColor: '#6c757d', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      marginTop: '5px'
-                    }}
-                  >
+                  <button type="button" onClick={addEditUkuran} className="hpp-btn-add-inline">
                     + Tambah Ukuran
                   </button>
                 </div>
+                  </>
+                )}
 
                 {/* Komponen */}
+                {editModalTab === "komponen" && (
                 <div className="hpp-komponen-section">
-                  <h3>🔧 Edit Komponen Produk</h3>
+                  <h3>Edit Komponen Produk</h3>
 
                   {editKomponenList.map((komp, index) => (
                     <div key={index} className="hpp-komponen-row">
@@ -1345,7 +1590,10 @@ const HppProduk = () => {
                       )}
 
                       {/* Harga */}
-                      <input type="number" value={komp.harga_bahan} readOnly />
+                      <div className="hpp-price-input-wrap">
+                        <span className="hpp-price-prefix">Rp.</span>
+                        <input type="text" className="hpp-input-with-prefix" value={formatRupiahDisplay(komp.harga_bahan)} readOnly />
+                      </div>
 
                       {/* Jumlah */}
                       <input type="number" value={komp.jumlah_bahan} onChange={(e) => handleEditKomponenChange(index, "jumlah_bahan", e.target.value)} />
@@ -1354,7 +1602,7 @@ const HppProduk = () => {
                       <input type="text" value={komp.satuan_bahan} readOnly />
 
                       <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeEditKomponen(index)}>
-                        🗑️ Hapus
+                        Hapus
                       </button>
                     </div>
                   ))}
@@ -1363,21 +1611,11 @@ const HppProduk = () => {
                     <FaPlus /> Tambah Komponen
                   </button>
                 </div>
-
-                {/* Status HPP */}
-                <div className="hpp-form-group">
-                  <label>Status HPP</label>
-                  <select name="status_produk" className="hpp-form-select" value={editProduk.status_produk} onChange={handleInputChange}>
-                    <option value="">Pilih Status</option>
-                    <option value="Sementara">Sementara</option>
-                    <option value="Fix">Fix</option>
-                    <option value="Bermasalah">Bermasalah</option>
-                  </select>
-                </div>
+                )}
 
                 <div className="hpp-form-actions">
                   <button type="submit" className="hpp-btn-submit">
-                    💾 Simpan Edit
+                    Simpan Edit
                   </button>
                   <button type="button" className="hpp-btn-cancel" onClick={handleCancelEdit}>
                     Batal
@@ -1394,7 +1632,7 @@ const HppProduk = () => {
         <div className="hpp-modal-overlay" onClick={handleCloseModal}>
           <div className="hpp-modal-content hpp-detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="hpp-modal-header">
-              <h3>📋 Detail Produk</h3>
+              <h3>Detail Produk</h3>
               <button className="hpp-modal-close" onClick={handleCloseModal} type="button">
                 <FaTimes />
               </button>
@@ -1404,19 +1642,11 @@ const HppProduk = () => {
               <div className="hpp-detail-top">
                 <div className="hpp-detail-hero">
                   {selectedProduk.gambar_produk && (
-                    <div style={{ marginBottom: "20px", textAlign: "center" }}>
+                    <div className="hpp-detail-image-wrap">
                       <img
                         src={selectedProduk.gambar_produk}
                         alt={selectedProduk.nama_produk}
-                        style={{
-                          maxWidth: "300px",
-                          maxHeight: "300px",
-                          width: "auto",
-                          height: "auto",
-                          borderRadius: "12px",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                          objectFit: "contain",
-                        }}
+                        className="hpp-detail-image"
                       />
                     </div>
                   )}
@@ -1449,7 +1679,7 @@ const HppProduk = () => {
                   </div>
                   <div className="hpp-detail-summary-item highlight">
                     <div className="label">HPP</div>
-                    <div className="value big">Rp. {selectedProduk.hpp?.toLocaleString("id-ID") || "0"}</div>
+                    <div className="value big">Rp. {formatRupiahValue(selectedProduk.hpp)}</div>
                   </div>
                 </div>
               </div>
@@ -1458,65 +1688,65 @@ const HppProduk = () => {
               <div className="hpp-detail-grid">
                 <div className="hpp-detail-card">
                   <div className="label">Harga Jasa CMT</div>
-                  <div className="value">Rp. {selectedProduk.harga_jasa_cmt?.toLocaleString("id-ID") || "0"}</div>
+                  <div className="value">Rp. {formatRupiahValue(selectedProduk.harga_jasa_cmt)}</div>
                 </div>
                 <div className="hpp-detail-card">
                   <div className="label">Harga Jasa Cutting</div>
-                  <div className="value">Rp. {selectedProduk.harga_jasa_cutting?.toLocaleString("id-ID") || "0"}</div>
+                  <div className="value">Rp. {formatRupiahValue(selectedProduk.harga_jasa_cutting)}</div>
                 </div>
                 <div className="hpp-detail-card">
                   <div className="label">Harga Jasa Aksesoris</div>
-                  <div className="value">Rp. {selectedProduk.harga_jasa_aksesoris?.toLocaleString("id-ID") || "0"}</div>
+                  <div className="value">Rp. {formatRupiahValue(selectedProduk.harga_jasa_aksesoris)}</div>
                 </div>
                 <div className="hpp-detail-card">
                   <div className="label">Harga Overhead</div>
-                  <div className="value">Rp. {selectedProduk.harga_overhead?.toLocaleString("id-ID") || "0"}</div>
+                  <div className="value">Rp. {formatRupiahValue(selectedProduk.harga_overhead)}</div>
                 </div>
                 <div className="hpp-detail-card full highlight">
                   <div className="label">Total Harga Komponen</div>
-                  <div className="value big">Rp. {selectedProduk.total_komponen?.toLocaleString("id-ID") || "0"}</div>
+                  <div className="value big">Rp. {formatRupiahValue(selectedProduk.total_komponen)}</div>
                 </div>
               </div>
 
               <div className="hpp-detail-section">
-                <h4>🔧 Detail Komponen</h4>
+                <h4>Detail Komponen</h4>
                 {selectedProduk.komponen && selectedProduk.komponen.length > 0 ? (
-                  <table className="hpp-komponen-table">
-                    <thead>
-                      <tr>
-                        <th>Jenis Komponen</th>
-                        <th>Nama Bahan/Aksesoris</th>
-                        <th>Harga Bahan</th>
-                        <th>Jumlah</th>
-                        <th>Satuan</th>
-                        <th>Total Harga</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedProduk.komponen.map((k, idx) => {
-                        const nama = k.nama_bahan || k.nama_aksesoris || k.bahan?.nama_bahan || k.aksesoris?.nama_aksesoris || "-";
-                        const satuan = k.satuan_bahan || (k.sumber_komponen === "aksesoris" ? "pcs" : k.bahan?.satuan) || "-";
-                        const jumlahFormatted = k.jumlah_bahan !== undefined && k.jumlah_bahan !== null ? Number(k.jumlah_bahan).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 }) : "0";
-                        return (
-                          <tr key={idx}>
-                            <td>
-                              <strong>{k.jenis_komponen}</strong>
-                            </td>
-                            <td>{nama}</td>
-                            <td>Rp. {k.harga_bahan?.toLocaleString("id-ID") || "0"}</td>
-                            <td>{jumlahFormatted}</td>
-                            <td>{satuan}</td>
-                            <td>
-                              <strong>Rp. {k.total_harga_bahan?.toLocaleString("id-ID") || "0"}</strong>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="hpp-komponen-table-wrap">
+                    <table className="hpp-komponen-table">
+                      <thead>
+                        <tr>
+                          <th>Jenis Komponen</th>
+                          <th>Nama Bahan/Aksesoris</th>
+                          <th className="text-right">Harga Bahan</th>
+                          <th className="text-right">Jumlah</th>
+                          <th>Satuan</th>
+                          <th className="text-right">Total Harga</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedProduk.komponen.map((k, idx) => {
+                          const nama = k.nama_bahan || k.nama_aksesoris || k.bahan?.nama_bahan || k.aksesoris?.nama_aksesoris || "-";
+                          const satuan = k.satuan_bahan || (k.sumber_komponen === "aksesoris" ? "pcs" : k.bahan?.satuan) || "-";
+                          const jumlahFormatted = k.jumlah_bahan !== undefined && k.jumlah_bahan !== null ? Number(k.jumlah_bahan).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 }) : "0";
+                          return (
+                            <tr key={idx}>
+                              <td>
+                                <span className="hpp-komponen-type-chip">{k.jenis_komponen}</span>
+                              </td>
+                              <td>{nama}</td>
+                              <td className="text-right">Rp. {formatRupiahValue(k.harga_bahan)}</td>
+                              <td className="text-right">{jumlahFormatted}</td>
+                              <td>{satuan}</td>
+                              <td className="text-right hpp-komponen-total">Rp. {formatRupiahValue(k.total_harga_bahan)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div className="hpp-empty-state">
-                    <p>📭 Tidak ada data komponen untuk produk ini.</p>
+                    <p>Tidak ada data komponen untuk produk ini.</p>
                   </div>
                 )}
               </div>
@@ -1530,8 +1760,32 @@ const HppProduk = () => {
           </div>
         </div>
       )}
+
+      {feedbackModal.open && (
+        <div className="hpp-modal-overlay" onClick={closeFeedback}>
+          <div className="hpp-modal-content hpp-feedback-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="hpp-modal-header">
+              <h3>{feedbackModal.title}</h3>
+              <button className="hpp-modal-close" onClick={closeFeedback} type="button">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="hpp-modal-body">
+              <div className={`hpp-feedback-box ${feedbackModal.type}`}>
+                <p>{feedbackModal.message}</p>
+              </div>
+              <div className="hpp-form-actions">
+                <button type="button" className="hpp-btn-submit" onClick={closeFeedback}>
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default HppProduk;
+
