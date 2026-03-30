@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./PembelianBahan.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes, FaUndo } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes, FaUndo, FaSearch } from "react-icons/fa";
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
@@ -157,6 +157,16 @@ const PembelianBahan = () => {
       }, 100);
     }
   }, [scannedRoll]);
+
+  useEffect(() => {
+    if (!showForm && !showEditForm && !showDetail && !showScanBarcode && !showReturnForm) return;
+    setTimeout(() => {
+      const modalContents = document.querySelectorAll(".pembelian-bahan-modal-content");
+      modalContents.forEach((node) => {
+        node.scrollTop = 0;
+      });
+    }, 0);
+  }, [showForm, showEditForm, showDetail, showScanBarcode, showReturnForm]);
 
   // === PAGINATION ===
   const filtered = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase()));
@@ -990,115 +1000,126 @@ const PembelianBahan = () => {
 
   return (
     <div className="pembelian-bahan-page">
-      <div className="pembelian-bahan-header">
-        <div className="pembelian-bahan-header-icon">
-          <FaShoppingCart />
-        </div>
-        <h1>Pembelian Bahan</h1>
-      </div>
-
-      <div className="pembelian-bahan-table-container">
-        <div className="pembelian-bahan-filter-header">
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
-              <FaPlus /> Tambah Pembelian
-            </button>
-            <button className="pembelian-bahan-btn-add" onClick={() => setShowScanBarcode(true)} style={{ background: "#10b981" }}>
-              <FaBarcode /> Update Berat Roll
-            </button>
+      <section className="pembelian-bahan-shell">
+        <div className="pembelian-bahan-header">
+          <div className="pembelian-bahan-header-main">
+            <div className="pembelian-bahan-header-icon">
+              <FaShoppingCart />
+            </div>
+            <div className="pembelian-bahan-header-text">
+              <h1>Pembelian Bahan</h1>
+              <p>Kelola transaksi pembelian, roll bahan, dan dokumen penerimaan dalam satu layar.</p>
+            </div>
           </div>
-          <div className="pembelian-bahan-search-bar">
-            <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <div className="pembelian-bahan-header-meta">
+            <span>{filtered.length} transaksi</span>
           </div>
         </div>
 
-        {loading ? (
-          <p className="pembelian-bahan-loading">Memuat data...</p>
-        ) : error ? (
-          <p className="pembelian-bahan-error">{error}</p>
-        ) : !isReady ? (
-          <p className="pembelian-bahan-loading">Menyiapkan data master...</p>
-        ) : (
-          <>
-            <table className="pembelian-bahan-table">
-              <thead>
-                <tr>
-                  <th>No</th>
-                 
-                  <th>SPK Bahan</th>
-                  <th>Nama Bahan</th>
-                  <th>Harga</th>
-                  <th>Gudang</th>
-                  <th>Pabrik</th>
-                  <th>Tgl Diterima</th>
-                  <th>Barcode</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((b, index) => (
-                  <tr key={b.id}>
-                    <td>{indexOfFirstItem + index + 1}</td>
+        <div className="pembelian-bahan-table-container">
+          <div className="pembelian-bahan-filter-header">
+            <div className="pembelian-bahan-toolbar-actions">
+              <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
+                <FaPlus /> Tambah Pembelian
+              </button>
+              <button className="pembelian-bahan-btn-add pembelian-bahan-btn-add-scan" onClick={() => setShowScanBarcode(true)}>
+                <FaBarcode /> Update Berat Roll
+              </button>
+            </div>
+            <div className="pembelian-bahan-search-bar">
+              <FaSearch className="pembelian-bahan-search-icon" />
+              <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+          </div>
+
+          {loading ? (
+            <p className="pembelian-bahan-loading">Memuat data...</p>
+          ) : error ? (
+            <p className="pembelian-bahan-error">{error}</p>
+          ) : !isReady ? (
+            <p className="pembelian-bahan-loading">Menyiapkan data master...</p>
+          ) : (
+            <>
+              <table className="pembelian-bahan-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
                    
-                    <td>
-                      {b.spk ? (
-                        <div>
-                          <div>{b.spk.id}</div>
-                       
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
-                   
-                    <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
-                    <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
-                    <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
-                    <td>{b.tanggal_kirim}</td>
-                   
-                    <td>
-                      <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
-                        <FaDownload />
-                      </button>
-                    </td>
-                    <td>
-                      <button className="pembelian-bahan-btn-icon view" title="Lihat Detail" onClick={() => handleDetailClick(b)} style={{ marginRight: "8px" }}>
-                        <FaEye />
-                      </button>
-                      <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
-                        <FaEdit />
-                      </button>
-                    </td>
+                    <th>SPK Bahan</th>
+                    <th>Nama Bahan</th>
+                    <th>Harga</th>
+                    <th>Gudang</th>
+                    <th>Pabrik</th>
+                    <th>Tgl Diterima</th>
+                    <th>Barcode</th>
+                    <th>Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentItems.map((b, index) => (
+                    <tr key={b.id}>
+                      <td>{indexOfFirstItem + index + 1}</td>
+                     
+                      <td>
+                        {b.spk ? (
+                          <div>
+                            <div>{b.spk.id}</div>
+                         
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
+                     
+                      <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
+                      <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
+                      <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
+                      <td>{b.tanggal_kirim}</td>
+                     
+                      <td>
+                        <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
+                          <FaDownload />
+                        </button>
+                      </td>
+                      <td>
+                        <button className="pembelian-bahan-btn-icon view pembelian-bahan-btn-icon-spaced" title="Lihat Detail" onClick={() => handleDetailClick(b)}>
+                          <FaEye />
+                        </button>
+                        <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
+                          <FaEdit />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pembelian-bahan-pagination">
-                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="pembelian-bahan-pagination">
+                  <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                    Previous
+                  </button>
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const page = i + 1;
-                  return (
-                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
-                      {page}
-                    </button>
-                  );
-                })}
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
+                        {page}
+                      </button>
+                    );
+                  })}
 
-                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Modal Tambah */}
       {showForm && (
@@ -1123,7 +1144,7 @@ const PembelianBahan = () => {
                     ))}
                   </select>
                   {selectedSpkBahan && (
-                    <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#f0f9ff", borderRadius: "6px", fontSize: "13px" }}>
+                    <div className="pembelian-bahan-info-box">
                       <div><strong>Bahan:</strong> {selectedSpkBahan.bahan?.nama_bahan || "-"}</div>
                       <div><strong>Pabrik:</strong> {selectedSpkBahan.pabrik?.nama_pabrik || "-"}</div>
                       <div><strong>Total Rol SPK:</strong> {selectedSpkBahan.jumlah || 0}</div>
@@ -1147,14 +1168,14 @@ const PembelianBahan = () => {
                 <div className="pembelian-bahan-form-group">
                   <label>Harga (Rp)</label>
                   <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
-                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input type="checkbox" id="ppn-checkbox" checked={usePPN} onChange={(e) => setUsePPN(e.target.checked)} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
-                    <label htmlFor="ppn-checkbox" style={{ cursor: "pointer", fontSize: "14px", color: "#555", fontWeight: "normal" }}>
+                  <div className="pembelian-bahan-ppn-row">
+                    <input type="checkbox" id="ppn-checkbox" checked={usePPN} onChange={(e) => setUsePPN(e.target.checked)} className="pembelian-bahan-ppn-checkbox" />
+                    <label htmlFor="ppn-checkbox" className="pembelian-bahan-ppn-label">
                       Gunakan PPN (11%)
                     </label>
                   </div>
                   {usePPN && newItem.harga && (
-                    <div style={{ marginTop: "8px", padding: "8px 12px", backgroundColor: "#e3f2fd", borderRadius: "6px", fontSize: "13px", color: "#17457c" }}>
+                    <div className="pembelian-bahan-info-note">
                       <strong>Harga Setelah PPN:</strong> {formatRupiah(calculateHargaWithPPN(parseFloat(unformatRupiah(newItem.harga)) || 0))}
                     </div>
                   )}
@@ -1194,7 +1215,7 @@ const PembelianBahan = () => {
                 <div className="pembelian-bahan-form-group">
                   <label>No. Surat Jalan</label>
                   <input type="text" name="no_surat_jalan" value={newItem.no_surat_jalan} onChange={handleInputChange} className={noSuratJalanError ? "error" : ""} />
-                  {noSuratJalanError && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "4px" }}>{noSuratJalanError}</span>}
+                  {noSuratJalanError && <span className="pembelian-bahan-error-text">{noSuratJalanError}</span>}
                 </div>
               </div>
 
@@ -1283,17 +1304,17 @@ const PembelianBahan = () => {
 
               {/* Total Jumlah Rol dan Total Harga */}
               {selectedSpkBahan && (
-                <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
+                <div className="pembelian-bahan-total-section">
                   <div className="pembelian-bahan-form-row">
                     <div className="pembelian-bahan-form-group">
-                      <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll yang Dikirim</label>
-                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                      <label className="pembelian-bahan-total-label">Total Jumlah Roll yang Dikirim</label>
+                      <div className="pembelian-bahan-total-value">
                         {Object.values(newItem.berat_rol || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0)}
                       </div>
                     </div>
                     <div className="pembelian-bahan-form-group">
-                      <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Berat (kg)</label>
-                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                      <label className="pembelian-bahan-total-label">Total Berat (kg)</label>
+                      <div className="pembelian-bahan-total-value">
                         {Object.values(newItem.berat_rol || {})
                           .flat()
                           .reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0)
@@ -1625,14 +1646,14 @@ const PembelianBahan = () => {
                 <div className="pembelian-bahan-form-group">
                   <label>Harga (Rp)</label>
                   <input type="text" name="harga" value={editItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50.000" />
-                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input type="checkbox" id="ppn-checkbox-edit" checked={usePPNEdit} onChange={(e) => setUsePPNEdit(e.target.checked)} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
-                    <label htmlFor="ppn-checkbox-edit" style={{ cursor: "pointer", fontSize: "14px", color: "#555", fontWeight: "normal" }}>
+                  <div className="pembelian-bahan-ppn-row">
+                    <input type="checkbox" id="ppn-checkbox-edit" checked={usePPNEdit} onChange={(e) => setUsePPNEdit(e.target.checked)} className="pembelian-bahan-ppn-checkbox" />
+                    <label htmlFor="ppn-checkbox-edit" className="pembelian-bahan-ppn-label">
                       Gunakan PPN (11%)
                     </label>
                   </div>
                   {usePPNEdit && editItem.harga && (
-                    <div style={{ marginTop: "8px", padding: "8px 12px", backgroundColor: "#e3f2fd", borderRadius: "6px", fontSize: "13px", color: "#17457c" }}>
+                    <div className="pembelian-bahan-info-note">
                       <strong>Harga Setelah PPN:</strong> {formatRupiah(calculateHargaWithPPN(parseFloat(unformatRupiah(editItem.harga)) || 0))}
                     </div>
                   )}
@@ -1676,7 +1697,7 @@ const PembelianBahan = () => {
                 <div className="pembelian-bahan-form-group">
                   <label>No. Surat Jalan</label>
                   <input type="text" name="no_surat_jalan" value={editItem.no_surat_jalan} onChange={handleInputChange} className={noSuratJalanError ? "error" : ""} />
-                  {noSuratJalanError && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "4px" }}>{noSuratJalanError}</span>}
+                  {noSuratJalanError && <span className="pembelian-bahan-error-text">{noSuratJalanError}</span>}
                 </div>
               </div>
 
@@ -1751,35 +1772,35 @@ const PembelianBahan = () => {
                   </div>
                 </div>
               ))}
-              <div style={{ marginBottom: 20 }}>
+              <div className="pembelian-bahan-add-warna-row">
                 <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarnaEdit}>
                   <FaPlus /> Tambah Warna
                 </button>
               </div>
 
               {/* Total Jumlah Rol dan Total Harga */}
-              <div className="pembelian-bahan-total-section" style={{ marginTop: "30px", marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "10px", border: "2px solid #b3d9f2" }}>
+              <div className="pembelian-bahan-total-section">
                 <div className="pembelian-bahan-form-row">
                   <div className="pembelian-bahan-form-group">
-                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Jumlah Roll</label>
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>{calculateTotalRoll(editItem.warna)}</div>
+                    <label className="pembelian-bahan-total-label">Total Jumlah Roll</label>
+                    <div className="pembelian-bahan-total-value">{calculateTotalRoll(editItem.warna)}</div>
                   </div>
                   <div className="pembelian-bahan-form-group">
-                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Berat</label>
-                    <div style={{ fontSize: "18px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                    <label className="pembelian-bahan-total-label">Total Berat</label>
+                    <div className="pembelian-bahan-total-value pembelian-bahan-total-value-small">
                       {calculateTotalBerat(editItem.warna).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {getSatuanBahan(editItem.bahan_id) === "kg" ? "kg" : "yard"}
                     </div>
                   </div>
-                  <div className="pembelian-bahan-form-group" style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ fontWeight: "bold", fontSize: "16px", color: "#17457c" }}>Total Harga (Rp)</label>
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#17457c", padding: "10px", backgroundColor: "white", borderRadius: "8px", textAlign: "center" }}>
+                  <div className="pembelian-bahan-form-group pembelian-bahan-form-group-full">
+                    <label className="pembelian-bahan-total-label">Total Harga (Rp)</label>
+                    <div className="pembelian-bahan-total-value">
                       {formatRupiah(calculateTotalHarga(editItem.bahan_id, editItem.warna))}
                     </div>
-                    <div style={{ marginTop: "8px", fontSize: "12px", color: "#666", textAlign: "center" }}>
+                    <div className="pembelian-bahan-total-note">
                       (Harga = {formatRupiah(getHargaBahan(editItem.bahan_id))} × {calculateTotalBerat(editItem.warna).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
                       {getSatuanBahan(editItem.bahan_id) === "kg" ? "kg" : "yard"})
                     </div>
-                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#666", textAlign: "center" }}>(Harga roll tidak termasuk PPN)</div>
+                    <div className="pembelian-bahan-total-note">(Harga roll tidak termasuk PPN)</div>
                   </div>
                 </div>
               </div>
@@ -1800,7 +1821,7 @@ const PembelianBahan = () => {
       {/* Modal Scan Barcode */}
       {showScanBarcode && (
         <div className="pembelian-bahan-modal" onClick={handleCloseScanModal}>
-          <div className="pembelian-bahan-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+          <div className="pembelian-bahan-modal-content pembelian-bahan-modal-content-compact" onClick={(e) => e.stopPropagation()}>
             <div className="pembelian-bahan-modal-header">
               <h2>Scan Barcode - Update Berat Roll</h2>
               <button className="pembelian-bahan-modal-close" onClick={handleCloseScanModal}>
@@ -2021,3 +2042,4 @@ const PembelianBahan = () => {
 };
 
 export default PembelianBahan;
+
