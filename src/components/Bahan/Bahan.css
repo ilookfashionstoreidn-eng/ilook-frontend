@@ -1,464 +1,563 @@
-/* ===================================
-   BAHAN - MODERN UI
-   Future Blue Gradient Theme
-   =================================== */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
-/* Container */
+:root {
+  --erp-bg: #f3f5f8;
+  --erp-panel: #ffffff;
+  --erp-line: #dde3ea;
+  --erp-line-soft: #e9eef4;
+  --erp-text: #1f2937;
+  --erp-muted: #6b7280;
+  --erp-primary: #1d4f91;
+  --erp-primary-dark: #163f74;
+  --erp-primary-soft: #edf3fb;
+  --erp-success: #15803d;
+  --erp-danger: #b91c1c;
+  --erp-warning: #b45309;
+}
+
 .bahan-page {
   min-height: 100vh;
-  background: #ffffff;
-  padding: 20px;
+  padding: 16px;
+  background: var(--erp-bg);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--erp-text);
 }
 
-/* Header Section */
-.bahan-header {
-  background: transparent;
-  color: #17457c;
-  padding: 30px;
-  border-radius: 15px;
-  margin-bottom: 30px;
-  box-shadow: none;
+.bahan-shell {
+  max-width: 1360px;
+  margin: 0 auto;
+  background: #f8fafc;
+  border: 1px solid var(--erp-line);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.bahan-topbar {
   display: flex;
   align-items: center;
-  gap: 15px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 6px 14px;
+  border-bottom: 1px solid var(--erp-line);
 }
 
-.bahan-header-icon {
-  font-size: 42px;
-  background: transparent;
-  padding: 15px;
-  border-radius: 12px;
+.bahan-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bahan-title-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0487d8;
+  background: var(--erp-primary-soft);
+  color: var(--erp-primary);
+  border: 1px solid #cddcf1;
+  font-size: 16px;
 }
 
-.bahan-header h1 {
+.bahan-title-wrap h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 21px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.01em;
 }
 
-/* Table Container */
-.bahan-table-container {
-  background: white;
-  border-radius: 15px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+.bahan-title-wrap p {
+  margin: 2px 0 0;
+  color: var(--erp-muted);
+  font-size: 13px;
 }
 
-/* Filter Header */
-.bahan-filter-header {
+.bahan-topbar-right {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
-.bahan-btn-add {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 15px;
+.bahan-topbar-right small {
+  color: #7b8796;
+  font-size: 12px;
+}
+
+.bahan-kpi-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bahan-kpi-card {
+  background: var(--erp-panel);
+  border: 1px solid var(--erp-line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.bahan-kpi-card span {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #79879a;
   font-weight: 600;
-  cursor: pointer;
+}
+
+.bahan-kpi-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.bahan-kpi-price {
+  border-color: #d1deef;
+  background: #f7fbff;
+}
+
+.bahan-table-card {
+  margin-top: 12px;
+  background: var(--erp-panel);
+  border: 1px solid var(--erp-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bahan-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border-bottom: 1px solid var(--erp-line);
+}
+
+.bahan-table-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bahan-table-header p {
+  margin: 3px 0 0;
+  color: var(--erp-muted);
+  font-size: 12px;
+}
+
+.bahan-search-box {
+  width: 360px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
-}
-
-.bahan-btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
-}
-
-.bahan-btn-add:active {
-  transform: translateY(0);
-}
-
-.bahan-search-bar {
-  position: relative;
-  flex: 1;
-  max-width: 400px;
-}
-
-.bahan-search-bar input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #b3d9f2;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  padding: 9px 11px;
+  border: 1px solid #cfd8e3;
+  border-radius: 7px;
   background: #fff;
+  color: #7b8796;
 }
 
-.bahan-search-bar input:focus {
+.bahan-search-box input {
+  flex: 1;
+  border: none;
   outline: none;
-  border-color: #0487d8;
-  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
 }
 
-/* Table */
+.bahan-table-wrap {
+  overflow-x: auto;
+}
+
 .bahan-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 20px;
-  overflow: hidden;
-  border-radius: 12px;
+  border-collapse: collapse;
 }
 
-.bahan-table thead {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-}
-
-.bahan-table thead th {
-  padding: 16px 12px;
+.bahan-table th {
+  padding: 11px 14px;
   text-align: left;
-  font-weight: 600;
-  font-size: 14px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  color: #6c7a8e;
+  background: #f6f8fb;
+  border-bottom: 1px solid var(--erp-line);
 }
 
-.bahan-table thead th:first-child {
-  border-top-left-radius: 12px;
-}
-
-.bahan-table thead th:last-child {
-  border-top-right-radius: 12px;
-}
-
-.bahan-table tbody tr {
-  background: white;
-  transition: all 0.3s ease;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.bahan-table tbody tr:hover {
-  background: #e3f2fd;
-  transform: scale(1.01);
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.1);
-}
-
-.bahan-table tbody td {
-  padding: 14px 12px;
-  font-size: 14px;
-  color: #333;
+.bahan-table td {
+  padding: 12px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--erp-line-soft);
   vertical-align: middle;
 }
 
-/* Badge */
-.bahan-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+.bahan-table tbody tr:hover td {
+  background: #fafcff;
 }
 
-/* Price */
+.bahan-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bahan-name {
+  font-weight: 600;
+}
+
 .bahan-price {
-  color: #17457c;
   font-weight: 600;
-  font-size: 14px;
+  color: var(--erp-primary-dark);
 }
 
-/* Action Buttons */
-.bahan-btn-icon {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
+.bahan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid #d8e2ef;
+  background: #f4f8fc;
+  color: #335e92;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.bahan-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bahan-icon-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.bahan-btn-icon:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
+.bahan-icon-btn.edit {
+  color: #1d4ed8;
+  background: #eef4ff;
+  border-color: #d5e3ff;
 }
 
-.bahan-btn-icon.edit {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+.bahan-icon-btn.detail {
+  color: #0369a1;
+  background: #edf9ff;
+  border-color: #cdeffd;
 }
 
-.bahan-btn-icon.delete {
-  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+.bahan-icon-btn.delete {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fdd5d5;
 }
 
-/* Pagination */
+.bahan-icon-btn:hover {
+  filter: brightness(0.98);
+}
+
 .bahan-pagination {
+  padding: 12px 14px;
+  border-top: 1px solid var(--erp-line);
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 30px;
   flex-wrap: wrap;
+  gap: 6px;
 }
 
 .bahan-pagination button {
-  padding: 10px 16px;
-  border: 2px solid #b3d9f2;
-  background: white;
-  color: #17457c;
-  border-radius: 8px;
-  cursor: pointer;
+  border: 1px solid #cfd8e3;
+  background: #fff;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
-.bahan-pagination button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border-color: #17457c;
-  transform: translateY(-2px);
+  color: #405067;
+  cursor: pointer;
 }
 
 .bahan-pagination button.active {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  border-color: #17457c;
+  border-color: var(--erp-primary);
+  background: var(--erp-primary);
+  color: #fff;
 }
 
 .bahan-pagination button:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
+  opacity: 0.55;
 }
 
-/* Modal */
+.bahan-state {
+  padding: 36px 14px;
+  text-align: center;
+  color: #66758a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bahan-state-error {
+  color: var(--erp-danger);
+}
+
 .bahan-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.35);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 9999;
-  padding: 20px;
-  overflow-y: auto;
+  justify-content: center;
+  padding: 16px;
 }
 
 .bahan-modal-content {
-  background: white;
-  border-radius: 20px;
-  padding: 35px;
-  max-width: 600px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.3s ease;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--erp-line);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.bahan-detail-modal {
+  max-width: 620px;
 }
 
-.bahan-modal-content h2 {
-  margin: 0 0 25px 0;
-  color: #17457c;
-  font-size: 26px;
-  font-weight: 700;
-  border-bottom: 3px solid #0487d8;
-  padding-bottom: 15px;
+.bahan-modal-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--erp-line);
 }
 
-/* Form */
-.bahan-form {
+.bahan-modal-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.bahan-modal-head p {
+  margin: 4px 0 0;
+  color: #728197;
+  font-size: 12px;
+}
+
+.bahan-detail-grid {
+  padding: 14px 16px 8px;
   display: grid;
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bahan-detail-item {
+  border: 1px solid #e1e7ef;
+  border-radius: 6px;
+  background: #f9fbfd;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bahan-detail-item span {
+  font-size: 11px;
+  color: #6b7a90;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.bahan-detail-item strong {
+  font-size: 13px;
+  color: #1f2937;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.bahan-form {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .bahan-form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .bahan-form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .bahan-form-group label {
+  font-size: 12px;
   font-weight: 600;
-  color: #555;
-  font-size: 14px;
+  color: #455468;
 }
 
 .bahan-form-group input,
-.bahan-form-group select,
-.bahan-form-group textarea {
-  padding: 12px 14px;
-  border: 2px solid #b3d9f2;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.bahan-form-group textarea,
+.bahan-form-group select {
+  border: 1px solid #c8d3e0;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--erp-text);
+  padding: 10px;
   font-family: inherit;
+  font-size: 13px;
+}
+
+.bahan-input-prefix {
+  display: flex;
+  align-items: center;
+  border: 1px solid #c8d3e0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.bahan-input-prefix span {
+  padding: 0 10px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  border-right: 1px solid #e2e8f0;
+  line-height: 1;
+}
+
+.bahan-input-prefix input {
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+.bahan-input-prefix:focus-within {
+  border-color: #7ca0cc;
+  box-shadow: 0 0 0 2px rgba(29, 79, 145, 0.1);
 }
 
 .bahan-form-group input:focus,
-.bahan-form-group select:focus,
-.bahan-form-group textarea:focus {
+.bahan-form-group textarea:focus,
+.bahan-form-group select:focus {
   outline: none;
-  border-color: #0487d8;
-  box-shadow: 0 0 0 3px rgba(4, 135, 216, 0.1);
-}
-
-/* Buttons */
-.bahan-btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.bahan-btn-primary {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(4, 135, 216, 0.3);
-}
-
-.bahan-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(4, 135, 216, 0.4);
-}
-
-.bahan-btn-secondary {
-  background: linear-gradient(135deg, #757575 0%, #424242 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.bahan-btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  border-color: #7ca0cc;
+  box-shadow: 0 0 0 2px rgba(29, 79, 145, 0.1);
 }
 
 .bahan-form-actions {
+  margin-top: 4px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--erp-line);
   display: flex;
-  gap: 15px;
   justify-content: flex-end;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px solid #b3d9f2;
+  gap: 8px;
 }
 
-/* Loading & Error */
-.bahan-loading,
-.bahan-error {
-  text-align: center;
-  padding: 40px;
-  font-size: 16px;
-  color: #666;
+.bahan-btn-primary,
+.bahan-btn-secondary {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.bahan-error {
-  color: #f44336;
+.bahan-btn-primary {
+  color: #fff;
+  background: var(--erp-primary);
+  border-color: var(--erp-primary);
 }
 
-/* Responsive */
+.bahan-btn-primary:hover {
+  background: var(--erp-primary-dark);
+  border-color: var(--erp-primary-dark);
+}
+
+.bahan-btn-secondary {
+  color: #475569;
+  background: #eef2f7;
+  border-color: #d7dee8;
+}
+
+.bahan-btn-secondary:hover {
+  background: #e6ebf2;
+}
+
+/* ── Tombol Tutup di detail modal ── */
+.bahan-btn-tutup {
+  min-width: 100px;
+  justify-content: center;
+  color: #374151;
+  background: #e9edf2;
+  border-color: #cdd5df;
+  font-size: 13.5px;
+  padding: 9px 20px;
+  border-radius: 7px;
+}
+
+.bahan-btn-tutup:hover {
+  background: #dde3ec;
+  border-color: #bec8d4;
+}
+
+.bahan-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1000;
+  min-width: 220px;
+  max-width: 340px;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bahan-toast-info { background: var(--erp-primary); }
+.bahan-toast-success { background: var(--erp-success); }
+.bahan-toast-warning { background: var(--erp-warning); }
+.bahan-toast-error { background: var(--erp-danger); }
+
 @media (max-width: 1024px) {
-  .bahan-table-container {
-    overflow-x: auto;
-  }
-
-  .bahan-table {
-    min-width: 800px;
-  }
+  .bahan-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
-  .bahan-header {
-    padding: 20px;
-  }
-
-  .bahan-header h1 {
-    font-size: 24px;
-  }
-
-  .bahan-header-icon {
-    font-size: 32px;
-    padding: 12px;
-  }
-
-  .bahan-filter-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .bahan-search-bar {
-    max-width: 100%;
-  }
-
-  .bahan-modal-content {
-    padding: 25px;
-  }
-
-  .bahan-form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .bahan-form-actions {
-    flex-direction: column;
-  }
-
-  .bahan-form-actions button {
-    width: 100%;
-  }
+  .bahan-shell { padding: 12px; }
+  .bahan-topbar { flex-direction: column; align-items: flex-start; }
+  .bahan-topbar-right { width: 100%; align-items: flex-start; }
+  .bahan-search-box { width: 100%; }
+  .bahan-table-header { flex-direction: column; align-items: flex-start; }
+  .bahan-form-row { grid-template-columns: 1fr; }
+  .bahan-detail-grid { grid-template-columns: 1fr; }
+  .bahan-form-actions { flex-direction: column; }
+  .bahan-form-actions button { width: 100%; justify-content: center; }
 }
 
-@media (max-width: 480px) {
-  .bahan-page {
-    padding: 10px;
-  }
-
-  .bahan-table-container {
-    padding: 15px;
-  }
-
-  .bahan-pagination {
-    gap: 5px;
-  }
-
-  .bahan-pagination button {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
+@media (max-width: 520px) {
+  .bahan-kpi-grid { grid-template-columns: 1fr; }
+  .bahan-page { padding: 10px; }
 }

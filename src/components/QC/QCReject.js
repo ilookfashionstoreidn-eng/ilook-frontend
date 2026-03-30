@@ -244,7 +244,7 @@ const QCReject = () => {
 
       <header className="qcr-header">
         <div className="qcr-header-copy">
-          <div className="qcr-module-pill">ERP Module - Quality Control</div>
+          <div className="qcr-module-pill">Module - Quality Control</div>
           <div className="qcr-title-wrapper">
             <div className="qcr-brand-icon">
               <FiAlertTriangle />
