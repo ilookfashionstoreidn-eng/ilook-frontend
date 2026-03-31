@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ScanBahan.css";
 import API from "../../api";
-import { FaQrcode, FaCalendarAlt } from "react-icons/fa";
+import { FaQrcode } from "react-icons/fa";
+import { FiBox, FiCalendar, FiFilter, FiRefreshCw, FiSearch } from "react-icons/fi";
 
 const ScanBahan = () => {
   const scanInputRef = useRef(null);
@@ -10,7 +11,6 @@ const ScanBahan = () => {
   const [scanMessage, setScanMessage] = useState("");
   const [scanStatus, setScanStatus] = useState("");
 
-  // State untuk tabel stok
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [tanggalMulai, setTanggalMulai] = useState("");
@@ -29,7 +29,6 @@ const ScanBahan = () => {
     setCurrentPage(1);
   }, [searchTerm, filterAktif]);
 
-  // Cleanup timeout saat component unmount
   useEffect(() => {
     return () => {
       if (barcodeTimeoutRef.current) {
@@ -38,7 +37,6 @@ const ScanBahan = () => {
     };
   }, []);
 
-  // === FETCH STOK DATA ===
   const fetchStok = async () => {
     try {
       setStokLoading(true);
@@ -51,13 +49,12 @@ const ScanBahan = () => {
     }
   };
 
-  // === FILTER LOGIC ===
   const filtered = items.filter((item) => {
-    // Filter berdasarkan search term
     const matchesSearch =
-      (item.barcode || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.nama_bahan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (item.warna || "").toLowerCase().includes(searchTerm.toLowerCase());
+      (item.barcode || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.nama_bahan || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.warna || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filter berdasarkan tanggal scan (hanya jika filter aktif)
     let matchesTanggal = true;
     if (filterAktif && (tanggalMulai || tanggalAkhir)) {
       const scanDate = item.scanned_at ? new Date(item.scanned_at) : null;
@@ -77,7 +74,6 @@ const ScanBahan = () => {
           }
         }
       } else {
-        // Jika tidak ada tanggal scan, exclude jika filter tanggal aktif
         matchesTanggal = false;
       }
     }
@@ -85,7 +81,6 @@ const ScanBahan = () => {
     return matchesSearch && matchesTanggal;
   });
 
-  // Handler untuk menerapkan filter
   const handleTerapkanFilter = () => {
     if (!tanggalMulai && !tanggalAkhir) {
       alert("Silakan pilih tanggal mulai atau tanggal akhir terlebih dahulu!");
@@ -95,7 +90,6 @@ const ScanBahan = () => {
     setCurrentPage(1);
   };
 
-  // Handler untuk reset filter
   const handleResetFilter = () => {
     setTanggalMulai("");
     setTanggalAkhir("");
@@ -107,6 +101,18 @@ const ScanBahan = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const stokMelewatiBatas = items.filter((item) => Number(item.hari_di_gudang) > 30).length;
+  const ringkasanHalamanMulai = filtered.length === 0 ? 0 : indexOfFirstItem + 1;
+  const ringkasanHalamanAkhir = Math.min(indexOfLastItem, filtered.length);
+
+  const formatTanggal = (value) => {
+    if (!value) return "-";
+    return new Date(value).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -114,29 +120,22 @@ const ScanBahan = () => {
     }
   };
 
-  // Handle scan barcode - auto trigger saat input berubah
   const handleBarcodeChange = (value) => {
     setScanInput(value);
 
-    // Clear timeout sebelumnya jika ada
     if (barcodeTimeoutRef.current) {
       clearTimeout(barcodeTimeoutRef.current);
     }
 
     const trimmedValue = value.trim();
 
-    // Auto trigger jika barcode sudah lengkap (biasanya barcode scanner mengirim data dengan cepat)
-    // Barcode biasanya panjangnya minimal 8 karakter
     if (trimmedValue.length >= 8 && scanStatus !== "loading") {
-      // Delay kecil untuk memastikan semua karakter sudah ter-input dari scanner
       barcodeTimeoutRef.current = setTimeout(async () => {
-        // Langsung proses karena sudah validasi panjang
         await processScan(trimmedValue);
-      }, 200); // Delay 200ms untuk respons lebih cepat
+      }, 200);
     }
   };
 
-  // Proses scan barcode (dipanggil dari auto-submit atau manual submit)
   const processScan = async (barcodeValue = null) => {
     const barcodeToScan = barcodeValue || scanInput.trim();
 
@@ -152,9 +151,7 @@ const ScanBahan = () => {
       setScanMessage(response.data.message);
       setScanStatus("success");
       setScanInput("");
-      // Refresh tabel stok setelah scan berhasil
       fetchStok();
-      // Focus kembali ke input scan
       setTimeout(() => {
         scanInputRef.current?.focus();
       }, 100);
@@ -167,7 +164,6 @@ const ScanBahan = () => {
     }
   };
 
-  // Handle form submit (manual dengan Enter atau button)
   const handleScan = async (e) => {
     e.preventDefault();
     await processScan();
@@ -175,161 +171,210 @@ const ScanBahan = () => {
 
   return (
     <div className="scan-bahan-page">
-      <div className="scan-bahan-header">
-        <div className="scan-bahan-header-icon">
-          <FaQrcode />
-        </div>
-        <h1>Scan Bahan</h1>
-      </div>
-
-      {/* Card Scan Barcode */}
-      <div className="scan-bahan-table-container">
-        <div className="scan-bahan-filter-header">
-          <h3 style={{ margin: 0, color: "#17457c" }}>Scan Barcode Rol</h3>
-        </div>
-        <form onSubmit={handleScan} className="scan-bahan-form" style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <input
-            ref={scanInputRef}
-            type="text"
-            value={scanInput}
-            onChange={(e) => handleBarcodeChange(e.target.value)}
-            placeholder="Scan barcode rol - otomatis terdeteksi"
-            className="scan-bahan-form-group"
-            style={{ flex: 1, padding: "12px 14px", border: "2px solid #b3d9f2", borderRadius: "10px" }}
-          />
-          <button type="submit" disabled={scanStatus === "loading"} className="scan-bahan-btn scan-bahan-btn-primary">
-            {scanStatus === "loading" ? "Memindai..." : "Scan"}
-          </button>
-        </form>
-
-        {scanMessage && (
-          <div
-            className={`scan-bahan-loading ${scanStatus === "error" ? "scan-bahan-error" : ""}`}
-            style={{ padding: "15px", marginBottom: "20px", borderRadius: "8px", background: scanStatus === "error" ? "#ffebee" : "#e3f2fd", color: scanStatus === "error" ? "#f44336" : "#17457c" }}
-          >
-            {scanMessage}
-          </div>
-        )}
-      </div>
-
-      {/* Card Tabel Stok Bahan */}
-      <div className="scan-bahan-table-container">
-        <div className="scan-bahan-filter-header">
-          <h3 style={{ margin: 0, color: "#17457c" }}>Daftar Stok Bahan</h3>
-          <div className="scan-bahan-search-bar">
-            <input type="text" placeholder="Cari barcode, nama bahan, atau warna..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          </div>
-        </div>
-
-        {/* Filter Tanggal */}
-        <div className="scan-bahan-filter-tanggal">
-          <div className="scan-bahan-filter-tanggal-header">
-            <FaCalendarAlt className="scan-bahan-filter-icon" />
-            <h4>Filter Tanggal Scan</h4>
-          </div>
-          <div className="scan-bahan-filter-tanggal-inputs">
-            <div className="scan-bahan-form-group" style={{ marginBottom: 0 }}>
-              <label>Tanggal Mulai</label>
-              <input type="date" value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} className="scan-bahan-date-input" />
+      <div className="scan-bahan-shell">
+        <header className="scan-bahan-topbar">
+          <div className="scan-bahan-title-group">
+            <div className="scan-bahan-brand-icon">
+              <FaQrcode />
             </div>
-            <div className="scan-bahan-form-group" style={{ marginBottom: 0 }}>
-              <label>Tanggal Akhir</label>
-              <input type="date" value={tanggalAkhir} onChange={(e) => setTanggalAkhir(e.target.value)} className="scan-bahan-date-input" />
+            <div>
+              <h1>Scan Bahan</h1>
+              <p>Kontrol stok bahan berbasis scan barcode secara real-time</p>
             </div>
-            <div className="scan-bahan-filter-tanggal-actions">
-              <button className="scan-bahan-btn scan-bahan-btn-primary" onClick={handleTerapkanFilter} disabled={stokLoading} style={{ marginTop: "20px" }}>
-                {stokLoading ? "Memproses..." : "Terapkan Filter"}
-              </button>
-              <button className="scan-bahan-btn scan-bahan-btn-secondary" onClick={handleResetFilter} disabled={stokLoading} style={{ marginTop: "20px" }}>
-                Reset Filter
-              </button>
+          </div>
+
+          <div className="scan-bahan-kpi-grid">
+            <div className="scan-bahan-kpi-card">
+              <span>Total Stok</span>
+              <strong>{items.length}</strong>
             </div>
-            {filterAktif && (tanggalMulai || tanggalAkhir) && (
-              <div className="scan-bahan-filter-info">
-                <strong>Filter Aktif:</strong>
-                <span>
-                  {tanggalMulai && tanggalAkhir
-                    ? `Tanggal ${new Date(tanggalMulai).toLocaleDateString("id-ID")} - ${new Date(tanggalAkhir).toLocaleDateString("id-ID")}`
-                    : tanggalMulai
-                    ? `Dari tanggal ${new Date(tanggalMulai).toLocaleDateString("id-ID")}`
-                    : `Sampai tanggal ${new Date(tanggalAkhir).toLocaleDateString("id-ID")}`}
-                </span>
+            <div className="scan-bahan-kpi-card">
+              <span>Hasil Filter</span>
+              <strong>{filtered.length}</strong>
+            </div>
+            <div className="scan-bahan-kpi-card">
+              <span>Lewat 30 Hari</span>
+              <strong>{stokMelewatiBatas}</strong>
+            </div>
+          </div>
+        </header>
+
+        <main className="scan-bahan-main">
+          <section className="scan-bahan-card">
+            <div className="scan-bahan-card-header">
+              <div className="scan-bahan-card-title">
+                <FiBox />
+                <h3>Scan Barcode Rol</h3>
               </div>
-            )}
-          </div>
-        </div>
+              <p>Input barcode secara otomatis atau tekan Enter untuk memindai manual.</p>
+            </div>
 
-        {stokLoading ? (
-          <p className="scan-bahan-loading">Memuat data stok...</p>
-        ) : stokError ? (
-          <p className="scan-bahan-error">{stokError}</p>
-        ) : (
-          <>
-            <table className="scan-bahan-table">
-              <thead>
-                <tr>
-                  <th>NO</th>
-                  <th>NAMA BAHAN</th>
-                  <th>WARNA</th>
-                  <th>BARCODE</th>
-                  <th>BERAT (KG)</th>
-                  <th>HARI DI GUDANG</th>
-                  <th>TANGGAL SCAN</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="empty-state">
-                      <div className="empty-icon">📦</div>
-                      Tidak ada data stok
-                    </td>
-                  </tr>
-                ) : (
-                  currentItems.map((item, index) => (
-                    <tr key={item.id}>
-                          <td className="table-no">{indexOfFirstItem + index + 1}</td>
-                          <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
-                          <td>{item.warna || "-"}</td>
-                          <td className="table-barcode">{item.barcode}</td>
-                          <td className="table-berat">{item.berat || "-"}</td>
-                          <td>
-                            <span className={`badge badge-hari ${item.hari_di_gudang > 30 ? "danger" : item.hari_di_gudang > 15 ? "warning" : "fresh"}`}>{item.hari_di_gudang} hari</span>
-                          </td>
-                          <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleDateString("id-ID") : "-"}</td>
-                          <td>
-                            <span className={`badge badge-status ${(item.status || "tersedia") === "tersedia" ? "tersedia" : "tidak-tersedia"}`}>{item.status || "tersedia"}</span>
+            <form onSubmit={handleScan} className="scan-bahan-scan-form">
+              <div className="scan-bahan-input-wrap">
+                <FiSearch className="scan-bahan-input-icon" />
+                <input
+                  ref={scanInputRef}
+                  type="text"
+                  value={scanInput}
+                  onChange={(e) => handleBarcodeChange(e.target.value)}
+                  placeholder="Scan barcode rol"
+                  className="scan-bahan-input"
+                />
+              </div>
+              <button type="submit" disabled={scanStatus === "loading"} className="scan-bahan-btn scan-bahan-btn-primary">
+                {scanStatus === "loading" ? "Memindai..." : "Scan"}
+              </button>
+            </form>
+
+            {scanMessage && <div className={`scan-bahan-alert ${scanStatus === "error" ? "error" : "success"}`}>{scanMessage}</div>}
+          </section>
+
+          <section className="scan-bahan-card">
+            <div className="scan-bahan-toolbar">
+              <div className="scan-bahan-card-title">
+                <FiBox />
+                <h3>Daftar Stok Bahan</h3>
+              </div>
+              <div className="scan-bahan-search-bar">
+                <FiSearch className="scan-bahan-search-icon" />
+                <input type="text" placeholder="Cari barcode, nama bahan, atau warna..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="scan-bahan-filter-tanggal">
+              <div className="scan-bahan-filter-tanggal-header">
+                <FiFilter className="scan-bahan-filter-icon" />
+                <h4>Filter Tanggal Scan</h4>
+              </div>
+              <div className="scan-bahan-filter-tanggal-inputs">
+                <div className="scan-bahan-form-group">
+                  <label>Tanggal Mulai</label>
+                  <div className="scan-bahan-date-wrap">
+                    <FiCalendar />
+                    <input type="date" value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} className="scan-bahan-date-input" />
+                  </div>
+                </div>
+                <div className="scan-bahan-form-group">
+                  <label>Tanggal Akhir</label>
+                  <div className="scan-bahan-date-wrap">
+                    <FiCalendar />
+                    <input type="date" value={tanggalAkhir} onChange={(e) => setTanggalAkhir(e.target.value)} className="scan-bahan-date-input" />
+                  </div>
+                </div>
+                <div className="scan-bahan-filter-tanggal-actions">
+                  <button type="button" className="scan-bahan-btn scan-bahan-btn-primary" onClick={handleTerapkanFilter} disabled={stokLoading}>
+                    {stokLoading ? "Memproses..." : "Terapkan"}
+                  </button>
+                  <button type="button" className="scan-bahan-btn scan-bahan-btn-secondary" onClick={handleResetFilter} disabled={stokLoading}>
+                    <FiRefreshCw />
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {filterAktif && (tanggalMulai || tanggalAkhir) && (
+                <div className="scan-bahan-filter-info">
+                  {tanggalMulai && tanggalAkhir
+                    ? `Filter aktif: ${formatTanggal(tanggalMulai)} - ${formatTanggal(tanggalAkhir)}`
+                    : tanggalMulai
+                    ? `Filter aktif: dari ${formatTanggal(tanggalMulai)}`
+                    : `Filter aktif: sampai ${formatTanggal(tanggalAkhir)}`}
+                </div>
+              )}
+            </div>
+
+            {stokLoading ? (
+              <p className="scan-bahan-loading">Memuat data stok...</p>
+            ) : stokError ? (
+              <p className="scan-bahan-error">{stokError}</p>
+            ) : (
+              <>
+                <div className="scan-bahan-table-wrap">
+                  <table className="scan-bahan-table">
+                    <thead>
+                      <tr>
+                        <th className="table-no">No</th>
+                        <th>Nama Bahan</th>
+                        <th>Warna</th>
+                        <th>Barcode</th>
+                        <th>Berat (Kg)</th>
+                        <th>Hari di Gudang</th>
+                        <th>Tanggal Scan</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="empty-state">
+                            Tidak ada data stok yang sesuai filter.
                           </td>
                         </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      ) : (
+                        currentItems.map((item, index) => {
+                          const hariDiGudang = Number(item.hari_di_gudang);
+                          const badgeHari =
+                            !Number.isFinite(hariDiGudang) || hariDiGudang < 0
+                              ? "scan-bahan-pill-neutral"
+                              : hariDiGudang > 30
+                              ? "scan-bahan-pill-danger"
+                              : hariDiGudang > 15
+                              ? "scan-bahan-pill-warning"
+                              : "scan-bahan-pill-fresh";
+                          const normalizedStatus = String(item.status || "tersedia").toLowerCase();
+                          const statusClass = normalizedStatus.includes("tidak") ? "scan-bahan-pill-tidak-tersedia" : "scan-bahan-pill-tersedia";
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="scan-bahan-pagination">
-                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
+                          return (
+                            <tr key={item.id}>
+                              <td className="table-no">{indexOfFirstItem + index + 1}</td>
+                              <td className="table-nama-bahan">{item.nama_bahan || "-"}</td>
+                              <td>{item.warna || "-"}</td>
+                              <td className="table-barcode">{item.barcode || "-"}</td>
+                              <td>{item.berat || "-"}</td>
+                              <td>
+                                <span className={`scan-bahan-pill ${badgeHari}`}>{Number.isFinite(hariDiGudang) && hariDiGudang >= 0 ? `${hariDiGudang} hari` : "-"}</span>
+                              </td>
+                              <td>{formatTanggal(item.scanned_at)}</td>
+                              <td>
+                                <span className={`scan-bahan-pill ${statusClass}`}>{item.status || "tersedia"}</span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const page = i + 1;
-                  return (
-                    <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
-                      {page}
-                    </button>
-                  );
-                })}
+                <div className="scan-bahan-table-footer">
+                  <p>
+                    Menampilkan {ringkasanHalamanMulai}-{ringkasanHalamanAkhir} dari {filtered.length} data
+                  </p>
+                  {totalPages > 1 && (
+                    <div className="scan-bahan-pagination">
+                      <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                        Sebelumnya
+                      </button>
 
-                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                  Next
-                </button>
-              </div>
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
+                            {page}
+                          </button>
+                        );
+                      })}
+
+                      <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                        Berikutnya
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-          </>
-        )}
+          </section>
+        </main>
       </div>
     </div>
   );
