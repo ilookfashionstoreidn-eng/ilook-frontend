@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
-.distribusi-erp-container {
+.history-cutting-erp-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -10,13 +10,13 @@
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
-.distribusi-erp-container *,
-.distribusi-erp-container *::before,
-.distribusi-erp-container *::after {
+.history-cutting-erp-container *,
+.history-cutting-erp-container *::before,
+.history-cutting-erp-container *::after {
   box-sizing: border-box;
 }
 
-.distribusi-erp-container::before {
+.history-cutting-erp-container::before {
   content: "";
   display: block;
   height: 3px;
@@ -24,7 +24,7 @@
   flex-shrink: 0;
 }
 
-.distribusi-erp-header {
+.history-cutting-erp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,7 +34,7 @@
   border-bottom: 1px solid #e4e9f0;
 }
 
-.distribusi-erp-header-top {
+.history-cutting-erp-header-top {
   width: 100%;
   display: flex;
   align-items: center;
@@ -43,13 +43,13 @@
   flex-wrap: wrap;
 }
 
-.distribusi-erp-title-group {
+.history-cutting-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.distribusi-erp-brand-icon {
+.history-cutting-brand-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -63,7 +63,7 @@
   flex-shrink: 0;
 }
 
-.distribusi-erp-title-wrap h1 {
+.history-cutting-title-wrap h1 {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
@@ -71,14 +71,14 @@
   color: #0f172a;
 }
 
-.distribusi-erp-title-wrap p {
+.history-cutting-title-wrap p {
   margin: 2px 0 0;
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.distribusi-erp-module-pill {
+.history-cutting-module-pill {
   width: fit-content;
   margin-bottom: 6px;
   border: 1px solid #cdd9ef;
@@ -92,18 +92,18 @@
   padding: 4px 10px;
 }
 
-.distribusi-erp-actions {
+.history-cutting-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.distribusi-erp-search-wrap {
+.history-cutting-search-wrap {
   position: relative;
   min-width: 300px;
 }
 
-.distribusi-erp-search-icon {
+.history-cutting-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -112,7 +112,7 @@
   font-size: 15px;
 }
 
-.distribusi-erp-search-input {
+.history-cutting-search-input {
   width: 100%;
   border: 1px solid #dde3ed;
   border-radius: 8px;
@@ -125,22 +125,22 @@
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.distribusi-erp-search-input::placeholder {
+.history-cutting-search-input::placeholder {
   color: #94a3b8;
 }
 
-.distribusi-erp-search-input:hover {
+.history-cutting-search-input:hover {
   border-color: #b6c2d6;
   background: #ffffff;
 }
 
-.distribusi-erp-search-input:focus {
+.history-cutting-search-input:focus {
   border-color: #2458ce;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
-.distribusi-erp-search-clear {
+.history-cutting-search-clear {
   position: absolute;
   right: 8px;
   top: 50%;
@@ -157,11 +157,11 @@
   justify-content: center;
 }
 
-.distribusi-erp-search-clear:hover {
+.history-cutting-search-clear:hover {
   background: #f1f5f9;
 }
 
-.distribusi-erp-icon-btn {
+.history-cutting-icon-btn {
   width: 38px;
   height: 38px;
   border: 1px solid #d1dbe8;
@@ -176,11 +176,11 @@
   position: relative;
 }
 
-.distribusi-erp-icon-btn:hover {
+.history-cutting-icon-btn:hover {
   background: #f8fafc;
 }
 
-.distribusi-erp-dot {
+.history-cutting-dot {
   position: absolute;
   top: 7px;
   right: 8px;
@@ -191,7 +191,7 @@
   border: 1.5px solid #ffffff;
 }
 
-.distribusi-erp-avatar {
+.history-cutting-avatar {
   width: 38px;
   height: 38px;
   border-radius: 9px;
@@ -206,27 +206,27 @@
   justify-content: center;
 }
 
-.distribusi-erp-main {
+.history-cutting-main {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 20px 24px;
 }
 
-.distribusi-erp-stats {
+.history-cutting-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.distribusi-erp-stat-item {
+.history-cutting-stat-item {
   background: #ffffff;
   border: 1px solid #e4e9f0;
   border-radius: 10px;
   padding: 12px 14px;
 }
 
-.distribusi-erp-stat-label {
+.history-cutting-stat-label {
   margin: 0;
   font-size: 11px;
   color: #64748b;
@@ -235,7 +235,7 @@
   letter-spacing: 0.05em;
 }
 
-.distribusi-erp-stat-value {
+.history-cutting-stat-value {
   margin: 5px 0 0;
   font-size: 22px;
   line-height: 1;
@@ -244,20 +244,20 @@
   color: #0f172a;
 }
 
-.distribusi-erp-stat-value-info {
+.history-cutting-stat-value-info {
   color: #2458ce;
 }
 
-.distribusi-erp-stat-value-success {
+.history-cutting-stat-value-success {
   color: #047857;
 }
 
-.distribusi-erp-stat-value-muted {
+.history-cutting-stat-value-muted {
   color: #475569;
   font-size: 18px;
 }
 
-.distribusi-erp-table-wrapper {
+.history-cutting-table-wrapper {
   background: #ffffff;
   border: 1px solid #e4e9f0;
   border-radius: 16px;
@@ -267,82 +267,76 @@
   flex-direction: column;
 }
 
-.distribusi-erp-table-header {
+.history-cutting-table-header {
   padding: 18px 22px;
   border-bottom: 1px solid #e8edf5;
 }
 
-.distribusi-erp-table-header h3 {
+.history-cutting-table-header h3 {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
   color: #0f172a;
 }
 
-.distribusi-erp-table-header p {
+.history-cutting-table-header p {
   margin: 3px 0 0;
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.distribusi-erp-loading,
-.distribusi-erp-empty-state {
+.history-cutting-loading,
+.history-cutting-empty-state {
   text-align: center;
   padding: 44px 16px;
   background: #ffffff;
 }
 
-.distribusi-erp-empty-state.inline {
+.history-cutting-empty-state.inline {
   padding: 24px;
 }
 
-.distribusi-erp-spinner {
+.history-cutting-spinner {
   width: 28px;
   height: 28px;
   margin: 0 auto;
   border: 3px solid #dbe8ff;
   border-top-color: #2458ce;
   border-radius: 50%;
-  animation: distribusi-erp-spin 0.8s linear infinite;
+  animation: history-cutting-spin 0.8s linear infinite;
 }
 
-.distribusi-erp-loading p {
+.history-cutting-loading p {
   margin-top: 10px;
   color: #0f172a;
   font-size: 15px;
   font-weight: 700;
 }
 
-.distribusi-erp-empty-icon {
+.history-cutting-empty-icon {
   font-size: 32px;
   color: #8ba2c2;
 }
 
-.distribusi-erp-empty-title {
+.history-cutting-empty-title {
   margin: 12px 0 0;
   color: #0f172a;
   font-size: 16px;
   font-weight: 700;
 }
 
-.distribusi-erp-empty-title.error {
+.history-cutting-empty-title.error {
   color: #b91c1c;
 }
 
-.distribusi-erp-empty-text {
+.history-cutting-empty-text {
   margin: 6px 0 0;
   color: #64748b;
   font-size: 13px;
 }
 
-.distribusi-erp-empty-note {
-  color: #64748b;
-  font-size: 13px;
-  margin: 0;
-}
-
-.distribusi-erp-table-scroll {
+.history-cutting-table-scroll {
   width: 100%;
   overflow-y: auto;
   overflow-x: auto;
@@ -350,14 +344,14 @@
   overscroll-behavior: contain;
 }
 
-.distribusi-erp-table {
+.history-cutting-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 930px;
+  min-width: 920px;
 }
 
-.distribusi-erp-table th {
+.history-cutting-table th {
   background: #f4f7fa;
   color: #475569;
   font-size: 12px;
@@ -372,7 +366,7 @@
   z-index: 2;
 }
 
-.distribusi-erp-table td {
+.history-cutting-table td {
   padding: 12px 14px;
   border-bottom: 1px solid #edf2f7;
   color: #1e293b;
@@ -382,107 +376,94 @@
   vertical-align: middle;
 }
 
-.distribusi-erp-table tbody tr:hover td {
+.history-cutting-table tbody tr:hover td {
   background: #fcfdff;
 }
 
-.distribusi-erp-kode-cell {
-  display: inline-flex;
+.history-cutting-product-cell {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  color: #0f172a;
-  font-weight: 700;
+  gap: 10px;
+  text-align: left;
 }
 
-.distribusi-erp-badge {
+.history-cutting-product-image,
+.history-cutting-product-fallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 9px;
+  border: 1px solid #dbe3ee;
+  flex-shrink: 0;
+}
+
+.history-cutting-product-image {
+  object-fit: cover;
+}
+
+.history-cutting-product-fallback {
+  background: #eef4ff;
+  color: #2458ce;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.history-cutting-product-name {
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.history-cutting-product-id {
+  margin-top: 2px;
+  display: inline-block;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.history-cutting-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c8d8f6;
+  background: #edf4ff;
+  color: #2458ce;
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 700;
-  border: 1px solid transparent;
 }
 
-.distribusi-erp-badge-primary {
-  background: #edf4ff;
-  color: #2458ce;
-  border-color: #c8d8f6;
-}
-
-.distribusi-erp-badge-success {
-  background: #ecfdf5;
-  color: #047857;
-  border-color: #a7f3d0;
-}
-
-.distribusi-erp-badge-info {
-  background: #f1f5f9;
-  color: #334155;
-  border-color: #d5dee9;
-}
-
-.distribusi-erp-container .distribusi-erp-action-btn {
-  border: 1px solid #1f4cb2 !important;
+.history-cutting-erp-container .history-cutting-action-btn {
+  border: none;
   border-radius: 9px;
   background: linear-gradient(135deg, #2458ce 0%, #4f79e8 100%) !important;
   color: #ffffff !important;
   height: 34px;
-  padding: 0 12px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  border: 1px solid #1f4cb2 !important;
   box-shadow: 0 6px 12px -8px rgba(36, 88, 206, 0.65);
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-.distribusi-erp-container .distribusi-erp-action-btn:hover {
+.history-cutting-erp-container .history-cutting-action-btn:hover {
   filter: brightness(1.02);
   transform: translateY(-1px);
   box-shadow: 0 10px 18px -10px rgba(36, 88, 206, 0.7);
 }
 
-.distribusi-erp-container .distribusi-erp-action-btn:active {
+.history-cutting-erp-container .history-cutting-action-btn:active {
   transform: translateY(0);
   box-shadow: 0 4px 10px -8px rgba(36, 88, 206, 0.55);
 }
 
-.distribusi-erp-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  padding: 14px;
-  border-top: 1px solid #e8edf5;
-  background: #f8fafc;
-}
-
-.distribusi-erp-pagination-btn {
-  border: none;
-  border-radius: 8px;
-  background: #2458ce;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.distribusi-erp-pagination-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.distribusi-erp-pagination-info {
-  color: #475569;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.distribusi-erp-modal-overlay {
+.history-cutting-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1100;
@@ -494,8 +475,8 @@
   padding: 16px;
 }
 
-.distribusi-erp-modal-content {
-  width: min(96vw, 1120px);
+.history-cutting-modal-content {
+  width: min(96vw, 1240px);
   max-height: 92vh;
   overflow-y: auto;
   background: #ffffff;
@@ -504,7 +485,7 @@
   box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24);
 }
 
-.distribusi-erp-modal-header {
+.history-cutting-modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -513,20 +494,20 @@
   border-bottom: 1px solid #e4e9f0;
 }
 
-.distribusi-erp-modal-header h2 {
+.history-cutting-modal-header h2 {
   margin: 0;
   color: #0f172a;
   font-size: 20px;
   font-weight: 700;
 }
 
-.distribusi-erp-modal-header p {
+.history-cutting-modal-header p {
   margin: 4px 0 0;
   color: #64748b;
   font-size: 13px;
 }
 
-.distribusi-erp-modal-close {
+.history-cutting-modal-close {
   width: 34px;
   height: 34px;
   border: 1px solid #d4dce8;
@@ -539,204 +520,205 @@
   justify-content: center;
 }
 
-.distribusi-erp-modal-close:hover {
+.history-cutting-modal-close:hover {
   background: #f8fafc;
 }
 
-.distribusi-erp-modal-body {
+.history-cutting-modal-body {
   padding: 16px 20px 20px;
   background: #fbfcff;
 }
 
-.distribusi-erp-info-card {
-  border: 1px solid #dde5f0;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 12px;
-}
-
-.distribusi-erp-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px;
-}
-
-.distribusi-erp-info-item {
-  border: 1px solid #e3eaf3;
-  border-radius: 10px;
-  background: #fcfdff;
-  padding: 10px;
-}
-
-.distribusi-erp-info-label {
-  color: #64748b;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
-  font-weight: 700;
-}
-
-.distribusi-erp-info-value {
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.distribusi-erp-timeline-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 16px 0 12px;
-}
-
-.distribusi-erp-timeline {
+.history-cutting-history-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.distribusi-erp-timeline-item {
-  display: flex;
   gap: 12px;
 }
 
-.distribusi-erp-timeline-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.distribusi-erp-timeline-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 1px #cbd5e1;
-}
-
-.distribusi-erp-type-cutting {
-  background: #2563eb;
-}
-
-.distribusi-erp-type-jasa {
-  background: #f59e0b;
-}
-
-.distribusi-erp-type-cmt {
-  background: #10b981;
-}
-
-.distribusi-erp-type-default {
-  background: #64748b;
-}
-
-.distribusi-erp-timeline-line {
-  width: 2px;
-  flex: 1;
-  min-height: 28px;
-  background: #cbd5e1;
-  margin-top: 4px;
-}
-
-.distribusi-erp-timeline-content {
-  flex: 1;
+.history-cutting-history-card {
   border: 1px solid #dde5f0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #ffffff;
-  padding: 10px 12px;
+  overflow: hidden;
 }
 
-.distribusi-erp-timeline-header {
+.history-cutting-history-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e9eff6;
+  background: #f7faff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.distribusi-erp-type-badge {
+.history-cutting-history-index {
+  border: 1px solid #c8d8f6;
+  background: #edf4ff;
+  color: #2458ce;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-cutting-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-cutting-history-meta span {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.history-cutting-detail-table-wrap {
+  overflow-x: auto;
+}
+
+.history-cutting-detail-table {
+  width: 100%;
+  min-width: 1200px;
+  border-collapse: collapse;
+}
+
+.history-cutting-detail-table thead {
+  background: #eef3fa;
+}
+
+.history-cutting-detail-table th,
+.history-cutting-detail-table td {
+  text-align: left;
+  border-bottom: 1px solid #ebf0f6;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.history-cutting-detail-table th {
+  color: #475569;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-cutting-detail-table td {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.history-cutting-detail-table tbody tr:nth-child(even) td {
+  background: #fbfcff;
+}
+
+.history-cutting-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c8d8f6;
+  background: #edf4ff;
+  color: #2458ce;
   border-radius: 999px;
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
 }
 
-.distribusi-erp-timeline-time {
+.history-cutting-status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 3px 9px;
   font-size: 11px;
-  color: #64748b;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.distribusi-erp-timeline-status {
-  margin-top: 6px;
-  color: #0f172a;
-  font-size: 13px;
+.history-cutting-status-heavy {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 
-.distribusi-erp-timeline-note {
-  margin-top: 6px;
+.history-cutting-status-light {
+  background: #fff7ed;
+  color: #b45309;
+  border-color: #fed7aa;
+}
+
+.history-cutting-status-even {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.history-cutting-status-neutral {
+  background: #f1f5f9;
   color: #475569;
-  font-size: 12px;
-  font-style: italic;
+  border-color: #cbd5e1;
 }
 
-@keyframes distribusi-erp-spin {
+.history-cutting-empty-inline {
+  padding: 16px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+@keyframes history-cutting-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 @media (max-width: 1000px) {
-  .distribusi-erp-stats {
+  .history-cutting-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .distribusi-erp-search-wrap {
+  .history-cutting-search-wrap {
     min-width: 240px;
   }
 }
 
 @media (max-width: 768px) {
-  .distribusi-erp-header {
+  .history-cutting-erp-header {
     padding: 14px 16px;
   }
 
-  .distribusi-erp-main {
+  .history-cutting-main {
     padding: 14px 16px;
   }
 
-  .distribusi-erp-stats {
+  .history-cutting-stats {
     grid-template-columns: 1fr;
   }
 
-  .distribusi-erp-actions {
+  .history-cutting-header-actions {
     width: 100%;
   }
 
-  .distribusi-erp-search-wrap,
-  .distribusi-erp-search-input {
+  .history-cutting-search-wrap,
+  .history-cutting-search-input {
     width: 100%;
     min-width: 0;
   }
 
-  .distribusi-erp-table {
-    min-width: 780px;
+  .history-cutting-table {
+    min-width: 760px;
   }
 
-  .distribusi-erp-modal-content {
+  .history-cutting-modal-content {
     width: 100%;
   }
 
-  .distribusi-erp-modal-header {
+  .history-cutting-modal-header {
     padding: 14px 16px;
   }
 
-  .distribusi-erp-modal-body {
+  .history-cutting-modal-body {
     padding: 14px 16px 16px;
   }
 }

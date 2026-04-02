@@ -1,451 +1,773 @@
-/* HasilCutting Component Styles */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
-/* Container & Layout */
+:root {
+  --hc-bg: #f4f6f9;
+  --hc-surface: #ffffff;
+  --hc-surface-soft: #f8fafc;
+  --hc-border: #e4e9f0;
+  --hc-text: #0f172a;
+  --hc-text-muted: #64748b;
+  --hc-primary-600: #2458ce;
+  --hc-primary-700: #1f4fb9;
+  --hc-primary-800: #163f98;
+  --hc-success: #047857;
+  --hc-warning: #b45309;
+  --hc-danger: #b91c1c;
+  --hc-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+}
+
 .hasil-cutting-container {
   min-height: 100vh;
-  background: #f5f5f7;
-  padding: 20px;
+  background: var(--hc-bg);
+  padding: 0;
+  font-family: "Plus Jakarta Sans", "Segoe UI", Tahoma, sans-serif;
+  color: var(--hc-text);
+  display: flex;
+  flex-direction: column;
+}
+
+.hasil-cutting-container::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #2458ce 0%, #6b8ff0 100%);
+  flex-shrink: 0;
 }
 
 .hasil-cutting-header-card {
-  background: linear-gradient(135deg, #0487d8 0%, #17457c 100%);
-  border-radius: 16px;
-  padding: 24px 32px;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-  margin-bottom: 24px;
-  color: white;
+  background: #fff;
+  border-bottom: 1px solid var(--hc-border);
+  padding: 16px 24px;
+  box-shadow: none;
+  margin-bottom: 0;
+  color: var(--hc-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.hasil-cutting-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hasil-cutting-brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2458ce 0%, #4f79e8 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(36, 88, 206, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.hasil-cutting-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.hasil-cutting-module-pill {
+  width: fit-content;
+  margin-bottom: 4px;
+  border: 1px solid #cdd9ef;
+  background: #edf3ff;
+  color: #355589;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
 }
 
 .hasil-cutting-header-title {
   margin: 0;
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 700;
-  color: white;
+  line-height: 1.25;
+  color: #0f172a;
 }
 
 .hasil-cutting-header-subtitle {
-  margin: 8px 0 0 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .hasil-cutting-primary-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
-  display: flex;
+  border-radius: 9px;
+  background: #2458ce;
+  color: #fff;
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .hasil-cutting-primary-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  background: #1e4caf;
 }
 
 .hasil-cutting-primary-button-icon {
-  font-size: 16px;
+  font-size: 13px;
 }
 
-/* Target Cards */
 .hasil-cutting-target-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  padding: 16px 24px;
 }
 
 .hasil-cutting-target-card {
-  padding: 16px 18px;
-  border-radius: 14px;
-  background: #ffffffff;
-  border: 1px solid rgba(212, 212, 211, 0.5);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .hasil-cutting-target-card-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background: #ffffffff;
-  display: flex;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 16px;
 }
 
 .hasil-cutting-target-card-icon.daily {
-  background: rgba(22, 163, 74, 0.18);
+  background: #dcfce7;
+  color: #166534;
 }
 
 .hasil-cutting-target-card-content {
   flex: 1;
 }
 
-.hasil-cutting-target-card-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #854d0e;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
+.hasil-cutting-target-card-label,
 .hasil-cutting-target-card-label.daily {
-  font-size: 16px;
-  color: #14532d;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.hasil-cutting-target-card-value {
-  font-size: 18px;
-  font-weight: 800;
-  color: #854d0e;
-  margin-top: 4px;
-}
-
+.hasil-cutting-target-card-value,
 .hasil-cutting-target-card-value.daily {
-  color: #14532d;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--hc-text);
+  margin-top: 5px;
 }
 
-.hasil-cutting-target-card-info {
-  font-size: 16px;
-  color: #854d0e;
-  margin-top: 4px;
-}
-
-.hasil-cutting-target-card-info.daily {
-  color: #14532d;
-}
-
-.hasil-cutting-target-card-status {
-  font-size: 16px;
-  color: #854d0e;
-  margin-top: 2px;
-}
-
+.hasil-cutting-target-card-info,
+.hasil-cutting-target-card-info.daily,
+.hasil-cutting-target-card-status,
 .hasil-cutting-target-card-status.daily {
-  color: #14532d;
+  font-size: 13px;
+  color: var(--hc-text-muted);
+  margin-top: 4px;
+  line-height: 1.45;
 }
 
 .hasil-cutting-target-card-status-achieved {
-  font-weight: 600;
-}
-
-.hasil-cutting-target-card-period {
-  font-size: 14px;
-  color: #a16207;
-  margin-top: 4px;
-}
-
-.hasil-cutting-target-card-period.daily {
-  font-size: 11px;
   color: #166534;
+  font-weight: 700;
 }
 
-/* Table Card */
+.hasil-cutting-target-card-period,
+.hasil-cutting-target-card-period.daily {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 6px;
+}
+
+.hasil-cutting-target-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.hasil-cutting-target-filter-row.single {
+  justify-content: flex-start;
+}
+
+.hasil-cutting-target-filter-input {
+  width: 100%;
+  max-width: 200px;
+  min-height: 34px;
+  border: 1px solid #dde3ed;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0 11px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.hasil-cutting-target-filter-input:hover {
+  border-color: #b6c2d6;
+  background: #ffffff;
+}
+
+.hasil-cutting-target-filter-input:focus {
+  border-color: #2458ce;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.hasil-cutting-target-filter-separator {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
 .hasil-cutting-table-card {
-  background: white;
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
   border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  overflow: visible;
+  box-shadow: var(--hc-shadow);
+  margin: 0 24px 20px;
+  padding: 0;
+}
+
+.hasil-cutting-table-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e8edf5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hasil-cutting-table-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hasil-cutting-table-header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.hasil-cutting-table-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hasil-cutting-table-search {
+  width: min(100%, 360px);
+  min-width: 280px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.hasil-cutting-table-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.hasil-cutting-table-search-input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #d3deea;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 36px 0 34px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.hasil-cutting-table-search-input:focus {
+  outline: none;
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+  background: #ffffff;
+}
+
+.hasil-cutting-table-search-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.hasil-cutting-table-search-clear:hover {
+  background: #cbd5e1;
+  color: #1e293b;
 }
 
 .hasil-cutting-loading-container {
   text-align: center;
-  padding: 40px;
+  padding: 36px;
 }
 
 .hasil-cutting-loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid var(--hc-primary-600);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
+  width: 36px;
+  height: 36px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
 }
 
 .hasil-cutting-loading-text {
-  margin-top: 16px;
-  color: #667eea;
-  font-size: 14px;
+  margin-top: 12px;
+  color: var(--hc-text-muted);
+  font-size: 13px;
   font-weight: 500;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.hasil-cutting-table-scroll {
+  width: 100%;
+  overflow: visible;
+  max-height: none;
+  overscroll-behavior: auto;
 }
 
-/* Table Styles */
-.hasil-cutting-table-row {
-  transition: all 0.2s ease;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.hasil-cutting-container .penjahit-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.hasil-cutting-container .penjahit-table thead {
+  background: #f4f7fa;
+}
+
+.hasil-cutting-index-table thead {
+  background: #f4f7fa !important;
+}
+
+.hasil-cutting-index-table {
+  width: 100% !important;
+  table-layout: auto !important;
+}
+
+.hasil-cutting-container .penjahit-table th {
+  padding: 13px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hasil-cutting-index-table th {
+  background: #f4f7fa !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 12px 14px !important;
+}
+
+.hasil-cutting-container .penjahit-table tbody tr {
+  border-bottom: 1px solid #eef2f7;
+  transition: background-color 0.18s ease;
+}
+
+.hasil-cutting-index-table tbody tr,
+.hasil-cutting-index-table tbody tr:nth-child(even),
+.hasil-cutting-index-table tbody tr:nth-child(odd) {
+  background: #ffffff !important;
+  transform: none !important;
+  box-shadow: none !important;
+  display: table-row !important;
+}
+
+.hasil-cutting-index-table tbody {
+  display: table-row-group !important;
+}
+
+.hasil-cutting-container .penjahit-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.hasil-cutting-index-table tbody tr:hover,
+.hasil-cutting-index-table tbody tr:nth-child(even):hover {
+  background: #fcfdff !important;
+}
+
+.hasil-cutting-container .penjahit-table td {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.hasil-cutting-index-table td {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #edf2f7 !important;
+  padding: 10px 14px !important;
 }
 
 .hasil-cutting-table-no {
-  font-weight: 600;
-  color: #667eea;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
 }
 
 .hasil-cutting-badge {
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
+  padding: 5px 10px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   display: inline-block;
 }
 
 .hasil-cutting-badge-success {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  background: #dcfce7;
+  color: #166534;
 }
 
 .hasil-cutting-badge-muted {
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  background: #e2e8f0;
+  color: #475569;
 }
 
 .hasil-cutting-table-product {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .hasil-cutting-table-date {
-  color: #666;
-  font-size: 13px;
+  color: #475569;
+  font-size: 12px;
 }
 
 .hasil-cutting-table-date-icon {
   margin-right: 6px;
-  color: #667eea;
+  color: #64748b;
 }
 
 .hasil-cutting-action-buttons {
   display: flex;
-  gap: 8px;
-  justify-content: center;
+  gap: 6px;
+  justify-content: flex-start;
 }
 
 .hasil-cutting-action-button {
-  padding: 8px 12px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 0;
 }
 
 .hasil-cutting-action-button-info {
-  background-color: #17a2b8;
-  color: white;
+  background: #e0f2fe;
+  color: #075985;
 }
 
 .hasil-cutting-action-button-info:hover {
-  background-color: #138496;
-  transform: scale(1.1);
+  background: #bae6fd;
 }
 
 .hasil-cutting-action-button-edit {
-  background-color: #ffc107;
-  color: white;
+  background: #2458ce;
+  color: #ffffff;
 }
 
 .hasil-cutting-action-button-edit:hover {
-  background-color: #e0a800;
-  transform: scale(1.1);
+  background: #1e4caf;
 }
 
 .hasil-cutting-action-button-delete {
-  background-color: #dc3545;
-  color: white;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .hasil-cutting-action-button-delete:hover {
-  background-color: #c82333;
-  transform: scale(1.1);
+  background: #fecaca;
 }
 
-/* Pagination */
 .hasil-cutting-pagination {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 16px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 12px;
+  gap: 10px;
+  margin-top: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--hc-border);
+  background: #f8fafc;
 }
 
 .hasil-cutting-pagination-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  background: white;
-  color: #667eea;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #2458ce;
+  color: #ffffff;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.2s;
 }
 
 .hasil-cutting-pagination-button:hover:not(:disabled) {
-  background: #667eea;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: #1e4caf;
 }
 
 .hasil-cutting-pagination-button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .hasil-cutting-pagination-info {
-  color: #667eea;
+  color: #64748b;
   font-weight: 600;
+  font-size: 12px;
 }
 
-/* Empty State */
 .hasil-cutting-empty-state {
   text-align: center;
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 16px;
-  border: 2px dashed #667eea;
+  padding: 48px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
 }
 
 .hasil-cutting-empty-state-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+  font-size: 40px;
+  color: #64748b;
+  margin-bottom: 12px;
 }
 
 .hasil-cutting-empty-state-title {
-  color: #667eea;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px;
 }
 
 .hasil-cutting-empty-state-text {
-  color: #666;
-  font-size: 14px;
+  color: var(--hc-text-muted);
+  font-size: 13px;
   margin: 0;
 }
 
-/* Modal */
 .hasil-cutting-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 20px;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.3s ease;
+  padding: 16px;
+  backdrop-filter: blur(3px);
 }
 
 .hasil-cutting-modal-content {
-  background-color: white;
-  border-radius: 20px;
+  background-color: #fff;
+  border-radius: 14px;
   width: 100%;
-  max-width: 1200px;
-  max-height: 90vh;
+  max-width: 1220px;
+  max-height: 92vh;
   overflow: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24);
+  border: 1px solid #dce5f1;
+}
+
+.hasil-cutting-modal-content-form {
+  width: min(98vw, 1680px);
+  max-width: 1680px;
 }
 
 .hasil-cutting-modal-content.detail {
-  max-width: 90%;
-  width: 1000px;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  max-width: 1120px;
 }
 
 .hasil-cutting-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 24px 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 20px 20px 0 0;
+  margin-bottom: 0;
+  padding: 18px 20px;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 14px 14px 0 0;
+  border-bottom: 1px solid var(--hc-border);
 }
 
-.hasil-cutting-modal-header.detail {
-  padding: 24px 32px;
+.hasil-cutting-modal-header-detail {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .hasil-cutting-modal-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
 }
 
 .hasil-cutting-modal-close-button {
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: #ffffff;
+  color: #64748b;
+  border: 1px solid #d4dce8;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 0;
 }
 
 .hasil-cutting-modal-close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+  background: #f8fafc;
+}
+
+.hasil-cutting-section-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 0 0 10px;
+  border: none;
+  border-bottom: 1px solid #e4e9f0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.hasil-cutting-section-bar-soft {
+  border-color: #e4e9f0;
+}
+
+.hasil-cutting-section-bar-inline {
+  justify-content: flex-start;
+}
+
+.hasil-cutting-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hasil-cutting-section-title-soft {
+  color: #0f172a;
+}
+
+.hasil-cutting-section-icon {
+  color: #2458ce;
+  font-size: 16px;
+}
+
+.hasil-cutting-section-action {
+  border: none;
+  border-radius: 9px;
+  background: #2458ce;
+  color: #fff;
+  height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.hasil-cutting-section-action:hover {
+  background: #1e4caf;
+}
+
+.hasil-cutting-save-button {
+  background: #047857;
+  border-color: transparent;
+}
+
+.hasil-cutting-save-button:hover:not(.is-disabled) {
+  background: #0f766e;
+}
+
+.hasil-cutting-save-button.is-disabled {
+  background: #64748b;
+  cursor: not-allowed;
 }
 
 .hasil-cutting-modal-body {
@@ -453,117 +775,932 @@
 }
 
 .hasil-cutting-modal-body.detail {
-  padding: 32px;
+  padding: 24px;
 }
 
-/* Original Data Card */
-.hasil-cutting-original-data-card {
-  padding: 20px;
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
-  border: 1px solid #dce2ff;
+.hasil-cutting-modal-body-form {
+  padding: 16px 20px 20px;
+  background: #fbfcff;
+  border-top: 1px solid #e4e9f0;
+}
+
+.hasil-cutting-modal-footer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e5ebf3;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hasil-cutting-modal-top-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.hasil-cutting-modal-top-card {
+  border: 1px solid #dde5f0;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  padding: 12px;
 }
 
-.hasil-cutting-original-data-header {
+.hasil-cutting-modal-top-title {
+  margin: 0 0 10px;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hasil-cutting-modal-tabs,
+.hasil-cutting-workflow-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border: 1px solid #dde6f2;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.hasil-cutting-modal-tab,
+.hasil-cutting-workflow-step {
+  min-height: 42px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.hasil-cutting-workflow-step-no {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hasil-cutting-modal-tab.is-active,
+.hasil-cutting-workflow-step.is-active {
+  border-color: #bcd2f7;
+  background: #edf4ff;
+  color: #2458ce;
+}
+
+.hasil-cutting-modal-tab.is-active .hasil-cutting-workflow-step-no,
+.hasil-cutting-modal-tab.is-done .hasil-cutting-workflow-step-no,
+.hasil-cutting-workflow-step.is-active .hasil-cutting-workflow-step-no,
+.hasil-cutting-workflow-step.is-done .hasil-cutting-workflow-step-no {
+  border-color: #2458ce;
+  background: #2458ce;
+  color: #ffffff;
+}
+
+.hasil-cutting-modal-tab.is-done,
+.hasil-cutting-workflow-step.is-done {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.hasil-cutting-operational-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.hasil-cutting-operational-item {
+  border: 1px solid #e4e9f0;
+  border-radius: 10px;
+  background: #fcfdff;
+  padding: 10px;
+}
+
+.hasil-cutting-operational-label {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hasil-cutting-operational-value {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hasil-cutting-intake-shell {
+  border: 1px solid #e4e9f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+  margin-bottom: 0;
+}
+
+.hasil-cutting-form-spk-group {
+  margin-bottom: 0;
+}
+
+.hasil-cutting-original-reference {
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #dbe5f3;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.hasil-cutting-original-reference-header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
 
-.hasil-cutting-original-data-icon {
-  font-size: 18px;
+.hasil-cutting-original-reference-icon {
+  font-size: 15px;
+  color: #334155;
 }
 
-.hasil-cutting-original-data-title {
+.hasil-cutting-original-reference-title {
+  font-size: 13px;
   font-weight: 700;
-  color: #3b4783;
+  color: #1e3a8a;
 }
 
-.hasil-cutting-original-data-subtitle {
+.hasil-cutting-original-reference-subtitle {
+  margin-top: 2px;
   font-size: 12px;
-  color: #6c7187;
+  color: #64748b;
 }
 
-.hasil-cutting-original-data-grid {
+.hasil-cutting-original-reference-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-top: 8px;
+  gap: 10px;
 }
 
-.hasil-cutting-original-data-item {
-  background: white;
-  padding: 12px;
+.hasil-cutting-original-reference-item {
+  border: 1px solid #e3eaf3;
   border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 10px;
 }
 
-.hasil-cutting-original-data-item.full-width {
+.hasil-cutting-original-reference-item-full {
   grid-column: 1 / -1;
 }
 
-.hasil-cutting-original-data-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.hasil-cutting-original-data-value {
+.hasil-cutting-original-reference-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   font-weight: 700;
-  color: #111827;
 }
 
-.hasil-cutting-original-data-value.catatan {
-  font-weight: 600;
-  color: #374151;
+.hasil-cutting-original-reference-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
-/* Form Styles */
-.hasil-cutting-form-group {
+.hasil-cutting-original-reference-note {
+  color: #334155;
+}
+
+.hasil-cutting-detail-content {
+  padding: 16px 20px 20px;
+  background: #fbfcff;
+}
+
+.hasil-cutting-detail-overview {
+  margin-bottom: 16px;
+  border: 1px solid #dde5f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.hasil-cutting-detail-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hasil-cutting-detail-overview-card {
+  border: 1px solid #e3eaf3;
+  border-radius: 10px;
+  background: #fcfdff;
+  padding: 10px;
+}
+
+.hasil-cutting-detail-overview-card-highlight {
+  background: #edf4ff;
+  border-color: #c8d8f6;
+}
+
+.hasil-cutting-detail-overview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.hasil-cutting-detail-overview-icon {
+  color: #2458ce;
+  font-size: 14px;
+}
+
+.hasil-cutting-detail-overview-label {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hasil-cutting-detail-overview-value {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hasil-cutting-detail-overview-value-highlight {
+  color: #2458ce;
+}
+
+.hasil-cutting-detail-section {
   margin-bottom: 20px;
+}
+
+.hasil-cutting-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #dde5f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.hasil-cutting-entry-detail-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.hasil-cutting-entry-detail-table th,
+.hasil-cutting-entry-detail-table td {
+  padding: 10px 8px !important;
+  font-size: 12px !important;
+}
+
+.hasil-cutting-entry-detail-table th:nth-child(1),
+.hasil-cutting-entry-detail-table td:nth-child(1) { width: 11%; }
+.hasil-cutting-entry-detail-table th:nth-child(2),
+.hasil-cutting-entry-detail-table td:nth-child(2) { width: 13%; }
+.hasil-cutting-entry-detail-table th:nth-child(3),
+.hasil-cutting-entry-detail-table td:nth-child(3) { width: 8%; }
+.hasil-cutting-entry-detail-table th:nth-child(4),
+.hasil-cutting-entry-detail-table td:nth-child(4) { width: 8%; }
+.hasil-cutting-entry-detail-table th:nth-child(5),
+.hasil-cutting-entry-detail-table td:nth-child(5) { width: 7%; }
+.hasil-cutting-entry-detail-table th:nth-child(6),
+.hasil-cutting-entry-detail-table td:nth-child(6) { width: 9%; }
+.hasil-cutting-entry-detail-table th:nth-child(7),
+.hasil-cutting-entry-detail-table td:nth-child(7) { width: 9%; }
+.hasil-cutting-entry-detail-table th:nth-child(8),
+.hasil-cutting-entry-detail-table td:nth-child(8) { width: 10%; }
+.hasil-cutting-entry-detail-table th:nth-child(9),
+.hasil-cutting-entry-detail-table td:nth-child(9) { width: 10%; }
+.hasil-cutting-entry-detail-table th:nth-child(10),
+.hasil-cutting-entry-detail-table td:nth-child(10) { width: 15%; }
+
+.hasil-cutting-entry-detail-table td:nth-child(10) {
+  white-space: normal;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-table-wrap {
+  border: 1px solid #dfe6ef;
+  border-radius: 10px;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table {
+  min-width: 860px;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table thead {
+  background: #f8fafc !important;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table td {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #eef2f7 !important;
+}
+
+.hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+.hasil-cutting-detail-row-no {
+  font-weight: 700;
+  color: #334155;
+}
+
+.hasil-cutting-detail-cell-strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hasil-cutting-detail-cell-medium {
+  font-weight: 600;
+  color: #475569;
+}
+
+.hasil-cutting-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.hasil-cutting-chip-primary {
+  background: #edf4ff;
+  color: #1e3a8a;
+  border-color: #c8d8f6;
+}
+
+.hasil-cutting-chip-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.hasil-cutting-chip-soft-success {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.hasil-cutting-chip-info {
+  background: #ecfeff;
+  color: #155e75;
+  border-color: #a5f3fc;
+}
+
+.hasil-cutting-chip-muted {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+  font-weight: 600;
+}
+
+.hasil-cutting-chip-primary-sm,
+.hasil-cutting-chip-info-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.hasil-cutting-chip-primary-sm {
+  background: #edf4ff;
+  color: #1e3a8a;
+  border-color: #c8d8f6;
+}
+
+.hasil-cutting-chip-info-sm {
+  background: #f8fafc;
+  color: #0f4ba8;
+  border-color: #bfdbfe;
+}
+
+.hasil-cutting-chip-status {
+  text-transform: uppercase;
+}
+
+.hasil-cutting-chip-status.is-draft {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.hasil-cutting-chip-status.is-completed {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.hasil-cutting-chip-status.is-default {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.hasil-cutting-detail-warna-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hasil-cutting-detail-warna-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #dbe5f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.hasil-cutting-detail-total-row td {
+  background: #edf4ff !important;
+  color: #1e3a8a !important;
+  border-top: 1px solid #c8d8f6 !important;
+  border-bottom: none !important;
+  font-weight: 700 !important;
+}
+
+.hasil-cutting-detail-total-label {
+  text-align: right;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.hasil-cutting-detail-total-value {
+  text-align: center;
+  padding: 12px;
+  font-size: 15px;
+}
+
+.hasil-cutting-detail-total-spacer {
+  padding: 12px;
+}
+
+.hasil-cutting-total-row {
+  background: #2458ce;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.hasil-cutting-total-label {
+  text-align: right;
+  padding: 16px;
+  font-size: 16px;
+}
+
+.hasil-cutting-total-value {
+  text-align: center;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Flatten legacy gradient badges inside detail modal to match ERP card language */
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"],
+.hasil-cutting-detail-content div[style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"] {
+  background: #edf4ff !important;
+  color: #1e3a8a !important;
+  border: 1px solid #c8d8f6 !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #28a745 0%, #20c997 100%)"] {
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #17a2b8 0%, #138496 100%)"] {
+  background: #ecfeff !important;
+  color: #155e75 !important;
+  border: 1px solid #a5f3fc !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)"] {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #ffc107 0%, #ff9800 100%)"] {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #6c757d 0%, #5a6268 100%)"] {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.hasil-cutting-detail-content span[style*="linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)"] {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Generic modal flattening for legacy inline styles in add/edit modal */
+.hasil-cutting-modal-body span[style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"],
+.hasil-cutting-modal-body div[style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"] {
+  background: #edf4ff !important;
+  color: #1e3a8a !important;
+  border: 1px solid #c8d8f6 !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body span[style*="linear-gradient(135deg, #28a745 0%, #20c997 100%)"],
+.hasil-cutting-modal-body div[style*="linear-gradient(135deg, #28a745 0%, #20c997 100%)"] {
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body span[style*="linear-gradient(135deg, #dc3545 0%, #c82333 100%)"],
+.hasil-cutting-modal-body div[style*="linear-gradient(135deg, #dc3545 0%, #c82333 100%)"] {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+}
+
+.hasil-cutting-modal-body span[style*="linear-gradient(135deg, #6c757d 0%, #5a6268 100%)"],
+.hasil-cutting-modal-body div[style*="linear-gradient(135deg, #6c757d 0%, #5a6268 100%)"] {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.hasil-cutting-modal-body button[style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"] {
+  background: #2458ce !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body button[style*="linear-gradient(135deg, #28a745 0%, #20c997 100%)"] {
+  background: #047857 !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body button[style*="linear-gradient(135deg, #dc3545 0%, #c82333 100%)"] {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body button[style*="linear-gradient(135deg, #6c757d 0%, #5a6268 100%)"] {
+  background: #64748b !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-form-group {
+  margin-bottom: 10px;
+}
+
+.hasil-cutting-form-spk-group {
+  margin-bottom: 0;
 }
 
 .hasil-cutting-form-label {
   display: block;
-  margin-bottom: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
+  margin-bottom: 6px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .hasil-cutting-form-input-wrapper {
   position: relative;
 }
 
-.hasil-cutting-form-input {
+.hasil-cutting-form-input,
+.modern-input {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   outline: none;
+  background: #fff;
+  color: #0f172a;
 }
 
-.hasil-cutting-form-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.hasil-cutting-form-input:focus,
+.modern-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-erp {
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-erp:hover {
+  border-color: #b6c2d6;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-erp:focus {
+  border-color: #2458ce;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-erp-sm {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-number {
+  text-align: center;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-qty-erp {
+  min-width: 100px;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-jumlah-seri {
+  width: 100%;
+  max-width: 100%;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-sku {
+  min-width: 180px;
+  flex: 1;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-jumlah-seri.is-locked {
+  background: #f1f5f9 !important;
+}
+
+.hasil-cutting-cell-input-shell {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: none;
+  display: flex;
+  align-items: stretch;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hasil-cutting-cell-input-shell:hover {
+  border-color: #b6c2d6;
+}
+
+.hasil-cutting-cell-input-shell:focus-within {
+  border-color: #2458ce;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.hasil-cutting-cell-input-shell-compact {
+  max-width: 165px;
+}
+
+.hasil-cutting-cell-input-shell.is-locked {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  border-style: dashed;
+}
+
+.hasil-cutting-cell-input-shell.has-addon-left .hasil-cutting-cell-input-addon {
+  border-right: 1px solid #e2e8f0;
+}
+
+.hasil-cutting-cell-input-shell.has-addon-right .hasil-cutting-cell-input-addon.right {
+  border-left: 1px solid #e2e8f0;
+}
+
+.hasil-cutting-cell-input-addon {
+  height: auto;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.hasil-cutting-cell-input-addon.right {
+  border-radius: 0 7px 7px 0;
+}
+
+.hasil-cutting-cell-input-shell .hasil-cutting-cell-input-addon:first-child {
+  border-radius: 7px 0 0 7px;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-in-shell {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 32px;
+  padding: 0 10px !important;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-input-in-shell:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.hasil-cutting-modal-body-form input[type="number"]::-webkit-outer-spin-button,
+.hasil-cutting-modal-body-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hasil-cutting-modal-body-form input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.hasil-cutting-cell-input-shell.is-locked .hasil-cutting-input-in-shell {
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.hasil-cutting-cell-metric {
+  min-height: 34px;
+  border: 1px solid #d7e2ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hasil-cutting-cell-metric.is-neutral {
+  background: #f1f5f9;
+  border-color: #d7e2ee;
+  color: #334155;
+}
+
+.hasil-cutting-cell-metric.is-success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.hasil-cutting-row-action-btn {
+  min-height: 34px;
+  min-width: 96px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.hasil-cutting-row-action-btn.danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.hasil-cutting-row-action-btn.danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.hasil-cutting-modal-body-form .hasil-cutting-select-erp {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) calc(50% - 3px),
+    calc(100% - 9px) calc(50% - 3px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
 .hasil-cutting-form-input-search {
-  padding-right: 40px;
+  min-height: 44px;
+  padding-right: 38px;
+  font-size: 14px;
+  border: 1px solid #c7d4e3;
+  background: #f9fbff;
+}
+
+.hasil-cutting-form-input-search:focus {
+  border-color: #2458ce;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
 .hasil-cutting-form-search-icon {
   position: absolute;
-  right: 16px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #667eea;
-  font-size: 16px;
+  color: #64748b;
+  font-size: 14px;
   pointer-events: none;
+}
+
+.hasil-cutting-form-section {
+  margin-bottom: 22px;
+  border: 1px solid #e4e9f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.hasil-cutting-form-section > .hasil-cutting-section-bar {
+  margin-bottom: 12px;
+  padding: 0 0 10px 0;
+  border: none;
+  border-bottom: 1px solid #e6edf5;
+  border-radius: 0;
+  background: transparent;
+}
+
+.hasil-cutting-form-section-acuan {
+  border-left: 1px solid #e4e9f0;
+}
+
+.hasil-cutting-form-section-detail {
+  border-left: 1px solid #e4e9f0;
+}
+
+.hasil-cutting-form-section-distribusi {
+  border-left: 1px solid #e4e9f0;
 }
 
 .hasil-cutting-form-dropdown {
@@ -572,406 +1709,615 @@
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 30px -20px rgba(15, 23, 42, 0.65);
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e2e8f0;
 }
 
 .hasil-cutting-form-dropdown-item {
-  padding: 12px 16px;
+  padding: 10px 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .hasil-cutting-form-dropdown-item:hover {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #f8fafc;
 }
 
-.hasil-cutting-form-dropdown-item-content {
+.hasil-cutting-form-dropdown-content {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.hasil-cutting-form-dropdown-item-icon {
-  color: #667eea;
+.hasil-cutting-form-dropdown-icon {
+  color: #2458ce;
   font-size: 14px;
 }
 
-.hasil-cutting-form-dropdown-item-id {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
+.hasil-cutting-form-dropdown-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
-.hasil-cutting-form-dropdown-item-name {
-  font-size: 12px;
-  color: #666;
+.hasil-cutting-form-dropdown-subtitle {
   margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .hasil-cutting-form-dropdown-empty {
-  padding: 20px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 30px -20px rgba(15, 23, 42, 0.65);
+  padding: 18px 14px;
   text-align: center;
+  z-index: 1000;
 }
 
 .hasil-cutting-form-dropdown-empty-icon {
-  font-size: 24px;
-  color: #999;
+  font-size: 20px;
+  color: #94a3b8;
   margin-bottom: 8px;
 }
 
 .hasil-cutting-form-dropdown-empty-text {
   margin: 0;
-  color: #666;
-  font-size: 14px;
+  color: #64748b;
+  font-size: 13px;
 }
 
-/* Section Headers */
-.hasil-cutting-section-header {
+.hasil-cutting-distribusi-section {
+  margin-top: 8px;
+}
+
+.hasil-cutting-distribusi-panel {
+  background: #ffffff;
+  border: 1px solid #dde5f0;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.hasil-cutting-distribusi-card {
+  margin-bottom: 14px;
+  border: 1px solid #dde5f0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.hasil-cutting-distribusi-card:last-child {
+  margin-bottom: 0;
+}
+
+.hasil-cutting-distribusi-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dde5f0;
 }
 
-.hasil-cutting-section-header-gray {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+.hasil-cutting-distribusi-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.hasil-cutting-section-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-}
-
-.hasil-cutting-section-title-gray {
-  color: #333;
-}
-
-.hasil-cutting-section-button {
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+.hasil-cutting-distribusi-index {
+  font-weight: 700;
+  color: #334155;
   font-size: 14px;
+}
+
+.hasil-cutting-distribusi-code {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #c8d8f6;
+  background: #edf4ff;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hasil-cutting-distribusi-jumlah-wrap {
+  position: relative;
+  padding-right: 20px;
+}
+
+.hasil-cutting-distribusi-info-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 13px;
+  cursor: help;
+}
+
+.hasil-cutting-distribusi-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hasil-cutting-distribusi-btn {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hasil-cutting-distribusi-btn-add {
+  background: #047857;
+  color: #ffffff;
+}
+
+.hasil-cutting-distribusi-btn-add:hover {
+  background: #0f766e;
+}
+
+.hasil-cutting-distribusi-btn-remove {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.hasil-cutting-distribusi-btn-remove:hover {
+  background: #b91c1c;
+}
+
+.hasil-cutting-distribusi-btn-remove.is-disabled {
+  background: #64748b;
+  cursor: not-allowed;
+}
+
+.hasil-cutting-distribusi-total {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hasil-cutting-sync-icon {
+  margin-right: 4px;
+}
+
+.hasil-cutting-distribusi-total.is-match {
+  color: #047857;
+}
+
+.hasil-cutting-distribusi-total.is-mismatch {
+  color: #b91c1c;
+}
+
+.hasil-cutting-distribusi-row-no {
+  font-weight: 700;
+  color: #334155;
+}
+
+.hasil-cutting-distribusi-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hasil-cutting-distribusi-row-actions .hasil-cutting-cell-input-shell {
+  flex: 1 1 170px;
+  min-width: 170px;
+}
+
+.hasil-cutting-distribusi-row-actions .hasil-cutting-distribusi-btn-remove {
+  flex: 0 0 auto;
+  min-width: 108px;
+  width: auto;
+  height: 34px;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 0 12px;
+}
+
+.hasil-cutting-distribusi-detail-table {
+  min-width: 920px;
+  table-layout: fixed;
+}
+
+.hasil-cutting-distribusi-detail-table th:nth-child(1),
+.hasil-cutting-distribusi-detail-table td:nth-child(1) { width: 8%; }
+.hasil-cutting-distribusi-detail-table th:nth-child(2),
+.hasil-cutting-distribusi-detail-table td:nth-child(2) { width: 24%; }
+.hasil-cutting-distribusi-detail-table th:nth-child(3),
+.hasil-cutting-distribusi-detail-table td:nth-child(3) { width: 22%; }
+.hasil-cutting-distribusi-detail-table th:nth-child(4),
+.hasil-cutting-distribusi-detail-table td:nth-child(4) { width: 46%; }
+
+.hasil-cutting-distribusi-detail-table td:nth-child(4) {
+  min-width: 320px;
+  overflow: visible;
+}
+
+.hasil-cutting-distribusi-empty {
+  text-align: center;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+}
+
+.hasil-cutting-distribusi-empty-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
   font-weight: 600;
-  transition: all 0.3s ease;
+}
+
+.hasil-cutting-inline-alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.hasil-cutting-section-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+.hasil-cutting-inline-alert.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
 }
 
-.hasil-cutting-section-button-gray {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  padding: 12px 32px;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+.hasil-cutting-inline-alert.info {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
-.hasil-cutting-section-button-gray:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+.hasil-cutting-distribusi-summary {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #dde5f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.hasil-cutting-section-button-gray:disabled {
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-  cursor: not-allowed;
-  box-shadow: none;
+.hasil-cutting-distribusi-summary.primary {
+  background: #edf4ff;
+  border-color: #c8d8f6;
 }
 
-.hasil-cutting-section-button-gray:disabled:hover {
-  transform: none;
-  box-shadow: none;
+.hasil-cutting-distribusi-summary-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
 }
 
-/* Input Table Styles */
-.hasil-cutting-input-table-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+.hasil-cutting-distribusi-summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hasil-cutting-distribusi-summary-value.is-match {
+  color: #047857;
+}
+
+.hasil-cutting-distribusi-summary-value.is-mismatch {
+  color: #b91c1c;
+}
+
+.hasil-cutting-message-box {
   text-align: center;
-  transition: all 0.3s ease;
+  padding: 24px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border: 1px solid #e2e8f0;
 }
 
-.hasil-cutting-input-table-input:focus {
-  border-color: #667eea;
-  outline: none;
+.hasil-cutting-message-box.error {
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
-.hasil-cutting-input-table-display {
-  padding: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-  border-radius: 8px;
-  color: #495057;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.hasil-cutting-input-table-display-weight {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: #155724;
+.hasil-cutting-message-box.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
 }
 
 .hasil-cutting-status-badge {
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
   display: inline-block;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .hasil-cutting-status-badge-heavier {
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-  color: #721c24;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .hasil-cutting-status-badge-lighter {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  color: #856404;
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .hasil-cutting-status-badge-same {
-  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-  color: #0c5460;
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .hasil-cutting-status-badge-empty {
   padding: 8px 12px;
   font-size: 12px;
-  color: #999;
+  color: #64748b;
   font-style: italic;
 }
 
-/* Delete Button */
 .hasil-cutting-delete-button {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-  color: white;
-  border: none;
+  padding: 8px 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  display: flex;
+  transition: all 0.2s ease;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
 .hasil-cutting-delete-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+  background: #fecaca;
 }
 
-/* Empty State for Data Acuan */
-.hasil-cutting-empty-acuan {
-  text-align: center;
-  padding: 40px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 12px;
-  border: 2px dashed #667eea;
-}
-
-.hasil-cutting-empty-acuan-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.hasil-cutting-empty-acuan-title {
-  margin: 0;
-  color: #667eea;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.hasil-cutting-empty-acuan-text {
-  margin: 8px 0 0 0;
-  color: #666;
-  font-size: 14px;
-}
-
-/* Error Messages */
-.hasil-cutting-error-message {
-  text-align: center;
-  padding: 40px;
-  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
-  border-radius: 12px;
-  border: 2px solid #fcc;
-  margin: 20px 0;
-}
-
-.hasil-cutting-error-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.hasil-cutting-error-title {
-  margin: 0;
-  color: #dc3545;
-  font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 8px;
-}
-
-.hasil-cutting-error-text {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.hasil-cutting-warning-message {
-  text-align: center;
-  padding: 40px;
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border-radius: 12px;
-  border: 2px solid #ffc107;
-  margin: 20px 0;
-}
-
-.hasil-cutting-warning-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.hasil-cutting-warning-title {
-  margin: 0;
-  font-weight: 600;
-  font-size: 16px;
-  color: #856404;
-  margin-bottom: 8px;
-}
-
-.hasil-cutting-warning-text {
-  margin: 0;
-  font-size: 14px;
-  color: #856404;
-}
-
-/* Detail Modal Cards */
-.hasil-cutting-detail-info-section {
-  margin-bottom: 32px;
-  padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.hasil-cutting-detail-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.hasil-cutting-detail-info-card {
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.hasil-cutting-detail-info-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.hasil-cutting-detail-info-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.hasil-cutting-detail-info-icon {
-  color: #667eea;
-  font-size: 18px;
-}
-
-.hasil-cutting-detail-info-label {
-  margin: 0;
-  font-size: 12px;
-  color: #666;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.hasil-cutting-detail-info-value {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-}
-
-.hasil-cutting-detail-info-value.money {
-  color: #667eea;
-}
-
-.hasil-cutting-detail-section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-}
-
-.hasil-cutting-detail-section-icon {
-  color: white;
-  font-size: 20px;
-}
-
-.hasil-cutting-detail-section-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: white;
-}
-
-/* Footer Total */
-.hasil-cutting-footer-total {
-  text-align: right;
-  padding: 16px;
-  font-size: 16px;
-}
-
-.hasil-cutting-footer-total-value {
-  text-align: center;
-  padding: 16px;
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
-}
-
-/* Spinner for Save Button */
 .hasil-cutting-save-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top: 2px solid #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* Inline style normalization to keep JSX logic intact but give ERP visual language */
+.hasil-cutting-container [style*="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"],
+.hasil-cutting-container [style*="linear-gradient(135deg, #0487d8 0%, #17457c 100%)"] {
+  background: linear-gradient(135deg, #2458ce 0%, #4f79e8 100%) !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #28a745 0%, #20c997 100%)"] {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%) !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #6c757d 0%, #5a6268 100%)"] {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"] {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%) !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)"] {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  color: #065f46 !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)"] {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+  color: #334155 !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)"] {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+  color: #991b1b !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)"] {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  color: #92400e !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%)"] {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  color: #075985 !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)"] {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #dc3545 0%, #c82333 100%)"] {
+  background: linear-gradient(135deg, #dc2626 0%, #be123c 100%) !important;
+}
+
+.hasil-cutting-container [style*="linear-gradient(135deg, #ffc107 0%, #ff9800 100%)"] {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.hasil-cutting-container [style*="background: #f9fafb"] {
+  background: #f8fafc !important;
+}
+
+@media (max-width: 1024px) {
+  .hasil-cutting-header-card {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hasil-cutting-primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hasil-cutting-modal-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .hasil-cutting-container {
+    padding: 0;
+  }
+
+  .hasil-cutting-target-cards {
+    grid-template-columns: 1fr;
+    padding: 14px 16px;
+  }
+
+  .hasil-cutting-target-filter-row {
+    flex-wrap: wrap;
+  }
+
+  .hasil-cutting-target-filter-input {
+    max-width: 100%;
+  }
+
+  .hasil-cutting-table-card {
+    margin: 0 16px 16px;
+  }
+
+  .hasil-cutting-table-scroll {
+    max-height: none;
+    overflow-x: auto;
+  }
+
+  .hasil-cutting-modal-content-form {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hasil-cutting-table-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hasil-cutting-modal-overlay {
+    padding: 10px;
+  }
+
+  .hasil-cutting-modal-header {
+    padding: 14px 16px;
+  }
+
+  .hasil-cutting-modal-title {
+    font-size: 16px;
+  }
+
+  .hasil-cutting-modal-body-form {
+    padding: 14px 16px 16px;
+  }
+
+  .hasil-cutting-container .penjahit-table th,
+  .hasil-cutting-container .penjahit-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .hasil-cutting-title-group {
+    align-items: flex-start;
+  }
+
+  .hasil-cutting-table-tools {
+    width: 100%;
+  }
+
+  .hasil-cutting-table-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hasil-cutting-section-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hasil-cutting-section-action,
+  .hasil-cutting-save-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hasil-cutting-detail-content {
+    padding: 14px 16px 16px;
+  }
+
+  .hasil-cutting-detail-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hasil-cutting-modal-tabs,
+  .hasil-cutting-workflow-bar,
+  .hasil-cutting-operational-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hasil-cutting-modal-top-card {
+    padding: 10px;
+  }
+
+  .hasil-cutting-form-section {
+    padding: 12px;
+  }
+
+  .hasil-cutting-intake-shell {
+    padding: 12px;
+  }
+
+  .hasil-cutting-distribusi-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hasil-cutting-distribusi-meta {
+    align-items: flex-start;
+  }
+
+  .hasil-cutting-distribusi-actions {
+    width: 100%;
+  }
+
+  .hasil-cutting-distribusi-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .hasil-cutting-distribusi-row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hasil-cutting-inline-alert {
+    font-size: 11px;
+  }
 }

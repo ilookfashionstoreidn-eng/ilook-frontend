@@ -5,10 +5,20 @@ import "./SpkCutting.css";
 
 import API from "../../../api";
 
-import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel, FaTimes } from "react-icons/fa";
+import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel } from "react-icons/fa";
+import { FiCalendar, FiCheckCircle, FiClock, FiFilter, FiScissors, FiSearch, FiTarget, FiX } from "react-icons/fi";
+
+const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js";
+
+const STATUS_LABELS = {
+  all: "Semua",
+  belum_diambil: "Belum Diambil",
+  sudah_diambil: "Sudah Diambil",
+  selesai: "Selesai",
+};
 
 const SpkCutting = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   
   const [spkCutting, setSpkCutting] = useState([]);
 
@@ -19,8 +29,6 @@ const SpkCutting = () => {
   const [showForm, setShowForm] = useState(false);
 
   const [showEditForm, setShowEditForm] = useState(false);
-
-  const [editingId, setEditingId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -89,6 +97,81 @@ const SpkCutting = () => {
 
   const namaBagianList = ["fullbody", "atasan", "bawahan", "combinasi"];
 
+  const ensureSweetAlert = () =>
+    new Promise((resolve, reject) => {
+      if (window.Swal) {
+        resolve(window.Swal);
+        return;
+      }
+
+      const existingScript = document.querySelector('script[data-sweetalert2="cdn"]');
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.Swal), { once: true });
+        existingScript.addEventListener("error", reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = SWEETALERT_CDN;
+      script.async = true;
+      script.setAttribute("data-sweetalert2", "cdn");
+      script.onload = () => resolve(window.Swal);
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+
+  const showStatusAlert = async (icon, title, text) => {
+    try {
+      const Swal = await ensureSweetAlert();
+      if (!Swal) throw new Error("SweetAlert2 tidak tersedia");
+
+      await Swal.fire({
+        icon: icon || "info",
+        title: title || "Informasi",
+        text: text || "",
+        confirmButtonText: "OK",
+        buttonsStyling: false,
+        customClass: {
+          popup: "spk-swal-popup",
+          confirmButton: "spk-swal-btn spk-swal-btn-primary",
+        },
+      });
+      return true;
+    } catch (alertError) {
+      console.error("Gagal menampilkan SweetAlert:", alertError);
+      window.alert(text || title || "Terjadi kesalahan");
+      return false;
+    }
+  };
+
+  const showConfirmAlert = async ({ title, text, confirmText, icon = "question" }) => {
+    try {
+      const Swal = await ensureSweetAlert();
+      if (!Swal) throw new Error("SweetAlert2 tidak tersedia");
+
+      const result = await Swal.fire({
+        icon,
+        title: title || "Konfirmasi",
+        text: text || "Lanjutkan aksi ini?",
+        showCancelButton: true,
+        confirmButtonText: confirmText || "Ya, Lanjutkan",
+        cancelButtonText: "Batal",
+        reverseButtons: true,
+        buttonsStyling: false,
+        customClass: {
+          popup: "spk-swal-popup",
+          confirmButton: "spk-swal-btn spk-swal-btn-danger",
+          cancelButton: "spk-swal-btn spk-swal-btn-cancel",
+        },
+      });
+
+      return !!result.isConfirmed;
+    } catch (alertError) {
+      console.error("Gagal menampilkan konfirmasi SweetAlert:", alertError);
+      return window.confirm(text || title || "Lanjutkan aksi ini?");
+    }
+  };
+
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
 
   const fetchSpkNumber = async (tukangCuttingId) => {
@@ -111,7 +194,7 @@ const SpkCutting = () => {
     } catch (error) {
       console.error("Error generating SPK number:", error);
 
-      alert("Gagal generate nomor seri SPK. Silakan coba lagi.");
+      await showStatusAlert("error", "Generate Nomor SPK Gagal", "Gagal generate nomor seri SPK. Silakan coba lagi.");
     }
   };
 
@@ -540,7 +623,7 @@ const SpkCutting = () => {
   const handleWeeklyStartChange = (e) => {
     const newValue = e.target.value;
     if (newValue && dailyDate) {
-      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
+      void showStatusAlert("warning", "Filter Periode Tidak Valid", "Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
       return;
     }
     setWeeklyStart(newValue);
@@ -549,7 +632,7 @@ const SpkCutting = () => {
   const handleWeeklyEndChange = (e) => {
     const newValue = e.target.value;
     if (newValue && dailyDate) {
-      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
+      void showStatusAlert("warning", "Filter Periode Tidak Valid", "Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter harian terlebih dahulu.");
       return;
     }
     setWeeklyEnd(newValue);
@@ -559,7 +642,7 @@ const SpkCutting = () => {
   const handleDailyDateChange = (e) => {
     const newValue = e.target.value;
     if (newValue && (weeklyStart || weeklyEnd)) {
-      alert("Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter mingguan terlebih dahulu.");
+      void showStatusAlert("warning", "Filter Periode Tidak Valid", "Anda hanya bisa memilih salah satu filter: Mingguan atau Harian. Silakan reset filter mingguan terlebih dahulu.");
       return;
     }
     setDailyDate(newValue);
@@ -571,21 +654,21 @@ const SpkCutting = () => {
     // Validasi nomor seri SPK harus ada (akan di-generate otomatis oleh backend jika kosong)
 
     if (!newSpkCutting.tukang_cutting_id) {
-      alert("Pilih tukang cutting terlebih dahulu!");
+      await showStatusAlert("warning", "Validasi Data", "Pilih tukang cutting terlebih dahulu!");
 
       return;
     }
 
     // Validasi SKU harus dipilih
     if (!selectedSkuIds || selectedSkuIds.length === 0) {
-      alert("Pilih minimal 1 SKU produk!");
+      await showStatusAlert("warning", "Validasi Data", "Pilih minimal 1 SKU produk!");
       return;
     }
 
     // Validasi frontend sebelum submit
 
     if (!newSpkCutting.bagian || newSpkCutting.bagian.length === 0) {
-      alert("Minimal harus ada 1 bagian!");
+      await showStatusAlert("warning", "Validasi Data", "Minimal harus ada 1 bagian!");
 
       return;
     }
@@ -596,13 +679,13 @@ const SpkCutting = () => {
       const bagian = newSpkCutting.bagian[i];
 
       if (!bagian.nama_bagian || bagian.nama_bagian.trim() === "") {
-        alert(`Bagian ${i + 1}: Nama bagian harus diisi!`);
+        await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}: Nama bagian harus diisi!`);
 
         return;
       }
 
       if (!bagian.bahan || bagian.bahan.length === 0) {
-        alert(`Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
+        await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
 
         return;
       }
@@ -611,19 +694,19 @@ const SpkCutting = () => {
         const bahan = bagian.bahan[j];
 
         if (!bahan.bahan_id || bahan.bahan_id === "") {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
 
           return;
         }
 
         if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Masukkan warna custom terlebih dahulu!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Masukkan warna custom terlebih dahulu!`);
 
           return;
         }
 
         if (!bahan.qty || bahan.qty <= 0) {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
 
           return;
         }
@@ -665,7 +748,7 @@ const SpkCutting = () => {
 
       console.log("Response:", response.data);
 
-      alert("SPK Cutting berhasil ditambahkan!");
+      await showStatusAlert("success", "Berhasil", "SPK Cutting berhasil ditambahkan!");
 
       // Refresh data dan summary
 
@@ -706,9 +789,9 @@ const SpkCutting = () => {
 
           .join("\n");
 
-        alert(`Validasi gagal:\n${errorMessages}`);
+        await showStatusAlert("error", "Validasi Gagal", errorMessages);
       } else {
-        alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan SPK Cutting.");
+        await showStatusAlert("error", "Simpan Data Gagal", error.response?.data?.message || "Terjadi kesalahan saat menyimpan SPK Cutting.");
       }
     }
   };
@@ -814,12 +897,25 @@ const SpkCutting = () => {
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
-  const removeBahan = (bagianIndex, bahanIndex) => {
+  const removeBahan = async (bagianIndex, bahanIndex) => {
+    const confirmed = await showConfirmAlert({
+      icon: "warning",
+      title: "Hapus Bahan?",
+      text: "Baris bahan yang dipilih akan dihapus dari form SPK.",
+      confirmText: "Ya, Hapus",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     const updated = [...newSpkCutting.bagian];
 
     updated[bagianIndex].bahan.splice(bahanIndex, 1);
 
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated }));
+
+    await showStatusAlert("success", "Berhasil", "Bahan berhasil dihapus dari form.");
   };
 
   const handleDetailClick = (spk) => {
@@ -849,10 +945,11 @@ const SpkCutting = () => {
       link.remove();
 
       window.URL.revokeObjectURL(url);
+      void showStatusAlert("success", "Download Berhasil", "QR code berhasil diunduh.");
     } catch (error) {
       console.error("Error downloading QR code:", error);
 
-      alert(error.response?.data?.message || "Gagal mengunduh QR code.");
+      await showStatusAlert("error", "Download Gagal", error.response?.data?.message || "Gagal mengunduh QR code.");
     }
   };
 
@@ -898,10 +995,11 @@ const SpkCutting = () => {
       link.remove();
 
       window.URL.revokeObjectURL(url);
+      void showStatusAlert("success", "Export Berhasil", "Data SPK Cutting berhasil diexport ke Excel.");
     } catch (error) {
       console.error("Error exporting to Excel:", error);
 
-      alert(error.response?.data?.message || "Gagal export data ke Excel.");
+      await showStatusAlert("error", "Export Gagal", error.response?.data?.message || "Gagal export data ke Excel.");
     }
   };
 
@@ -916,11 +1014,53 @@ const SpkCutting = () => {
     if (status === "selesai") {
       return "#22C55E"; // Hijau
     }
-    return "#667eea"; // Default
+    return "#2458ce"; // Default
+  };
+
+  const getRowToneClass = (status) => {
+    if (status === "belum_diambil") return "spk-cutting-row-tone-danger";
+    if (status === "sudah_diambil") return "spk-cutting-row-tone-info";
+    if (status === "selesai") return "spk-cutting-row-tone-success";
+    return "";
+  };
+
+  const getSisaHariToneClass = (sisaHari) => {
+    if (sisaHari === null || sisaHari === undefined || sisaHari === "") return "is-muted";
+    const numericDay = Number(sisaHari);
+    if (!Number.isFinite(numericDay)) return "is-muted";
+    if (numericDay <= 0) return "is-danger";
+    if (numericDay <= 3) return "is-warning";
+    if (numericDay <= 7) return "is-info";
+    return "is-safe";
+  };
+
+  const getJenisSpkToneClass = (jenisSpk) => {
+    const normalizedJenis = String(jenisSpk || "").toLowerCase();
+    if (normalizedJenis.includes("terjual")) return "is-terjual";
+    if (normalizedJenis.includes("fitting")) return "is-fittingan";
+    if (normalizedJenis.includes("habisin")) return "is-habisin";
+    return "is-default";
   };
 
   // Fungsi untuk update status langsung dari dropdown
-  const handleStatusChangeDirect = async (spkId, newStatus) => {
+  const handleStatusChangeDirect = async (spkId, newStatus, currentStatus) => {
+    if (newStatus === currentStatus) {
+      return;
+    }
+
+    const statusLabel = STATUS_LABELS[newStatus] || newStatus;
+    const confirmed = await showConfirmAlert({
+      icon: "question",
+      title: "Ubah Status SPK?",
+      text: `Status SPK akan diubah menjadi "${statusLabel}".`,
+      confirmText: "Ya, Ubah",
+    });
+
+    if (!confirmed) {
+      await fetchSpkCutting(currentPage);
+      return;
+    }
+
     try {
       const response = await API.patch(`/spk-cutting/${spkId}/status`, {
         status: newStatus,
@@ -936,9 +1076,10 @@ const SpkCutting = () => {
 
       // Tampilkan notifikasi sukses (opsional)
       console.log("Status berhasil diupdate:", response.data.message);
+      void showStatusAlert("success", "Status Diperbarui", `Status SPK berhasil diubah menjadi ${statusLabel}.`);
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Error: " + (error.response?.data?.message || error.message));
+      await showStatusAlert("error", "Update Status Gagal", error.response?.data?.message || error.message);
 
       // Revert perubahan jika error - refetch data
       await fetchSpkCutting();
@@ -1033,7 +1174,7 @@ const SpkCutting = () => {
     } catch (error) {
       console.error("Error loading SPK for edit:", error);
 
-      alert("Gagal memuat data untuk edit.");
+      await showStatusAlert("error", "Gagal Memuat Data", "Gagal memuat data untuk edit.");
     }
   };
 
@@ -1113,12 +1254,25 @@ const SpkCutting = () => {
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
   };
 
-  const removeEditBahan = (bagianIndex, bahanIndex) => {
+  const removeEditBahan = async (bagianIndex, bahanIndex) => {
+    const confirmed = await showConfirmAlert({
+      icon: "warning",
+      title: "Hapus Bahan?",
+      text: "Baris bahan yang dipilih akan dihapus dari form edit SPK.",
+      confirmText: "Ya, Hapus",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     const updated = [...editSpkCutting.bagian];
 
     updated[bagianIndex].bahan.splice(bahanIndex, 1);
 
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated }));
+
+    await showStatusAlert("success", "Berhasil", "Bahan berhasil dihapus dari form edit.");
   };
 
   const handleFormUpdate = async (e) => {
@@ -1126,14 +1280,14 @@ const SpkCutting = () => {
 
     // Validasi SKU harus dipilih
     if (!editSelectedSkuIds || editSelectedSkuIds.length === 0) {
-      alert("Pilih minimal 1 SKU produk!");
+      await showStatusAlert("warning", "Validasi Data", "Pilih minimal 1 SKU produk!");
       return;
     }
 
     // Validasi
 
     if (editSpkCutting.bagian.length === 0) {
-      alert("Minimal harus ada 1 bagian!");
+      await showStatusAlert("warning", "Validasi Data", "Minimal harus ada 1 bagian!");
 
       return;
     }
@@ -1142,13 +1296,13 @@ const SpkCutting = () => {
       const bagian = editSpkCutting.bagian[i];
 
       if (!bagian.nama_bagian || bagian.nama_bagian.trim() === "") {
-        alert(`Bagian ${i + 1}: Nama bagian harus diisi!`);
+        await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}: Nama bagian harus diisi!`);
 
         return;
       }
 
       if (bagian.bahan.length === 0) {
-        alert(`Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
+        await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}: Minimal harus ada 1 bahan!`);
 
         return;
       }
@@ -1157,19 +1311,19 @@ const SpkCutting = () => {
         const bahan = bagian.bahan[j];
 
         if (!bahan.bahan_id) {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
 
           return;
         }
 
         if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Warna custom harus diisi jika memilih "Lainnya"!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Warna custom harus diisi jika memilih "Lainnya"!`);
 
           return;
         }
 
         if (!bahan.qty || bahan.qty <= 0) {
-          alert(`Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
 
           return;
         }
@@ -1211,7 +1365,7 @@ const SpkCutting = () => {
 
       console.log("Response:", response.data);
 
-      alert("SPK Cutting berhasil diperbarui!");
+      await showStatusAlert("success", "Berhasil", "SPK Cutting berhasil diperbarui!");
 
       // Refresh data dan summary
 
@@ -1255,50 +1409,110 @@ const SpkCutting = () => {
 
           .join("\n");
 
-        alert(`Validasi gagal:\n${errorMessages}`);
+        await showStatusAlert("error", "Validasi Gagal", errorMessages);
       } else {
-        alert(error.response?.data?.message || "Terjadi kesalahan saat memperbarui SPK Cutting.");
+        await showStatusAlert("error", "Perbarui Data Gagal", error.response?.data?.message || "Terjadi kesalahan saat memperbarui SPK Cutting.");
       }
     }
   };
 
+  const activeSummaryLabel = STATUS_LABELS[statusFilter] || STATUS_LABELS.all;
+  const activeSummaryValue =
+    statusFilter === "all"
+      ? summary.all
+      : statusFilter === "belum_diambil"
+      ? summary.belum_diambil?.count || 0
+      : statusFilter === "sudah_diambil"
+      ? summary.sudah_diambil || 0
+      : summary.selesai || 0;
+
+  const weeklyCardTitle =
+    statusFilter === "selesai"
+      ? "Selesai Mingguan"
+      : statusFilter === "belum_diambil"
+      ? "Belum Diambil Mingguan"
+      : statusFilter === "sudah_diambil"
+      ? "Sudah Diambil Mingguan"
+      : "Belum Diambil Mingguan";
+
+  const dailyCardTitle =
+    statusFilter === "selesai"
+      ? "Selesai Harian"
+      : statusFilter === "belum_diambil"
+      ? "Belum Diambil Harian"
+      : statusFilter === "sudah_diambil"
+      ? "Sudah Diambil Harian"
+      : "Belum Diambil Harian";
+
+  const renderSkuSelector = ({ produkId, selectedIds, setSelectedIds }) => (
+    <div className="spk-cutting-form-row">
+      <div className="spk-cutting-form-group spk-cutting-form-group-full">
+        <label>
+          SKU Produk: <span className="spk-cutting-required">*</span>
+        </label>
+        <div className={`spk-cutting-sku-selector ${!produkId || skuList.length === 0 ? "is-disabled" : ""}`}>
+          {skuList.length > 0 ? (
+            skuList.map((sku) => {
+              const skuId = sku.id.toString();
+              const isSelected = selectedIds.includes(skuId);
+              return (
+                <label key={sku.id} className={`spk-cutting-sku-item ${isSelected ? "is-selected" : ""}`}>
+                  <input
+                    type="checkbox"
+                    className="spk-cutting-sku-checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds((prev) => (prev.includes(skuId) ? prev : [...prev, skuId]));
+                      } else {
+                        setSelectedIds((prev) => prev.filter((id) => id !== skuId));
+                      }
+                    }}
+                    disabled={!produkId || skuList.length === 0}
+                  />
+                  <span className="spk-cutting-sku-text">
+                    {sku.sku} ({sku.warna} - {sku.ukuran})
+                  </span>
+                </label>
+              );
+            })
+          ) : (
+            <div className="spk-cutting-sku-empty">{produkId ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}</div>
+          )}
+        </div>
+        <small className="spk-cutting-form-hint">Centang checkbox untuk memilih SKU. Minimal pilih 1 SKU.</small>
+      </div>
+    </div>
+  );
+
   return (
     <div className="spk-cutting-page">
       <div className="spk-cutting-header">
-        <div className="spk-cutting-header-icon">
-          <FaInfoCircle />
+        <div className="spk-cutting-header-top">
+          <div className="spk-cutting-title-group">
+            <div className="spk-cutting-brand-icon">
+              <FiScissors />
+            </div>
+            <div className="spk-cutting-title-wrap">
+              <p className="spk-cutting-module-pill">Cutting Module</p>
+              <h1>Data SPK Cutting</h1>
+              <p className="spk-cutting-header-subtitle">Pemantauan progres, target, dan dokumen kerja cutting.</p>
+            </div>
+          </div>
         </div>
-
-        <h1>Data SPK Cutting</h1>
       </div>
 
       {/* Summary Card - Dinamis berdasarkan filter */}
       <div className="spk-cutting-summary-cards">
         <div className="spk-cutting-summary-card active">
           <div className="spk-cutting-summary-card-icon">
-            {statusFilter === "all" ? "📊" : statusFilter === "belum_diambil" ? "⏳" : statusFilter === "sudah_diambil" ? "📦" : "✅"}
+            {statusFilter === "all" ? <FiFilter /> : statusFilter === "belum_diambil" ? <FiClock /> : statusFilter === "sudah_diambil" ? <FaInfoCircle /> : <FiCheckCircle />}
           </div>
 
           <div className="spk-cutting-summary-card-content">
-            <div className="spk-cutting-summary-card-label">
-              {statusFilter === "all"
-                ? "Semua"
-                : statusFilter === "belum_diambil"
-                ? "Belum Diambil"
-                : statusFilter === "sudah_diambil"
-                ? "Sudah Diambil"
-                : "Selesai"}
-            </div>
+            <div className="spk-cutting-summary-card-label">{activeSummaryLabel}</div>
 
-            <div className="spk-cutting-summary-card-value">
-              {statusFilter === "all"
-                ? summary.all
-                : statusFilter === "belum_diambil"
-                ? summary.belum_diambil?.count || 0
-                : statusFilter === "sudah_diambil"
-                ? summary.sudah_diambil || 0
-                : summary.selesai || 0}
-            </div>
+            <div className="spk-cutting-summary-card-value">{activeSummaryValue}</div>
           </div>
         </div>
       </div>
@@ -1307,50 +1521,17 @@ const SpkCutting = () => {
       <div className="spk-cutting-in-progress-cards">
         {/* Card In Progress Mingguan */}
         <div className="spk-cutting-in-progress-card weekly">
-          <div className="spk-cutting-in-progress-card-icon">⚙️</div>
+          <div className="spk-cutting-in-progress-card-icon"><FiTarget /></div>
           <div className="spk-cutting-in-progress-card-content">
-            <div className="spk-cutting-in-progress-card-label">
-              {statusFilter === "selesai"
-                ? "Selesai Mingguan"
-                : statusFilter === "belum_diambil"
-                ? "Belum Diambil Mingguan"
-                : statusFilter === "sudah_diambil"
-                ? "Sudah Diambil Mingguan"
-                : "Belum Diambil Mingguan"}
-            </div>
+            <div className="spk-cutting-in-progress-card-label">{weeklyCardTitle}</div>
             {/* Filter periode mingguan */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
-              <input type="date" value={weeklyStart} onChange={handleWeeklyStartChange} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
-              <span style={{ fontSize: "12px", alignSelf: "center", color: "#667eea" }}>s/d</span>
-              <input type="date" value={weeklyEnd} onChange={handleWeeklyEndChange} className="spk-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+            <div className="spk-cutting-period-row">
+              <input type="date" value={weeklyStart} onChange={handleWeeklyStartChange} className="spk-cutting-form-input spk-cutting-date-input" />
+              <span className="spk-cutting-period-separator">s/d</span>
+              <input type="date" value={weeklyEnd} onChange={handleWeeklyEndChange} className="spk-cutting-form-input spk-cutting-date-input" />
               {(weeklyStart || weeklyEnd) && (
-                <button
-                  onClick={handleResetWeekly}
-                  style={{
-                    background: "#f5576c",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "6px 10px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#e63946";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#f5576c";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                  title="Reset tanggal"
-                >
-                  <FaTimes style={{ fontSize: "10px" }} /> Reset
+                <button type="button" onClick={handleResetWeekly} className="spk-cutting-reset-btn" title="Reset tanggal">
+                  <FiX /> Reset
                 </button>
               )}
             </div>
@@ -1378,7 +1559,7 @@ const SpkCutting = () => {
                       Kurang <strong>{Number(summary.in_progress_weekly?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai {Number(summary.in_progress_weekly?.target || 50000).toLocaleString("id-ID")}
                     </>
                   ) : (
-                    <span style={{ fontWeight: "600", color: "#16a34a" }}>Target mingguan tercapai 🎉</span>
+                    <span className="spk-cutting-target-achieved">Target mingguan tercapai</span>
                   )}
                 </div>
               </>
@@ -1388,48 +1569,15 @@ const SpkCutting = () => {
 
         {/* Card In Progress Harian */}
         <div className="spk-cutting-in-progress-card daily">
-          <div className="spk-cutting-in-progress-card-icon daily">📅</div>
+          <div className="spk-cutting-in-progress-card-icon daily"><FiCalendar /></div>
           <div className="spk-cutting-in-progress-card-content">
-            <div className="spk-cutting-in-progress-card-label daily">
-              {statusFilter === "selesai"
-                ? "Selesai Harian"
-                : statusFilter === "belum_diambil"
-                ? "Belum Diambil Harian"
-                : statusFilter === "sudah_diambil"
-                ? "Sudah Diambil Harian"
-                : "Belum Diambil Harian"}
-            </div>
+            <div className="spk-cutting-in-progress-card-label daily">{dailyCardTitle}</div>
             {/* Filter tanggal harian */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px", alignItems: "center" }}>
-              <input type="date" value={dailyDate} onChange={handleDailyDateChange} className="spk-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+            <div className="spk-cutting-period-row">
+              <input type="date" value={dailyDate} onChange={handleDailyDateChange} className="spk-cutting-form-input spk-cutting-date-input spk-cutting-date-input-daily" />
               {dailyDate && (
-                <button
-                  onClick={handleResetDaily}
-                  style={{
-                    background: "#f5576c",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "6px 10px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#e63946";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#f5576c";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                  title="Reset tanggal"
-                >
-                  <FaTimes style={{ fontSize: "10px" }} /> Reset
+                <button type="button" onClick={handleResetDaily} className="spk-cutting-reset-btn" title="Reset tanggal">
+                  <FiX /> Reset
                 </button>
               )}
             </div>
@@ -1457,7 +1605,7 @@ const SpkCutting = () => {
                       Kurang <strong>{Number(summary.in_progress_daily?.remaining || 0).toLocaleString("id-ID")} Pcs</strong> untuk capai {Number(summary.in_progress_daily?.target || 7143).toLocaleString("id-ID")}
                     </>
                   ) : (
-                    <span style={{ fontWeight: "600", color: "#16a34a" }}>Target harian tercapai 💪</span>
+                    <span className="spk-cutting-target-achieved">Target harian tercapai</span>
                   )}
                 </div>
               </>
@@ -1522,6 +1670,15 @@ const SpkCutting = () => {
 
             <div className="spk-cutting-search-bar">
               <input type="text" placeholder="Cari ID, Nomor SPK, Tukang, atau Produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              {searchTerm ? (
+                <button type="button" className="spk-cutting-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
+                  <FiX />
+                </button>
+              ) : (
+                <span className="spk-cutting-search-icon">
+                  <FiSearch />
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1532,7 +1689,8 @@ const SpkCutting = () => {
           <p className="spk-cutting-error">{error}</p>
         ) : (
           <>
-            <table className="spk-cutting-table">
+            <div className="spk-cutting-table-scroll">
+              <table className="spk-cutting-table">
               <thead>
                 <tr>
                  
@@ -1553,39 +1711,34 @@ const SpkCutting = () => {
 
               <tbody>
                 {currentItems.map((spk, index) => (
-                  <tr key={spk.id}>
-                  
+                  <tr key={spk.id} className={`spk-cutting-row ${getRowToneClass(spk.status_cutting)}`}>
+                   
                     <td>{spk.id_spk_cutting}</td>
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
                     <td>{spk.produk?.nama_produk || "-"}</td>
                     <td>{spk.tanggal_batas_kirim || "-"}</td>
-                    <td>{spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}</td>
+                    <td>
+                      <span className={`spk-cutting-sisa-badge ${getSisaHariToneClass(spk.sisa_hari)}`}>
+                        {spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}
+                      </span>
+                    </td>
                     <td className="spk-cutting-price">
                       {formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}
                     </td>
                     <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
                     <td>{spk.jumlah_asumsi_produk !== null && spk.jumlah_asumsi_produk !== undefined ? spk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</td>
-                    <td>{spk.jenis_spk || "-"}</td>
+                    <td>
+                      <span className={`spk-cutting-jenis-chip ${getJenisSpkToneClass(spk.jenis_spk)}`}>{spk.jenis_spk || "-"}</span>
+                    </td>
                     <td>
                       <select
                         value={spk.status_cutting || "belum_diambil"}
                         onChange={(e) => {
                           const newStatus = e.target.value;
-                          handleStatusChangeDirect(spk.id, newStatus);
+                          handleStatusChangeDirect(spk.id, newStatus, spk.status_cutting || "belum_diambil");
                         }}
-                        style={{
-                          backgroundColor: getStatusColor(spk.status_cutting),
-                          color: "white",
-                          border: "2px solid transparent",
-                          padding: "6px 8px",
-                          borderRadius: "8px",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                          minWidth: "130px",
-                          outline: "none",
-                          transition: "all 0.2s ease",
-                        }}
+                        className="spk-cutting-status-select"
+                        style={{ "--status-color": getStatusColor(spk.status_cutting) }}
                       >
                         <option value="belum_diambil">Belum Diambil</option>
                         <option value="sudah_diambil">Sudah Diambil</option>
@@ -1594,113 +1747,43 @@ const SpkCutting = () => {
                     </td>
               
                     <td>
-                      <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail" style={{ marginRight: "8px" }}>
-                        <FaInfoCircle />
-                      </button>
-                      <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ marginRight: "8px" }}>
-                        <FaEdit />
-                      </button>
-                      <button className="spk-cutting-btn-icon download" onClick={() => handleDownloadQr(spk.id)} title="Download QR Code" disabled={!spk.barcode}>
-                        <FaDownload />
-                      </button>
+                      <div className="spk-cutting-row-actions">
+                        <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail">
+                          <FaInfoCircle />
+                        </button>
+                        <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit">
+                          <FaEdit />
+                        </button>
+                        <button className="spk-cutting-btn-icon download" onClick={() => handleDownloadQr(spk.id)} title="Download QR Code" disabled={!spk.barcode}>
+                          <FaDownload />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
 
             {/* ✅ OPTIMASI: Server-side Pagination - Tampilkan selalu jika ada data */}
             {pagination.total > 0 && (
-              <div className="spk-cutting-pagination" style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "20px",
-                padding: "16px",
-                background: "#f5f5f5",
-                borderRadius: "8px",
-                flexWrap: "wrap",
-                gap: "12px"
-              }}>
-                <div style={{ fontSize: "14px", color: "#666" }}>
+              <div className="spk-cutting-pagination">
+                <div className="spk-cutting-pagination-summary">
                   Menampilkan {pagination.from || 0} - {pagination.to || 0} dari {pagination.total.toLocaleString("id-ID")} data
                 </div>
-                
+
                 {pagination.last_page > 1 && (
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <button 
-                      onClick={() => goToPage(currentPage - 1)} 
-                      disabled={currentPage === 1}
-                      style={{
-                        padding: "8px 16px",
-                        background: currentPage === 1 ? "#ccc" : "#0487d8",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== 1) {
-                          e.currentTarget.style.background = "#0369a1";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== 1) {
-                          e.currentTarget.style.background = "#0487d8";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }
-                      }}
-                    >
-                      <i className="fas fa-chevron-left" style={{ marginRight: "4px" }}></i>
+                  <div className="spk-cutting-pagination-controls">
+                    <button className="spk-cutting-page-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                       Sebelumnya
                     </button>
 
-                    <span style={{ 
-                      padding: "8px 16px", 
-                      background: "white", 
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      border: "1px solid #e0e0e0",
-                      minWidth: "150px",
-                      textAlign: "center"
-                    }}>
+                    <span className="spk-cutting-page-indicator">
                       Halaman {pagination.current_page} dari {pagination.last_page}
                     </span>
 
-                    <button 
-                      onClick={() => goToPage(currentPage + 1)} 
-                      disabled={currentPage === pagination.last_page}
-                      style={{
-                        padding: "8px 16px",
-                        background: currentPage === pagination.last_page ? "#ccc" : "#0487d8",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: currentPage === pagination.last_page ? "not-allowed" : "pointer",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== pagination.last_page) {
-                          e.currentTarget.style.background = "#0369a1";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== pagination.last_page) {
-                          e.currentTarget.style.background = "#0487d8";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }
-                      }}
-                    >
+                    <button className="spk-cutting-page-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pagination.last_page}>
                       Selanjutnya
-                      <i className="fas fa-chevron-right" style={{ marginLeft: "4px" }}></i>
                     </button>
                   </div>
                 )}
@@ -1732,7 +1815,7 @@ const SpkCutting = () => {
                 <div className="spk-cutting-form-group">
                   <label>Nomor Seri SPK:</label>
                   <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || "Pilih tukang cutting terlebih dahulu"} readOnly disabled />
-                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih.</small>
+                  <small className="spk-cutting-form-hint">Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih.</small>
                 </div>
               </div>
 
@@ -1769,106 +1852,26 @@ const SpkCutting = () => {
                 </div>
               </div>
 
-              <div className="spk-cutting-form-row">
-                <div className="spk-cutting-form-group" style={{ width: "100%" }}>
-                  <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
-                  <div
-                    style={{
-                      width: "100%",
-                      minHeight: "120px",
-                      maxHeight: "200px",
-                      padding: "12px",
-                      fontSize: "14px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: "8px",
-                      background: !newSpkCutting.produk_id || skuList.length === 0 ? "#f5f5f5" : "white",
-                      overflowY: "auto",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    {skuList.length > 0 ? (
-                      skuList.map((sku) => (
-                        <label
-                          key={sku.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            background: selectedSkuIds.includes(sku.id.toString()) ? "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)" : "transparent",
-                            border: selectedSkuIds.includes(sku.id.toString()) ? "1px solid #2196f3" : "1px solid transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!selectedSkuIds.includes(sku.id.toString())) {
-                              e.currentTarget.style.background = "#f5f5f5";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!selectedSkuIds.includes(sku.id.toString())) {
-                              e.currentTarget.style.background = "transparent";
-                            }
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedSkuIds.includes(sku.id.toString())}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSkuIds([...selectedSkuIds, sku.id.toString()]);
-                              } else {
-                                setSelectedSkuIds(selectedSkuIds.filter((id) => id !== sku.id.toString()));
-                              }
-                            }}
-                            disabled={!newSpkCutting.produk_id || skuList.length === 0}
-                            style={{
-                              width: "18px",
-                              height: "18px",
-                              cursor: "pointer",
-                              accentColor: "#2196f3",
-                            }}
-                          />
-                          <span
-                            style={{
-                              flex: 1,
-                              fontSize: "14px",
-                              color: "#333",
-                              fontWeight: selectedSkuIds.includes(sku.id.toString()) ? "600" : "400",
-                            }}
-                          >
-                            {sku.sku} ({sku.warna} - {sku.ukuran})
-                          </span>
-                        </label>
-                      ))
-                    ) : (
-                      <div
-                        style={{
-                          padding: "20px",
-                          textAlign: "center",
-                          color: "#999",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {newSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
-                      </div>
-                    )}
-                  </div>
-                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                    Centang checkbox untuk memilih SKU. Minimal pilih 1 SKU.
-                  </small>
-                </div>
-              </div>
+              {renderSkuSelector({
+                produkId: newSpkCutting.produk_id,
+                selectedIds: selectedSkuIds,
+                setSelectedIds: setSelectedSkuIds,
+              })}
 
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Harga Jasa:</label>
-                  <div style={{ position: "relative" }}>
-                    <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#666", fontWeight: "500" }}>Rp</span>
-                    <input type="text" name="harga_jasa" value={newSpkCutting.harga_jasaDisplay} onChange={handleInputChange} placeholder="0" style={{ paddingLeft: "40px" }} required />
+                  <div className="spk-cutting-currency-input">
+                    <span className="spk-cutting-currency-prefix">Rp</span>
+                    <input
+                      type="text"
+                      name="harga_jasa"
+                      className="spk-cutting-input-with-prefix"
+                      value={newSpkCutting.harga_jasaDisplay}
+                      onChange={handleInputChange}
+                      placeholder="0"
+                      required
+                    />
                   </div>
                 </div>
 
@@ -2027,22 +2030,11 @@ const SpkCutting = () => {
                 <span>{selectedDetailSpk.jenis_spk || "-"}</span>
               </div>
               {selectedDetailSpk.skus && selectedDetailSpk.skus.length > 0 && (
-                <div className="spk-cutting-detail-item" style={{ gridColumn: "1 / -1" }}>
+                <div className="spk-cutting-detail-item spk-cutting-detail-item-full">
                   <strong>SKU Produk:</strong>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
+                  <div className="spk-cutting-sku-chip-list">
                     {selectedDetailSpk.skus.map((sku) => (
-                      <span
-                        key={sku.id}
-                        style={{
-                          padding: "6px 12px",
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          color: "white",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          display: "inline-block",
-                        }}
-                      >
+                      <span key={sku.id} className="spk-cutting-sku-chip">
                         {sku.sku} ({sku.warna} - {sku.ukuran})
                       </span>
                     ))}
@@ -2075,7 +2067,7 @@ const SpkCutting = () => {
                   <thead>
                     <tr>
                       {selectedDetailSpk.bagian.map((bagian, i) => (
-                        <th key={i} colSpan="3" style={{ textAlign: "center" }}>
+                        <th key={i} colSpan="3" className="spk-cutting-log-th-center">
                           {bagian.nama_bagian?.toUpperCase()}
                         </th>
                       ))}
@@ -2157,7 +2149,7 @@ const SpkCutting = () => {
                 <div className="spk-cutting-form-group">
                   <label>Nomor Seri SPK:</label>
                   <input type="text" name="id_spk_cutting" value={editSpkCutting.id_spk_cutting || ""} readOnly disabled />
-                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>Nomor seri tidak dapat diubah.</small>
+                  <small className="spk-cutting-form-hint">Nomor seri tidak dapat diubah.</small>
                 </div>
               </div>
 
@@ -2180,106 +2172,26 @@ const SpkCutting = () => {
                 </div>
               </div>
 
-              <div className="spk-cutting-form-row">
-                <div className="spk-cutting-form-group" style={{ width: "100%" }}>
-                  <label>SKU Produk: <span style={{ color: "red" }}>*</span></label>
-                  <div
-                    style={{
-                      width: "100%",
-                      minHeight: "120px",
-                      maxHeight: "200px",
-                      padding: "12px",
-                      fontSize: "14px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: "8px",
-                      background: !editSpkCutting.produk_id || skuList.length === 0 ? "#f5f5f5" : "white",
-                      overflowY: "auto",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    {skuList.length > 0 ? (
-                      skuList.map((sku) => (
-                        <label
-                          key={sku.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            background: editSelectedSkuIds.includes(sku.id.toString()) ? "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)" : "transparent",
-                            border: editSelectedSkuIds.includes(sku.id.toString()) ? "1px solid #2196f3" : "1px solid transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!editSelectedSkuIds.includes(sku.id.toString())) {
-                              e.currentTarget.style.background = "#f5f5f5";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!editSelectedSkuIds.includes(sku.id.toString())) {
-                              e.currentTarget.style.background = "transparent";
-                            }
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={editSelectedSkuIds.includes(sku.id.toString())}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEditSelectedSkuIds([...editSelectedSkuIds, sku.id.toString()]);
-                              } else {
-                                setEditSelectedSkuIds(editSelectedSkuIds.filter((id) => id !== sku.id.toString()));
-                              }
-                            }}
-                            disabled={!editSpkCutting.produk_id || skuList.length === 0}
-                            style={{
-                              width: "18px",
-                              height: "18px",
-                              cursor: "pointer",
-                              accentColor: "#2196f3",
-                            }}
-                          />
-                          <span
-                            style={{
-                              flex: 1,
-                              fontSize: "14px",
-                              color: "#333",
-                              fontWeight: editSelectedSkuIds.includes(sku.id.toString()) ? "600" : "400",
-                            }}
-                          >
-                            {sku.sku} ({sku.warna} - {sku.ukuran})
-                          </span>
-                        </label>
-                      ))
-                    ) : (
-                      <div
-                        style={{
-                          padding: "20px",
-                          textAlign: "center",
-                          color: "#999",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {editSpkCutting.produk_id ? "Tidak ada SKU untuk produk ini" : "Pilih produk terlebih dahulu"}
-                      </div>
-                    )}
-                  </div>
-                  <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-                    Centang checkbox untuk memilih SKU. Minimal pilih 1 SKU.
-                  </small>
-                </div>
-              </div>
+              {renderSkuSelector({
+                produkId: editSpkCutting.produk_id,
+                selectedIds: editSelectedSkuIds,
+                setSelectedIds: setEditSelectedSkuIds,
+              })}
 
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
                   <label>Harga Jasa:</label>
-                  <div style={{ position: "relative" }}>
-                    <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#666", fontWeight: "500" }}>Rp</span>
-                    <input type="text" name="harga_jasa" value={editSpkCutting.harga_jasaDisplay} onChange={handleEditInputChange} placeholder="0" style={{ paddingLeft: "40px" }} required />
+                  <div className="spk-cutting-currency-input">
+                    <span className="spk-cutting-currency-prefix">Rp</span>
+                    <input
+                      type="text"
+                      name="harga_jasa"
+                      className="spk-cutting-input-with-prefix"
+                      value={editSpkCutting.harga_jasaDisplay}
+                      onChange={handleEditInputChange}
+                      placeholder="0"
+                      required
+                    />
                   </div>
                 </div>
 
