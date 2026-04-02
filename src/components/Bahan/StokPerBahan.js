@@ -332,7 +332,6 @@ const StokPerBahan = () => {
           <div className="stok-bahan-topbar-right">
             <div className="stok-bahan-topbar-meta">
               <span>Data Tersaring</span>
-              <span>Data Tersaring</span>
               <strong>{formatNumber(filtered.length)}</strong>
             </div>
             <div className="stok-bahan-sync-meta">

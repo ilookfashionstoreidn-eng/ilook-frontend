@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
-.laporan-erp-container {
+.history-pendapatan-cutting-erp-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -10,13 +10,13 @@
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
-.laporan-erp-container *,
-.laporan-erp-container *::before,
-.laporan-erp-container *::after {
+.history-pendapatan-cutting-erp-container *,
+.history-pendapatan-cutting-erp-container *::before,
+.history-pendapatan-cutting-erp-container *::after {
   box-sizing: border-box;
 }
 
-.laporan-erp-container::before {
+.history-pendapatan-cutting-erp-container::before {
   content: "";
   display: block;
   height: 3px;
@@ -24,11 +24,7 @@
   flex-shrink: 0;
 }
 
-.laporan-erp-shell {
-  width: 100%;
-}
-
-.laporan-erp-header {
+.history-pendapatan-cutting-erp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -36,10 +32,9 @@
   padding: 16px 24px;
   background: #ffffff;
   border-bottom: 1px solid #e4e9f0;
-  flex-shrink: 0;
 }
 
-.laporan-erp-header-top {
+.history-pendapatan-cutting-erp-header-top {
   width: 100%;
   display: flex;
   align-items: center;
@@ -48,13 +43,13 @@
   flex-wrap: wrap;
 }
 
-.laporan-erp-title-group {
+.history-pendapatan-cutting-erp-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.laporan-erp-brand-icon {
+.history-pendapatan-cutting-erp-brand-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -68,7 +63,7 @@
   flex-shrink: 0;
 }
 
-.laporan-erp-title-wrap h1 {
+.history-pendapatan-cutting-erp-title-wrap h1 {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
@@ -76,14 +71,14 @@
   color: #0f172a;
 }
 
-.laporan-erp-title-wrap p {
+.history-pendapatan-cutting-erp-title-wrap p {
   margin: 2px 0 0;
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.laporan-erp-module-pill {
+.history-pendapatan-cutting-erp-module-pill {
   width: fit-content;
   margin-bottom: 6px;
   border: 1px solid #cdd9ef;
@@ -97,18 +92,18 @@
   padding: 4px 10px;
 }
 
-.laporan-erp-actions {
+.history-pendapatan-cutting-erp-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.laporan-erp-search-wrap {
+.history-pendapatan-cutting-erp-search-wrap {
   position: relative;
-  min-width: 300px;
+  min-width: 290px;
 }
 
-.laporan-erp-search-icon {
+.history-pendapatan-cutting-erp-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -117,7 +112,7 @@
   font-size: 15px;
 }
 
-.laporan-erp-search-input {
+.history-pendapatan-cutting-erp-search-input {
   width: 100%;
   border: 1px solid #dde3ed;
   border-radius: 8px;
@@ -130,22 +125,22 @@
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.laporan-erp-search-input::placeholder {
+.history-pendapatan-cutting-erp-search-input::placeholder {
   color: #94a3b8;
 }
 
-.laporan-erp-search-input:hover {
+.history-pendapatan-cutting-erp-search-input:hover {
   border-color: #b6c2d6;
   background: #ffffff;
 }
 
-.laporan-erp-search-input:focus {
+.history-pendapatan-cutting-erp-search-input:focus {
   border-color: #2458ce;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
-.laporan-erp-search-clear {
+.history-pendapatan-cutting-erp-search-clear {
   position: absolute;
   right: 8px;
   top: 50%;
@@ -162,38 +157,11 @@
   justify-content: center;
 }
 
-.laporan-erp-search-clear:hover {
+.history-pendapatan-cutting-erp-search-clear:hover {
   background: #f1f5f9;
 }
 
-.laporan-erp-icon-btn,
-.laporan-erp-reset-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.laporan-erp-icon-btn::after,
-.laporan-erp-reset-btn::after {
-  content: "";
-  position: absolute;
-  width: 120%;
-  aspect-ratio: 1;
-  left: 50%;
-  top: 50%;
-  border-radius: 999px;
-  transform: translate(-50%, -50%) scale(0);
-  background: rgba(36, 88, 206, 0.2);
-  opacity: 0;
-}
-
-.laporan-erp-icon-btn:active::after,
-.laporan-erp-reset-btn:active::after {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  transition: transform 0.3s ease, opacity 0.45s ease;
-}
-
-.laporan-erp-icon-btn {
+.history-pendapatan-cutting-erp-icon-btn {
   width: 38px;
   height: 38px;
   border: 1px solid #d1dbe8;
@@ -205,13 +173,14 @@
   justify-content: center;
   cursor: pointer;
   font-size: 16px;
+  position: relative;
 }
 
-.laporan-erp-icon-btn:hover {
+.history-pendapatan-cutting-erp-icon-btn:hover {
   background: #f8fafc;
 }
 
-.laporan-erp-dot {
+.history-pendapatan-cutting-erp-dot {
   position: absolute;
   top: 7px;
   right: 8px;
@@ -222,7 +191,7 @@
   border: 1.5px solid #ffffff;
 }
 
-.laporan-erp-avatar {
+.history-pendapatan-cutting-erp-avatar {
   width: 38px;
   height: 38px;
   border-radius: 9px;
@@ -237,28 +206,31 @@
   justify-content: center;
 }
 
-.laporan-erp-main {
+.history-pendapatan-cutting-erp-main {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 20px 24px;
 }
 
-.laporan-erp-stats {
+.history-pendapatan-cutting-erp-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.laporan-erp-stat-item {
+.history-pendapatan-cutting-erp-stats.compact {
+  grid-template-columns: 1fr;
+}
+
+.history-pendapatan-cutting-erp-stat-item {
   background: #ffffff;
   border: 1px solid #e4e9f0;
   border-radius: 10px;
   padding: 12px 14px;
-  animation: laporan-erp-rise 0.35s ease;
 }
 
-.laporan-erp-stat-label {
+.history-pendapatan-cutting-erp-stat-label {
   margin: 0;
   font-size: 11px;
   color: #64748b;
@@ -267,29 +239,37 @@
   letter-spacing: 0.05em;
 }
 
-.laporan-erp-stat-value {
+.history-pendapatan-cutting-erp-stat-value {
   margin: 5px 0 0;
   font-size: 22px;
-  line-height: 1;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   font-weight: 700;
   color: #0f172a;
 }
 
-.laporan-erp-stat-value-info {
+.history-pendapatan-cutting-erp-stat-value-info {
   color: #2458ce;
-}
-
-.laporan-erp-stat-value-success {
-  color: #047857;
-}
-
-.laporan-erp-stat-value-muted {
-  color: #475569;
   font-size: 18px;
 }
 
-.laporan-erp-table-wrapper {
+.history-pendapatan-cutting-erp-stat-value-danger {
+  color: #b91c1c;
+  font-size: 18px;
+}
+
+.history-pendapatan-cutting-erp-stat-value-success {
+  color: #047857;
+  font-size: 18px;
+}
+
+.history-pendapatan-cutting-erp-stat-value-small {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.history-pendapatan-cutting-erp-table-wrapper {
   background: #ffffff;
   border: 1px solid #e4e9f0;
   border-radius: 16px;
@@ -297,10 +277,9 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
   display: flex;
   flex-direction: column;
-  animation: laporan-erp-rise 0.4s ease;
 }
 
-.laporan-erp-table-header {
+.history-pendapatan-cutting-erp-table-header {
   padding: 18px 22px;
   border-bottom: 1px solid #e8edf5;
   display: flex;
@@ -310,150 +289,144 @@
   flex-wrap: wrap;
 }
 
-.laporan-erp-table-header h3 {
+.history-pendapatan-cutting-erp-table-header h3 {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
   color: #0f172a;
 }
 
-.laporan-erp-table-header p {
+.history-pendapatan-cutting-erp-table-header p {
   margin: 3px 0 0;
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.laporan-erp-table-header-right {
+.history-pendapatan-cutting-erp-filter-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.laporan-erp-filter-pill {
-  border: 1px solid #c8d8f6;
-  border-radius: 999px;
-  background: #edf4ff;
-  color: #2458ce;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-}
-
-.laporan-erp-reset-btn {
-  border: none;
-  border-radius: 9px;
-  background: #2458ce;
-  color: #ffffff;
-  height: 36px;
-  padding: 0 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.laporan-erp-reset-btn:hover {
-  background: #1e4caf;
-}
-
-.laporan-erp-filter-section {
-  display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #edf2f8;
-  background: #f9fbff;
   flex-wrap: wrap;
 }
 
-.laporan-erp-date-field {
+.history-pendapatan-cutting-erp-date-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 220px;
+  gap: 5px;
 }
 
-.laporan-erp-date-field label {
-  color: #475569;
+.history-pendapatan-cutting-erp-date-field span {
+  color: #64748b;
   font-size: 11px;
-  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.laporan-erp-date-field input {
-  width: 100%;
-  border: 1px solid #cfd8e3;
-  border-radius: 9px;
+.history-pendapatan-cutting-erp-date-field input {
+  width: 170px;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
   background: #ffffff;
   color: #0f172a;
+  padding: 8px 10px;
   font-size: 13px;
   font-family: inherit;
-  min-height: 38px;
-  padding: 0 11px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.laporan-erp-date-field input:focus {
-  outline: none;
+.history-pendapatan-cutting-erp-date-field input:focus {
   border-color: #2458ce;
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
-.laporan-erp-loading,
-.laporan-erp-empty-state {
+.history-pendapatan-cutting-erp-filter-btn {
+  border: 1px solid #39506d;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #43566f 0%, #5b6f89 100%);
+  color: #ffffff;
+  height: 35px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px -7px rgba(36, 52, 73, 0.45);
+}
+
+.history-pendapatan-cutting-erp-filter-btn:hover {
+  filter: brightness(1.04);
+}
+
+.history-pendapatan-cutting-erp-loading,
+.history-pendapatan-cutting-erp-empty-state {
   text-align: center;
   padding: 44px 16px;
   background: #ffffff;
 }
 
-.laporan-erp-spinner {
+.history-pendapatan-cutting-erp-spinner {
   width: 28px;
   height: 28px;
   margin: 0 auto;
   border: 3px solid #dbe8ff;
   border-top-color: #2458ce;
   border-radius: 50%;
-  animation: laporan-erp-spin 0.8s linear infinite;
+  animation: history-pendapatan-cutting-erp-spin 0.8s linear infinite;
 }
 
-.laporan-erp-loading p {
+.history-pendapatan-cutting-erp-loading p {
   margin-top: 10px;
   color: #0f172a;
   font-size: 15px;
   font-weight: 700;
 }
 
-.laporan-erp-empty-title {
-  margin: 0;
+.history-pendapatan-cutting-erp-empty-icon {
+  font-size: 32px;
+  color: #8ba2c2;
+}
+
+.history-pendapatan-cutting-erp-empty-title {
+  margin: 12px 0 0;
   color: #0f172a;
   font-size: 16px;
   font-weight: 700;
 }
 
-.laporan-erp-empty-title.error {
+.history-pendapatan-cutting-erp-empty-title.error {
   color: #b91c1c;
 }
 
-.laporan-erp-table-scroll {
+.history-pendapatan-cutting-erp-empty-text {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.history-pendapatan-cutting-erp-table-scroll {
   width: 100%;
   overflow-y: auto;
   overflow-x: auto;
-  max-height: clamp(320px, 58vh, 640px);
+  max-height: clamp(320px, 62vh, 680px);
   overscroll-behavior: contain;
 }
 
-.laporan-erp-table {
+.history-pendapatan-cutting-erp-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 860px;
+  min-width: 1150px;
 }
 
-.laporan-erp-table th {
+.history-pendapatan-cutting-erp-table th {
   background: #f4f7fa;
   color: #475569;
   font-size: 12px;
@@ -466,10 +439,9 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  white-space: nowrap;
 }
 
-.laporan-erp-table td {
+.history-pendapatan-cutting-erp-table td {
   padding: 12px 14px;
   border-bottom: 1px solid #edf2f7;
   color: #1e293b;
@@ -479,125 +451,102 @@
   vertical-align: middle;
 }
 
-.laporan-erp-table tbody tr:hover td {
+.history-pendapatan-cutting-erp-table tbody tr:hover td {
   background: #fcfdff;
 }
 
-.laporan-erp-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.laporan-erp-date-cell {
-  color: #465a73;
-  font-weight: 600;
-}
-
-.laporan-erp-total-cell {
-  color: #2458ce;
+.history-pendapatan-cutting-erp-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
   font-weight: 700;
 }
 
-.laporan-erp-empty-row {
-  padding: 42px 16px !important;
-  color: #6d8295 !important;
-  font-style: italic;
-  text-align: center;
-}
-
-.laporan-erp-table tfoot td {
-  background: #f8fafc;
-  color: #1f2937;
-  font-weight: 700;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: none;
-}
-
-.laporan-erp-table-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.laporan-erp-table-scroll::-webkit-scrollbar-thumb {
-  background: #b8c3d6;
+.history-pendapatan-cutting-erp-badge {
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
 }
 
-.laporan-erp-table-scroll::-webkit-scrollbar-track {
-  background: #eef2f8;
+.history-pendapatan-cutting-erp-badge.info {
+  background: #edf4ff;
+  color: #2458ce;
+  border-color: #c8d8f6;
 }
 
-@keyframes laporan-erp-spin {
+.history-pendapatan-cutting-erp-badge.danger {
+  background: #fff1f2;
+  color: #b91c1c;
+  border-color: #fecdd3;
+}
+
+.history-pendapatan-cutting-erp-badge.success {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.history-pendapatan-cutting-erp-badge.muted {
+  background: #eef2f6;
+  color: #42546b;
+  border-color: #cad4e0;
+}
+
+@keyframes history-pendapatan-cutting-erp-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes laporan-erp-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 1000px) {
-  .laporan-erp-stats {
+@media (max-width: 1080px) {
+  .history-pendapatan-cutting-erp-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .laporan-erp-search-wrap {
+  .history-pendapatan-cutting-erp-search-wrap {
     min-width: 240px;
   }
 }
 
 @media (max-width: 768px) {
-  .laporan-erp-header {
+  .history-pendapatan-cutting-erp-header {
     padding: 14px 16px;
   }
 
-  .laporan-erp-main {
+  .history-pendapatan-cutting-erp-main {
     padding: 14px 16px;
   }
 
-  .laporan-erp-stats {
+  .history-pendapatan-cutting-erp-stats {
     grid-template-columns: 1fr;
   }
 
-  .laporan-erp-actions {
+  .history-pendapatan-cutting-erp-actions {
     width: 100%;
   }
 
-  .laporan-erp-search-wrap,
-  .laporan-erp-search-input {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .laporan-erp-table-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .laporan-erp-table-header-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .laporan-erp-filter-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .laporan-erp-date-field {
+  .history-pendapatan-cutting-erp-search-wrap,
+  .history-pendapatan-cutting-erp-search-input {
     width: 100%;
     min-width: 0;
   }
 
-  .laporan-erp-table {
-    min-width: 720px;
+  .history-pendapatan-cutting-erp-table-header {
+    padding: 14px 16px;
+  }
+
+  .history-pendapatan-cutting-erp-filter-row {
+    width: 100%;
+  }
+
+  .history-pendapatan-cutting-erp-date-field,
+  .history-pendapatan-cutting-erp-date-field input,
+  .history-pendapatan-cutting-erp-filter-btn {
+    width: 100%;
   }
 }

@@ -4,6 +4,83 @@ import "./SpkCuting.css";
 import "./HasilCutting.css";
 import API from "../../../api";
 
+const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js";
+
+const ensureSweetAlert = () =>
+  new Promise((resolve, reject) => {
+    if (window.Swal) {
+      resolve(window.Swal);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-sweetalert2="cdn"]');
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.Swal), { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = SWEETALERT_CDN;
+    script.async = true;
+    script.setAttribute("data-sweetalert2", "cdn");
+    script.onload = () => resolve(window.Swal);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+
+const showStatusAlert = async (icon, title, text) => {
+  try {
+    const Swal = await ensureSweetAlert();
+    if (!Swal) throw new Error("SweetAlert2 tidak tersedia");
+
+    await Swal.fire({
+      icon: icon || "info",
+      title: title || "Informasi",
+      text: text || "",
+      confirmButtonText: "OK",
+      buttonsStyling: false,
+      customClass: {
+        popup: "spk-swal-popup",
+        confirmButton: "spk-swal-btn spk-swal-btn-primary",
+      },
+    });
+    return true;
+  } catch (alertError) {
+    console.error("Gagal menampilkan SweetAlert:", alertError);
+    window.alert(text || title || "Terjadi kesalahan");
+    return false;
+  }
+};
+
+const showConfirmAlert = async ({ title, text, confirmText, icon = "question" }) => {
+  try {
+    const Swal = await ensureSweetAlert();
+    if (!Swal) throw new Error("SweetAlert2 tidak tersedia");
+
+    const result = await Swal.fire({
+      icon,
+      title: title || "Konfirmasi",
+      text: text || "Lanjutkan aksi ini?",
+      showCancelButton: true,
+      confirmButtonText: confirmText || "Ya, Lanjutkan",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+      buttonsStyling: false,
+      customClass: {
+        popup: "spk-swal-popup",
+        confirmButton: "spk-swal-btn spk-swal-btn-danger",
+        cancelButton: "spk-swal-btn spk-swal-btn-cancel",
+      },
+    });
+
+    return !!result.isConfirmed;
+  } catch (alertError) {
+    console.error("Gagal menampilkan konfirmasi SweetAlert:", alertError);
+    return window.confirm(text || title || "Lanjutkan aksi ini?");
+  }
+};
+
 const HasilCutting = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,6 +120,9 @@ const HasilCutting = () => {
   const [dailyDate, setDailyDate] = useState(searchParams.get("daily_date") || "");
   // Filter tukang cutting (baca dari URL)
   const [tukangCuttingFilter, setTukangCuttingFilter] = useState(searchParams.get("tukang_cutting") || "");
+  // Search data index hasil cutting
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchKeywordDebounced, setSearchKeywordDebounced] = useState("");
   // State untuk search SPK Cutting
   const [searchSpkQuery, setSearchSpkQuery] = useState("");
   const [showSpkDropdown, setShowSpkDropdown] = useState(false);
@@ -73,6 +153,20 @@ const HasilCutting = () => {
     console.log('SearchParams changed:', searchParams.toString());
     console.log('Current URL:', window.location.href);
   }, [searchParams]);
+
+  // Debounce input pencarian agar request API tidak terlalu sering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchKeywordDebounced(searchKeyword.trim());
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchKeyword]);
+
+  // Reset ke halaman pertama saat keyword search berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchKeywordDebounced]);
   
   // Fetch data hasil cutting - baca langsung dari URL untuk menghindari race condition
   useEffect(() => {
@@ -144,6 +238,11 @@ const HasilCutting = () => {
         if (tukangCuttingFromUrl) {
           params.tukang_cutting = tukangCuttingFromUrl;
         }
+
+        // Tambahkan keyword search jika ada
+        if (searchKeywordDebounced) {
+          params.search = searchKeywordDebounced;
+        }
         
         // Debug: log parameter yang dikirim
         console.log('Fetching hasil cutting with params:', params);
@@ -175,7 +274,7 @@ const HasilCutting = () => {
       }
     };
     fetchDataHasilCutting();
-  }, [location.search, searchParams, showForm, currentPage]); // Gunakan location.search sebagai dependency utama
+  }, [location.search, searchParams, showForm, currentPage, searchKeywordDebounced]); // Gunakan location.search sebagai dependency utama
 
   // Fetch detail SPK Cutting dengan berat dari stok_bahan_keluar
   useEffect(() => {
@@ -219,13 +318,13 @@ const HasilCutting = () => {
 
         // Tampilkan alert untuk memberikan feedback lebih jelas
         if (error.response?.status === 404) {
-          alert("SPK Cutting tidak ditemukan. Pastikan SPK Cutting yang dipilih sudah terdaftar di sistem.");
+          await showStatusAlert("error", "SPK Tidak Ditemukan", "SPK Cutting yang dipilih belum terdaftar di sistem.");
         } else if (error.response?.status === 500) {
-          alert("Terjadi kesalahan di server. Silakan cek log atau hubungi administrator.");
+          await showStatusAlert("error", "Server Error", "Terjadi kesalahan di server. Silakan hubungi administrator.");
         } else if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          await showStatusAlert("error", "Gagal Memuat SPK", error.response.data.message);
         } else {
-          alert("Gagal mengambil data SPK Cutting. Pastikan koneksi internet Anda stabil.");
+          await showStatusAlert("error", "Gagal Memuat SPK", "Pastikan koneksi internet Anda stabil lalu coba lagi.");
         }
       } finally {
         setLoading(false);
@@ -376,7 +475,7 @@ const HasilCutting = () => {
   // Handler untuk menyimpan data ke database
   const handleSimpan = async () => {
     if (!selectedSpkId || !spkDetail?.detail) {
-      alert("Pilih SPK Cutting terlebih dahulu");
+      await showStatusAlert("warning", "SPK Belum Dipilih", "Pilih SPK Cutting terlebih dahulu.");
       return;
     }
 
@@ -388,7 +487,7 @@ const HasilCutting = () => {
     });
 
     if (hasEmptyData) {
-      alert("Mohon lengkapi semua data jumlah lembar dan jumlah produk");
+      await showStatusAlert("warning", "Data Belum Lengkap", "Lengkapi semua data jumlah lembar dan jumlah produk.");
       return;
     }
 
@@ -403,12 +502,16 @@ const HasilCutting = () => {
       // Jika user mengisi distribusi seri, validasi harus lengkap dan total harus sama
       const hasEmptyDistribusi = distribusiSeri.some((item) => !item.jumlah_produk || parseInt(item.jumlah_produk) <= 0);
       if (hasEmptyDistribusi) {
-        alert("Mohon lengkapi semua data distribusi seri yang sudah diisi");
+        await showStatusAlert("warning", "Distribusi Seri Belum Lengkap", "Lengkapi semua data distribusi seri yang sudah diisi.");
         return;
       }
 
       if (totalDistribusi !== totalProduk) {
-        alert(`Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")})`);
+        await showStatusAlert(
+          "warning",
+          "Total Distribusi Tidak Sama",
+          `Total distribusi seri (${totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk (${totalProduk.toLocaleString("id-ID")}).`
+        );
         return;
       }
 
@@ -426,12 +529,16 @@ const HasilCutting = () => {
             // Validasi semua detail harus lengkap
             const hasEmptyDetail = distribusi.detail.some((d) => !d.warna || !d.jumlah_produk || parseInt(d.jumlah_produk) <= 0);
             if (hasEmptyDetail) {
-              alert(`Mohon lengkapi semua data detail distribusi seri ke-${i + 1}`);
+              await showStatusAlert("warning", "Detail Distribusi Belum Lengkap", `Lengkapi semua data detail distribusi seri ke-${i + 1}.`);
               return;
             }
 
             if (totalDetail !== jumlahProdukDistribusi) {
-              alert(`Total detail distribusi seri ke-${i + 1} (${totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk (${jumlahProdukDistribusi.toLocaleString("id-ID")})`);
+              await showStatusAlert(
+                "warning",
+                "Total Detail Tidak Sama",
+                `Total detail distribusi seri ke-${i + 1} (${totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk (${jumlahProdukDistribusi.toLocaleString("id-ID")}).`
+              );
               return;
             }
           }
@@ -575,7 +682,7 @@ const HasilCutting = () => {
         response = await API.post("/hasil_cutting", payload);
       }
 
-      alert(editingId ? "Data berhasil diupdate!" : "Data berhasil disimpan!");
+      await showStatusAlert("success", "Berhasil", editingId ? "Data berhasil diupdate." : "Data berhasil disimpan.");
       console.log("Data tersimpan:", response.data);
 
       // Reset form setelah berhasil simpan
@@ -589,8 +696,13 @@ const HasilCutting = () => {
 
       // Refresh data setelah simpan
       try {
+        const refreshParams = { page: 1, per_page: 7 };
+        if (searchKeywordDebounced) {
+          refreshParams.search = searchKeywordDebounced;
+        }
+
         const refreshResponse = await API.get("/hasil_cutting", {
-          params: { page: 1 },
+          params: refreshParams,
         });
         if (refreshResponse.data.data) {
           setDataHasilCutting(refreshResponse.data.data || []);
@@ -620,7 +732,7 @@ const HasilCutting = () => {
         errorMessage = error.message;
       }
 
-      alert(errorMessage);
+      await showStatusAlert("error", "Gagal Menyimpan Data", errorMessage);
     } finally {
       setSaving(false);
     }
@@ -704,7 +816,7 @@ const HasilCutting = () => {
       setShowForm(true);
     } catch (error) {
       console.error("Gagal mengambil data untuk edit:", error);
-      alert("Gagal mengambil data untuk edit");
+      await showStatusAlert("error", "Gagal Memuat Data Edit", "Gagal mengambil data untuk edit.");
     } finally {
       setLoading(false);
     }
@@ -712,18 +824,30 @@ const HasilCutting = () => {
 
   // Handler untuk delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+    const isConfirmed = await showConfirmAlert({
+      title: "Hapus Data Hasil Cutting?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      confirmText: "Ya, Hapus",
+      icon: "warning",
+    });
+
+    if (!isConfirmed) {
       return;
     }
 
     try {
       await API.delete(`/hasil_cutting/${id}`);
-      alert("Data berhasil dihapus!");
+      await showStatusAlert("success", "Berhasil", "Data berhasil dihapus.");
       // Refresh data setelah hapus
       setCurrentPage(1);
       // Force refresh
+      const refreshParams = { page: 1, per_page: 7 };
+      if (searchKeywordDebounced) {
+        refreshParams.search = searchKeywordDebounced;
+      }
+
       const response = await API.get("/hasil_cutting", {
-        params: { page: 1, per_page: 7 },
+        params: refreshParams,
       });
       if (response.data.data) {
         setDataHasilCutting(response.data.data || []);
@@ -732,7 +856,7 @@ const HasilCutting = () => {
       }
     } catch (error) {
       console.error("Gagal menghapus data:", error);
-      alert(error.response?.data?.message || "Gagal menghapus data");
+      await showStatusAlert("error", "Gagal Menghapus Data", error.response?.data?.message || "Gagal menghapus data.");
     }
   };
 
@@ -744,7 +868,7 @@ const HasilCutting = () => {
       setDetailData(response.data);
     } catch (error) {
       console.error("Gagal mengambil detail:", error);
-      alert("Gagal mengambil detail data");
+      await showStatusAlert("error", "Gagal Memuat Detail", "Gagal mengambil detail data.");
     } finally {
       setLoading(false);
     }
@@ -905,9 +1029,15 @@ const HasilCutting = () => {
   return (
     <div className="hasil-cutting-container">
       <div className="hasil-cutting-header-card">
-        <div>
-          <h1 className="hasil-cutting-header-title">📊 Data Hasil Cutting</h1>
-          <p className="hasil-cutting-header-subtitle">Kelola hasil cutting dengan mudah dan efisien</p>
+        <div className="hasil-cutting-title-group">
+          <div className="hasil-cutting-brand-icon">
+            <i className="fas fa-cut"></i>
+          </div>
+          <div className="hasil-cutting-title-wrap">
+            <div className="hasil-cutting-module-pill">Modul Cutting</div>
+            <h1 className="hasil-cutting-header-title">Data Hasil Cutting</h1>
+            <p className="hasil-cutting-header-subtitle">Kelola hasil cutting dengan mudah dan efisien</p>
+          </div>
         </div>
         <button onClick={handleTambahBaru} className="hasil-cutting-primary-button">
           <i className="fas fa-plus-circle hasil-cutting-primary-button-icon"></i>
@@ -919,14 +1049,14 @@ const HasilCutting = () => {
       <div className="hasil-cutting-target-cards">
         {/* Target Mingguan */}
         <div className="hasil-cutting-target-card">
-          <div className="hasil-cutting-target-card-icon">🎯</div>
+          <div className="hasil-cutting-target-card-icon"><i className="fas fa-bullseye"></i></div>
           <div className="hasil-cutting-target-card-content">
             <div className="hasil-cutting-target-card-label">Target Mingguan</div>
             {/* Filter periode mingguan (custom) */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "4px" }}>
-              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
-              <span style={{ fontSize: "12px", alignSelf: "center", color: "#854d0e" }}>s/d</span>
-              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "150px", padding: "6px 10px", fontSize: "12px" }} />
+            <div className="hasil-cutting-target-filter-row">
+              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="hasil-cutting-target-filter-input" />
+              <span className="hasil-cutting-target-filter-separator">s/d</span>
+              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="hasil-cutting-target-filter-input" />
             </div>
             <div className="hasil-cutting-target-card-value">{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
             <div className="hasil-cutting-target-card-info">
@@ -938,7 +1068,7 @@ const HasilCutting = () => {
                   Kurang <strong>{Number(targetStats.weekly_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 50.000
                 </>
               ) : (
-                <span className="hasil-cutting-target-card-status-achieved">Target mingguan tercapai 🎉</span>
+                <span className="hasil-cutting-target-card-status-achieved">Target mingguan tercapai</span>
               )}
             </div>
             {targetStats.week_start && targetStats.week_end && (
@@ -951,12 +1081,12 @@ const HasilCutting = () => {
 
         {/* Target Harian */}
         <div className="hasil-cutting-target-card">
-          <div className="hasil-cutting-target-card-icon daily">📈</div>
+          <div className="hasil-cutting-target-card-icon daily"><i className="fas fa-chart-line"></i></div>
           <div className="hasil-cutting-target-card-content">
             <div className="hasil-cutting-target-card-label daily">Target Harian</div>
             {/* Filter tanggal harian (custom) */}
-            <div style={{ marginBottom: "8px", marginTop: "4px" }}>
-              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="hasil-cutting-form-input" style={{ maxWidth: "180px", padding: "6px 10px", fontSize: "12px" }} />
+            <div className="hasil-cutting-target-filter-row single">
+              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="hasil-cutting-target-filter-input" />
             </div>
             <div className="hasil-cutting-target-card-value daily">{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
             <div className="hasil-cutting-target-card-info daily">
@@ -968,7 +1098,7 @@ const HasilCutting = () => {
                   Kurang <strong>{Number(targetStats.daily_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 7.143
                 </>
               ) : (
-                <span className="hasil-cutting-target-card-status-achieved">Target harian tercapai 💪</span>
+                <span className="hasil-cutting-target-card-status-achieved">Target harian tercapai</span>
               )}
             </div>
             {targetStats.today && <div className="hasil-cutting-target-card-period daily">Tanggal: {targetStats.today}</div>}
@@ -977,6 +1107,34 @@ const HasilCutting = () => {
       </div>
 
       <div className="hasil-cutting-table-card">
+        <div className="hasil-cutting-table-header">
+          <div>
+            <h3>Daftar Hasil Cutting</h3>
+            <p>Ringkasan data hasil cutting produksi ({dataHasilCutting.length} data)</p>
+          </div>
+          <div className="hasil-cutting-table-tools">
+            <div className="hasil-cutting-table-search">
+              <i className="fas fa-search hasil-cutting-table-search-icon"></i>
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="Cari SPK / Produk / Tukang"
+                className="hasil-cutting-table-search-input"
+              />
+              {searchKeyword && (
+                <button
+                  type="button"
+                  className="hasil-cutting-table-search-clear"
+                  onClick={() => setSearchKeyword("")}
+                  title="Reset pencarian"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
         {/* Tabel Index */}
         <div>
           {loadingData ? (
@@ -986,7 +1144,7 @@ const HasilCutting = () => {
             </div>
           ) : dataHasilCutting.length > 0 ? (
             <>
-              <table className="penjahit-table">
+              <table className="penjahit-table hasil-cutting-index-table">
                 <thead>
                   <tr>
                     <th>NO</th>
@@ -1063,9 +1221,13 @@ const HasilCutting = () => {
             </>
           ) : (
             <div className="hasil-cutting-empty-state">
-              <div className="hasil-cutting-empty-state-icon">📋</div>
-              <h3 className="hasil-cutting-empty-state-title">Belum Ada Data</h3>
-              <p className="hasil-cutting-empty-state-text">Mulai dengan menambahkan hasil cutting pertama Anda</p>
+              <div className="hasil-cutting-empty-state-icon"><i className="fas fa-clipboard-list"></i></div>
+              <h3 className="hasil-cutting-empty-state-title">{searchKeywordDebounced ? "Data Tidak Ditemukan" : "Belum Ada Data"}</h3>
+              <p className="hasil-cutting-empty-state-text">
+                {searchKeywordDebounced
+                  ? `Tidak ada data yang cocok dengan kata kunci "${searchKeywordDebounced}"`
+                  : "Mulai dengan menambahkan hasil cutting pertama Anda"}
+              </p>
             </div>
           )}
         </div>
@@ -1080,402 +1242,264 @@ const HasilCutting = () => {
               }
             }}
           >
-            <div className="hasil-cutting-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="hasil-cutting-modal-content hasil-cutting-modal-content-form" onClick={(e) => e.stopPropagation()}>
               {/* Header Modal */}
-              <div className="hasil-cutting-modal-header" style={{ position: "sticky", top: 0, zIndex: 10 }}>
-                <h2 className="hasil-cutting-modal-title">{editingId ? "✏️ Edit Hasil Cutting" : "➕ Tambah Hasil Cutting"}</h2>
+              <div className="hasil-cutting-modal-header hasil-cutting-modal-header-detail">
+                <h2 className="hasil-cutting-modal-title">{editingId ? "Edit Hasil Cutting" : "Tambah Hasil Cutting"}</h2>
                 <button
                   onClick={handleBatal}
                   className="hasil-cutting-modal-close-button"
-                  style={{ fontSize: "20px", fontWeight: "bold" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
-                    e.currentTarget.style.transform = "rotate(90deg)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                    e.currentTarget.style.transform = "rotate(0deg)";
-                  }}
                 >
-                  ×
+                  <i className="fas fa-times"></i>
                 </button>
               </div>
 
               {/* Content Modal */}
-              <div className="hasil-cutting-modal-body">
+              <div className="hasil-cutting-modal-body hasil-cutting-modal-body-form">
                 {/* Data sebelum diedit (hanya tampil saat mode edit) */}
                 {editingId && originalData && (
-                  <div
-                    style={{
-                      marginBottom: "20px",
-                      padding: "16px",
-                      borderRadius: "12px",
-                      background: "linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%)",
-                      border: "1px solid #dce2ff",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                      <span style={{ fontSize: "18px" }}>📋</span>
+                  <div className="hasil-cutting-original-reference">
+                    <div className="hasil-cutting-original-reference-header">
+                      <i className="fas fa-history hasil-cutting-original-reference-icon"></i>
                       <div>
-                        <div style={{ fontWeight: "700", color: "#3b4783" }}>Data sebelum diedit</div>
-                        <div style={{ fontSize: "12px", color: "#6c7187" }}>Referensi nilai asli sebelum Anda melakukan perubahan</div>
+                        <div className="hasil-cutting-original-reference-title">Data sebelum diedit</div>
+                        <div className="hasil-cutting-original-reference-subtitle">Referensi nilai asli sebelum Anda melakukan perubahan</div>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                        gap: "12px",
-                        marginTop: "8px",
-                      }}
-                    >
-                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>SPK Cutting</div>
-                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.spk_cutting_id || "-"}</div>
+                    <div className="hasil-cutting-original-reference-grid">
+                      <div className="hasil-cutting-original-reference-item">
+                        <div className="hasil-cutting-original-reference-label">SPK Cutting</div>
+                        <div className="hasil-cutting-original-reference-value">{originalData.spk_cutting_id || "-"}</div>
                       </div>
-                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Produk</div>
-                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalProduk?.toLocaleString("id-ID") || "0"}</div>
+                      <div className="hasil-cutting-original-reference-item">
+                        <div className="hasil-cutting-original-reference-label">Total Produk</div>
+                        <div className="hasil-cutting-original-reference-value">{originalData.totalProduk?.toLocaleString("id-ID") || "0"}</div>
                       </div>
-                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Berat</div>
-                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalBerat?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
+                      <div className="hasil-cutting-original-reference-item">
+                        <div className="hasil-cutting-original-reference-label">Total Berat</div>
+                        <div className="hasil-cutting-original-reference-value">{originalData.totalBerat?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
                       </div>
-                      <div style={{ background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Berat per Produk</div>
-                        <div style={{ fontWeight: "700", color: "#111827" }}>{originalData.totalBeratPerProduk?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
+                      <div className="hasil-cutting-original-reference-item">
+                        <div className="hasil-cutting-original-reference-label">Total Berat per Produk</div>
+                        <div className="hasil-cutting-original-reference-value">{originalData.totalBeratPerProduk?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0,00"} kg</div>
                       </div>
                       {originalData.catatan && (
-                        <div style={{ gridColumn: "1 / -1", background: "white", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>Catatan</div>
-                          <div style={{ fontWeight: "600", color: "#374151" }}>{originalData.catatan}</div>
+                        <div className="hasil-cutting-original-reference-item hasil-cutting-original-reference-item-full">
+                          <div className="hasil-cutting-original-reference-label">Catatan</div>
+                          <div className="hasil-cutting-original-reference-value hasil-cutting-original-reference-note">{originalData.catatan}</div>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div className="filter-header1">
-                  <div className="form-group" style={{ marginBottom: "20px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "12px",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                        color: "#333",
-                      }}
-                    >
-                      🔍 Cari SPK Cutting:
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <input
-                        type="text"
-                        value={searchSpkQuery}
-                        onChange={(e) => {
-                          setSearchSpkQuery(e.target.value);
-                          setShowSpkDropdown(true);
-                          if (!e.target.value) {
-                            setSelectedSpkId("");
-                            setSpkDetail(null);
-                          }
-                        }}
-                        onFocus={() => {
-                          if (filteredSpkCutting.length > 0 && searchSpkQuery) {
-                            setShowSpkDropdown(true);
-                          }
-                        }}
-                        onBlur={() => {
-                          // Delay untuk memungkinkan klik pada dropdown
-                          setTimeout(() => setShowSpkDropdown(false), 200);
-                        }}
-                        placeholder="Ketik untuk mencari SPK Cutting (contoh: SK24, Gamis Karinaa)"
-                        className="modern-input hasil-cutting-form-input hasil-cutting-form-input-search"
-                      />
-                      <i
-                        className="fas fa-search"
-                        style={{
-                          position: "absolute",
-                          right: "16px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          color: "#667eea",
-                          fontSize: "16px",
-                          pointerEvents: "none",
-                        }}
-                      ></i>
+                <div className="hasil-cutting-modal-top-grid">
+                  <div className="hasil-cutting-modal-top-card">
+                    <div className="hasil-cutting-modal-top-title">Alur Input</div>
+                    <div className="hasil-cutting-modal-tabs">
+                      <div className={`hasil-cutting-modal-tab ${selectedSpkId ? "is-done" : "is-active"}`}>
+                        <span className="hasil-cutting-workflow-step-no">1</span>
+                        Pilih SPK
+                      </div>
+                      <div className={`hasil-cutting-modal-tab ${dataAcuan.length > 0 ? "is-done" : ""}`}>
+                        <span className="hasil-cutting-workflow-step-no">2</span>
+                        Data Acuan
+                      </div>
+                      <div className={`hasil-cutting-modal-tab ${spkDetail?.detail?.length > 0 ? "is-done" : ""}`}>
+                        <span className="hasil-cutting-workflow-step-no">3</span>
+                        Input Detail
+                      </div>
+                      <div className={`hasil-cutting-modal-tab ${getTotalDistribusiSeri() > 0 ? "is-done" : ""}`}>
+                        <span className="hasil-cutting-workflow-step-no">4</span>
+                        Distribusi Seri
+                      </div>
+                    </div>
 
-                      {/* Dropdown hasil pencarian */}
-                      {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length > 0 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            marginTop: "4px",
-                            background: "white",
-                            borderRadius: "12px",
-                            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
-                            maxHeight: "300px",
-                            overflowY: "auto",
-                            zIndex: 1000,
-                            border: "1px solid #e0e0e0",
-                          }}
-                        >
-                          {filteredSpkCutting.map((spk) => (
-                            <div
-                              key={spk.id}
-                              onMouseDown={(e) => {
-                                e.preventDefault(); // Prevent blur event
-                                handleSelectSpk(spk.id, spk.id_spk_cutting, spk.produk?.nama_produk || "N/A");
-                              }}
-                              style={{
-                                padding: "12px 16px",
-                                cursor: "pointer",
-                                transition: "all 0.2s ease",
-                                borderBottom: "1px solid #f0f0f0",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "white";
-                              }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <i className="fas fa-tag" style={{ color: "#667eea", fontSize: "14px" }}></i>
-                                <div>
-                                  <div style={{ fontWeight: "600", color: "#333", fontSize: "14px" }}>{spk.id_spk_cutting}</div>
-                                  <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>{spk.produk?.nama_produk || "N/A"}</div>
+                    <div className="hasil-cutting-intake-shell">
+                      <div className="hasil-cutting-form-group hasil-cutting-form-spk-group">
+                        <label className="hasil-cutting-form-label">
+                          Cari SPK Cutting:
+                        </label>
+                        <div className="hasil-cutting-form-input-wrapper">
+                          <input
+                            type="text"
+                            value={searchSpkQuery}
+                            onChange={(e) => {
+                              setSearchSpkQuery(e.target.value);
+                              setShowSpkDropdown(true);
+                              if (!e.target.value) {
+                                setSelectedSpkId("");
+                                setSpkDetail(null);
+                              }
+                            }}
+                            onFocus={() => {
+                              if (filteredSpkCutting.length > 0 && searchSpkQuery) {
+                                setShowSpkDropdown(true);
+                              }
+                            }}
+                            onBlur={() => {
+                              // Delay untuk memungkinkan klik pada dropdown
+                              setTimeout(() => setShowSpkDropdown(false), 200);
+                            }}
+                            placeholder="Ketik untuk mencari SPK Cutting (contoh: SK24, Gamis Karinaa)"
+                            className="modern-input hasil-cutting-form-input hasil-cutting-form-input-search"
+                          />
+                          <i className="fas fa-search hasil-cutting-form-search-icon"></i>
+
+                          {/* Dropdown hasil pencarian */}
+                          {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length > 0 && (
+                            <div className="hasil-cutting-form-dropdown">
+                              {filteredSpkCutting.map((spk) => (
+                                <div
+                                  key={spk.id}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault(); // Prevent blur event
+                                    handleSelectSpk(spk.id, spk.id_spk_cutting, spk.produk?.nama_produk || "N/A");
+                                  }}
+                                  className="hasil-cutting-form-dropdown-item"
+                                >
+                                  <div className="hasil-cutting-form-dropdown-content">
+                                    <i className="fas fa-tag hasil-cutting-form-dropdown-icon"></i>
+                                    <div>
+                                      <div className="hasil-cutting-form-dropdown-title">{spk.id_spk_cutting}</div>
+                                      <div className="hasil-cutting-form-dropdown-subtitle">{spk.produk?.nama_produk || "N/A"}</div>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          )}
 
-                      {/* Pesan jika tidak ada hasil */}
-                      {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length === 0 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            marginTop: "4px",
-                            background: "white",
-                            borderRadius: "12px",
-                            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
-                            padding: "20px",
-                            textAlign: "center",
-                            zIndex: 1000,
-                            border: "1px solid #e0e0e0",
-                          }}
-                        >
-                          <i className="fas fa-search" style={{ fontSize: "24px", color: "#999", marginBottom: "8px" }}></i>
-                          <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>Tidak ada SPK Cutting yang ditemukan</p>
+                          {/* Pesan jika tidak ada hasil */}
+                          {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length === 0 && (
+                            <div className="hasil-cutting-form-dropdown-empty">
+                              <i className="fas fa-search hasil-cutting-form-dropdown-empty-icon"></i>
+                              <p className="hasil-cutting-form-dropdown-empty-text">Tidak ada SPK Cutting yang ditemukan</p>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hasil-cutting-modal-top-card">
+                    <div className="hasil-cutting-modal-top-title">Ringkasan Operasional</div>
+                    <div className="hasil-cutting-operational-grid">
+                      <div className="hasil-cutting-operational-item">
+                        <p className="hasil-cutting-operational-label">SPK Aktif</p>
+                        <p className="hasil-cutting-operational-value">{spkDetail?.spk_cutting?.id_spk_cutting || "-"}</p>
+                      </div>
+                      <div className="hasil-cutting-operational-item">
+                        <p className="hasil-cutting-operational-label">Produk</p>
+                        <p className="hasil-cutting-operational-value">{spkDetail?.spk_cutting?.nama_produk || "-"}</p>
+                      </div>
+                      <div className="hasil-cutting-operational-item">
+                        <p className="hasil-cutting-operational-label">Total Acuan</p>
+                        <p className="hasil-cutting-operational-value">{dataAcuan.length.toLocaleString("id-ID")}</p>
+                      </div>
+                      <div className="hasil-cutting-operational-item">
+                        <p className="hasil-cutting-operational-label">Total Produk</p>
+                        <p className="hasil-cutting-operational-value">{getTotalKeseluruhan().toLocaleString("id-ID")}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Tabel Data Acuan - Selalu tampil */}
-                <div style={{ marginBottom: "32px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "16px",
-                      padding: "16px",
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "white",
-                      }}
-                    >
-                      📊 Data Acuan
-                    </h3>
-                    <button
-                      onClick={handleTambahAcuan}
-                      style={{
-                        padding: "10px 20px",
-                        background: "rgba(255, 255, 255, 0.2)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "10px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        transition: "all 0.3s ease",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                        e.currentTarget.style.transform = "translateY(0)";
-                      }}
-                    >
+                <div className="hasil-cutting-form-section hasil-cutting-form-section-acuan">
+                  <div className="hasil-cutting-section-bar">
+                    <h3 className="hasil-cutting-section-title">Data Acuan</h3>
+                    <button onClick={handleTambahAcuan} className="hasil-cutting-section-action">
                       <i className="fas fa-plus"></i>
                       Tambah Data Acuan
                     </button>
                   </div>
 
                   {dataAcuan.length > 0 ? (
-                    <table className="penjahit-table">
-                      <thead>
-                        <tr>
-                          <th>Warna</th>
-                          <th>Berat Acuan (KG)</th>
-                          <th>Banyak Produk</th>
-                          <th>Berat Acuan per Produk (KG)</th>
-                          <th>Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dataAcuan.map((acuan) => {
-                          const beratAcuanPerProduk = getBeratAcuanPerProduk(parseFloat(acuan.berat_acuan || 0), parseFloat(acuan.banyak_produk || 0));
-                          return (
-                            <tr key={acuan.id}>
-                              <td>
-                                <select
-                                  value={acuan.warna}
-                                  onChange={(e) => handleAcuanChange(acuan.id, "warna", e.target.value)}
-                                  className="modern-input"
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    border: "2px solid #e0e0e0",
-                                    borderRadius: "8px",
-                                    transition: "all 0.3s ease",
-                                  }}
-                                >
-                                  <option value="">-- Pilih Warna --</option>
-                                  {getWarnaList().map((warna) => (
-                                    <option key={warna} value={warna}>
-                                      {warna}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={acuan.berat_acuan || ""}
-                                  onChange={(e) => handleAcuanChange(acuan.id, "berat_acuan", e.target.value)}
-                                  placeholder="0.00"
-                                  className="modern-input"
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    border: "2px solid #e0e0e0",
-                                    borderRadius: "8px",
-                                    textAlign: "center",
-                                    transition: "all 0.3s ease",
-                                  }}
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={acuan.banyak_produk || ""}
-                                  onChange={(e) => handleAcuanChange(acuan.id, "banyak_produk", e.target.value)}
-                                  placeholder="0"
-                                  className="modern-input"
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    border: "2px solid #e0e0e0",
-                                    borderRadius: "8px",
-                                    textAlign: "center",
-                                    transition: "all 0.3s ease",
-                                  }}
-                                />
-                              </td>
-                              <td>
-                                <div
-                                  style={{
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                    textAlign: "center",
-                                    background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
-                                    borderRadius: "8px",
-                                    color: "#155724",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                  }}
-                                >
-                                  {beratAcuanPerProduk > 0 ? `${beratAcuanPerProduk.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : "-"}
-                                </div>
-                              </td>
-                              <td>
-                                <button
-                                  onClick={() => handleHapusAcuan(acuan.id)}
-                                  style={{
-                                    padding: "8px 16px",
-                                    background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                    fontSize: "13px",
-                                    fontWeight: "600",
-                                    transition: "all 0.3s ease",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "scale(1.05)";
-                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "scale(1)";
-                                    e.currentTarget.style.boxShadow = "none";
-                                  }}
-                                >
-                                  <i className="fas fa-trash"></i>
-                                  Hapus
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <div className="hasil-cutting-table-wrap">
+                      <table className="penjahit-table">
+                        <thead>
+                          <tr>
+                            <th>Warna</th>
+                            <th>Berat Acuan (KG)</th>
+                            <th>Banyak Produk</th>
+                            <th>Berat Acuan per Produk (KG)</th>
+                            <th>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dataAcuan.map((acuan) => {
+                            const beratAcuanPerProduk = getBeratAcuanPerProduk(parseFloat(acuan.berat_acuan || 0), parseFloat(acuan.banyak_produk || 0));
+                            return (
+                              <tr key={acuan.id}>
+                                <td>
+                                  <div className="hasil-cutting-cell-input-shell">
+                                    <select
+                                      value={acuan.warna}
+                                      onChange={(e) => handleAcuanChange(acuan.id, "warna", e.target.value)}
+                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-in-shell"
+                                    >
+                                      <option value="">-- Pilih Warna --</option>
+                                      {getWarnaList().map((warna) => (
+                                        <option key={warna} value={warna}>
+                                          {warna}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="hasil-cutting-cell-input-shell has-addon-left">
+                                    <span className="hasil-cutting-cell-input-addon">KG</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={acuan.berat_acuan || ""}
+                                      onChange={(e) => handleAcuanChange(acuan.id, "berat_acuan", e.target.value)}
+                                      placeholder="0.00"
+                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-in-shell"
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="hasil-cutting-cell-input-shell has-addon-right">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={acuan.banyak_produk || ""}
+                                      onChange={(e) => handleAcuanChange(acuan.id, "banyak_produk", e.target.value)}
+                                      placeholder="0"
+                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-in-shell"
+                                    />
+                                    <span className="hasil-cutting-cell-input-addon right">PCS</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="hasil-cutting-cell-metric is-success">
+                                    {beratAcuanPerProduk > 0 ? `${beratAcuanPerProduk.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : "-"}
+                                  </div>
+                                </td>
+                                <td>
+                                  <button
+                                    onClick={() => handleHapusAcuan(acuan.id)}
+                                    className="hasil-cutting-row-action-btn danger"
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                    Hapus
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "40px",
-                        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                        borderRadius: "12px",
-                        border: "2px dashed #667eea",
-                      }}
-                    >
-                      <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
-                      <p style={{ margin: 0, color: "#667eea", fontSize: "16px", fontWeight: "600" }}>Belum ada data acuan</p>
-                      <p style={{ margin: "8px 0 0 0", color: "#666", fontSize: "14px" }}>Klik "Tambah Data Acuan" untuk menambahkan data acuan</p>
+                    <div className="hasil-cutting-empty-state">
+                      <div className="hasil-cutting-empty-state-icon"><i className="fas fa-clipboard-list"></i></div>
+                      <p className="hasil-cutting-empty-state-title">Belum ada data acuan</p>
+                      <p className="hasil-cutting-empty-state-text">Klik "Tambah Data Acuan" untuk menambahkan data acuan</p>
                     </div>
                   )}
                 </div>
@@ -1489,84 +1513,14 @@ const HasilCutting = () => {
                 )}
 
                 {/* Tabel Detail SPK Cutting - Selalu tampil */}
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "24px",
-                      padding: "16px",
-                      background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "#333",
-                      }}
-                    >
-                      📦 Detail SPK Cutting: {spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting} - ${spkDetail.spk_cutting.nama_produk}` : "Belum dipilih"}
+                <div className="hasil-cutting-form-section hasil-cutting-form-section-detail">
+                  <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft">
+                    <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">
+                      Detail SPK Cutting: {spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting} - ${spkDetail.spk_cutting.nama_produk}` : "Belum dipilih"}
                     </h3>
-                    {spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
-                      <button
-                        onClick={handleSimpan}
-                        disabled={saving}
-                        style={{
-                          padding: "12px 32px",
-                          background: saving ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "10px",
-                          cursor: saving ? "not-allowed" : "pointer",
-                          fontSize: "14px",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease",
-                          boxShadow: saving ? "none" : "0 4px 15px rgba(40, 167, 69, 0.4)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!saving) {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.5)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!saving) {
-                            e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow = "0 4px 15px rgba(40, 167, 69, 0.4)";
-                          }
-                        }}
-                      >
-                        {saving ? (
-                          <>
-                            <div
-                              style={{
-                                width: "14px",
-                                height: "14px",
-                                border: "2px solid rgba(255,255,255,0.3)",
-                                borderTop: "2px solid white",
-                                borderRadius: "50%",
-                                animation: "spin 0.8s linear infinite",
-                              }}
-                            ></div>
-                            Menyimpan...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-save"></i>
-                            Simpan Data
-                          </>
-                        )}
-                      </button>
-                    )}
                   </div>
-                  <table className="penjahit-table">
+                  <div className="hasil-cutting-table-wrap">
+                    <table className="penjahit-table hasil-cutting-entry-detail-table">
                     <thead>
                       <tr>
                         <th>Bagian</th>
@@ -1579,7 +1533,6 @@ const HasilCutting = () => {
                         <th>Total Produk</th>
                         <th>Berat per Produk (KG)</th>
                         <th>Status Perbandingan</th>
-                        <th>Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1590,6 +1543,19 @@ const HasilCutting = () => {
                           const totalProduk = getTotalProduk(bahanId);
                           const beratPerProduk = getBeratPerProduk(item.berat_scanned, totalProduk);
                           const statusPerbandingan = getStatusPerbandingan(item.warna, beratPerProduk);
+                          const status = statusPerbandingan && typeof statusPerbandingan === "object" ? statusPerbandingan.status : statusPerbandingan;
+                          const selisih = statusPerbandingan && typeof statusPerbandingan === "object" ? statusPerbandingan.selisih : 0;
+                          const statusText = status
+                            ? status === "lebih berat dari acuan" || status === "lebih ringan dari acuan"
+                              ? `${status} ${selisih > 0 ? `${selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : ""}`.trim()
+                              : status
+                            : "";
+                          const statusClass =
+                            status === "lebih berat dari acuan"
+                              ? "hasil-cutting-status-badge-heavier"
+                              : status === "lebih ringan dari acuan"
+                              ? "hasil-cutting-status-badge-lighter"
+                              : "hasil-cutting-status-badge-same";
 
                           return (
                             <tr key={`${bahanId}-${index}`}>
@@ -1605,16 +1571,7 @@ const HasilCutting = () => {
                                   value={currentData.jumlahLembar || ""}
                                   onChange={(e) => handleInputChange(bahanId, "jumlahLembar", e.target.value)}
                                   placeholder="0"
-                                  className="modern-input"
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    border: "2px solid #e0e0e0",
-                                    borderRadius: "8px",
-                                    textAlign: "center",
-                                    transition: "all 0.3s ease",
-                                  }}
+                                  className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-qty-erp"
                                 />
                               </td>
                               <td>
@@ -1624,93 +1581,26 @@ const HasilCutting = () => {
                                   value={currentData.jumlahProduk || ""}
                                   onChange={(e) => handleInputChange(bahanId, "jumlahProduk", e.target.value)}
                                   placeholder="0"
-                                  className="modern-input"
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    border: "2px solid #e0e0e0",
-                                    borderRadius: "8px",
-                                    textAlign: "center",
-                                    transition: "all 0.3s ease",
-                                  }}
+                                  className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-qty-erp"
                                 />
                               </td>
                               <td>
-                                <div
-                                  style={{
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                    textAlign: "center",
-                                    background: "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
-                                    borderRadius: "8px",
-                                    color: "#495057",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                  }}
-                                >
+                                <div className="hasil-cutting-cell-metric is-neutral">
                                   {totalProduk > 0 ? totalProduk.toLocaleString("id-ID") : "0"}
                                 </div>
                               </td>
                               <td>
-                                <div
-                                  style={{
-                                    padding: "10px",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                    textAlign: "center",
-                                    background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
-                                    borderRadius: "8px",
-                                    color: "#155724",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                  }}
-                                >
+                                <div className="hasil-cutting-cell-metric is-success">
                                   {beratPerProduk > 0 ? `${beratPerProduk.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : "-"}
                                 </div>
                               </td>
                               <td>
                                 {statusPerbandingan ? (
-                                  <span
-                                    style={{
-                                      padding: "8px 12px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      borderRadius: "8px",
-                                      display: "inline-block",
-                                      background:
-                                        statusPerbandingan === "lebih berat dari acuan"
-                                          ? "linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)"
-                                          : statusPerbandingan === "lebih ringan dari acuan"
-                                          ? "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)"
-                                          : "linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%)",
-                                      color: statusPerbandingan === "lebih berat dari acuan" ? "#721c24" : statusPerbandingan === "lebih ringan dari acuan" ? "#856404" : "#0c5460",
-                                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                    }}
-                                  >
-                                    {(() => {
-                                      const status = typeof statusPerbandingan === "object" ? statusPerbandingan.status : statusPerbandingan;
-                                      const selisih = typeof statusPerbandingan === "object" ? statusPerbandingan.selisih : 0;
-
-                                      if (status === "lebih berat dari acuan") {
-                                        return `⚠️ ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
-                                      } else if (status === "lebih ringan dari acuan") {
-                                        return `📉 ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
-                                      } else {
-                                        return `✅ ${status}`;
-                                      }
-                                    })()}
+                                  <span className={`hasil-cutting-status-badge ${statusClass}`}>
+                                    {statusText}
                                   </span>
                                 ) : (
-                                  <span
-                                    style={{
-                                      padding: "8px 12px",
-                                      fontSize: "12px",
-                                      color: "#999",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    -
-                                  </span>
+                                  <span className="hasil-cutting-status-badge-empty">-</span>
                                 )}
                               </td>
                             </tr>
@@ -1718,10 +1608,10 @@ const HasilCutting = () => {
                         })
                       ) : (
                         <tr>
-                          <td colSpan="11" style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                          <td colSpan="10" style={{ textAlign: "center", padding: "40px", color: "#999" }}>
                             {!selectedSpkId ? (
                               <div>
-                                <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
+                                <div style={{ fontSize: "40px", marginBottom: "16px", color: "#475569" }}><i className="fas fa-search"></i></div>
                                 <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#667eea" }}>Pilih SPK Cutting terlebih dahulu</p>
                                 <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Gunakan search di atas untuk mencari dan memilih SPK Cutting</p>
                               </div>
@@ -1732,7 +1622,7 @@ const HasilCutting = () => {
                               </div>
                             ) : (
                               <div>
-                                <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
+                                <div style={{ fontSize: "40px", marginBottom: "16px", color: "#475569" }}><i className="fas fa-clipboard-list"></i></div>
                                 <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#667eea" }}>Tidak ada data detail</p>
                                 <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>SPK Cutting yang dipilih tidak memiliki data bagian dan bahan</p>
                               </div>
@@ -1743,88 +1633,34 @@ const HasilCutting = () => {
                     </tbody>
                     {!loading && spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
                       <tfoot>
-                        <tr
-                          style={{
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                            fontWeight: "bold",
-                            color: "white",
-                          }}
-                        >
-                          <td colSpan="10" style={{ textAlign: "right", padding: "16px", fontSize: "16px" }}>
+                        <tr className="hasil-cutting-total-row">
+                          <td colSpan="9" className="hasil-cutting-total-label">
                             Total Keseluruhan:
                           </td>
-                          <td
-                            style={{
-                              textAlign: "center",
-                              padding: "16px",
-                              fontSize: "18px",
-                              fontWeight: "700",
-                              color: "white",
-                            }}
-                          >
+                          <td className="hasil-cutting-total-value">
                             {getTotalKeseluruhan().toLocaleString("id-ID")}
                           </td>
                         </tr>
                       </tfoot>
                     )}
-                  </table>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Section Distribusi Seri */}
                 {!loading && spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
-                  <div style={{ marginTop: "32px", marginBottom: "24px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "16px",
-                        padding: "16px",
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        borderRadius: "12px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: "600",
-                          color: "white",
-                        }}
-                      >
-                        📦 Distribusi Seri
+                  <div className="hasil-cutting-form-section hasil-cutting-form-section-distribusi hasil-cutting-distribusi-section">
+                    <div className="hasil-cutting-section-bar">
+                      <h3 className="hasil-cutting-section-title">
+                        Distribusi Seri
                       </h3>
-                      <button
-                        onClick={handleTambahDistribusiSeri}
-                        style={{
-                          padding: "8px 16px",
-                          background: "rgba(255, 255, 255, 0.2)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                      >
+                      <button onClick={handleTambahDistribusiSeri} className="hasil-cutting-section-action">
                         <i className="fas fa-plus"></i>
                         Tambah Seri
                       </button>
                     </div>
 
-                    <div style={{ background: "white", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                    <div className="hasil-cutting-distribusi-panel">
                       {distribusiSeri.map((seri, index) => {
                         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
                         const kodeSeri = spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting}${alphabet[index]}` : `-${alphabet[index]}`;
@@ -1833,64 +1669,39 @@ const HasilCutting = () => {
                         const hasDetailData = seri.detail && seri.detail.length > 0 && seri.detail.some((d) => d.warna && d.jumlah_produk && parseInt(d.jumlah_produk) > 0);
 
                         return (
-                          <div key={index} style={{ marginBottom: "24px", border: "2px solid #e0e0e0", borderRadius: "12px", padding: "16px", background: "#f9fafb" }}>
+                          <div key={index} className="hasil-cutting-distribusi-card">
                             {/* Header Distribusi */}
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "2px solid #e0e0e0" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                <span style={{ fontWeight: "700", color: "#667eea", fontSize: "16px" }}>#{index + 1}</span>
+                            <div className="hasil-cutting-distribusi-header">
+                              <div className="hasil-cutting-distribusi-meta">
+                                <span className="hasil-cutting-distribusi-index">#{index + 1}</span>
                                 <span
-                                  style={{
-                                    padding: "8px 16px",
-                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                  }}
+                                  className="hasil-cutting-distribusi-code"
                                 >
                                   {kodeSeri}
                                 </span>
-                                <div style={{ position: "relative" }}>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    value={seri.jumlah_produk}
-                                    onChange={(e) => handleUpdateDistribusiSeri(index, "jumlah_produk", e.target.value)}
-                                    placeholder="Jumlah Produk"
-                                    disabled={hasDetailData}
-                                    className="hasil-cutting-form-input"
-                                    style={{
-                                      maxWidth: "150px",
-                                      padding: "8px 12px",
-                                      fontSize: "14px",
-                                      textAlign: "center",
-                                      background: hasDetailData ? "#e9ecef" : "white",
-                                      cursor: hasDetailData ? "not-allowed" : "text",
-                                      opacity: hasDetailData ? 0.7 : 1,
-                                    }}
-                                    title={hasDetailData ? "Jumlah produk otomatis terisi dari total detail warna" : ""}
-                                  />
-                                  {hasDetailData && (
-                                    <i
-                                      className="fas fa-info-circle"
-                                      style={{
-                                        position: "absolute",
-                                        right: "-25px",
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                        color: "#667eea",
-                                        fontSize: "14px",
-                                        cursor: "help",
-                                      }}
-                                      title="Jumlah produk otomatis terisi dari total detail warna"
+                                <div className="hasil-cutting-distribusi-jumlah-wrap">
+                                  <div className={`hasil-cutting-cell-input-shell hasil-cutting-cell-input-shell-compact has-addon-right${hasDetailData ? " is-locked" : ""}`}>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={seri.jumlah_produk}
+                                      onChange={(e) => handleUpdateDistribusiSeri(index, "jumlah_produk", e.target.value)}
+                                      placeholder="Jumlah Produk"
+                                      disabled={hasDetailData}
+                                      className={`hasil-cutting-form-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-jumlah-seri hasil-cutting-input-in-shell${hasDetailData ? " is-locked" : ""}`}
+                                      title={hasDetailData ? "Jumlah produk otomatis terisi dari total detail warna" : ""}
                                     />
+                                    <span className="hasil-cutting-cell-input-addon right">PCS</span>
+                                  </div>
+                                  {hasDetailData && (
+                                    <i className="fas fa-info-circle hasil-cutting-distribusi-info-icon" title="Jumlah produk otomatis terisi dari total detail warna" />
                                   )}
                                 </div>
                                 {jumlahProdukDistribusi > 0 && (
-                                  <span style={{ fontSize: "13px", color: totalDetail === jumlahProdukDistribusi ? "#28a745" : "#dc3545", fontWeight: "600" }}>
+                                  <span className={`hasil-cutting-distribusi-total ${totalDetail === jumlahProdukDistribusi ? "is-match" : "is-mismatch"}`}>
                                     {hasDetailData ? (
                                       <span>
-                                        <i className="fas fa-sync-alt" style={{ marginRight: "4px" }}></i>
+                                        <i className="fas fa-sync-alt hasil-cutting-sync-icon"></i>
                                         Total Detail: {totalDetail.toLocaleString("id-ID")}
                                       </span>
                                     ) : (
@@ -1901,31 +1712,10 @@ const HasilCutting = () => {
                                   </span>
                                 )}
                               </div>
-                              <div style={{ display: "flex", gap: "8px" }}>
+                              <div className="hasil-cutting-distribusi-actions">
                                 <button
                                   onClick={() => handleTambahDetailDistribusi(index)}
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    transition: "all 0.3s ease",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "translateY(-2px)";
-                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 167, 69, 0.4)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "translateY(0)";
-                                    e.currentTarget.style.boxShadow = "none";
-                                  }}
+                                  className="hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-add"
                                 >
                                   <i className="fas fa-plus"></i>
                                   Tambah Warna
@@ -1933,32 +1723,7 @@ const HasilCutting = () => {
                                 <button
                                   onClick={() => handleHapusDistribusiSeri(index)}
                                   disabled={distribusiSeri.length === 1}
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: distribusiSeri.length === 1 ? "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)" : "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    cursor: distribusiSeri.length === 1 ? "not-allowed" : "pointer",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    transition: "all 0.3s ease",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    if (distribusiSeri.length > 1) {
-                                      e.currentTarget.style.transform = "scale(1.05)";
-                                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
-                                    }
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (distribusiSeri.length > 1) {
-                                      e.currentTarget.style.transform = "scale(1)";
-                                      e.currentTarget.style.boxShadow = "none";
-                                    }
-                                  }}
+                                  className={`hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-remove${distribusiSeri.length === 1 ? " is-disabled" : ""}`}
                                 >
                                   <i className="fas fa-trash"></i>
                                   Hapus Seri
@@ -1968,152 +1733,98 @@ const HasilCutting = () => {
 
                             {/* Tabel Detail Warna */}
                             {seri.detail && seri.detail.length > 0 ? (
-                              <table className="penjahit-table" style={{ margin: 0, background: "white" }}>
-                                <thead>
-                                  <tr>
-                                    <th>NO</th>
-                                    <th>WARNA</th>
-                                    <th>JUMLAH PRODUK</th>
-                                    <th>AKSI</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {seri.detail.map((detail, detailIndex) => (
-                                    <tr key={detailIndex}>
-                                      <td style={{ fontWeight: "600", color: "#667eea" }}>{detailIndex + 1}</td>
+                              <div className="hasil-cutting-table-wrap">
+                                <table className="penjahit-table hasil-cutting-distribusi-detail-table">
+                                  <thead>
+                                    <tr>
+                                      <th>NO</th>
+                                      <th>WARNA</th>
+                                      <th>JUMLAH PRODUK</th>
+                                      <th>AKSI</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {seri.detail.map((detail, detailIndex) => (
+                                      <tr key={detailIndex}>
+                                        <td className="hasil-cutting-distribusi-row-no">{detailIndex + 1}</td>
                                       <td>
-                                        <select
-                                          value={detail.warna || ""}
-                                          onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "warna", e.target.value)}
-                                          className="modern-input"
-                                          style={{
-                                            width: "100%",
-                                            padding: "8px 12px",
-                                            fontSize: "14px",
-                                            border: "2px solid #e0e0e0",
-                                            borderRadius: "8px",
-                                          }}
-                                        >
-                                          <option value="">-- Pilih Warna --</option>
-                                          {getWarnaList().map((warna) => (
-                                            <option key={warna} value={warna}>
-                                              {warna}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </td>
-                                      <td>
-                                        <input
-                                          type="number"
-                                          min="1"
-                                          value={detail.jumlah_produk || ""}
-                                          onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "jumlah_produk", e.target.value)}
-                                          placeholder="0"
-                                          className="hasil-cutting-form-input"
-                                          style={{
-                                            maxWidth: "150px",
-                                            padding: "8px 12px",
-                                            fontSize: "14px",
-                                            textAlign: "center",
-                                          }}
-                                        />
-                                      </td>
-                                      <td>
-                                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                        <div className="hasil-cutting-cell-input-shell">
                                           <select
-                                            value={detail.produk_sku_id || ""}
-                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "produk_sku_id", e.target.value)}
-                                            className="modern-input"
-                                            style={{
-                                              flex: 1,
-                                              padding: "6px 10px",
-                                              fontSize: "12px",
-                                              border: "2px solid #e0e0e0",
-                                              borderRadius: "8px",
-                                              minWidth: "150px",
-                                            }}
+                                            value={detail.warna || ""}
+                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "warna", e.target.value)}
+                                            className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-in-shell"
                                           >
-                                            <option value="">-- Pilih SKU --</option>
-                                            {spkDetail?.skus && spkDetail.skus.length > 0 ? (
-                                              spkDetail.skus.map((sku) => {
-                                                const namaProduk = (sku.nama_produk || "").toUpperCase();
-                                                const warna = (sku.warna || "").toUpperCase();
-                                                const ukuran = (sku.ukuran || "").toUpperCase();
-                                                const displayText = `${namaProduk} - ${warna} ${ukuran}`.trim();
-                                                return (
-                                                  <option key={sku.id} value={sku.id}>
-                                                    {displayText}
-                                                  </option>
-                                                );
-                                              })
-                                            ) : (
-                                              <option value="" disabled>Tidak ada SKU</option>
-                                            )}
+                                            <option value="">-- Pilih Warna --</option>
+                                            {getWarnaList().map((warna) => (
+                                              <option key={warna} value={warna}>
+                                                {warna}
+                                              </option>
+                                            ))}
                                           </select>
+                                        </div>
+                                      </td>
+                                      <td>
+                                        <div className="hasil-cutting-cell-input-shell has-addon-right">
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            value={detail.jumlah_produk || ""}
+                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "jumlah_produk", e.target.value)}
+                                            placeholder="0"
+                                            className="hasil-cutting-form-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-jumlah-seri hasil-cutting-input-in-shell"
+                                          />
+                                          <span className="hasil-cutting-cell-input-addon right">PCS</span>
+                                        </div>
+                                      </td>
+                                      <td>
+                                        <div className="hasil-cutting-distribusi-row-actions">
+                                          <div className="hasil-cutting-cell-input-shell">
+                                            <select
+                                              value={detail.produk_sku_id || ""}
+                                              onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "produk_sku_id", e.target.value)}
+                                              className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-sku hasil-cutting-input-in-shell"
+                                            >
+                                              <option value="">-- Pilih SKU --</option>
+                                              {spkDetail?.skus && spkDetail.skus.length > 0 ? (
+                                                spkDetail.skus.map((sku) => {
+                                                  const namaProduk = (sku.nama_produk || "").toUpperCase();
+                                                  const warna = (sku.warna || "").toUpperCase();
+                                                  const ukuran = (sku.ukuran || "").toUpperCase();
+                                                  const displayText = `${namaProduk} - ${warna} ${ukuran}`.trim();
+                                                  return (
+                                                    <option key={sku.id} value={sku.id}>
+                                                      {displayText}
+                                                    </option>
+                                                  );
+                                                })
+                                              ) : (
+                                                <option value="" disabled>Tidak ada SKU</option>
+                                              )}
+                                            </select>
+                                          </div>
                                           <button
                                             onClick={() => handleHapusDetailDistribusi(index, detailIndex)}
-                                            style={{
-                                              padding: "6px 12px",
-                                              background: "linear-gradient(135deg, #dc3545 0%, #c82333 100%)",
-                                              color: "white",
-                                              border: "none",
-                                              borderRadius: "8px",
-                                              cursor: "pointer",
-                                              fontSize: "12px",
-                                              fontWeight: "600",
-                                              transition: "all 0.3s ease",
-                                              display: "flex",
-                                              alignItems: "center",
-                                              gap: "6px",
-                                            }}
-                                            onMouseEnter={(e) => {
-                                              e.currentTarget.style.transform = "scale(1.05)";
-                                              e.currentTarget.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.currentTarget.style.transform = "scale(1)";
-                                              e.currentTarget.style.boxShadow = "none";
-                                            }}
+                                            className="hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-remove"
                                           >
                                             <i className="fas fa-trash"></i>
                                             Hapus
                                           </button>
                                         </div>
                                       </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             ) : (
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  padding: "20px",
-                                  background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                                  borderRadius: "8px",
-                                  border: "2px dashed #667eea",
-                                }}
-                              >
-                                <p style={{ margin: 0, color: "#667eea", fontSize: "14px", fontWeight: "600" }}>Belum ada detail warna. Klik "Tambah Warna" untuk menambahkan.</p>
+                              <div className="hasil-cutting-distribusi-empty">
+                                <p className="hasil-cutting-distribusi-empty-text">Belum ada detail warna. Klik "Tambah Warna" untuk menambahkan.</p>
                               </div>
                             )}
 
                             {/* Warning jika total detail tidak sama dengan jumlah produk */}
                             {hasDetailData && jumlahProdukDistribusi > 0 && totalDetail !== jumlahProdukDistribusi && (
-                              <div
-                                style={{
-                                  marginTop: "12px",
-                                  padding: "12px",
-                                  background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-                                  borderRadius: "8px",
-                                  border: "1px solid #ffc107",
-                                  fontSize: "13px",
-                                  color: "#856404",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                }}
-                              >
+                              <div className="hasil-cutting-inline-alert warning">
                                 <i className="fas fa-exclamation-triangle"></i>
                                 <span>
                                   Total detail ({totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk ({jumlahProdukDistribusi.toLocaleString("id-ID")})
@@ -2125,47 +1836,15 @@ const HasilCutting = () => {
                       })}
 
                       {/* Summary Total */}
-                      <div
-                        style={{
-                          marginTop: "16px",
-                          padding: "16px",
-                          background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                          borderRadius: "12px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div style={{ fontSize: "16px", fontWeight: "700", color: "#333" }}>Total Distribusi:</div>
-                        <div
-                          style={{
-                            fontSize: "18px",
-                            fontWeight: "700",
-                            color: getTotalDistribusiSeri() === getTotalKeseluruhan() ? "#28a745" : "#dc3545",
-                          }}
-                        >
+                      <div className="hasil-cutting-distribusi-summary">
+                        <div className="hasil-cutting-distribusi-summary-label">Total Distribusi:</div>
+                        <div className={`hasil-cutting-distribusi-summary-value ${getTotalDistribusiSeri() === getTotalKeseluruhan() ? "is-match" : "is-mismatch"}`}>
                           {getTotalDistribusiSeri().toLocaleString("id-ID")}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          marginTop: "8px",
-                          padding: "16px",
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          borderRadius: "12px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div style={{ fontSize: "16px", fontWeight: "700", color: "white" }}>Total Produk:</div>
-                        <div
-                          style={{
-                            fontSize: "18px",
-                            fontWeight: "700",
-                            color: "white",
-                          }}
-                        >
+                      <div className="hasil-cutting-distribusi-summary primary">
+                        <div className="hasil-cutting-distribusi-summary-label">Total Produk:</div>
+                        <div className="hasil-cutting-distribusi-summary-value">
                           {getTotalKeseluruhan().toLocaleString("id-ID")}
                         </div>
                       </div>
@@ -2178,20 +1857,7 @@ const HasilCutting = () => {
                         // Hanya tampilkan warning jika user mengisi distribusi seri dan total tidak sama
                         if (hasDistribusiData && totalDistribusi !== totalProduk) {
                           return (
-                            <div
-                              style={{
-                                marginTop: "12px",
-                                padding: "12px",
-                                background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-                                borderRadius: "8px",
-                                border: "1px solid #ffc107",
-                                fontSize: "13px",
-                                color: "#856404",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
-                            >
+                            <div className="hasil-cutting-inline-alert warning">
                               <i className="fas fa-exclamation-triangle"></i>
                               <span>
                                 Total distribusi ({totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk ({totalProduk.toLocaleString("id-ID")})
@@ -2202,20 +1868,7 @@ const HasilCutting = () => {
                         // Jika tidak ada distribusi seri yang diisi, tampilkan info bahwa distribusi seri opsional
                         if (!hasDistribusiData) {
                           return (
-                            <div
-                              style={{
-                                marginTop: "12px",
-                                padding: "12px",
-                                background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
-                                borderRadius: "8px",
-                                border: "1px solid #2196f3",
-                                fontSize: "13px",
-                                color: "#1565c0",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
-                            >
+                            <div className="hasil-cutting-inline-alert info">
                               <i className="fas fa-info-circle"></i>
                               <span>Distribusi seri bersifat opsional. Jika tidak diisi, sistem akan otomatis membuat 1 seri dengan total produk ({getTotalKeseluruhan().toLocaleString("id-ID")}).</span>
                             </div>
@@ -2229,17 +1882,8 @@ const HasilCutting = () => {
 
                 {/* Error Messages */}
                 {!loading && !spkDetail && selectedSpkId && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      background: "linear-gradient(135deg, #fee 0%, #fdd 100%)",
-                      borderRadius: "12px",
-                      border: "2px solid #fcc",
-                      margin: "20px 0",
-                    }}
-                  >
-                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+                  <div className="hasil-cutting-message-box error">
+                    <div style={{ fontSize: "40px", marginBottom: "16px", color: "#b91c1c" }}><i className="fas fa-exclamation-triangle"></i></div>
                     <p
                       style={{
                         margin: 0,
@@ -2263,17 +1907,8 @@ const HasilCutting = () => {
                   </div>
                 )}
                 {!loading && spkDetail && spkDetail.spk_cutting && (!spkDetail.detail || spkDetail.detail.length === 0) && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      background: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-                      borderRadius: "12px",
-                      border: "2px solid #ffc107",
-                      margin: "20px 0",
-                    }}
-                  >
-                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>ℹ️</div>
+                  <div className="hasil-cutting-message-box warning">
+                    <div style={{ fontSize: "40px", marginBottom: "16px", color: "#b45309" }}><i className="fas fa-info-circle"></i></div>
                     <p
                       style={{
                         margin: 0,
@@ -2296,6 +1931,28 @@ const HasilCutting = () => {
                     </p>
                   </div>
                 )}
+
+                {!loading && spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
+                  <div className="hasil-cutting-modal-footer">
+                    <button
+                      onClick={handleSimpan}
+                      disabled={saving}
+                      className={`hasil-cutting-primary-button hasil-cutting-save-button${saving ? " is-disabled" : ""}`}
+                    >
+                      {saving ? (
+                        <>
+                          <div className="hasil-cutting-save-spinner"></div>
+                          Menyimpan...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save"></i>
+                          Simpan Data
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2304,135 +1961,40 @@ const HasilCutting = () => {
         {/* Modal Detail */}
         {detailData && (
           <div className="hasil-cutting-modal-overlay" onClick={() => setDetailData(null)}>
-            <div className="hasil-cutting-modal-content detail" onClick={(e) => e.stopPropagation()}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "24px",
-                  padding: "24px 32px",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  borderRadius: "20px 20px 0 0",
-                }}
-              >
-                <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "700" }}>📋 Detail Hasil Cutting</h2>
+            <div className="hasil-cutting-modal-content detail hasil-cutting-modal-content-detail-erp" onClick={(e) => e.stopPropagation()}>
+              <div className="hasil-cutting-modal-header hasil-cutting-modal-header-detail">
+                <h2 className="hasil-cutting-modal-title">Detail Hasil Cutting</h2>
                 <button
                   onClick={() => setDetailData(null)}
-                  style={{
-                    padding: "8px 14px",
-                    background: "rgba(255, 255, 255, 0.2)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    transition: "all 0.2s ease",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
+                  className="hasil-cutting-modal-close-button"
                 >
                   <i className="fas fa-times"></i>
-                  Tutup
                 </button>
               </div>
 
-              <div style={{ padding: "32px" }}>
-                <div
-                  style={{
-                    marginBottom: "32px",
-                    padding: "24px",
-                    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-                    borderRadius: "16px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                      gap: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "20px",
-                        background: "white",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                        <i className="fas fa-tag" style={{ color: "#667eea", fontSize: "18px" }}></i>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#666", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>SPK Cutting</p>
+              <div className="hasil-cutting-detail-content">
+                <div className="hasil-cutting-detail-overview">
+                  <div className="hasil-cutting-detail-overview-grid">
+                    <div className="hasil-cutting-detail-overview-card">
+                      <div className="hasil-cutting-detail-overview-head">
+                        <i className="fas fa-tag hasil-cutting-detail-overview-icon"></i>
+                        <p className="hasil-cutting-detail-overview-label">SPK Cutting</p>
                       </div>
-                      <p style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#333" }}>{detailData.id_spk_cutting}</p>
+                      <p className="hasil-cutting-detail-overview-value">{detailData.id_spk_cutting}</p>
                     </div>
-                    <div
-                      style={{
-                        padding: "20px",
-                        background: "white",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                        <i className="fas fa-box" style={{ color: "#667eea", fontSize: "18px" }}></i>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#666", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Produk</p>
+                    <div className="hasil-cutting-detail-overview-card">
+                      <div className="hasil-cutting-detail-overview-head">
+                        <i className="fas fa-box hasil-cutting-detail-overview-icon"></i>
+                        <p className="hasil-cutting-detail-overview-label">Produk</p>
                       </div>
-                      <p style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#333" }}>{detailData.nama_produk}</p>
+                      <p className="hasil-cutting-detail-overview-value">{detailData.nama_produk}</p>
                     </div>
-                    <div
-                      style={{
-                        padding: "20px",
-                        background: "white",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                        <i className="far fa-calendar-alt" style={{ color: "#667eea", fontSize: "18px" }}></i>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#666", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tanggal</p>
+                    <div className="hasil-cutting-detail-overview-card">
+                      <div className="hasil-cutting-detail-overview-head">
+                        <i className="far fa-calendar-alt hasil-cutting-detail-overview-icon"></i>
+                        <p className="hasil-cutting-detail-overview-label">Tanggal</p>
                       </div>
-                      <p style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#333" }}>
+                      <p className="hasil-cutting-detail-overview-value">
                         {new Date(detailData.created_at).toLocaleString("id-ID", {
                           day: "2-digit",
                           month: "long",
@@ -2442,28 +2004,12 @@ const HasilCutting = () => {
                         })}
                       </p>
                     </div>
-                    <div
-                      style={{
-                        padding: "20px",
-                        background: "white",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                        <i className="fas fa-money-bill-wave" style={{ color: "#667eea", fontSize: "18px" }}></i>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#666", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Bayar</p>
+                    <div className="hasil-cutting-detail-overview-card hasil-cutting-detail-overview-card-highlight">
+                      <div className="hasil-cutting-detail-overview-head">
+                        <i className="fas fa-money-bill-wave hasil-cutting-detail-overview-icon"></i>
+                        <p className="hasil-cutting-detail-overview-label">Total Bayar</p>
                       </div>
-                      <p style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#667eea" }}>
+                      <p className="hasil-cutting-detail-overview-value hasil-cutting-detail-overview-value-highlight">
                         {detailData.total_bayar
                           ? `Rp ${Number(detailData.total_bayar).toLocaleString("id-ID", {
                               minimumFractionDigits: 0,
@@ -2476,23 +2022,13 @@ const HasilCutting = () => {
                 </div>
 
                 {Array.isArray(detailData.data_acuan) && detailData.data_acuan.length > 0 && (
-                  <div style={{ marginBottom: "32px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        marginBottom: "20px",
-                        padding: "16px",
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        borderRadius: "12px",
-                      }}
-                    >
-                      <i className="fas fa-clipboard-list" style={{ color: "white", fontSize: "20px" }}></i>
-                      <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "white" }}>📊 Data Acuan</h3>
+                  <div className="hasil-cutting-detail-section">
+                    <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft hasil-cutting-section-bar-inline">
+                      <i className="fas fa-clipboard-list hasil-cutting-section-icon"></i>
+                      <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">Data Acuan</h3>
                     </div>
-                    <div style={{ overflowX: "auto" }}>
-                      <table className="penjahit-table">
+                    <div className="hasil-cutting-table-wrap">
+                      <table className="penjahit-table hasil-cutting-detail-table">
                         <thead>
                           <tr>
                             <th>Warna</th>
@@ -2505,48 +2041,18 @@ const HasilCutting = () => {
                           {detailData.data_acuan.map((acuan, idx) => (
                             <tr key={idx}>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
+                                <span className="hasil-cutting-chip hasil-cutting-chip-primary">
                                   {acuan.warna}
                                 </span>
                               </td>
-                              <td style={{ fontWeight: "600", color: "#333" }}>{acuan.berat_acuan?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
+                              <td className="hasil-cutting-detail-cell-strong">{acuan.berat_acuan?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
+                                <span className="hasil-cutting-chip hasil-cutting-chip-success">
                                   {acuan.banyak_produk}
                                 </span>
                               </td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
-                                    color: "#155724",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
+                                <span className="hasil-cutting-chip hasil-cutting-chip-soft-success">
                                   {acuan.berat_acuan_per_produk?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                                 </span>
                               </td>
@@ -2559,23 +2065,13 @@ const HasilCutting = () => {
                 )}
 
                 {detailData.distribusi_seri && Array.isArray(detailData.distribusi_seri) && detailData.distribusi_seri.length > 0 && (
-                  <div style={{ marginBottom: "32px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        marginBottom: "20px",
-                        padding: "16px",
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        borderRadius: "12px",
-                      }}
-                    >
-                      <i className="fas fa-boxes" style={{ color: "white", fontSize: "20px" }}></i>
-                      <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "white" }}>📦 Distribusi Seri</h3>
+                  <div className="hasil-cutting-detail-section">
+                    <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft hasil-cutting-section-bar-inline">
+                      <i className="fas fa-boxes hasil-cutting-section-icon"></i>
+                      <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">Distribusi Seri</h3>
                     </div>
-                    <div style={{ overflowX: "auto" }}>
-                      <table className="penjahit-table">
+                    <div className="hasil-cutting-table-wrap">
+                      <table className="penjahit-table hasil-cutting-detail-table">
                         <thead>
                           <tr>
                             <th>NO</th>
@@ -2586,146 +2082,58 @@ const HasilCutting = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {detailData.distribusi_seri.map((distribusi, idx) => (
-                            <tr key={distribusi.id || idx}>
-                              <td style={{ fontWeight: "600", color: "#667eea" }}>{idx + 1}</td>
+                          {detailData.distribusi_seri.filter(Boolean).map((distribusi, idx) => {
+                            const statusDistribusi = distribusi?.status || "draft";
+                            return (
+                            <tr key={distribusi?.id || idx}>
+                              <td className="hasil-cutting-detail-row-no">{idx + 1}</td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
-                                  {distribusi.kode_seri}
+                                <span className="hasil-cutting-chip hasil-cutting-chip-primary">
+                                  {distribusi?.kode_seri || "-"}
                                 </span>
                               </td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
-                                  {distribusi.jumlah_produk?.toLocaleString("id-ID")}
+                                <span className="hasil-cutting-chip hasil-cutting-chip-success">
+                                  {(parseInt(distribusi?.jumlah_produk, 10) || 0).toLocaleString("id-ID")}
                                 </span>
                               </td>
                               <td>
                                 {distribusi.detail && distribusi.detail.length > 0 ? (
-                                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    {distribusi.detail.map((detail, detailIdx) => (
-                                      <div
-                                        key={detailIdx}
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: "8px",
-                                          padding: "6px 10px",
-                                          background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
-                                          borderRadius: "6px",
-                                          border: "1px solid #2196f3",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            padding: "4px 8px",
-                                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                            color: "white",
-                                            borderRadius: "6px",
-                                            fontSize: "11px",
-                                            fontWeight: "600",
-                                            minWidth: "60px",
-                                            textAlign: "center",
-                                          }}
-                                        >
-                                          {detail.warna}
+                                  <div className="hasil-cutting-detail-warna-list">
+                                    {distribusi.detail.filter(Boolean).map((detail, detailIdx) => (
+                                      <div key={detailIdx} className="hasil-cutting-detail-warna-item">
+                                        <span className="hasil-cutting-chip hasil-cutting-chip-primary-sm">
+                                          {detail?.warna || "-"}
                                         </span>
-                                        <span
-                                          style={{
-                                            padding: "4px 8px",
-                                            background: "white",
-                                            color: "#1565c0",
-                                            borderRadius: "6px",
-                                            fontSize: "11px",
-                                            fontWeight: "700",
-                                            border: "1px solid #2196f3",
-                                          }}
-                                        >
-                                          {detail.jumlah_produk?.toLocaleString("id-ID")} pcs
+                                        <span className="hasil-cutting-chip hasil-cutting-chip-info-sm">
+                                          {(parseInt(detail?.jumlah_produk, 10) || 0).toLocaleString("id-ID")} pcs
                                         </span>
                                       </div>
                                     ))}
                                   </div>
                                 ) : (
-                                  <span
-                                    style={{
-                                      padding: "6px 12px",
-                                      background: "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
-                                      color: "#666",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                      fontStyle: "italic",
-                                      display: "inline-block",
-                                    }}
-                                  >
+                                  <span className="hasil-cutting-chip hasil-cutting-chip-muted">
                                     Tidak ada detail warna
                                   </span>
                                 )}
                               </td>
                               <td>
                                 <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background:
-                                      distribusi.status === "draft"
-                                        ? "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)"
-                                        : distribusi.status === "completed"
-                                        ? "linear-gradient(135deg, #28a745 0%, #20c997 100%)"
-                                        : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                    textTransform: "uppercase",
-                                  }}
+                                  className={`hasil-cutting-chip hasil-cutting-chip-status ${statusDistribusi === "draft" ? "is-draft" : statusDistribusi === "completed" ? "is-completed" : "is-default"}`}
                                 >
-                                  {distribusi.status || "draft"}
+                                  {statusDistribusi}
                                 </span>
                               </td>
                             </tr>
-                          ))}
+                          )})}
                         </tbody>
                         <tfoot>
-                          <tr
-                            style={{
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              fontWeight: "bold",
-                              color: "white",
-                            }}
-                          >
-                            <td colSpan="3" style={{ textAlign: "right", padding: "12px", fontSize: "14px" }}>
+                          <tr className="hasil-cutting-detail-total-row">
+                            <td colSpan="3" className="hasil-cutting-detail-total-label">
                               Total Distribusi:
                             </td>
-                            <td
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                fontSize: "16px",
-                                fontWeight: "700",
-                                color: "white",
-                              }}
-                            >
-                              {detailData.distribusi_seri.reduce((sum, d) => sum + (parseInt(d.jumlah_produk) || 0), 0).toLocaleString("id-ID")}
+                            <td className="hasil-cutting-detail-total-value">
+                              {detailData.distribusi_seri.reduce((sum, d) => sum + (parseInt(d?.jumlah_produk, 10) || 0), 0).toLocaleString("id-ID")}
                             </td>
                             <td></td>
                           </tr>
@@ -2735,23 +2143,13 @@ const HasilCutting = () => {
                   </div>
                 )}
 
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "20px",
-                      padding: "16px",
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <i className="fas fa-list-alt" style={{ color: "white", fontSize: "20px" }}></i>
-                    <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "white" }}>📦 Data Hasil</h3>
+                <div className="hasil-cutting-detail-section">
+                  <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft hasil-cutting-section-bar-inline">
+                    <i className="fas fa-list-alt hasil-cutting-section-icon"></i>
+                    <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">Data Hasil</h3>
                   </div>
-                  <div style={{ overflowX: "auto" }}>
-                    <table className="penjahit-table">
+                  <div className="hasil-cutting-table-wrap">
+                    <table className="penjahit-table hasil-cutting-detail-table">
                       <thead>
                         <tr>
                           <th>Bagian</th>
@@ -2770,126 +2168,70 @@ const HasilCutting = () => {
                         {detailData.bahan.map((bahan, idx) => {
                           // Cari status perbandingan dari status_perbandingan_agregat berdasarkan warna
                           const statusPerbandinganAgregat = detailData.status_perbandingan_agregat || [];
-                          const statusPerbandingan = statusPerbandinganAgregat.find((s) => s.warna === bahan.warna)?.status || null;
+                          const statusPerbandingan = statusPerbandinganAgregat.find((s) => s && s.warna === bahan.warna)?.status || null;
 
                           return (
                             <tr key={idx}>
-                              <td style={{ fontWeight: "600", color: "#333" }}>{bahan.nama_bagian || "-"}</td>
-                              <td style={{ fontWeight: "500", color: "#555" }}>{bahan.nama_bahan || "-"}</td>
+                              <td className="hasil-cutting-detail-cell-strong">{bahan.nama_bagian || "-"}</td>
+                              <td className="hasil-cutting-detail-cell-medium">{bahan.nama_bahan || "-"}</td>
                               <td>
                                 {bahan.warna ? (
-                                  <span
-                                    style={{
-                                      padding: "6px 12px",
-                                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                      color: "white",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      display: "inline-block",
-                                    }}
-                                  >
+                                  <span className="hasil-cutting-chip hasil-cutting-chip-primary">
                                     {bahan.warna}
                                   </span>
                                 ) : (
                                   "-"
                                 )}
                               </td>
-                              <td style={{ fontWeight: "600", color: "#333" }}>{bahan.berat?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
+                              <td className="hasil-cutting-detail-cell-strong">{bahan.berat?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
                               <td>
                                 {bahan.qty ? (
-                                  <span
-                                    style={{
-                                      padding: "6px 12px",
-                                      background: "linear-gradient(135deg, #17a2b8 0%, #138496 100%)",
-                                      color: "white",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      display: "inline-block",
-                                    }}
-                                  >
+                                  <span className="hasil-cutting-chip hasil-cutting-chip-info">
                                     {bahan.qty}
                                   </span>
                                 ) : (
                                   "-"
                                 )}
                               </td>
-                              <td style={{ fontWeight: "500", color: "#666" }}>{bahan.jumlah_lembar || 0}</td>
-                              <td style={{ fontWeight: "500", color: "#666" }}>{bahan.jumlah_produk || 0}</td>
+                              <td className="hasil-cutting-detail-cell-medium">{bahan.jumlah_lembar || 0}</td>
+                              <td className="hasil-cutting-detail-cell-medium">{bahan.jumlah_produk || 0}</td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: bahan.total_produk > 0 ? "linear-gradient(135deg, #28a745 0%, #20c997 100%)" : "linear-gradient(135deg, #6c757d 0%, #5a6268 100%)",
-                                    color: "white",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                    boxShadow: bahan.total_produk > 0 ? "0 2px 8px rgba(40, 167, 69, 0.3)" : "none",
-                                  }}
-                                >
+                                <span className={`hasil-cutting-chip ${bahan.total_produk > 0 ? "hasil-cutting-chip-success" : "hasil-cutting-chip-muted"}`}>
                                   {bahan.total_produk?.toLocaleString("id-ID") || bahan.hasil?.toLocaleString("id-ID") || 0}
                                 </span>
                               </td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
-                                    color: "#155724",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    display: "inline-block",
-                                  }}
-                                >
+                                <span className="hasil-cutting-chip hasil-cutting-chip-soft-success">
                                   {bahan.berat_per_produk?.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                                 </span>
                               </td>
                               <td>
                                 {statusPerbandingan ? (
                                   <span
-                                    style={{
-                                      padding: "8px 12px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      borderRadius: "8px",
-                                      display: "inline-block",
-                                      background:
-                                        statusPerbandingan === "lebih berat dari acuan"
-                                          ? "linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)"
-                                          : statusPerbandingan === "lebih ringan dari acuan"
-                                          ? "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)"
-                                          : "linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%)",
-                                      color: statusPerbandingan === "lebih berat dari acuan" ? "#721c24" : statusPerbandingan === "lebih ringan dari acuan" ? "#856404" : "#0c5460",
-                                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                    }}
+                                    className={`hasil-cutting-status-badge ${
+                                      statusPerbandingan === "lebih berat dari acuan"
+                                        ? "hasil-cutting-status-badge-heavier"
+                                        : statusPerbandingan === "lebih ringan dari acuan"
+                                        ? "hasil-cutting-status-badge-lighter"
+                                        : "hasil-cutting-status-badge-same"
+                                    }`}
                                   >
                                     {(() => {
-                                      const statusInfo = statusPerbandinganAgregat.find((s) => s.warna === bahan.warna);
+                                      const statusInfo = statusPerbandinganAgregat.find((s) => s && s.warna === bahan.warna);
                                       const status = statusInfo?.status || statusPerbandingan;
                                       const selisih = statusInfo?.selisih || 0;
 
                                       if (status === "lebih berat dari acuan") {
-                                        return `⚠️ ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                        return `${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
                                       } else if (status === "lebih ringan dari acuan") {
-                                        return `📉 ${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
+                                        return `${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
                                       } else {
-                                        return `✅ ${status}`;
+                                        return status;
                                       }
                                     })()}
                                   </span>
                                 ) : (
-                                  <span
-                                    style={{
-                                      padding: "8px 12px",
-                                      fontSize: "12px",
-                                      color: "#999",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
+                                  <span className="hasil-cutting-status-badge-empty">
                                     -
                                   </span>
                                 )}
@@ -2901,24 +2243,18 @@ const HasilCutting = () => {
                       {/* Baris Total */}
                       {detailData.bahan && detailData.bahan.length > 0 && (
                         <tfoot>
-                          <tr
-                            style={{
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              color: "white",
-                              fontWeight: "700",
-                            }}
-                          >
-                            <td colSpan="3" style={{ padding: "16px", textAlign: "right", fontSize: "14px" }}>
+                          <tr className="hasil-cutting-detail-total-row">
+                            <td colSpan="3" className="hasil-cutting-detail-total-label">
                               <strong>TOTAL:</strong>
                             </td>
-                            <td colSpan="4" style={{ padding: "16px" }}></td>
-                            <td style={{ padding: "16px", fontSize: "14px" }}>
+                            <td colSpan="4" className="hasil-cutting-detail-total-spacer"></td>
+                            <td className="hasil-cutting-detail-total-value">
                               <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.total_produk || bahan.hasil) || 0), 0).toLocaleString("id-ID")}</strong>
                             </td>
-                            <td style={{ padding: "16px", fontSize: "14px" }}>
+                            <td className="hasil-cutting-detail-total-value">
                               <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.berat_per_produk) || 0), 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</strong>
                             </td>
-                            <td style={{ padding: "16px" }}></td>
+                            <td className="hasil-cutting-detail-total-spacer"></td>
                           </tr>
                         </tfoot>
                       )}
