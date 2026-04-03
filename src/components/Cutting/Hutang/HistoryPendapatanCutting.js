@@ -183,7 +183,7 @@ const HistoryPendapatanCutting = () => {
               <FiDollarSign />
             </div>
             <div className="history-pendapatan-cutting-erp-title-wrap">
-              <div className="history-pendapatan-cutting-erp-module-pill">ERP Finance Module</div>
+              <div className="history-pendapatan-cutting-erp-module-pill"> Finance Module</div>
               <h1>History Pendapatan Cutting</h1>
               <p>Audit pendapatan, potongan, dan transfer yang sudah tercatat per periode</p>
             </div>
