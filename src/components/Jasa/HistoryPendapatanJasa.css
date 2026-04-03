@@ -1,0 +1,559 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+.history-pendapatan-jasa-erp-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 34%),
+    #f4f6f9;
+  color: #0f172a;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.history-pendapatan-jasa-erp-container *,
+.history-pendapatan-jasa-erp-container *::before,
+.history-pendapatan-jasa-erp-container *::after {
+  box-sizing: border-box;
+}
+
+.history-pendapatan-jasa-erp-container::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 55%, #4f46e5 100%);
+  flex-shrink: 0;
+}
+
+.history-pendapatan-jasa-erp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #dde4ec;
+}
+
+.history-pendapatan-jasa-erp-header-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-pendapatan-jasa-erp-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-pendapatan-jasa-erp-brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #0f766e 0%, #0ea5a7 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 13px rgba(15, 118, 110, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.history-pendapatan-jasa-erp-title-wrap h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.history-pendapatan-jasa-erp-title-wrap p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #5f6f84;
+  font-weight: 500;
+}
+
+.history-pendapatan-jasa-erp-module-pill {
+  width: fit-content;
+  margin-bottom: 6px;
+  border: 1px solid #b7e2dc;
+  background: #e8faf7;
+  color: #0f5f59;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+}
+
+.history-pendapatan-jasa-erp-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-pendapatan-jasa-erp-search-wrap {
+  position: relative;
+  min-width: 320px;
+}
+
+.history-pendapatan-jasa-erp-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8b9bb0;
+  font-size: 15px;
+}
+
+.history-pendapatan-jasa-erp-search-input {
+  width: 100%;
+  border: 1px solid #d8e2eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 38px 8px 35px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.history-pendapatan-jasa-erp-search-input::placeholder {
+  color: #9aa8ba;
+}
+
+.history-pendapatan-jasa-erp-search-input:hover {
+  border-color: #b2c2d2;
+  background: #ffffff;
+}
+
+.history-pendapatan-jasa-erp-search-input:focus {
+  border-color: #0f766e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.history-pendapatan-jasa-erp-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-pendapatan-jasa-erp-search-clear:hover {
+  background: #eef2f7;
+}
+
+.history-pendapatan-jasa-erp-icon-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #cedae7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+}
+
+.history-pendapatan-jasa-erp-icon-btn:hover {
+  background: #f8fafc;
+}
+
+.history-pendapatan-jasa-erp-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f97316;
+  border: 1.5px solid #ffffff;
+}
+
+.history-pendapatan-jasa-erp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid #cedae7;
+  background: #ecfdf9;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-pendapatan-jasa-erp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.history-pendapatan-jasa-erp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.history-pendapatan-jasa-erp-stats.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.history-pendapatan-jasa-erp-stat-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.history-pendapatan-jasa-erp-stat-label {
+  margin: 0;
+  font-size: 11px;
+  color: #617289;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.history-pendapatan-jasa-erp-stat-value {
+  margin: 5px 0 0;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.history-pendapatan-jasa-erp-stat-value-info {
+  color: #0369a1;
+  font-size: 18px;
+}
+
+.history-pendapatan-jasa-erp-stat-value-danger {
+  color: #b91c1c;
+  font-size: 18px;
+}
+
+.history-pendapatan-jasa-erp-stat-value-success {
+  color: #0f766e;
+  font-size: 18px;
+}
+
+.history-pendapatan-jasa-erp-stat-value-small {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.history-pendapatan-jasa-erp-table-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px -8px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.history-pendapatan-jasa-erp-table-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e6edf5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-pendapatan-jasa-erp-table-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.history-pendapatan-jasa-erp-table-header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.history-pendapatan-jasa-erp-filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-pendapatan-jasa-erp-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.history-pendapatan-jasa-erp-date-field span {
+  color: #64748b;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.history-pendapatan-jasa-erp-date-field input {
+  width: 170px;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.history-pendapatan-jasa-erp-date-field input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.history-pendapatan-jasa-erp-filter-btn {
+  border: 1px solid #0f5c57;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  color: #ffffff;
+  height: 35px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px -8px rgba(13, 148, 136, 0.55);
+}
+
+.history-pendapatan-jasa-erp-filter-btn:hover {
+  filter: brightness(1.04);
+}
+
+.history-pendapatan-jasa-erp-loading,
+.history-pendapatan-jasa-erp-empty-state {
+  text-align: center;
+  padding: 44px 16px;
+  background: #ffffff;
+}
+
+.history-pendapatan-jasa-erp-spinner {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto;
+  border: 3px solid #ccfbf1;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: history-pendapatan-jasa-erp-spin 0.8s linear infinite;
+}
+
+.history-pendapatan-jasa-erp-loading p {
+  margin-top: 10px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.history-pendapatan-jasa-erp-empty-icon {
+  font-size: 32px;
+  color: #8ba2c2;
+}
+
+.history-pendapatan-jasa-erp-empty-title {
+  margin: 12px 0 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.history-pendapatan-jasa-erp-empty-title.error {
+  color: #b91c1c;
+}
+
+.history-pendapatan-jasa-erp-empty-text {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.history-pendapatan-jasa-erp-table-scroll {
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+  max-height: clamp(320px, 62vh, 680px);
+  overscroll-behavior: contain;
+}
+
+.history-pendapatan-jasa-erp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1150px;
+}
+
+.history-pendapatan-jasa-erp-table th {
+  background: #f2f7f7;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.history-pendapatan-jasa-erp-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf2f7;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.history-pendapatan-jasa-erp-table tbody tr:hover td {
+  background: #fafdff;
+}
+
+.history-pendapatan-jasa-erp-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.history-pendapatan-jasa-erp-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.history-pendapatan-jasa-erp-badge.info {
+  background: #eef8ff;
+  color: #0369a1;
+  border-color: #bfdbfe;
+}
+
+.history-pendapatan-jasa-erp-badge.danger {
+  background: #fff1f2;
+  color: #b91c1c;
+  border-color: #fecdd3;
+}
+
+.history-pendapatan-jasa-erp-badge.success {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.history-pendapatan-jasa-erp-badge.muted {
+  background: #eef2f6;
+  color: #42546b;
+  border-color: #cad4e0;
+}
+
+@keyframes history-pendapatan-jasa-erp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1080px) {
+  .history-pendapatan-jasa-erp-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-pendapatan-jasa-erp-stats.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .history-pendapatan-jasa-erp-search-wrap {
+    min-width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .history-pendapatan-jasa-erp-header {
+    padding: 14px 16px;
+  }
+
+  .history-pendapatan-jasa-erp-main {
+    padding: 14px 16px;
+  }
+
+  .history-pendapatan-jasa-erp-stats,
+  .history-pendapatan-jasa-erp-stats.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .history-pendapatan-jasa-erp-actions {
+    width: 100%;
+  }
+
+  .history-pendapatan-jasa-erp-search-wrap,
+  .history-pendapatan-jasa-erp-search-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .history-pendapatan-jasa-erp-table-header {
+    padding: 14px 16px;
+  }
+
+  .history-pendapatan-jasa-erp-filter-row {
+    width: 100%;
+  }
+
+  .history-pendapatan-jasa-erp-date-field,
+  .history-pendapatan-jasa-erp-date-field input,
+  .history-pendapatan-jasa-erp-filter-btn {
+    width: 100%;
+  }
+}
