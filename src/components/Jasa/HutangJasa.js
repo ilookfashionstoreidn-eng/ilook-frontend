@@ -1,467 +1,587 @@
-import React, { useEffect, useState, useRef } from "react";
-import "./HutangJasa.css";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FiAlertCircle,
+  FiBell,
+  FiCheckCircle,
+  FiClock,
+  FiDollarSign,
+  FiFilter,
+  FiInfo,
+  FiPlus,
+  FiSearch,
+  FiUpload,
+  FiX,
+} from "react-icons/fi";
 import API from "../../api";
-import { FaPlus, FaInfoCircle, FaSearch, FaTimes } from "react-icons/fa";
+import "./HutangJasa.css";
+
+const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js";
+
+const ensureSweetAlert = () =>
+  new Promise((resolve, reject) => {
+    if (window.Swal) {
+      resolve(window.Swal);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-sweetalert2="cdn"]');
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.Swal), { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = SWEETALERT_CDN;
+    script.async = true;
+    script.setAttribute("data-sweetalert2", "cdn");
+    script.onload = () => resolve(window.Swal);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+
+const showSuccessAlert = async (title, text) => {
+  try {
+    const Swal = await ensureSweetAlert();
+    if (!Swal) throw new Error("SweetAlert2 tidak tersedia");
+
+    await Swal.fire({
+      icon: "success",
+      title: title || "Berhasil",
+      text: text || "Data berhasil disimpan.",
+      confirmButtonText: "OK",
+      customClass: {
+        container: "hutang-jasa-swal-container",
+      },
+    });
+  } catch (alertError) {
+    console.error("Gagal menampilkan SweetAlert:", alertError);
+    window.alert(text || title || "Berhasil");
+  }
+};
+
+const initialNewHutang = {
+  tukang_jasa_id: "",
+  jumlah_hutang: "",
+  potongan_per_minggu: "",
+  is_potongan_persen: false,
+  persentase_potongan: null,
+  bukti_transfer: null,
+};
+
+const formatRupiahInput = (value) => {
+  if (!value && value !== 0) return "";
+  const number = String(value).replace(/\D/g, "");
+  if (!number) return "";
+  return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseRupiah = (value) => {
+  if (!value && value !== 0) return "";
+  return String(value).replace(/\D/g, "");
+};
+
+const formatRupiahDisplay = (angka) => {
+  if (!angka && angka !== 0) return "Rp 0";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(Number(angka) || 0);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStatusClass = (status = "") => {
+  const normalized = String(status).toLowerCase();
+
+  if (normalized === "lunas") return "is-lunas";
+  if (normalized.includes("proses")) return "is-proses";
+  return "is-belum";
+};
 
 const HutangJasa = () => {
   const [hutangs, setHutangs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [cuttingList, setCuttingList] = useState([]);
   const [error, setError] = useState(null);
+
   const [selectedHutang, setSelectedHutang] = useState(null);
+  const [newHutang, setNewHutang] = useState(initialNewHutang);
+
   const [selectedDetailHutang, setSelectedDetailHutang] = useState(null);
   const [selectedJenisPerubahan, setSelectedJenisPerubahan] = useState("");
   const [logHistory, setLogHistory] = useState([]);
-  const [newHutang, setNewHutang] = useState({
-    tukang_jasa_id: "",
-    jumlah_hutang: "",
-    potongan_per_minggu: "",
-    is_potongan_persen: false,
-    persentase_potongan: null,
-    bukti_transfer: null,
-  });
+  const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Refs untuk mencegah multiple simultaneous API calls
   const isFetchingHutangs = useRef(false);
-  const isFetchingCutting = useRef(false);
 
-  useEffect(() => {
-    // Mencegah multiple calls
-    if (isFetchingHutangs.current) return;
+  const closeTambahModal = () => {
+    setSelectedHutang(null);
+    setNewHutang(initialNewHutang);
+  };
 
-    const fetchHutangs = async () => {
-      if (isFetchingHutangs.current) return;
-      isFetchingHutangs.current = true;
+  const closeDetailModal = () => {
+    setSelectedDetailHutang(null);
+    setSelectedJenisPerubahan("");
+    setLogHistory([]);
+  };
 
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await API.get(`/hutang_jasa`, {});
-
-        setHutangs(response.data.data);
-      } catch (error) {
-        // Handle 429 (Too Many Requests) dengan pesan yang lebih jelas
-        if (error.response?.status === 429) {
-          setError("Terlalu banyak permintaan. Silakan tunggu beberapa saat dan refresh halaman.");
-        } else {
-          setError(error.response?.data?.message || "Failed to fetch data");
-        }
-        console.error("Error fetching Hutang:", error);
-      } finally {
-        setLoading(false);
-        isFetchingHutangs.current = false;
-      }
-    };
-
-    fetchHutangs();
-
-    // Cleanup function
-    return () => {
-      isFetchingHutangs.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    // Mencegah multiple calls
-    if (isFetchingCutting.current) return;
-
-    const fetchCutting = async () => {
-      if (isFetchingCutting.current) return;
-      isFetchingCutting.current = true;
-
-      try {
-        const response = await API.get("/tukang-jasa");
-        setCuttingList(response.data);
-      } catch (error) {
-        // Handle 429 (Too Many Requests)
-        if (error.response?.status === 429) {
-          console.warn("Too many requests for tukang-jasa. Skipping...");
-        } else {
-          setError("Gagal mengambil data tukang cutting .");
-        }
-      } finally {
-        isFetchingCutting.current = false;
-      }
-    };
-
-    fetchCutting();
-
-    // Cleanup function
-    return () => {
-      isFetchingCutting.current = false;
-    };
-  }, []);
-
-  // Fungsi helper untuk refresh data hutang dengan protection
-  const refreshHutangs = async () => {
+  const refreshHutangs = async ({ showLoading = false } = {}) => {
     if (isFetchingHutangs.current) return;
 
     try {
       isFetchingHutangs.current = true;
-      const response = await API.get(`/hutang_jasa`);
-      setHutangs(response.data.data);
+      if (showLoading) setLoading(true);
       setError(null);
-    } catch (error) {
-      if (error.response?.status === 429) {
-        setError("Terlalu banyak permintaan. Silakan tunggu beberapa saat.");
+
+      const response = await API.get("/hutang_jasa");
+      setHutangs(response?.data?.data || []);
+    } catch (fetchError) {
+      if (fetchError.response?.status === 429) {
+        setError("Terlalu banyak permintaan. Silakan tunggu beberapa saat lalu coba lagi.");
       } else {
-        console.error("Error refreshing hutangs:", error);
+        setError(fetchError.response?.data?.message || "Gagal mengambil data hutang jasa.");
       }
+      console.error("Error fetching hutang jasa:", fetchError);
     } finally {
+      if (showLoading) setLoading(false);
       isFetchingHutangs.current = false;
     }
   };
 
-  const fetchHistory = async (id, jenis_perubahan) => {
-    try {
-      console.log("Fetching history for hutang ID:", id, "with filter:", jenis_perubahan);
+  const fetchHistory = async (id, jenisPerubahan = "") => {
+    if (!id) {
+      setLogHistory([]);
+      return;
+    }
 
+    setHistoryLoading(true);
+    try {
       const response = await API.get(`/history_jasa/${id}`, {
-        params: { jenis_perubahan: jenis_perubahan || "" },
+        params: { jenis_perubahan: jenisPerubahan || "" },
       });
 
-      console.log("Response from API:", response.data);
-      setLogHistory(response.data || []);
-    } catch (error) {
-      console.error("Error fetching history:", error.response?.data || error);
+      setLogHistory(response?.data || []);
+    } catch (fetchError) {
+      console.error("Error fetching history hutang jasa:", fetchError.response?.data || fetchError);
 
-      if (error.response?.status === 404) {
+      if (fetchError.response?.status === 404) {
         setLogHistory([]);
-      } else if (error.response?.status === 429) {
-        console.warn("Too many requests for history. Skipping...");
+      } else if (fetchError.response?.status === 429) {
+        setError("Terlalu banyak permintaan saat memuat riwayat. Coba lagi sebentar.");
+      } else {
+        setLogHistory([]);
       }
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
-  // Fungsi untuk format rupiah (tampilan)
-  const formatRupiah = (value) => {
-    if (!value && value !== 0) return "";
-    // Konversi ke string dan hapus semua karakter non-digit
-    const number = value.toString().replace(/\D/g, "");
-    if (!number) return "";
-    // Format dengan pemisah ribuan menggunakan titik
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  useEffect(() => {
+    refreshHutangs({ showLoading: true });
+
+    return () => {
+      isFetchingHutangs.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onEscape = (event) => {
+      if (event.key === "Escape") {
+        if (selectedHutang) closeTambahModal();
+        if (selectedDetailHutang) closeDetailModal();
+      }
+    };
+
+    if (selectedHutang || selectedDetailHutang) {
+      document.addEventListener("keydown", onEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [selectedHutang, selectedDetailHutang]);
+
+  const filteredHutangs = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    const bySearch = hutangs.filter((hutang) => {
+      const namaTukang = hutang.tukang_jasa?.nama || hutang.nama || "";
+      return namaTukang.toLowerCase().includes(keyword);
+    });
+
+    return [...bySearch].sort((a, b) => {
+      const timeA = new Date(a.updated_at || a.tanggal_hutang || 0).getTime();
+      const timeB = new Date(b.updated_at || b.tanggal_hutang || 0).getTime();
+
+      if (timeA !== timeB) return timeB - timeA;
+      return Number(b.id || b.tukang_jasa_id || 0) - Number(a.id || a.tukang_jasa_id || 0);
+    });
+  }, [hutangs, searchTerm]);
+
+  const stats = useMemo(() => {
+    const totalHutang = filteredHutangs.reduce((sum, hutang) => sum + (Number(hutang.jumlah_hutang) || 0), 0);
+    const totalPotongan = filteredHutangs.reduce((sum, hutang) => sum + (Number(hutang.potongan_per_minggu) || 0), 0);
+    const lunas = filteredHutangs.filter((hutang) => String(hutang.status_pembayaran || "").toLowerCase() === "lunas").length;
+
+    return {
+      totalData: filteredHutangs.length,
+      totalHutang,
+      totalPotongan,
+      belumLunas: filteredHutangs.length - lunas,
+    };
+  }, [filteredHutangs]);
+
+  const handleTambahClick = (hutang) => {
+    setSelectedHutang(hutang);
   };
 
-  // Fungsi untuk parse dari format rupiah ke angka (untuk disimpan)
-  const parseRupiah = (value) => {
-    if (!value) return "";
-    // Hapus semua karakter non-digit
-    return value.toString().replace(/\D/g, "");
+  const handleDetailClick = (hutang) => {
+    setSelectedDetailHutang(hutang);
+    setSelectedJenisPerubahan("");
+    fetchHistory(hutang.id, "");
   };
 
-  const handlePaymentSubmit = async (e) => {
-    e.preventDefault(); // Mencegah refresh halaman
+  const handlePaymentSubmit = async (event) => {
+    event.preventDefault();
 
-    // Validasi
+    if (!newHutang.jumlah_hutang || parseRupiah(newHutang.jumlah_hutang) === "") {
+      alert("Jumlah hutang harus diisi.");
+      return;
+    }
+
     if (newHutang.is_potongan_persen && !newHutang.persentase_potongan) {
-      alert("Persentase potongan harus diisi");
+      alert("Persentase potongan harus diisi.");
       return;
     }
 
     if (!newHutang.is_potongan_persen && !newHutang.potongan_per_minggu) {
-      alert("Potongan per minggu harus diisi");
+      alert("Potongan per minggu harus diisi.");
       return;
     }
 
-    // Membuat FormData untuk mengirimkan data bersama file
     const formData = new FormData();
     formData.append("tukang_jasa_id", selectedHutang.tukang_jasa_id || selectedHutang.id);
-    // Konversi dari format rupiah ke number untuk jumlah_hutang dan potongan_per_minggu
-    const jumlahHutang = parseRupiah(newHutang.jumlah_hutang);
-    formData.append("jumlah_hutang", jumlahHutang);
+    formData.append("jumlah_hutang", parseRupiah(newHutang.jumlah_hutang));
     formData.append("is_potongan_persen", newHutang.is_potongan_persen ? "1" : "0");
 
     if (newHutang.is_potongan_persen) {
       formData.append("persentase_potongan", newHutang.persentase_potongan);
     } else {
-      const potonganMinggu = parseRupiah(newHutang.potongan_per_minggu);
-      formData.append("potongan_per_minggu", potonganMinggu);
+      formData.append("potongan_per_minggu", parseRupiah(newHutang.potongan_per_minggu));
     }
 
-    // Jika ada bukti transfer, tambahkan ke FormData
     if (newHutang.bukti_transfer) {
       formData.append("bukti_transfer", newHutang.bukti_transfer);
     }
 
     try {
-      // Gunakan endpoint tambahHutangJasa untuk create/update dengan potongan
-      const response = await API.post(`/hutang/tambah_jasa`, formData, {
+      const response = await API.post("/hutang/tambah_jasa", formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Pastikan menggunakan multipart untuk upload file
+          "Content-Type": "multipart/form-data",
         },
       });
 
-      alert(response.data.message);
-
-      // Refresh data dari server untuk mendapatkan data terbaru
+      closeTambahModal();
       await refreshHutangs();
-
-      setSelectedHutang(null);
-
-      // Reset form input
-      setNewHutang({
-        tukang_jasa_id: "",
-        jumlah_hutang: "",
-        potongan_per_minggu: "",
-        is_potongan_persen: false,
-        persentase_potongan: null,
-        bukti_transfer: null,
-      });
-    } catch (error) {
-      console.error("Error:", error.response?.data?.message || error.message);
-
-      // Tampilkan pesan error dari backend jika ada
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data hutang.");
+      await showSuccessAlert("Berhasil Menambahkan", response.data?.message || "Data hutang berhasil disimpan.");
+    } catch (submitError) {
+      console.error("Error submit hutang jasa:", submitError.response?.data?.message || submitError.message);
+      alert(submitError.response?.data?.message || "Terjadi kesalahan saat menyimpan data hutang.");
     }
-  };
-
-  const handleTambahClick = (hutang) => {
-    setSelectedHutang(hutang); // Set hutang yang dipilih untuk pembayaran
-  };
-
-  const handleDetailClick = (hutang) => {
-    setSelectedDetailHutang(hutang); // Simpan data hutang yang dipilih
-    // Hanya fetch history jika hutang sudah ada (id tidak null)
-    if (hutang.id) {
-      fetchHistory(hutang.id, selectedJenisPerubahan); // Ambil log history sesuai filter
-    } else {
-      setLogHistory([]); // Jika belum ada hutang, set history kosong
-    }
-  };
-  // Format rupiah untuk display
-  const formatRupiahDisplay = (angka) => {
-    if (!angka && angka !== 0) return "Rp 0";
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(angka);
   };
 
   return (
-    <div className="hutang-jasa-container">
-      <div className="hutang-jasa-header">
-        <div className="hutang-jasa-header-icon">💰</div>
-        <h1>Daftar Hutang Jasa</h1>
-      </div>
+    <div className="hutang-jasa-erp-container">
+      <header className="hutang-jasa-erp-header">
+        <div className="hutang-jasa-erp-header-top">
+          <div className="hutang-jasa-erp-title-group">
+            <div className="hutang-jasa-erp-brand-icon">
+              <FiDollarSign />
+            </div>
+            <div className="hutang-jasa-erp-title-wrap">
+              <div className="hutang-jasa-erp-module-pill">Finance Module</div>
+              <h1>Hutang Jasa</h1>
+              <p>Monitoring hutang, potongan, dan histori pembayaran tukang jasa</p>
+            </div>
+          </div>
 
-      <div className="hutang-jasa-filter-container">
-        <div className="hutang-jasa-search-wrapper">
-          <FaSearch className="hutang-jasa-search-icon" />
-          <input type="text" placeholder="Cari nama tukang jasa..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
-      </div>
+          <div className="hutang-jasa-erp-actions">
+            <div className="hutang-jasa-erp-search-wrap">
+              <FiSearch className="hutang-jasa-erp-search-icon" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari nama tukang jasa..."
+                className="hutang-jasa-erp-search-input"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="hutang-jasa-erp-search-clear"
+                  onClick={() => setSearchTerm("")}
+                  aria-label="Hapus pencarian"
+                >
+                  <FiX />
+                </button>
+              )}
+            </div>
 
-      {loading ? (
-        <div className="hutang-jasa-loading">Memuat data...</div>
-      ) : error ? (
-        <div className="hutang-jasa-error">{error}</div>
-      ) : hutangs.length === 0 ? (
-        <div className="hutang-jasa-empty-state">
-          <div className="hutang-jasa-empty-state-icon">📋</div>
-          <p>Tidak ada data hutang</p>
+            <button type="button" className="hutang-jasa-erp-icon-btn" aria-label="Notifikasi">
+              <FiBell />
+              <span className="hutang-jasa-erp-dot" />
+            </button>
+
+            <div className="hutang-jasa-erp-avatar" title="Finance Jasa Team">
+              FJ
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="hutang-jasa-table-wrapper">
-          <table className="hutang-jasa-table">
-            <thead>
-              <tr>
-                <th>Nama Tukang Jasa</th>
-                <th>Jumlah Hutang</th>
-                <th>Potongan Per Minggu</th>
-                <th>Potongan Persen</th>
-                <th>Status Pembayaran</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {hutangs
-                .filter((h) => {
-                  const searchLower = searchTerm.toLowerCase();
-                  return h.tukang_jasa?.nama?.toLowerCase().includes(searchLower) || (h.nama && h.nama.toLowerCase().includes(searchLower));
-                })
-                .map((hutang) => (
-                  <tr key={hutang.tukang_jasa_id || hutang.id}>
-                    <td>{hutang.tukang_jasa?.nama || hutang.nama}</td>
-                    <td>
-                      <span className="hutang-jasa-price">{formatRupiahDisplay(hutang.jumlah_hutang || 0)}</span>
-                    </td>
-                    <td>
-                      <span className="hutang-jasa-price">{formatRupiahDisplay(hutang.potongan_per_minggu || 0)}</span>
-                    </td>
-                    <td>{hutang.persentase_potongan ? <span style={{ fontWeight: 600, color: "#667eea" }}>{hutang.persentase_potongan}%</span> : <span style={{ color: "#94a3b8" }}>-</span>}</td>
-                    <td>
-                      <span className={`hutang-jasa-status ${hutang.status_pembayaran || "belum"}`}>{hutang.status_pembayaran || "belum"}</span>
-                    </td>
-                    <td>
-                      <div className="hutang-jasa-actions">
-                        <button className="hutang-jasa-btn hutang-jasa-btn-add" onClick={() => handleTambahClick(hutang)} title="Tambah Hutang">
-                          <FaPlus />
-                        </button>
-                        {hutang.id && (
-                          <button className="hutang-jasa-btn hutang-jasa-btn-info" onClick={() => handleDetailClick(hutang)} title="Detail">
-                            <FaInfoCircle />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+      </header>
+
+      <main className="hutang-jasa-erp-main">
+        <section className="hutang-jasa-erp-stats">
+          <article className="hutang-jasa-erp-stat-item">
+            <p className="hutang-jasa-erp-stat-label">Total Data</p>
+            <p className="hutang-jasa-erp-stat-value">{stats.totalData}</p>
+          </article>
+
+          <article className="hutang-jasa-erp-stat-item">
+            <p className="hutang-jasa-erp-stat-label">Total Hutang</p>
+            <p className="hutang-jasa-erp-stat-value hutang-jasa-erp-stat-value-danger">{formatRupiahDisplay(stats.totalHutang)}</p>
+          </article>
+
+          <article className="hutang-jasa-erp-stat-item">
+            <p className="hutang-jasa-erp-stat-label">Total Potongan Mingguan</p>
+            <p className="hutang-jasa-erp-stat-value hutang-jasa-erp-stat-value-info">{formatRupiahDisplay(stats.totalPotongan)}</p>
+          </article>
+
+          <article className="hutang-jasa-erp-stat-item">
+            <p className="hutang-jasa-erp-stat-label">Belum Lunas</p>
+            <p className="hutang-jasa-erp-stat-value hutang-jasa-erp-stat-value-warning">{stats.belumLunas}</p>
+          </article>
+        </section>
+
+        <section className="hutang-jasa-erp-table-wrapper">
+          <div className="hutang-jasa-erp-table-header">
+            <div>
+              <h3>Daftar Hutang Tukang Jasa</h3>
+              <p>Menampilkan {filteredHutangs.length} data sesuai filter pencarian.</p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="hutang-jasa-erp-loading">
+              <div className="hutang-jasa-erp-spinner" />
+              <p>Memuat data hutang jasa...</p>
+            </div>
+          ) : error ? (
+            <div className="hutang-jasa-erp-empty-state">
+              <FiAlertCircle className="hutang-jasa-erp-empty-icon" />
+              <p className="hutang-jasa-erp-empty-title error">{error}</p>
+            </div>
+          ) : filteredHutangs.length > 0 ? (
+            <div className="hutang-jasa-erp-table-scroll">
+              <table className="hutang-jasa-erp-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama Tukang Jasa</th>
+                    <th>Jumlah Hutang</th>
+                    <th>Potongan Per Minggu</th>
+                    <th>Skema Potongan</th>
+                    <th>Status Pembayaran</th>
+                    <th>Aksi</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {filteredHutangs.map((hutang, index) => {
+                    const namaTukang = hutang.tukang_jasa?.nama || hutang.nama || "-";
+                    const status = hutang.status_pembayaran || "belum lunas";
+
+                    return (
+                      <tr key={hutang.id || hutang.tukang_jasa_id || index}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <div className="hutang-jasa-erp-name-cell">
+                            <FiClock />
+                            <span>{namaTukang}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="hutang-jasa-erp-badge amount">{formatRupiahDisplay(hutang.jumlah_hutang || 0)}</span>
+                        </td>
+                        <td>
+                          <span className="hutang-jasa-erp-badge info">{formatRupiahDisplay(hutang.potongan_per_minggu || 0)}</span>
+                        </td>
+                        <td>
+                          {hutang.persentase_potongan ? (
+                            <span className="hutang-jasa-erp-badge percent">{hutang.persentase_potongan}%</span>
+                          ) : (
+                            <span className="hutang-jasa-erp-badge muted">Nominal tetap</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`hutang-jasa-erp-status-badge ${getStatusClass(status)}`}>{status}</span>
+                        </td>
+                        <td>
+                          <div className="hutang-jasa-erp-actions-cell">
+                            <button type="button" className="hutang-jasa-erp-action-btn add" onClick={() => handleTambahClick(hutang)}>
+                              <FiPlus /> Tambah
+                            </button>
+                            {hutang.id && (
+                              <button type="button" className="hutang-jasa-erp-action-btn detail" onClick={() => handleDetailClick(hutang)}>
+                                <FiInfo /> Detail
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="hutang-jasa-erp-empty-state">
+              <FiFilter className="hutang-jasa-erp-empty-icon" />
+              <p className="hutang-jasa-erp-empty-title">Tidak ada data hutang</p>
+              <p className="hutang-jasa-erp-empty-text">Coba ubah kata kunci pencarian atau periksa kembali data master tukang jasa.</p>
+            </div>
+          )}
+        </section>
+      </main>
 
       {selectedHutang && (
-        <div
-          className="hutang-jasa-modal"
-          onClick={() => {
-            setSelectedHutang(null);
-            setNewHutang({
-              tukang_jasa_id: "",
-              jumlah_hutang: "",
-              potongan_per_minggu: "",
-              is_potongan_persen: false,
-              persentase_potongan: null,
-              bukti_transfer: null,
-            });
-          }}
-        >
-          <div className="hutang-jasa-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="hutang-jasa-modal-header">
-              <h2>Tambah Hutang - {selectedHutang.tukang_jasa?.nama || selectedHutang.nama}</h2>
-              <button
-                className="hutang-jasa-modal-close"
-                onClick={() => {
-                  setSelectedHutang(null);
-                  setNewHutang({
-                    tukang_jasa_id: "",
-                    jumlah_hutang: "",
-                    potongan_per_minggu: "",
-                    is_potongan_persen: false,
-                    persentase_potongan: null,
-                    bukti_transfer: null,
-                  });
-                }}
-              >
-                <FaTimes />
+        <div className="hutang-jasa-erp-modal-overlay" onClick={closeTambahModal}>
+          <div className="hutang-jasa-erp-modal-content" onClick={(event) => event.stopPropagation()}>
+            <div className="hutang-jasa-erp-modal-header">
+              <div>
+                <h2>Tambah Hutang Jasa</h2>
+                <p>{selectedHutang.tukang_jasa?.nama || selectedHutang.nama || "-"}</p>
+              </div>
+              <button type="button" className="hutang-jasa-erp-modal-close" onClick={closeTambahModal}>
+                <FiX />
               </button>
             </div>
-            <form onSubmit={handlePaymentSubmit} className="hutang-jasa-form">
-              <div className="hutang-jasa-form-group">
-                <label>Jumlah Hutang</label>
-                <div className="hutang-jasa-input-rupiah">
-                  <input
-                    type="text"
-                    value={formatRupiah(newHutang.jumlah_hutang)}
-                    onChange={(e) => {
-                      const numericValue = parseRupiah(e.target.value);
-                      setNewHutang({
-                        ...newHutang,
-                        jumlah_hutang: numericValue !== "" ? numericValue : "",
-                      });
-                    }}
-                    placeholder="Masukkan jumlah hutang"
-                    required
-                  />
-                </div>
-              </div>
 
-              {/* Potongan Per Minggu */}
-              {!newHutang.is_potongan_persen && (
-                <div className="hutang-jasa-form-group">
-                  <label>Potongan Per Minggu</label>
-                  <div className="hutang-jasa-input-rupiah">
+            <form onSubmit={handlePaymentSubmit} className="hutang-jasa-erp-form">
+              <div className="hutang-jasa-erp-form-grid">
+                <div className="hutang-jasa-erp-form-group">
+                  <label>Jumlah Hutang</label>
+                  <div className="hutang-jasa-erp-rupiah-input">
                     <input
                       type="text"
-                      value={formatRupiah(newHutang.potongan_per_minggu)}
-                      onChange={(e) => {
-                        const numericValue = parseRupiah(e.target.value);
-                        setNewHutang({
-                          ...newHutang,
-                          potongan_per_minggu: numericValue !== "" ? numericValue : "",
-                        });
+                      value={formatRupiahInput(newHutang.jumlah_hutang)}
+                      onChange={(event) => {
+                        const numericValue = parseRupiah(event.target.value);
+                        setNewHutang((prev) => ({
+                          ...prev,
+                          jumlah_hutang: numericValue !== "" ? numericValue : "",
+                        }));
                       }}
-                      placeholder="Masukkan jumlah potongan tetap"
-                      required={!newHutang.is_potongan_persen}
+                      placeholder="Masukkan jumlah hutang"
+                      required
                     />
                   </div>
                 </div>
-              )}
 
-              {/* Potongan Berdasarkan Persen */}
-              <div className="hutang-jasa-checkbox-group">
+                {!newHutang.is_potongan_persen && (
+                  <div className="hutang-jasa-erp-form-group">
+                    <label>Potongan Per Minggu</label>
+                    <div className="hutang-jasa-erp-rupiah-input">
+                      <input
+                        type="text"
+                        value={formatRupiahInput(newHutang.potongan_per_minggu)}
+                        onChange={(event) => {
+                          const numericValue = parseRupiah(event.target.value);
+                          setNewHutang((prev) => ({
+                            ...prev,
+                            potongan_per_minggu: numericValue !== "" ? numericValue : "",
+                          }));
+                        }}
+                        placeholder="Masukkan potongan tetap"
+                        required={!newHutang.is_potongan_persen}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {newHutang.is_potongan_persen && (
+                  <div className="hutang-jasa-erp-form-group">
+                    <label>Persentase Potongan (%)</label>
+                    <input
+                      type="number"
+                      value={newHutang.persentase_potongan || ""}
+                      onChange={(event) =>
+                        setNewHutang((prev) => ({
+                          ...prev,
+                          persentase_potongan: event.target.value !== "" ? Number(event.target.value) : null,
+                        }))
+                      }
+                      placeholder="Contoh: 10"
+                      required={newHutang.is_potongan_persen}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                )}
+
+                <div className="hutang-jasa-erp-form-group full">
+                  <label>Upload Bukti Transfer (Opsional)</label>
+                  <div className="hutang-jasa-erp-file-input-wrap">
+                    <FiUpload />
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={(event) =>
+                        setNewHutang((prev) => ({
+                          ...prev,
+                          bukti_transfer: event.target.files?.[0] || null,
+                        }))
+                      }
+                    />
+                  </div>
+                  {newHutang.bukti_transfer && <p className="hutang-jasa-erp-file-name">File: {newHutang.bukti_transfer.name}</p>}
+                </div>
+              </div>
+
+              <div className="hutang-jasa-erp-checkbox-row">
                 <input
+                  id="is-potongan-persen-jasa"
                   type="checkbox"
                   checked={newHutang.is_potongan_persen}
-                  onChange={(e) =>
-                    setNewHutang({
-                      ...newHutang,
-                      is_potongan_persen: e.target.checked,
-                      persentase_potongan: e.target.checked ? newHutang.persentase_potongan : null,
-                    })
+                  onChange={(event) =>
+                    setNewHutang((prev) => ({
+                      ...prev,
+                      is_potongan_persen: event.target.checked,
+                      persentase_potongan: event.target.checked ? prev.persentase_potongan : null,
+                    }))
                   }
                 />
-                <label>Potongan berdasarkan persen</label>
+                <label htmlFor="is-potongan-persen-jasa">Gunakan skema potongan persen</label>
               </div>
 
-              {/* Persentase Potongan */}
-              {newHutang.is_potongan_persen && (
-                <div className="hutang-jasa-form-group">
-                  <label>Persentase Potongan (%)</label>
-                  <input
-                    type="number"
-                    value={newHutang.persentase_potongan || ""}
-                    onChange={(e) =>
-                      setNewHutang({
-                        ...newHutang,
-                        persentase_potongan: e.target.value !== "" ? Number(e.target.value) : null,
-                      })
-                    }
-                    placeholder="Masukkan persentase potongan (0-100)"
-                    required={newHutang.is_potongan_persen}
-                    min="0"
-                    max="100"
-                  />
-                </div>
-              )}
-
-              <div className="hutang-jasa-form-group">
-                <label>Upload Bukti Transfer (Opsional)</label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) =>
-                    setNewHutang({
-                      ...newHutang,
-                      bukti_transfer: e.target.files[0],
-                    })
-                  }
-                />
-              </div>
-
-              <div className="hutang-jasa-form-actions">
-                <button
-                  type="button"
-                  className="hutang-jasa-btn-cancel"
-                  onClick={() => {
-                    setSelectedHutang(null);
-                    setNewHutang({
-                      tukang_jasa_id: "",
-                      jumlah_hutang: "",
-                      potongan_per_minggu: "",
-                      is_potongan_persen: false,
-                      persentase_potongan: null,
-                      bukti_transfer: null,
-                    });
-                  }}
-                >
+              <div className="hutang-jasa-erp-form-actions">
+                <button type="button" className="hutang-jasa-erp-btn-secondary" onClick={closeTambahModal}>
                   Batal
                 </button>
-                <button type="submit" className="hutang-jasa-btn-submit">
-                  Simpan
+                <button type="submit" className="hutang-jasa-erp-btn-primary">
+                  Simpan Hutang
                 </button>
               </div>
             </form>
@@ -470,93 +590,105 @@ const HutangJasa = () => {
       )}
 
       {selectedDetailHutang && (
-        <div className="hutang-jasa-detail-modal" onClick={() => setSelectedDetailHutang(null)}>
-          <div className="hutang-jasa-detail-card" onClick={(e) => e.stopPropagation()}>
-            <div className="hutang-jasa-detail-header">
-              <h3>Detail Hutang</h3>
-              <button className="hutang-jasa-modal-close" onClick={() => setSelectedDetailHutang(null)}>
-                <FaTimes />
+        <div className="hutang-jasa-erp-modal-overlay" onClick={closeDetailModal}>
+          <div className="hutang-jasa-erp-modal-content wide" onClick={(event) => event.stopPropagation()}>
+            <div className="hutang-jasa-erp-modal-header">
+              <div>
+                <h2>Detail Hutang Jasa</h2>
+                <p>{selectedDetailHutang.tukang_jasa?.nama || selectedDetailHutang.nama || "-"}</p>
+              </div>
+              <button type="button" className="hutang-jasa-erp-modal-close" onClick={closeDetailModal}>
+                <FiX />
               </button>
             </div>
-            <div className="hutang-jasa-detail-body">
-              <div className="hutang-jasa-detail-info">
-                <div className="hutang-jasa-detail-item">
-                  <strong>ID Hutang</strong>
-                  <span>{selectedDetailHutang.id}</span>
+
+            <div className="hutang-jasa-erp-modal-body">
+              <div className="hutang-jasa-erp-info-grid">
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">ID Hutang</span>
+                  <strong>{selectedDetailHutang.id || "-"}</strong>
                 </div>
-                <div className="hutang-jasa-detail-item">
-                  <strong>ID Penjahit</strong>
-                  <span>{selectedDetailHutang.tukang_jasa_id}</span>
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">ID Tukang Jasa</span>
+                  <strong>{selectedDetailHutang.tukang_jasa_id || "-"}</strong>
                 </div>
-                <div className="hutang-jasa-detail-item">
-                  <strong>Jumlah Hutang</strong>
-                  <span>{formatRupiahDisplay(selectedDetailHutang.jumlah_hutang || 0)}</span>
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">Nama Tukang</span>
+                  <strong>{selectedDetailHutang.tukang_jasa?.nama || selectedDetailHutang.nama || "-"}</strong>
                 </div>
-                <div className="hutang-jasa-detail-item">
-                  <strong>Status Pembayaran</strong>
-                  <span className={`hutang-jasa-status ${selectedDetailHutang.status_pembayaran || "belum"}`}>{selectedDetailHutang.status_pembayaran || "belum"}</span>
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">Jumlah Hutang</span>
+                  <strong>{formatRupiahDisplay(selectedDetailHutang.jumlah_hutang || 0)}</strong>
                 </div>
-                {selectedDetailHutang.tanggal_hutang && (
-                  <div className="hutang-jasa-detail-item">
-                    <strong>Tanggal Hutang</strong>
-                    <span>{new Date(selectedDetailHutang.tanggal_hutang).toLocaleDateString("id-ID")}</span>
-                  </div>
-                )}
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">Status</span>
+                  <strong>
+                    <span className={`hutang-jasa-erp-status-badge ${getStatusClass(selectedDetailHutang.status_pembayaran || "")}`}>
+                      {selectedDetailHutang.status_pembayaran || "belum lunas"}
+                    </span>
+                  </strong>
+                </div>
+                <div className="hutang-jasa-erp-info-item">
+                  <span className="hutang-jasa-erp-info-label">Tanggal Hutang</span>
+                  <strong>{formatDateTime(selectedDetailHutang.tanggal_hutang || selectedDetailHutang.updated_at)}</strong>
+                </div>
               </div>
 
-              <div className="hutang-jasa-history-section">
-                <h4>Log History</h4>
-                <select
-                  className="hutang-jasa-filter-select"
-                  value={selectedJenisPerubahan}
-                  onChange={(e) => {
-                    setSelectedJenisPerubahan(e.target.value);
-                    if (selectedDetailHutang.id) {
-                      fetchHistory(selectedDetailHutang.id, e.target.value);
-                    }
-                  }}
-                >
-                  <option value="">Semua</option>
-                  <option value="penambahan">Penambahan</option>
-                  <option value="pengurangan">Pengurangan</option>
-                </select>
+              <div className="hutang-jasa-erp-history-card">
+                <div className="hutang-jasa-erp-history-header">
+                  <h4>Riwayat Perubahan Hutang</h4>
+                  <select
+                    value={selectedJenisPerubahan}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedJenisPerubahan(value);
+                      fetchHistory(selectedDetailHutang.id, value);
+                    }}
+                  >
+                    <option value="">Semua</option>
+                    <option value="penambahan">Penambahan</option>
+                    <option value="pengurangan">Pengurangan</option>
+                  </select>
+                </div>
 
-                {logHistory.length > 0 ? (
-                  <div style={{ overflowX: "auto" }}>
-                    <table className="hutang-jasa-history-table">
+                {historyLoading ? (
+                  <div className="hutang-jasa-erp-loading inline">
+                    <div className="hutang-jasa-erp-spinner" />
+                    <p>Memuat log history...</p>
+                  </div>
+                ) : logHistory.length > 0 ? (
+                  <div className="hutang-jasa-erp-history-scroll">
+                    <table className="hutang-jasa-erp-history-table">
                       <thead>
                         <tr>
-                          <th>Tanggal Perubahan</th>
-                          <th>Jenis Perubahan</th>
+                          <th>Tanggal</th>
+                          <th>Jenis</th>
                           <th>Nominal</th>
-                          <th>Bukti Transfer</th>
+                          <th>Bukti</th>
                         </tr>
                       </thead>
                       <tbody>
                         {logHistory.map((history, index) => (
-                          <tr key={index}>
+                          <tr key={`${history.id || "history"}-${index}`}>
+                            <td>{formatDateTime(history.tanggal_perubahan)}</td>
                             <td>
-                              {new Date(history.tanggal_perubahan).toLocaleDateString("id-ID", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              <span className={`hutang-jasa-erp-mini-badge ${history.jenis_perubahan === "penambahan" ? "plus" : "minus"}`}>
+                                {history.jenis_perubahan || "-"}
+                              </span>
                             </td>
-                            <td>
-                              <span className={`hutang-jasa-status ${history.jenis_perubahan === "penambahan" ? "belum" : "lunas"}`}>{history.jenis_perubahan}</span>
-                            </td>
-                            <td>
-                              <span className="hutang-jasa-price">{formatRupiahDisplay(history.perubahan_hutang || 0)}</span>
-                            </td>
+                            <td>{formatRupiahDisplay(history.perubahan_hutang || 0)}</td>
                             <td>
                               {history.bukti_transfer ? (
-                                <a href={`${process.env.REACT_APP_FILE_URL}/storage/${history.bukti_transfer}`} target="_blank" rel="noopener noreferrer">
+                                <a
+                                  className="hutang-jasa-erp-link"
+                                  href={`${process.env.REACT_APP_FILE_URL}/storage/${history.bukti_transfer}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
                                   Lihat Bukti
                                 </a>
                               ) : (
-                                <span style={{ color: "#94a3b8" }}>Tidak ada</span>
+                                <span className="hutang-jasa-erp-muted-text">Tidak ada</span>
                               )}
                             </td>
                           </tr>
@@ -565,13 +697,16 @@ const HutangJasa = () => {
                     </table>
                   </div>
                 ) : (
-                  <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px 0" }}>Tidak ada log pembayaran.</p>
+                  <div className="hutang-jasa-erp-empty-state inline">
+                    <FiCheckCircle className="hutang-jasa-erp-empty-icon" />
+                    <p className="hutang-jasa-erp-empty-title">Belum ada riwayat perubahan</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="hutang-jasa-detail-footer">
-              <button className="hutang-jasa-btn-close" onClick={() => setSelectedDetailHutang(null)}>
+            <div className="hutang-jasa-erp-modal-footer">
+              <button type="button" className="hutang-jasa-erp-btn-secondary" onClick={closeDetailModal}>
                 Tutup
               </button>
             </div>

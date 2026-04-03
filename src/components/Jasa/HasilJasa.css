@@ -1,398 +1,749 @@
-/* HasilJasa Modern Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 .hasil-jasa-page {
-  padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --hj-bg: #f4f6f9;
+  --hj-surface: #ffffff;
+  --hj-border: #e4e9f0;
+  --hj-text: #0f172a;
+  --hj-muted: #64748b;
+  --hj-primary: #2458ce;
+  --hj-primary-soft: #edf3ff;
+  --hj-primary-border: #cdd9ef;
+  --hj-success: #047857;
+  --hj-warning: #b45309;
+  --hj-danger: #be123c;
+
   min-height: 100vh;
+  width: 100%;
+  padding: 0;
+  background: var(--hj-bg);
+  color: var(--hj-text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-.hasil-jasa-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 24px 32px;
-  margin-bottom: 24px;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-  color: white;
+.hasil-jasa-shell {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--hj-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.hasil-jasa-shell::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #2458ce 0%, #6b8ff0 100%);
+  flex-shrink: 0;
+}
+
+.hasil-jasa-topbar {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.hasil-jasa-header-icon {
-  width: 60px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-}
-
-.hasil-jasa-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.hasil-jasa-table-container {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.hasil-jasa-filter-header {
-  display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
+  gap: 14px;
+  padding: 16px 24px;
+  background: var(--hj-surface);
+  border-bottom: 1px solid var(--hj-border);
   flex-wrap: wrap;
 }
 
-.hasil-jasa-btn-add {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
+.hasil-jasa-title-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  gap: 12px;
+}
+
+.hasil-jasa-brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2458ce 0%, #4f79e8 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(36, 88, 206, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.hasil-jasa-title-wrap h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--hj-text);
+  line-height: 1.25;
+}
+
+.hasil-jasa-module-pill {
+  width: fit-content;
+  margin-bottom: 6px;
+  border: 1px solid var(--hj-primary-border);
+  background: var(--hj-primary-soft);
+  color: #355589;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+}
+
+.hasil-jasa-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--hj-muted);
+  font-weight: 500;
+}
+
+.hasil-jasa-btn-add {
+  border: none;
+  border-radius: 9px;
+  background: var(--hj-primary);
+  color: #ffffff;
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 .hasil-jasa-btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: #1e4caf;
 }
 
-.hasil-jasa-btn-add:active {
-  transform: translateY(0);
+.hasil-jasa-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #edf2f8;
+  background: #f9fbff;
+  flex-wrap: wrap;
 }
 
 .hasil-jasa-search-bar {
-  flex: 1;
-  max-width: 400px;
+  position: relative;
+  min-width: 260px;
+  width: min(520px, 100%);
+}
+
+.hasil-jasa-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 15px;
 }
 
 .hasil-jasa-search-bar input {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
+  border: 1px solid #dde3ed;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 12px 8px 34px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.hasil-jasa-search-bar input:hover {
+  border-color: #b6c2d6;
+  background: #ffffff;
 }
 
 .hasil-jasa-search-bar input:focus {
-  outline: none;
-  border-color: #667eea;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--hj-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
-.hasil-jasa-loading,
-.hasil-jasa-error {
-  text-align: center;
-  padding: 40px;
-  font-size: 16px;
-  color: #666;
+.hasil-jasa-toolbar-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #c8d8f6;
+  border-radius: 999px;
+  background: #edf4ff;
+  color: var(--hj-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
 }
 
-.hasil-jasa-error {
-  color: #dc2626;
-  background: #fee2e2;
+.hasil-jasa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 24px;
+}
+
+.hasil-jasa-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--hj-border);
   border-radius: 10px;
-  padding: 16px;
+  padding: 12px 14px;
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
+.hasil-jasa-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+
+.hasil-jasa-kpi-icon.blue {
+  background: #eff6ff;
+  color: #2458ce;
+}
+
+.hasil-jasa-kpi-icon.cyan {
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.hasil-jasa-kpi-icon.amber {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.hasil-jasa-kpi-icon.green {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.hasil-jasa-kpi-card p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--hj-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hasil-jasa-kpi-card h3 {
+  margin: 5px 0 0;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--hj-text);
+}
+
+.hasil-jasa-table-card {
+  margin: 0 24px 20px;
+  background: #ffffff;
+  border: 1px solid var(--hj-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.hasil-jasa-table-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e8edf5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hasil-jasa-table-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hasil-jasa-table-header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.hasil-jasa-state,
 .hasil-jasa-empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #666;
+  padding: 44px 16px;
+  background: #ffffff;
 }
 
-.hasil-jasa-empty-state-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+.hasil-jasa-state {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hasil-jasa-state.error {
+  color: #b91c1c;
+}
+
+.hasil-jasa-empty-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  margin: 0 auto;
+  border: 1px solid #d8e4f7;
+  background: #eef4ff;
+  color: #2458ce;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hasil-jasa-empty-state h4 {
+  margin-top: 10px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .hasil-jasa-empty-state p {
-  font-size: 18px;
-  margin: 0;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .hasil-jasa-table-wrapper {
+  width: 100%;
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  overflow-y: auto;
+  max-height: clamp(320px, 58vh, 640px);
 }
 
 .hasil-jasa-table {
   width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-.hasil-jasa-table thead {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1040px;
 }
 
 .hasil-jasa-table th {
-  padding: 16px;
-  text-align: left;
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  background: #f4f7fa;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.hasil-jasa-table tbody tr {
-  border-bottom: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-}
-
-.hasil-jasa-table tbody tr:hover {
-  background: #f8f9fa;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .hasil-jasa-table td {
-  padding: 16px;
-  color: #374151;
-  font-size: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf2f7;
+  color: #1e293b;
+  font-size: 13px;
+  vertical-align: middle;
 }
 
-.hasil-jasa-table td:first-child {
+.hasil-jasa-table tr:hover td {
+  background: #fcfdff;
+}
+
+.hasil-jasa-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.text-strong {
+  font-weight: 700;
+}
+
+.text-mono {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2458ce;
+}
+
+.text-money {
+  color: #2458ce;
+  font-weight: 700;
+}
+
+.hasil-jasa-quality {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hasil-jasa-quality.good {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.hasil-jasa-quality.watch {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.hasil-jasa-quality.risk {
+  background: #fef2f2;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+.hasil-jasa-quality.neutral {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.hasil-jasa-table-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e4e9f0;
+  background: #f8fafc;
+  flex-wrap: wrap;
+}
+
+.hasil-jasa-page-info {
+  color: #64748b;
+  font-size: 12px;
   font-weight: 600;
-  color: #667eea;
+  margin-right: auto;
 }
 
-/* Modal Styles */
+.hasil-jasa-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hasil-jasa-page-controls label,
+.page-indicator {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hasil-jasa-page-controls select {
+  border: 1px solid #cfd8e3;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 12px;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.hasil-jasa-page-controls select:focus {
+  outline: none;
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.page-btn {
+  border: none;
+  border-radius: 9px;
+  background: #2458ce;
+  color: #ffffff;
+  height: 32px;
+  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #1e4caf;
+}
+
+.page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  min-width: 120px;
+  text-align: center;
+}
+
 .hasil-jasa-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  backdrop-filter: blur(4px);
+  padding: 16px;
 }
 
 .hasil-jasa-modal-content {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
+  width: min(94vw, 760px);
+  max-height: 92vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  position: relative;
-  animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  background: #ffffff;
+  border: 1px solid #dce5f1;
+  border-radius: 14px;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24);
 }
 
 .hasil-jasa-modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e5e7eb;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e4e9f0;
 }
 
 .hasil-jasa-modal-header h2 {
   margin: 0;
-  font-size: 24px;
+  color: #0f172a;
+  font-size: 20px;
   font-weight: 700;
-  color: #1f2937;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+}
+
+.hasil-jasa-modal-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .hasil-jasa-modal-close {
-  background: #f3f4f6;
-  border: none;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d4dce8;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #ffffff;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: #6b7280;
 }
 
-.hasil-jasa-modal-close:hover {
-  background: #e5e7eb;
-  color: #374151;
+.hasil-jasa-modal-close:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.hasil-jasa-modal-close:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .hasil-jasa-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  padding: 16px 20px 20px;
+  background: #fbfcff;
+}
+
+.hasil-jasa-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .hasil-jasa-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hasil-jasa-form-group.full-width {
+  margin-bottom: 14px;
 }
 
 .hasil-jasa-form-group label {
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  display: block;
+  margin-bottom: 6px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .hasil-jasa-form-group input,
 .hasil-jasa-form-group select {
-  padding: 12px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: white;
-  color: #374151;
+  width: 100%;
+  border: 1px solid #cfd8e3;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-family: inherit;
+  min-height: 38px;
+  padding: 0 11px;
 }
 
 .hasil-jasa-form-group input:focus,
 .hasil-jasa-form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.hasil-jasa-form-group input::placeholder {
-  color: #9ca3af;
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
 .hasil-jasa-form-actions {
-  display: flex;
-  gap: 12px;
   margin-top: 8px;
-  justify-content: flex-end;
-}
-
-.hasil-jasa-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding-top: 12px;
+  border-top: 1px solid #e4e9f0;
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
+.hasil-jasa-btn-cancel,
 .hasil-jasa-btn-submit {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.hasil-jasa-btn-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.hasil-jasa-btn-submit:active {
-  transform: translateY(0);
+  border-radius: 9px;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .hasil-jasa-btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  border: 1px solid #d1dbe8;
+  background: #ffffff;
+  color: #334155;
 }
 
-.hasil-jasa-btn-cancel:hover {
-  background: #e5e7eb;
+.hasil-jasa-btn-cancel:hover:not(:disabled) {
+  background: #f8fafc;
 }
 
-/* Price Badge */
-.hasil-jasa-price {
-  font-weight: 600;
-  color: #059669;
-  font-size: 14px;
+.hasil-jasa-btn-submit {
+  border: none;
+  background: #2458ce;
+  color: #ffffff;
 }
 
-/* Responsive */
+.hasil-jasa-btn-submit:hover:not(:disabled) {
+  background: #1e4caf;
+}
+
+.hasil-jasa-btn-cancel:disabled,
+.hasil-jasa-btn-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hj-swal-popup {
+  border-radius: 14px !important;
+  border: 1px solid #dce5f1 !important;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.hj-swal-btn {
+  border-radius: 9px !important;
+  height: 38px !important;
+  padding: 0 14px !important;
+  border: none !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+}
+
+.hj-swal-btn-primary {
+  background: #2458ce !important;
+  color: #ffffff !important;
+}
+
+.hj-swal-btn-primary:hover {
+  background: #1e4caf !important;
+}
+
+@media (max-width: 1000px) {
+  .hasil-jasa-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
-  .hasil-jasa-page {
-    padding: 16px;
+  .hasil-jasa-topbar {
+    padding: 14px 16px;
   }
 
-  .hasil-jasa-header {
-    padding: 20px;
-  }
-
-  .hasil-jasa-header h1 {
-    font-size: 24px;
-  }
-
-  .hasil-jasa-table-container {
-    padding: 16px;
-  }
-
-  .hasil-jasa-filter-header {
+  .hasil-jasa-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
 
   .hasil-jasa-search-bar {
-    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hasil-jasa-kpi-grid {
+    grid-template-columns: 1fr;
+    padding: 14px 16px;
+  }
+
+  .hasil-jasa-table-card {
+    margin: 0 16px 16px;
   }
 
   .hasil-jasa-table-wrapper {
-    overflow-x: scroll;
+    overflow-x: auto;
   }
 
   .hasil-jasa-table {
-    min-width: 800px;
+    min-width: 980px;
   }
 
-  .hasil-jasa-modal-content {
-    padding: 24px;
-    margin: 10px;
+  .hasil-jasa-form-grid {
+    grid-template-columns: 1fr;
   }
 
-  .hasil-jasa-form-actions {
+  .hasil-jasa-form-actions,
+  .hasil-jasa-table-footer {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .hasil-jasa-btn {
+  .hasil-jasa-page-info {
+    margin-right: 0;
+  }
+
+  .hasil-jasa-page-controls {
     width: 100%;
-    justify-content: center;
+    justify-content: space-between;
+  }
+
+  .page-indicator {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .hasil-jasa-btn-cancel,
+  .hasil-jasa-btn-submit {
+    width: 100%;
   }
 }
