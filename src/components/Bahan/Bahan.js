@@ -224,7 +224,7 @@ const Bahan = () => {
   };
 
   const handleDelete = async (id, nama) => {
-    if (!window.confirm(`Yakin ingin menghapus bahan \"${nama}\"?`)) return;
+    if (!window.confirm(`Yakin ingin menghapus bahan "${nama}"?`)) return;
 
     try {
       await API.delete(`/bahan/${id}`);

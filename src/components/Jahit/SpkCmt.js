@@ -1700,7 +1700,7 @@ const SpkCmt = () => {
 
                     <div>
                       {msg.message && <p>{msg.message}</p>} {/* Hanya tampilkan jika ada teks */}
-                      {msg.image_url && <img src={msg.image_url} alt="Chat Image" className="chat-image" onClick={() => openMediaPreview(msg.image_url, "image")} />}
+                      {msg.image_url && <img src={msg.image_url} alt="Chat media" className="chat-image" onClick={() => openMediaPreview(msg.image_url, "image")} />}
                       {msg.video_url && (
                         <video controls className="chat-image" onClick={() => openMediaPreview(msg.video_url, "video")}>
                           <source src={msg.video_url} type="video/mp4" />

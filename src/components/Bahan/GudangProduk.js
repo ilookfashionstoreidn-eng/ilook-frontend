@@ -466,7 +466,7 @@ const GudangProduk = () => {
                            item.produk_id && (
                                <div className="gudang-produk-preview-container">
                                    {(() => {
-                                       const p = produkList.find(x => x.id == item.produk_id);
+                                       const p = produkList.find(x => x.id === item.produk_id);
                                        if (p && p.gambar_produk) {
                                            const imgUrl = p.gambar_produk.startsWith('http') 
                                               ? p.gambar_produk 

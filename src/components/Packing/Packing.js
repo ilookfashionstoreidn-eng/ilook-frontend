@@ -129,7 +129,7 @@ const handleSearchOrder = async () => {
     return;
   }
 
-  const itemIndex = scannedItems.findIndex((item) => item.sku == sku);
+  const itemIndex = scannedItems.findIndex((item) => item.sku === sku);
 
   if (itemIndex === -1) {
     setMessage(`❌ SKU ${sku} tidak ditemukan dalam order`);
