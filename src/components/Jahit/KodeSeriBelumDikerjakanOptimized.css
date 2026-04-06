@@ -26,8 +26,7 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(244, 247, 251, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(244, 247, 251, 0.98) 100%);
 }
 
 .kode-seri-topbar {
@@ -168,8 +167,9 @@
 
 .kode-seri-overview-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 20px;
+  align-items: start;
 }
 
 .kode-seri-spotlight-card,
@@ -181,7 +181,6 @@
 }
 
 .kode-seri-spotlight-card {
-  grid-column: span 2;
   border-radius: 24px;
   padding: 24px;
   display: flex;
@@ -192,10 +191,17 @@
     linear-gradient(135deg, rgba(79, 70, 229, 0.1), transparent 55%);
 }
 
+.kode-seri-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
 .kode-seri-spotlight-head,
 .kode-seri-spotlight-footer,
 .kode-seri-table-head,
-.kode-seri-table-meta {
+.kode-seri-table-meta,
+.kode-seri-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -216,13 +222,15 @@
 }
 
 .kode-seri-chip {
-  color: #3730a3;
-  background: rgba(79, 70, 229, 0.1);
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.12);
 }
 
 .kode-seri-updated-at {
   color: #475569;
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(226, 232, 240, 0.72);
+  border: 1px solid rgba(203, 213, 225, 0.82);
 }
 
 .kode-seri-spotlight-card h2 {
@@ -232,7 +240,7 @@
   line-height: 1.25;
   letter-spacing: -0.03em;
   color: #0f172a;
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .kode-seri-spotlight-card p {
@@ -273,19 +281,20 @@
 
 .kode-seri-active-filter,
 .kode-seri-meta-pill {
-  color: #475569;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  color: #334155;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dbe6f3;
 }
 
 .kode-seri-stat-card {
-  min-height: 148px;
+  min-height: 0;
   border-radius: 22px;
   padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  justify-content: space-between;
+  gap: 16px;
+  justify-content: flex-start;
+  align-self: start;
 }
 
 .kode-seri-stat-icon {
@@ -297,35 +306,12 @@
   justify-content: center;
 }
 
-.tone-slate {
-  color: #334155;
-  background: #e2e8f0;
-}
-
-.tone-blue {
-  color: #2563eb;
-  background: #dbeafe;
-}
-
-.tone-cyan {
-  color: #0891b2;
-  background: #cffafe;
-}
-
-.tone-rose {
-  color: #e11d48;
-  background: #ffe4e6;
-}
-
-.tone-indigo {
-  color: #4338ca;
-  background: #e0e7ff;
-}
-
-.tone-teal {
-  color: #0f766e;
-  background: #ccfbf1;
-}
+.tone-slate { color: #334155; background: #e2e8f0; }
+.tone-blue { color: #2563eb; background: #dbeafe; }
+.tone-cyan { color: #0891b2; background: #cffafe; }
+.tone-rose { color: #e11d48; background: #ffe4e6; }
+.tone-indigo { color: #4338ca; background: #e0e7ff; }
+.tone-teal { color: #0f766e; background: #ccfbf1; }
 
 .kode-seri-stat-copy span,
 .kode-seri-section-label {
@@ -356,6 +342,7 @@
 .kode-seri-table-card {
   border-radius: 24px;
   overflow: hidden;
+  padding-bottom: 24px;
 }
 
 .kode-seri-table-head {
@@ -392,8 +379,9 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -401,7 +389,7 @@
 .kode-seri-filter-tab span {
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: #334155;
 }
 
 .kode-seri-filter-tab strong {
@@ -411,113 +399,221 @@
 }
 
 .kode-seri-filter-tab:hover {
-  border-color: #cbd5e1;
+  border-color: #bfccda;
   transform: translateY(-1px);
+  box-shadow: 0 14px 24px -24px rgba(15, 23, 42, 0.5);
 }
 
 .kode-seri-filter-tab.is-active {
-  border-color: transparent;
-  background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%);
-  box-shadow: 0 18px 28px -24px rgba(37, 99, 235, 0.95);
+  transform: translateY(-1px);
 }
 
 .kode-seri-filter-tab.is-active span,
 .kode-seri-filter-tab.is-active strong {
-  color: #ffffff;
+  color: #0f172a;
+}
+
+.kode-seri-filter-tab.tone-all {
+  background: linear-gradient(180deg, #f4f8ff 0%, #eef4ff 100%);
+  border-color: #d6e2ff;
+}
+
+.kode-seri-filter-tab.tone-cutting {
+  background: linear-gradient(180deg, #fff8ee 0%, #fff3e2 100%);
+  border-color: #f2dec0;
+}
+
+.kode-seri-filter-tab.tone-jasa {
+  background: linear-gradient(180deg, #effaf6 0%, #e7f7f1 100%);
+  border-color: #cbe8dc;
+}
+
+.kode-seri-filter-tab.is-active.tone-all {
+  background: linear-gradient(180deg, #dfeaff 0%, #d4e3ff 100%);
+  border-color: #b9cdfb;
+  box-shadow: 0 14px 26px -24px rgba(37, 99, 235, 0.85);
+}
+
+.kode-seri-filter-tab.is-active.tone-all span,
+.kode-seri-filter-tab.is-active.tone-all strong {
+  color: #1d4ed8;
+}
+
+.kode-seri-filter-tab.is-active.tone-cutting {
+  background: linear-gradient(180deg, #ffefcf 0%, #ffe4b2 100%);
+  border-color: #f0c97a;
+  box-shadow: 0 14px 26px -24px rgba(217, 119, 6, 0.85);
+}
+
+.kode-seri-filter-tab.is-active.tone-cutting span,
+.kode-seri-filter-tab.is-active.tone-cutting strong {
+  color: #92400e;
+}
+
+.kode-seri-filter-tab.is-active.tone-jasa {
+  background: linear-gradient(180deg, #d7f5eb 0%, #c7eddf 100%);
+  border-color: #93d5be;
+  box-shadow: 0 14px 26px -24px rgba(15, 118, 110, 0.85);
+}
+
+.kode-seri-filter-tab.is-active.tone-jasa span,
+.kode-seri-filter-tab.is-active.tone-jasa strong {
+  color: #0f766e;
 }
 
 .kode-seri-table-meta {
-  padding: 16px 28px 0;
+  padding: 16px 28px 18px;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
 
-.kode-seri-table-wrap {
-  overflow-x: auto;
-  padding: 18px 0 0;
+.kode-seri-virtual-table {
+  margin: 0 28px;
+  border: 1px solid #e9eef5;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
 }
 
-.kode-seri-table {
-  width: 100%;
-  min-width: 980px;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.kode-seri-table thead th {
-  padding: 16px 28px;
-  background: #f8fafc;
+.kode-seri-virtual-header {
   border-bottom: 1px solid #e9eef5;
-  text-align: left;
+  background: #f8fafc;
+}
+
+.kode-seri-virtual-header-row,
+.kode-seri-virtual-row {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr 1.7fr 1.2fr 0.8fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.kode-seri-virtual-header-row {
+  padding: 0 24px;
+  min-height: 58px;
+}
+
+.kode-seri-sort-btn,
+.kode-seri-sort-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  font: inherit;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
+  color: #475569;
 }
 
-.kode-seri-table tbody td {
-  padding: 22px 28px;
+.kode-seri-sort-btn {
+  cursor: pointer;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8fc 100%);
+  border-color: #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.kode-seri-sort-btn.align-right {
+  justify-content: flex-end;
+}
+
+.kode-seri-sort-btn:hover {
+  color: #1e293b;
+  border-color: #cbd8ea;
+  background: linear-gradient(180deg, #ffffff 0%, #edf4ff 100%);
+}
+
+.kode-seri-sort-btn.is-active {
+  color: #1d4ed8;
+  border-color: #cfe0ff;
+  background: linear-gradient(180deg, #f6f9ff 0%, #ebf2ff 100%);
+}
+
+.kode-seri-sort-placeholder {
+  padding-left: 12px;
+}
+
+.kode-seri-virtual-body {
+  height: 560px;
+  overflow: auto;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.kode-seri-virtual-spacer {
+  position: relative;
+}
+
+.kode-seri-virtual-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 0 24px;
   border-bottom: 1px solid #eef2f7;
-  vertical-align: top;
-  font-size: 14px;
-  color: #0f172a;
-  background: transparent;
+  background: #ffffff;
 }
 
-.kode-seri-table tbody tr:hover td {
+.kode-seri-virtual-row:hover {
   background: #fbfdff;
 }
 
-.kode-seri-table tbody tr:last-child td {
-  border-bottom: none;
+.kode-seri-virtual-row.is-continuation {
+  background: #fcfdff;
 }
 
-.kode-seri-cell-focus,
-.kode-seri-product-cell,
-.kode-seri-deadline-cell {
-  vertical-align: middle;
-}
-
-.kode-seri-series-block {
+.kode-seri-virtual-cell {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.kode-seri-series-block strong {
-  font-size: 15px;
+.kode-seri-virtual-cell.align-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.kode-seri-grid-primary {
+  font-size: 14px;
   font-weight: 700;
   color: #0f172a;
 }
 
-.kode-seri-series-block span {
+.kode-seri-grid-secondary {
   font-size: 12px;
   font-weight: 600;
   color: #64748b;
 }
 
-.kode-seri-product-cell {
-  max-width: 280px;
-  line-height: 1.65;
-  color: #334155;
+.kode-seri-virtual-cell.is-repeated .kode-seri-grid-primary,
+.kode-seri-virtual-cell.is-repeated .kode-seri-grid-secondary {
+  opacity: 0.82;
 }
 
-.kode-seri-deadline-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.kode-seri-grid-secondary.is-overdue {
+  color: #b91c1c;
 }
 
-.kode-seri-deadline-cell strong {
-  font-size: 14px;
-  font-weight: 700;
-  color: #0f172a;
+.kode-seri-grid-secondary.is-safe {
+  color: #166534;
 }
 
-.kode-seri-deadline-cell span,
-.kode-seri-status-pill,
-.kode-seri-process-pill {
+.kode-seri-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kode-seri-qty-inline {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.kode-seri-process-pill,
+.kode-seri-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -527,54 +623,90 @@
   font-weight: 700;
 }
 
-.kode-seri-deadline-cell span {
-  padding: 7px 11px;
-}
-
-.kode-seri-qty-cell {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-}
-
 .kode-seri-process-pill {
   padding: 8px 12px;
-}
-
-.kode-seri-process-pill.is-cutting {
-  color: #4338ca;
-  background: #e0e7ff;
-}
-
-.kode-seri-process-pill.is-jasa {
-  color: #0f766e;
-  background: #ccfbf1;
-}
-
-.kode-seri-process-pill.is-neutral {
-  color: #475569;
-  background: #e2e8f0;
 }
 
 .kode-seri-status-pill {
   padding: 8px 12px;
 }
 
-.kode-seri-status-pill.is-overdue,
-.kode-seri-deadline-cell span.is-overdue {
-  color: #b91c1c;
-  background: #fee2e2;
+.kode-seri-process-pill.is-cutting { color: #4338ca; background: #e0e7ff; }
+.kode-seri-process-pill.is-jasa { color: #0f766e; background: #ccfbf1; }
+.kode-seri-process-pill.is-neutral { color: #475569; background: #e2e8f0; }
+
+.kode-seri-status-pill.is-overdue { color: #b91c1c; background: #fee2e2; }
+.kode-seri-status-pill.is-safe { color: #166534; background: #dcfce7; }
+
+.kode-seri-pagination {
+  margin: 18px 28px 0;
+  flex-wrap: wrap;
 }
 
-.kode-seri-status-pill.is-safe,
-.kode-seri-deadline-cell span.is-safe {
-  color: #166534;
-  background: #dcfce7;
+.kode-seri-pagination-info,
+.kode-seri-pagination-actions,
+.kode-seri-page-size {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kode-seri-pagination-info span,
+.kode-seri-page-size span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.kode-seri-page-size select {
+  border: 1px solid #d9e3ef;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.kode-seri-page-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d9e3ef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kode-seri-page-btn:hover:not(:disabled) {
+  border-color: #c9daf8;
+  color: #1d4ed8;
+  background: linear-gradient(180deg, #ffffff 0%, #edf4ff 100%);
+}
+
+.kode-seri-page-btn.is-active {
+  border-color: transparent;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%);
+}
+
+.kode-seri-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .kode-seri-empty-state {
-  min-height: 280px;
+  min-height: 320px;
+  margin: 0 28px;
+  border: 1px dashed #dbe3ec;
+  border-radius: 20px;
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -582,6 +714,7 @@
   justify-content: center;
   gap: 12px;
   text-align: center;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .kode-seri-empty-icon {
@@ -604,24 +737,21 @@
 
 .kode-seri-empty-state p {
   margin: 0;
-  max-width: 420px;
+  max-width: 460px;
   font-size: 14px;
   line-height: 1.7;
   color: #64748b;
 }
 
 @keyframes kode-seri-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1180px) {
   .kode-seri-topbar,
-  .kode-seri-table-head {
+  .kode-seri-table-head,
+  .kode-seri-pagination {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -640,12 +770,13 @@
     width: 100%;
   }
 
-  .kode-seri-overview-grid {
+  .kode-seri-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .kode-seri-spotlight-card {
-    grid-column: span 2;
+  .kode-seri-virtual-header-row,
+  .kode-seri-virtual-row {
+    grid-template-columns: 1.1fr 0.9fr 1.4fr 1fr 0.8fr 1fr;
   }
 }
 
@@ -672,12 +803,9 @@
   }
 
   .kode-seri-overview-grid,
-  .kode-seri-spotlight-stats {
+  .kode-seri-spotlight-stats,
+  .kode-seri-stat-grid {
     grid-template-columns: 1fr;
-  }
-
-  .kode-seri-spotlight-card {
-    grid-column: span 1;
   }
 
   .kode-seri-filter-tabs {
@@ -687,5 +815,22 @@
   .kode-seri-filter-tab {
     flex: 1 1 100%;
     min-width: 0;
+  }
+
+  .kode-seri-virtual-table,
+  .kode-seri-empty-state,
+  .kode-seri-pagination {
+    margin-left: 18px;
+    margin-right: 18px;
+  }
+
+  .kode-seri-virtual-header,
+  .kode-seri-virtual-body {
+    overflow-x: auto;
+  }
+
+  .kode-seri-virtual-header-row,
+  .kode-seri-virtual-row {
+    min-width: 980px;
   }
 }

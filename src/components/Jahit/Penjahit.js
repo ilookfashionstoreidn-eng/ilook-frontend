@@ -1,37 +1,86 @@
 import React, { useEffect, useState } from "react";
 import "./Penjahit.css";
-import API from "../../api"; 
-import {FaInfoCircle, FaPlus, FaEdit, } from 'react-icons/fa';
+import API from "../../api";
+import {
+  FiCheckCircle,
+  FiCreditCard,
+  FiEdit2,
+  FiEye,
+  FiFileText,
+  FiMapPin,
+  FiPhone,
+  FiPlus,
+  FiScissors,
+  FiSearch,
+  FiUsers,
+  FiX,
+} from "react-icons/fi";
+
+const emptyPenjahit = {
+  nama_penjahit: "",
+  kontak: "",
+  alamat: "",
+  kategori_penjahit: "",
+  jumlah_tim: "",
+  no_rekening: "",
+  bank: "",
+  mesin: [],
+  ktp: null,
+};
+
+const parseMesin = (mesin) => {
+  if (!mesin) {
+    return [];
+  }
+
+  const source = Array.isArray(mesin)
+    ? mesin
+    : (() => {
+        try {
+          const parsed = JSON.parse(mesin);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          return [];
+        }
+      })();
+
+  return source.map((item) => ({
+    nama: item?.nama || "",
+    jumlah: item?.jumlah || "",
+  }));
+};
+
+const createPenjahitPayload = (penjahit) => ({
+  nama_penjahit: penjahit.nama_penjahit || "",
+  kontak: penjahit.kontak || "",
+  alamat: penjahit.alamat || "",
+  kategori_penjahit: penjahit.kategori_penjahit || "",
+  jumlah_tim: penjahit.jumlah_tim || "",
+  no_rekening: penjahit.no_rekening || "",
+  bank: penjahit.bank || "",
+  mesin: parseMesin(penjahit.mesin),
+  ktp: penjahit.ktp || null,
+});
 
 const Penjahit = () => {
   const [penjahits, setPenjahits] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showForm, setShowForm] = useState(false); 
+  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState("");
   const [selectedPenjahit, setSelectedPenjahit] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
-  const [newPenjahit, setNewPenjahit] = useState({
-    nama_penjahit: "",
-    kontak: "",
-    alamat: "",
-    kategori_penjahit: "",
-    jumlah_tim: "",
-    no_rekening: "",
-    bank: "",
-    mesin: [], 
-    ktp: null,
-  }); 
+  const [newPenjahit, setNewPenjahit] = useState(emptyPenjahit);
   const [successMessage, setSuccessMessage] = useState("");
-  // Fetch data penjahit
 
   useEffect(() => {
     const fetchPenjahits = async () => {
       try {
         setLoading(true);
-        const response = await API.get("/penjahit"); 
-        setPenjahits(response.data);
-      } catch (error) {
+        setError("");
+        const response = await API.get("/penjahit");
+        setPenjahits(Array.isArray(response.data) ? response.data : []);
+      } catch (fetchError) {
         setError("Gagal mengambil data penjahit.");
       } finally {
         setLoading(false);
@@ -41,19 +90,63 @@ const Penjahit = () => {
     fetchPenjahits();
   }, []);
 
+  useEffect(() => {
+    if (!successMessage && !error) {
+      return undefined;
+    }
 
+    const timeoutId = window.setTimeout(() => {
+      setSuccessMessage("");
+      setError("");
+    }, 3200);
 
-  // Filter data berdasarkan pencarian
-  const filteredPenjahits = penjahits.filter((penjahit) =>
-    penjahit.nama_penjahit.toLowerCase().includes(searchTerm.toLowerCase())
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage, error]);
+
+  const filteredPenjahits = penjahits.filter((penjahit) => {
+    const keyword = searchTerm.toLowerCase();
+    return [
+      penjahit.id_penjahit,
+      penjahit.nama_penjahit,
+      penjahit.kontak,
+      penjahit.kategori_penjahit,
+      penjahit.bank,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(keyword));
+  });
+
+  const totalTim = penjahits.reduce(
+    (total, penjahit) => total + Number(penjahit.jumlah_tim || 0),
+    0
   );
 
-  // Handle submit form
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-  
+  const totalDokumen = penjahits.filter((penjahit) => Boolean(penjahit.ktp)).length;
+
+  const resetFormState = () => {
+    setNewPenjahit(emptyPenjahit);
+    setShowForm(false);
+  };
+
+  const handleOpenCreateForm = () => {
+    setSelectedPenjahit(null);
+    setShowPopup(false);
+    setError("");
+    setSuccessMessage("");
+    setNewPenjahit(emptyPenjahit);
+    setShowForm(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedPenjahit(null);
+  };
+
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+
     try {
-      // Buat FormData untuk menangani file KTP
+      setError("");
       const formData = new FormData();
       formData.append("nama_penjahit", newPenjahit.nama_penjahit);
       formData.append("kontak", newPenjahit.kontak);
@@ -62,460 +155,622 @@ const Penjahit = () => {
       formData.append("jumlah_tim", newPenjahit.jumlah_tim);
       formData.append("no_rekening", newPenjahit.no_rekening);
       formData.append("bank", newPenjahit.bank);
-      
-      // Mesin dikirim dalam bentuk JSON string
       formData.append("mesin", JSON.stringify(newPenjahit.mesin));
-  
-      // Tambahkan KTP jika ada
+
       if (newPenjahit.ktp) {
         formData.append("ktp", newPenjahit.ktp);
       }
-  
-      // Kirim ke API
+
       const response = await API.post("/penjahit", formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Penting untuk upload file
+          "Content-Type": "multipart/form-data",
         },
       });
-  
-      // Update state setelah berhasil
-      setPenjahits([...penjahits, response.data]);
-      setShowForm(false);
-      setNewPenjahit({
-        nama_penjahit: "",
-        kontak: "",
-        alamat: "",
-        kategori_penjahit: "",
-        jumlah_tim: "",
-        no_rekening: "",
-        bank: "",
-        mesin: [],
-        ktp: null,
-      });
-  
-      // Tampilkan pesan sukses
-      setSuccessMessage("Penjahit berhasil ditambahkan!");
-    } catch (error) {
-      console.error("Error:", error);
-      setError("Gagal menambahkan penjahit.");
+
+      setPenjahits((prev) => [response.data, ...prev]);
+      resetFormState();
+      setSuccessMessage("Data penjahit berhasil ditambahkan.");
+    } catch (submitError) {
+      setError(
+        submitError.response?.data?.message || "Gagal menambahkan penjahit."
+      );
     }
   };
 
+  const handleFormUpdate = async (event) => {
+    event.preventDefault();
 
-  
-  const handleFormUpdate = async (e) => {
-    e.preventDefault();
-  
     if (!newPenjahit.id) {
-      alert("Gagal update: ID Penjahit tidak ditemukan!");
+      setError("ID penjahit tidak ditemukan, update dibatalkan.");
       return;
     }
-  
-    console.log("Mengupdate Penjahit dengan ID:", newPenjahit.id);
-  
-    const formData = new FormData();
-  
-    // Tambahkan semua data kecuali 'mesin' dan 'ktp'
-    Object.keys(newPenjahit).forEach((key) => {
-      if (key !== "mesin" && key !== "ktp") {
-        formData.append(key, newPenjahit[key]);
-      }
-    });
-  
-    // Menambahkan data mesin sebagai JSON string
-    formData.append("mesin", JSON.stringify(newPenjahit.mesin));
-  
-    // Jika ada file KTP yang baru diunggah, tambahkan ke FormData
-    if (newPenjahit.ktp instanceof File) {
-      formData.append("ktp", newPenjahit.ktp);
-    }
-  
-    // Tambahkan _method untuk Laravel (karena FormData tidak mendukung PUT secara langsung)
-    formData.append("_method", "PUT");
-  
+
     try {
-      const token = localStorage.getItem("token");
-  
-      const response = await fetch(`http://localhost:8000/api/penjahit/${newPenjahit.id}`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Accept": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+      setError("");
+      const formData = new FormData();
+
+      Object.keys(newPenjahit).forEach((key) => {
+        if (key !== "mesin" && key !== "ktp" && key !== "id") {
+          formData.append(key, newPenjahit[key]);
+        }
       });
-  
+
+      formData.append("mesin", JSON.stringify(newPenjahit.mesin));
+
+      if (newPenjahit.ktp instanceof File) {
+        formData.append("ktp", newPenjahit.ktp);
+      }
+
+      formData.append("_method", "PUT");
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:8000/api/penjahit/${newPenjahit.id}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       const result = await response.json();
-  
-      if (!response.ok) throw new Error(result.error || "Gagal update penjahit");
-  
-      console.log("✅ Penjahit berhasil diperbarui:", result);
-  
-      alert("Penjahit berhasil diperbarui!");
-  
-      // Update state penjahit di frontend
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || "Gagal update penjahit");
+      }
+
+      const updatedPenjahit = result.data || result;
+
       setPenjahits((prev) =>
         prev.map((penjahit) =>
-          penjahit.id === newPenjahit.id ? { ...penjahit, ...result.data } : penjahit
+          penjahit.id_penjahit === newPenjahit.id
+            ? {
+                ...penjahit,
+                ...updatedPenjahit,
+                id_penjahit: updatedPenjahit.id_penjahit || newPenjahit.id,
+              }
+            : penjahit
         )
       );
-  
-      setShowForm(false);
-    } catch (error) {
-      console.error("❌ Terjadi kesalahan:", error);
-      alert("Error: " + error.message);
+
+      if (selectedPenjahit?.id_penjahit === newPenjahit.id) {
+        setSelectedPenjahit((prev) => ({
+          ...prev,
+          ...updatedPenjahit,
+          id_penjahit: updatedPenjahit.id_penjahit || newPenjahit.id,
+        }));
+      }
+
+      resetFormState();
+      setSuccessMessage("Data penjahit berhasil diperbarui.");
+    } catch (updateError) {
+      setError(updateError.message || "Terjadi kesalahan saat update data.");
     }
   };
-  
-  
 
   const handleDetailClick = (penjahit) => {
-    setSelectedPenjahit(penjahit); // Simpan detail SPK yang dipilih
-    setShowPopup(true);  // Tampilkan pop-up
-  };
-  const closePopup = () => {
-    setShowPopup(false); // Sembunyikan pop-up
-    setSelectedPenjahit(null); // Reset data SPK
-  };
-  const handleEditClick = (penjahit) => {
-    console.log("Editing:", penjahit); // Debugging
-    setNewPenjahit({
-      ...penjahit,
-      id: penjahit.id_penjahit, // Pastikan id tersimpan sebagai 'id'
-    });
     setSelectedPenjahit(penjahit);
+    setShowPopup(true);
+  };
+
+  const handleEditClick = (penjahit) => {
+    setShowPopup(false);
+    setSelectedPenjahit(penjahit);
+    setNewPenjahit({
+      ...createPenjahitPayload(penjahit),
+      id: penjahit.id_penjahit,
+    });
     setShowForm(true);
   };
-  
-  
-  
+
+  const handleMesinChange = (index, field, value) => {
+    setNewPenjahit((prev) => {
+      const updatedMesin = [...prev.mesin];
+      updatedMesin[index] = {
+        ...updatedMesin[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        mesin: updatedMesin,
+      };
+    });
+  };
+
+  const handleRemoveMesin = (index) => {
+    setNewPenjahit((prev) => ({
+      ...prev,
+      mesin: prev.mesin.filter((_, mesinIndex) => mesinIndex !== index),
+    }));
+  };
+
+  const selectedMesin = parseMesin(selectedPenjahit?.mesin);
+
   return (
-    <div>
-     <div className="spkcmt-container">
-      <div className="spkcmt-header">
-        <h1>📋 Data CMT</h1>
-    </div>
-
-    <div className="table-container">
-        <div className="filter-header1">
-        <button 
-        onClick={() => setShowForm(true)}>
-          Tambah
-        </button>
-        <div className="search-bar1">
-          <input
-            type="text"
-            placeholder="Cari nama penjahit..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="penjahit-page">
+      <div className="penjahit-shell">
+        <header className="penjahit-header-card">
+          <div className="penjahit-header-main">
+            <div className="penjahit-header-icon">
+              <FiScissors size={20} />
+            </div>
+            <div>
+              <span className="penjahit-label">Jahit Master</span>
+              <h1>Data Penjahit</h1>
+              <p>Kelola partner jahit, data kontak, dan informasi pembayaran.</p>
+              <div className="penjahit-header-tags">
+                <span className="header-tag header-tag-primary"> Master Data</span>
+                <span className="header-tag">Vendor Workspace</span>
+              </div>
+            </div>
           </div>
-          
-      </div>
-      
-        <div className="table-container">
-        <table className="penjahit-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nama Penjahit</th>
-              <th>Kontak</th>
-              <th>Alamat</th>
-              <th> KATEGORI</th>
-             
-          
-              <th>Aksi</th>
-            
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPenjahits.map((penjahit) => (
-              <tr key={penjahit.id_penjahit}>
-                <td data-label="Id Penjahit : ">{penjahit.id_penjahit}</td>
-                <td data-label="Nama Penjahit : ">{penjahit.nama_penjahit}</td>
-                <td data-label="Kontak : ">{penjahit.kontak}</td>
-                <td data-label="Alamat : ">{penjahit.alamat}</td>
-                <td data-label="Kategori : ">{penjahit.kategori_penjahit}</td>
-               
-              
-              <td>
-              <div className="action-card">
-                  <button 
-                    className="btn1-icon" 
-                    onClick={() => handleDetailClick(penjahit)}
-                  >
-                    <FaInfoCircle className="icon" />
-                  </button>
-                  <button 
-                    className="btn1-icon" 
-                     onClick={() => handleEditClick(penjahit)}
-                     > 
-                     <FaEdit className="icon" />
-                   </button>
-       {
-          
-        }
-                  </div>
 
-                  </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-
-
-{/* Pop-Up Card */}
-{showPopup && selectedPenjahit && (
-  <div className="popup1-overlay">
-    <div className="popup1-card">
-      <div className="popup1-header">
-        <h2>Detail Penjahit</h2>
-        <button className="btn-close" onClick={closePopup}>
-          &times;
-        </button>
-      </div>
-
-      <div className="popup1-content">
-        {/* Gambar Produk */}
-        <div className="popup1-image-container">
-          {selectedPenjahit.ktp ? (
-            <img
-              src={`http://localhost:8000/storage/${selectedPenjahit.ktp}`}
-              alt="Gambar Produk"
-              className="popup1-image"
-            />
-          ) : (
-            <div className="popup1-no-image">No Image</div>
-          )}
-        </div>
-
-        {/* Detail Produk */}
-        <div className="popup1-details">
-          <div className="detail-group">
-          <p><strong>Jumlah Tim :</strong> <span> {selectedPenjahit.jumlah_tim}</span></p>
-          <p><strong>Nama Bank :</strong><span> {selectedPenjahit.bank}</span></p>
-          <p><strong>No. Rekening :</strong> <span> {selectedPenjahit.no_rekening}</span></p>
-          <p><strong>Jumlah Tim :</strong> <span> {selectedPenjahit.jumlah_tim}</span></p>
-          <p><strong>Mesin :</strong> <span>
-            {selectedPenjahit.mesin &&
-              (Array.isArray(selectedPenjahit.mesin)
-                ? selectedPenjahit.mesin
-                : JSON.parse(selectedPenjahit.mesin)
-              )
-              .map((item) => `${item.nama} (${item.jumlah})`)
-              .join(", ")}
-          </span></p>
-
-        
-          </div>
-          
-
-
-         
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-
-        {/* Modal Form */}
-        {showForm && (
-          <div className="modal">
-            <div className="modal-content">
-              <h2>Tambah Data Penjahit</h2 >
-              <form
-                className="modern-form"
-                onSubmit={(e) => {
-                  console.log("Form submit triggered!"); 
-                  newPenjahit.id ? handleFormUpdate(e) : handleFormSubmit(e);
-                }}
-              >
-
-              
-              <div className="form-group">
-                <label>Nama Penjahit</label>
-                <input
-                  type="text"
-                  value={newPenjahit.nama_penjahit}
-                  onChange={(e) =>
-                    setNewPenjahit({ ...newPenjahit, nama_penjahit: e.target.value })
-                  }
-                    placeholder="Masukkan nama penjahit"
-                  required
-                />
-                </div>
-
-                <div className="form-group">
-                <label>Kontak</label>
-                <input
-                  type="text"
-                  value={newPenjahit.kontak}
-                  onChange={(e) =>
-                    setNewPenjahit({ ...newPenjahit, kontak: e.target.value })
-                  }
-                  placeholder="Masukkan nomor telepon"
-                  required
-                />
-                </div>
-
-                <div className="form-group">
-                <label>Alamat</label>
-                <textarea
-                  value={newPenjahit.alamat}
-                  onChange={(e) =>
-                    setNewPenjahit({ ...newPenjahit, alamat: e.target.value })
-                  }
-                  placeholder="Tambahkan alamat..."
-                  required
-                ></textarea>
-                </div>
-
- {/* Kategori Penjahit */}
- <div className="form-group">
-          <label>Kategori Penjahit</label>
-          <input
-            type="text"
-            value={newPenjahit.kategori_penjahit}
-            onChange={(e) =>
-              setNewPenjahit({ ...newPenjahit, kategori_penjahit: e.target.value })
-            }
-            placeholder="Masukkan kategori penjahit"
-            required
-          />
-        </div>
-
-        {/* Jumlah Tim */}
-        <div className="form-group">
-          <label>Jumlah Tim</label>
-          <input
-            type="number"
-            value={newPenjahit.jumlah_tim}
-            onChange={(e) =>
-              setNewPenjahit({ ...newPenjahit, jumlah_tim: e.target.value })
-            }
-            placeholder="Masukkan jumlah tim"
-            required
-          />
-        </div>
-
-        {/* No. Rekening */}
-        <div className="form-group">
-          <label>No. Rekening</label>
-          <input
-            type="text"
-            value={newPenjahit.no_rekening}
-            onChange={(e) =>
-              setNewPenjahit({ ...newPenjahit, no_rekening: e.target.value })
-            }
-            placeholder="Masukkan nomor rekening"
-            required
-          />
-        </div>
-
-        {/* Bank */}
-        <div className="form-group">
-          <label>Bank</label>
-          <input
-            type="text"
-            value={newPenjahit.bank}
-            onChange={(e) =>
-              setNewPenjahit({ ...newPenjahit, bank: e.target.value })
-            }
-            placeholder="Masukkan nama bank"
-            required
-          />
-        </div>
-
-        {/* Mesin (Array) */}
-        <div className="form-group">
-          <label>Mesin</label>
-          {newPenjahit.mesin.map((item, index) => (
-            <div key={index} className="mesin-item">
+          <div className="penjahit-header-actions">
+            <label className="penjahit-searchbar" htmlFor="penjahit-search">
+              <FiSearch size={18} />
               <input
+                id="penjahit-search"
                 type="text"
-                value={item.nama}
-                onChange={(e) => {
-                  const updatedMesin = [...newPenjahit.mesin];
-                  updatedMesin[index].nama = e.target.value;
-                  setNewPenjahit({ ...newPenjahit, mesin: updatedMesin });
-                }}
-                placeholder="Nama Mesin"
-                required
+                placeholder="Cari penjahit..."
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
               />
-              <input
-                type="number"
-                value={item.jumlah}
-                onChange={(e) => {
-                  const updatedMesin = [...newPenjahit.mesin];
-                  updatedMesin[index].jumlah = e.target.value;
-                  setNewPenjahit({ ...newPenjahit, mesin: updatedMesin });
-                }}
-                placeholder="Jumlah Mesin"
-                required
-              />
+            </label>
+
+            <button
+              type="button"
+              className="penjahit-primary-btn"
+              onClick={handleOpenCreateForm}
+            >
+              <FiPlus size={18} />
+              Tambah Data
+            </button>
+          </div>
+        </header>
+
+        {(successMessage || error) && (
+          <div className={`penjahit-alert ${error ? "error" : "success"}`}>
+            {error ? <FiX size={16} /> : <FiCheckCircle size={16} />}
+            <span>{error || successMessage}</span>
+          </div>
+        )}
+
+        <section className="penjahit-summary-grid">
+          <article className="summary-card summary-card-blue">
+            <div className="summary-icon">
+              <FiUsers size={18} />
+            </div>
+            <div>
+              <span>Total Penjahit</span>
+              <strong>{penjahits.length}</strong>
+            </div>
+          </article>
+          <article className="summary-card summary-card-amber">
+            <div className="summary-icon">
+              <FiScissors size={18} />
+            </div>
+            <div>
+              <span>Total Tim</span>
+              <strong>{totalTim}</strong>
+            </div>
+          </article>
+          <article className="summary-card summary-card-emerald">
+            <div className="summary-icon">
+              <FiFileText size={18} />
+            </div>
+            <div>
+              <span>Dokumen KTP</span>
+              <strong>{totalDokumen}</strong>
+            </div>
+          </article>
+        </section>
+
+        <section className="penjahit-table-card">
+          <div className="penjahit-table-top">
+            <div>
+              <span className="table-section-label">Master Directory</span>
+              <h2>Daftar Penjahit</h2>
+              <p>
+                {loading
+                  ? "Memuat data..."
+                  : `${filteredPenjahits.length} dari ${penjahits.length} data ditampilkan`}
+              </p>
+            </div>
+          </div>
+
+          <div className="penjahit-table-wrap">
+            <table className="penjahit-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama Penjahit</th>
+                  <th>Kategori</th>
+                  <th>Kontak</th>
+                  <th>Jumlah Tim</th>
+                  <th>Bank</th>
+                  <th className="align-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!loading && filteredPenjahits.length > 0 &&
+                  filteredPenjahits.map((penjahit) => (
+                    <tr key={penjahit.id_penjahit}>
+                      <td data-label="ID">
+                        <span className="table-id-badge">#{penjahit.id_penjahit}</span>
+                      </td>
+                      <td data-label="Nama Penjahit">
+                        <div className="penjahit-name-cell">
+                          <strong>{penjahit.nama_penjahit}</strong>
+                          <span>{penjahit.alamat || "Alamat belum tersedia"}</span>
+                        </div>
+                      </td>
+                      <td data-label="Kategori">
+                        <span className="table-badge">{penjahit.kategori_penjahit || "-"}</span>
+                      </td>
+                      <td data-label="Kontak">{penjahit.kontak || "-"}</td>
+                      <td data-label="Jumlah Tim">{penjahit.jumlah_tim || 0}</td>
+                      <td data-label="Bank">{penjahit.bank || "-"}</td>
+                      <td data-label="Aksi" className="align-right">
+                        <div className="table-actions">
+                          <button
+                            type="button"
+                            className="table-icon-btn table-icon-view"
+                            onClick={() => handleDetailClick(penjahit)}
+                            aria-label={`Lihat detail ${penjahit.nama_penjahit}`}
+                          >
+                            <FiEye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="table-icon-btn table-icon-edit"
+                            onClick={() => handleEditClick(penjahit)}
+                            aria-label={`Edit ${penjahit.nama_penjahit}`}
+                          >
+                            <FiEdit2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                {!loading && filteredPenjahits.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="table-empty-state">
+                      Tidak ada data yang sesuai dengan pencarian.
+                    </td>
+                  </tr>
+                )}
+
+                {loading && (
+                  <tr>
+                    <td colSpan="7" className="table-empty-state">
+                      Memuat direktori penjahit...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      {showPopup && selectedPenjahit && (
+        <div className="penjahit-modal-layer">
+          <button
+            type="button"
+            className="penjahit-modal-backdrop"
+            onClick={handleClosePopup}
+            aria-label="Tutup detail penjahit"
+          />
+
+          <div className="penjahit-modal detail-modal">
+            <div className="penjahit-modal-header">
+              <div>
+                <span className="penjahit-label">Detail</span>
+                <h3>{selectedPenjahit.nama_penjahit}</h3>
+                <p>Ringkasan informasi partner jahit.</p>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  const updatedMesin = newPenjahit.mesin.filter((_, i) => i !== index);
-                  setNewPenjahit({ ...newPenjahit, mesin: updatedMesin });
-                }}
+                className="modal-close-btn"
+                onClick={handleClosePopup}
               >
-                Hapus
+                <FiX size={18} />
               </button>
             </div>
-          ))}
+
+            <div className="detail-grid">
+              <div className="detail-card">
+                <span><FiPhone size={15} /> Kontak</span>
+                <strong>{selectedPenjahit.kontak || "-"}</strong>
+              </div>
+              <div className="detail-card">
+                <span><FiUsers size={15} /> Jumlah Tim</span>
+                <strong>{selectedPenjahit.jumlah_tim || 0}</strong>
+              </div>
+              <div className="detail-card">
+                <span><FiCreditCard size={15} /> Bank</span>
+                <strong>{selectedPenjahit.bank || "-"}</strong>
+              </div>
+              <div className="detail-card">
+                <span><FiFileText size={15} /> No. Rekening</span>
+                <strong>{selectedPenjahit.no_rekening || "-"}</strong>
+              </div>
+              <div className="detail-card wide">
+                <span><FiMapPin size={15} /> Alamat</span>
+                <p>{selectedPenjahit.alamat || "Alamat belum tersedia."}</p>
+              </div>
+              <div className="detail-card wide">
+                <span><FiFileText size={15} /> Dokumen & Mesin</span>
+                <div className="detail-meta">
+                  <p>
+                    Status KTP: {selectedPenjahit.ktp ? "Tersedia" : "Belum tersedia"}
+                  </p>
+                  {selectedMesin.length > 0 ? (
+                    <div className="mesin-list">
+                      {selectedMesin.map((item, index) => (
+                        <div className="mesin-item" key={`${item.nama}-${index}`}>
+                          <strong>{item.nama || "Mesin"}</strong>
+                          <span>{item.jumlah || 0} unit</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>Belum ada data mesin.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="penjahit-modal-layer">
           <button
-          
-             className="btn1"
-            onClick={() =>
-              setNewPenjahit({
-                ...newPenjahit,
-                mesin: [...newPenjahit.mesin, { nama: "", jumlah: "" }],
-              })
-              
-            }
-          >
-             <FaPlus /> Tambah Mesin
-          </button>
-        </div>
-
-        {/* KTP (Upload File) */}
-        <div className="form-group">
-          <label>Upload KTP</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) =>
-              setNewPenjahit({ ...newPenjahit, ktp: e.target.files[0] })
-            }
-          />
-        </div>
-
-        <div className="form-actions">
-        <button type="submit" className="btn btn-submit">
-        {newPenjahit.id_penjahit ? "Update" : "Simpan"}
-      </button>
-
-        <button
             type="button"
-            className="btn btn-cancel"
-            onClick={() => setShowForm(false)}
-          >
-            Batal
-        </button>
+            className="penjahit-modal-backdrop"
+            onClick={resetFormState}
+            aria-label="Tutup form penjahit"
+          />
+
+          <div className="penjahit-modal form-modal">
+            <div className="penjahit-modal-header">
+              <div>
+                <span className="penjahit-label">{newPenjahit.id ? "Edit" : "Tambah"}</span>
+                <h3>{newPenjahit.id ? "Edit Penjahit" : "Tambah Penjahit"}</h3>
+                <p>Lengkapi informasi utama dan pembayaran.</p>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={resetFormState}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <form
+              className="penjahit-form"
+              onSubmit={newPenjahit.id ? handleFormUpdate : handleFormSubmit}
+            >
+              <div className="form-grid">
+                <label className="field-group">
+                  <span>Nama Penjahit</span>
+                  <input
+                    type="text"
+                    value={newPenjahit.nama_penjahit}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        nama_penjahit: event.target.value,
+                      })
+                    }
+                    placeholder="Masukkan nama penjahit"
+                    required
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Kontak</span>
+                  <input
+                    type="text"
+                    value={newPenjahit.kontak}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        kontak: event.target.value,
+                      })
+                    }
+                    placeholder="Nomor telepon"
+                    required
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Kategori Penjahit</span>
+                  <input
+                    type="text"
+                    value={newPenjahit.kategori_penjahit}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        kategori_penjahit: event.target.value,
+                      })
+                    }
+                    placeholder="Contoh: CMT"
+                    required
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Jumlah Tim</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newPenjahit.jumlah_tim}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        jumlah_tim: event.target.value,
+                      })
+                    }
+                    placeholder="0"
+                    required
+                  />
+                </label>
+
+                <label className="field-group full-width">
+                  <span>Alamat</span>
+                  <textarea
+                    value={newPenjahit.alamat}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        alamat: event.target.value,
+                      })
+                    }
+                    placeholder="Masukkan alamat lengkap"
+                    required
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Nama Bank</span>
+                  <input
+                    type="text"
+                    value={newPenjahit.bank}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        bank: event.target.value,
+                      })
+                    }
+                    placeholder="Contoh: BCA"
+                    required
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>No. Rekening</span>
+                  <input
+                    type="text"
+                    value={newPenjahit.no_rekening}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        no_rekening: event.target.value,
+                      })
+                    }
+                    placeholder="Masukkan nomor rekening"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="form-section-inline">
+                <div>
+                  <h4>Data Mesin</h4>
+                  <p>Tambahkan bila perlu.</p>
+                </div>
+                <button
+                  type="button"
+                  className="penjahit-secondary-btn"
+                  onClick={() =>
+                    setNewPenjahit({
+                      ...newPenjahit,
+                      mesin: [...newPenjahit.mesin, { nama: "", jumlah: "" }],
+                    })
+                  }
+                >
+                  <FiPlus size={16} />
+                  Tambah Mesin
+                </button>
+              </div>
+
+              {newPenjahit.mesin.length > 0 ? (
+                <div className="mesin-form-list">
+                  {newPenjahit.mesin.map((item, index) => (
+                    <div className="mesin-form-row" key={`mesin-${index}`}>
+                      <label className="field-group">
+                        <span>Nama Mesin</span>
+                        <input
+                          type="text"
+                          value={item.nama}
+                          onChange={(event) =>
+                            handleMesinChange(index, "nama", event.target.value)
+                          }
+                          placeholder="Nama mesin"
+                          required
+                        />
+                      </label>
+
+                      <label className="field-group small-field">
+                        <span>Jumlah</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.jumlah}
+                          onChange={(event) =>
+                            handleMesinChange(index, "jumlah", event.target.value)
+                          }
+                          placeholder="0"
+                          required
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        className="penjahit-text-btn"
+                        onClick={() => handleRemoveMesin(index)}
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="simple-empty-box">Belum ada data mesin.</div>
+              )}
+
+              <label className="field-group">
+                <span>Upload KTP</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setNewPenjahit({
+                      ...newPenjahit,
+                      ktp: event.target.files?.[0] || null,
+                    })
+                  }
+                />
+              </label>
+
+              <div className="form-footer">
+                <button
+                  type="button"
+                  className="penjahit-secondary-ghost"
+                  onClick={resetFormState}
+                >
+                  Batal
+                </button>
+                <button type="submit" className="penjahit-primary-btn">
+                  <FiCheckCircle size={18} />
+                  {newPenjahit.id ? "Simpan Perubahan" : "Simpan Data"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </form>
+      )}
     </div>
-  </div>
-)}
-        </div>
-</div>|
-</div>
   );
 };
 
 export default Penjahit;
+
