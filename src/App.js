@@ -19,7 +19,7 @@ import Kinerja2 from "./components/Jahit/Kinerja2";
 import DashboardCmt from "./components/Jahit/DashboardCmt";
 import DataDikerjakanPengirimanCmt from "./components/Jahit/DataDikerjakanPengirimanCmt";
 import Produk from "./components/Jahit/Produk";
-import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakan";
+import KodeSeriBelumDikerjakan from "./components/Jahit/KodeSeriBelumDikerjakanPage";
 
 import HistoryPendapatan from "./components/Jahit/HistoryPendapatan";
 import Aksesoris from "./components/Jahit/Aksesoris";
