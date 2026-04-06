@@ -9,6 +9,8 @@ import API from "../../api";
 import { FaMicrophone, FaArrowUp, FaArrowDown, FaStop, FaImage, FaPlus, FaSave, FaTimes, FaPaperPlane, FaBell, FaHistory, FaEdit, FaClock, FaInfoCircle, FaBarcode } from "react-icons/fa";
 import Select from "react-select";
 
+const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js";
+
 const SpkCmt = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +21,7 @@ const SpkCmt = () => {
   const [newMessage, setNewMessage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -28,6 +31,7 @@ const SpkCmt = () => {
   const [showModal, setShowModal] = useState(false);
   const [pengirimanDetails, setPengirimanDetails] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [showNotifPopup, setShowNotifPopup] = useState(false);
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
   const [showStatusForm, setShowStatusForm] = useState(false);
   const [penjahitList, setPenjahitList] = useState([]);
@@ -69,6 +73,7 @@ const SpkCmt = () => {
   const [showLogDeadline, setShowLogDeadline] = useState(false);
   const [logDeadline, setLogDeadline] = useState([]);
   const [loadingLog, setLoadingLog] = useState(false);
+  const [selectedLogSpkId, setSelectedLogSpkId] = useState(null);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [pendingDays, setPendingDays] = useState("");
   const [loadingPending, setLoadingPending] = useState(false);
@@ -106,6 +111,136 @@ const SpkCmt = () => {
     harga_per_jasa: "",
     jenis_harga_jasa: "per_barang",
   });
+
+  const ensureSweetAlert = useCallback(
+    () =>
+      new Promise((resolve, reject) => {
+        if (window.Swal) {
+          resolve(window.Swal);
+          return;
+        }
+
+        const existingScript = document.querySelector('script[data-sweetalert2="cdn"]');
+        if (existingScript) {
+          existingScript.addEventListener("load", () => resolve(window.Swal), { once: true });
+          existingScript.addEventListener("error", reject, { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = SWEETALERT_CDN;
+        script.async = true;
+        script.setAttribute("data-sweetalert2", "cdn");
+        script.onload = () => resolve(window.Swal);
+        script.onerror = reject;
+        document.body.appendChild(script);
+      }),
+    []
+  );
+
+  const formatAlertMessage = useCallback((message, fallback = "Terjadi kesalahan") => {
+    if (!message) {
+      return fallback;
+    }
+
+    if (typeof message === "string") {
+      return message;
+    }
+
+    if (Array.isArray(message)) {
+      return message.join("\n");
+    }
+
+    if (typeof message === "object") {
+      return Object.values(message)
+        .flat()
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    return fallback;
+  }, []);
+
+  const showStatusAlert = useCallback(
+    async ({ icon = "info", title = "Informasi", text = "", toast = false, timer = 2200 }) => {
+      try {
+        const Swal = await ensureSweetAlert();
+        if (!Swal) {
+          throw new Error("SweetAlert2 tidak tersedia");
+        }
+
+        await Swal.fire({
+          icon,
+          title,
+          text,
+          toast,
+          position: toast ? "top-end" : "center",
+          timer: toast ? timer : undefined,
+          timerProgressBar: toast,
+          showConfirmButton: !toast,
+          confirmButtonText: "OK",
+          buttonsStyling: false,
+          customClass: {
+            popup: "spkcmt-swal-popup",
+            confirmButton: "spkcmt-swal-btn spkcmt-swal-btn-primary",
+          },
+        });
+
+        return true;
+      } catch (alertError) {
+        console.error("Gagal menampilkan SweetAlert:", alertError);
+        window.alert(text || title || "Terjadi kesalahan");
+        return false;
+      }
+    },
+    [ensureSweetAlert]
+  );
+
+  const refreshStatusCount = useCallback(async () => {
+    try {
+      const params = {};
+      if (selectedPenjahit) {
+        params.id_penjahit = selectedPenjahit;
+      }
+
+      const response = await API.get("/spk-cmt/status-count", { params });
+      setStatusCount(response.data);
+    } catch (error) {
+      console.error("Error fetching status count:", error);
+    }
+  }, [selectedPenjahit]);
+
+  const updateSpkInTable = useCallback((updatedSpk) => {
+    if (!updatedSpk?.id_spk) {
+      return;
+    }
+
+    setSpkCmtData((prev) => prev.map((spk) => (spk.id_spk === updatedSpk.id_spk ? { ...spk, ...updatedSpk } : spk)));
+  }, []);
+
+  const prependSpkToTable = useCallback(
+    (createdSpk) => {
+      if (!createdSpk?.id_spk) {
+        return;
+      }
+
+      setSpkCmtData((prev) => {
+        const deduped = prev.filter((spk) => spk.id_spk !== createdSpk.id_spk);
+
+        if (currentPage !== 1) {
+          return deduped;
+        }
+
+        const nextRows = [createdSpk, ...deduped];
+        return itemsPerPage > 0 ? nextRows.slice(0, itemsPerPage) : nextRows;
+      });
+
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    },
+    [currentPage, itemsPerPage]
+  );
 
   useEffect(() => {
     if (!newSpk.source_type) {
@@ -159,14 +294,21 @@ const SpkCmt = () => {
       console.error("Error fetching preview:", error);
       console.error("Error response:", error.response?.data); // Debug log
       setPreviewData(null);
-      // Tampilkan alert untuk user jika error
       if (error.response?.status === 404) {
-        alert("Data SPK Jasa tidak ditemukan");
+        await showStatusAlert({
+          icon: "warning",
+          title: "Data Tidak Ditemukan",
+          text: "Data SPK Jasa tidak ditemukan.",
+        });
       } else if (error.response?.data?.error) {
-        alert(`Error: ${error.response.data.error}`);
+        await showStatusAlert({
+          icon: "error",
+          title: "Preview Gagal Dimuat",
+          text: formatAlertMessage(error.response.data.error),
+        });
       }
     }
-  }, [newSpk.source_id, newSpk.source_type]);
+  }, [formatAlertMessage, newSpk.source_id, newSpk.source_type, showStatusAlert]);
 
   useEffect(() => {
     fetchPreview();
@@ -176,6 +318,15 @@ const SpkCmt = () => {
     value: produk.id,
     label: produk.nama_produk,
   }));
+
+  const sourceOptions = useMemo(() => {
+    const rawOptions = newSpk.source_type === "cutting" ? distribusiOptions : spkJasaOptions;
+
+    return rawOptions.map((option) => ({
+      ...option,
+      searchText: (option.search_text || `${option.label || ""} ${option.kode_seri || ""} ${option.nama_produk || ""} ${option.jumlah_produk || ""}`).toLowerCase(),
+    }));
+  }, [distribusiOptions, newSpk.source_type, spkJasaOptions]);
 
   const [newDeadline, setNewDeadline] = useState({
     deadline: "",
@@ -331,10 +482,12 @@ const SpkCmt = () => {
         if (response.data.spk?.data) {
           setSpkCmtData(response.data.spk.data);
           setLastPage(response.data.spk.last_page || 1);
+          setItemsPerPage(response.data.spk.per_page || response.data.spk.data.length || 10);
         } else {
           // Jika menggunakan get() bukan paginate()
           setSpkCmtData(response.data.spk || []);
           setLastPage(1);
+          setItemsPerPage(response.data.spk?.length || response.data.spk?.data?.length || 10);
         }
       } catch (error) {
         setError(error.response?.data?.message || "Failed to fetch data");
@@ -349,21 +502,8 @@ const SpkCmt = () => {
 
   // Fetch status count
   useEffect(() => {
-    const fetchStatusCount = async () => {
-      try {
-        const params = {};
-        if (selectedPenjahit) {
-          params.id_penjahit = selectedPenjahit;
-        }
-        const response = await API.get("/spk-cmt/status-count", { params });
-        setStatusCount(response.data);
-      } catch (error) {
-        console.error("Error fetching status count:", error);
-      }
-    };
-
-    fetchStatusCount();
-  }, [selectedPenjahit]);
+    refreshStatusCount();
+  }, [refreshStatusCount]);
 
   useEffect(() => {
     const fetchProduks = async () => {
@@ -693,11 +833,20 @@ const SpkCmt = () => {
         }
       );
       console.log(response.data);
-      alert("Staff berhasil diundang ke chat!");
+      await showStatusAlert({
+        icon: "success",
+        title: "Undangan Terkirim",
+        text: "Staff berhasil diundang ke chat SPK.",
+        toast: true,
+      });
       setShowInviteStaffModal(false); // Tutup modal setelah mengundang
     } catch (error) {
       console.error("Gagal mengundang staff:", error);
-      alert("Gagal mengundang staff.");
+      await showStatusAlert({
+        icon: "error",
+        title: "Undangan Gagal",
+        text: "Gagal mengundang staff ke chat.",
+      });
     }
   };
 
@@ -729,6 +878,7 @@ const SpkCmt = () => {
   };
 
   const handleLogDeadlineClick = async (idSpk) => {
+    setSelectedLogSpkId(idSpk);
     setShowLogDeadline(true);
     setLoadingLog(true);
 
@@ -737,6 +887,11 @@ const SpkCmt = () => {
       setLogDeadline(res.data);
     } catch (error) {
       console.error("Gagal mengambil log deadline", error);
+      await showStatusAlert({
+        icon: "error",
+        title: "Riwayat Deadline Gagal Dimuat",
+        text: formatAlertMessage(error.response?.data?.message || "Gagal mengambil log deadline."),
+      });
     } finally {
       setLoadingLog(false);
     }
@@ -750,16 +905,31 @@ const SpkCmt = () => {
       const response = await API.put(`/spk/${spkId}/deadline`, { deadline, keterangan });
 
       // Update state lokal dengan data baru
-      setSpkCmtData((prevSpkCmtData) => prevSpkCmtData.map((spk) => (spk.id_spk === spkId ? { ...spk, deadline, keterangan } : spk)));
+      updateSpkInTable({
+        ...selectedSpk,
+        id_spk: spkId,
+        deadline,
+        keterangan,
+      });
 
       // Tutup popup dan form setelah pembaruan selesai
       setShowPopup(false);
       setShowForm(false);
       setShowDeadlineForm(false);
 
-      alert(response.data.message); // Menampilkan pesan sukses
+      await showStatusAlert({
+        icon: "success",
+        title: "Deadline Diperbarui",
+        text: response.data.message || "Deadline berhasil diperbarui.",
+        toast: true,
+      });
+      refreshStatusCount();
     } catch (error) {
-      alert("Error: " + (error.response?.data?.message || error.message)); // Menampilkan error yang lebih jelas
+      await showStatusAlert({
+        icon: "error",
+        title: "Update Deadline Gagal",
+        text: formatAlertMessage(error.response?.data?.message || error.message),
+      });
     }
   };
 
@@ -771,14 +941,29 @@ const SpkCmt = () => {
       const response = await API.put(`/spk/${spkId}/status`, { status, keterangan });
 
       // Update state lokal dengan status baru
-      setSpkCmtData((prevSpkCmtData) => prevSpkCmtData.map((spk) => (spk.id_spk === spkId ? { ...spk, status, keterangan } : spk)));
+      updateSpkInTable({
+        ...selectedSpk,
+        id_spk: spkId,
+        status,
+        keterangan,
+      });
 
-      alert(response.data.message); // Menampilkan pesan sukses
+      await showStatusAlert({
+        icon: "success",
+        title: "Status Diperbarui",
+        text: response.data.message || "Status SPK berhasil diperbarui.",
+        toast: true,
+      });
       setShowPopup(false); // Menutup popup setelah status berhasil diperbarui
       setShowForm(false); // Menyembunyikan form update setelah berhasil
       setShowStatusForm(false); // Menutup form update status
+      refreshStatusCount();
     } catch (error) {
-      alert("Error: " + (error.response?.data?.message || error.message)); // Menampilkan pesan error yang lebih spesifik
+      await showStatusAlert({
+        icon: "error",
+        title: "Update Status Gagal",
+        text: formatAlertMessage(error.response?.data?.message || error.message),
+      });
     }
   };
 
@@ -790,21 +975,28 @@ const SpkCmt = () => {
       });
 
       // Update state lokal dengan status baru
-      setSpkCmtData((prevSpkCmtData) => prevSpkCmtData.map((spk) => (spk.id_spk === spkId ? { ...spk, status: newStatus } : spk)));
+      updateSpkInTable({
+        id_spk: spkId,
+        status: newStatus,
+      });
 
       // Refresh status count
-      const params = {};
-      if (selectedPenjahit) {
-        params.id_penjahit = selectedPenjahit;
-      }
-      const countResponse = await API.get("/spk-cmt/status-count", { params });
-      setStatusCount(countResponse.data);
+      await refreshStatusCount();
 
-      // Tampilkan notifikasi sukses (opsional)
       console.log("Status berhasil diupdate:", response.data.message);
+      await showStatusAlert({
+        icon: "success",
+        title: "Status Berhasil Diubah",
+        text: response.data.message || "Status SPK berhasil diperbarui.",
+        toast: true,
+      });
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Error: " + (error.response?.data?.message || error.message));
+      await showStatusAlert({
+        icon: "error",
+        title: "Update Status Gagal",
+        text: formatAlertMessage(error.response?.data?.message || error.message),
+      });
 
       // Revert perubahan jika error - refetch data dengan memanggil fetchSpkCmtData dari useCallback
       const fetchData = async () => {
@@ -824,9 +1016,11 @@ const SpkCmt = () => {
           if (response.data.spk?.data) {
             setSpkCmtData(response.data.spk.data);
             setLastPage(response.data.spk.last_page || 1);
+            setItemsPerPage(response.data.spk.per_page || response.data.spk.data.length || 10);
           } else {
             setSpkCmtData(response.data.spk || []);
             setLastPage(1);
+            setItemsPerPage(response.data.spk?.length || 10);
           }
         } catch (err) {
           console.error("Error refetching data:", err);
@@ -916,7 +1110,11 @@ const SpkCmt = () => {
     console.log("Selected SPK ID:", selectedSpk?.id_spk);
 
     if (!id) {
-      alert("Gagal update: ID SPK tidak ditemukan!");
+      await showStatusAlert({
+        icon: "error",
+        title: "Update Gagal",
+        text: "ID SPK tidak ditemukan.",
+      });
       return;
     }
 
@@ -966,16 +1164,30 @@ const SpkCmt = () => {
       console.log("SPK berhasil diupdate:", updatedSpk);
 
       setShowForm(false);
-      setSpkCmtData((prev) => prev.map((spk) => (spk.id_spk === updatedSpk.data.id_spk ? updatedSpk.data : spk)));
+      updateSpkInTable(updatedSpk.data);
+      refreshStatusCount();
 
-      alert("SPK berhasil diupdate!");
+      await showStatusAlert({
+        icon: "success",
+        title: "Data Berhasil Diperbarui",
+        text: "SPK berhasil diupdate.",
+        toast: true,
+      });
     } catch (error) {
       if (error.response) {
         console.error("Detail kesalahan:", error.response.data.errors);
-        alert("Validasi gagal: " + JSON.stringify(error.response.data.errors, null, 2));
+        await showStatusAlert({
+          icon: "error",
+          title: "Validasi Gagal",
+          text: formatAlertMessage(error.response.data.errors),
+        });
       } else {
         console.error("Terjadi kesalahan:", error);
-        alert("Error: " + error.message);
+        await showStatusAlert({
+          icon: "error",
+          title: "Update Gagal",
+          text: formatAlertMessage(error.message),
+        });
       }
     }
   };
@@ -1017,7 +1229,8 @@ const SpkCmt = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSpkCmtData((prev) => [...prev, response.data.data]);
+      prependSpkToTable(response.data.data);
+      refreshStatusCount();
       setShowForm(false);
       // Reset form
       setNewSpk({
@@ -1038,9 +1251,18 @@ const SpkCmt = () => {
       });
       setPreviewData(null);
 
-      alert("SPK CMT berhasil disimpan!");
+      await showStatusAlert({
+        icon: "success",
+        title: "Data Berhasil Ditambahkan",
+        text: "SPK CMT berhasil disimpan.",
+        toast: true,
+      });
     } catch (error) {
-      alert(error.response?.data?.message || error.message);
+      await showStatusAlert({
+        icon: "error",
+        title: "Simpan Data Gagal",
+        text: formatAlertMessage(error.response?.data?.message || error.message),
+      });
     }
   };
 
@@ -1061,9 +1283,19 @@ const SpkCmt = () => {
 
       // Hapus URL blob setelah selesai
       window.URL.revokeObjectURL(blobUrl);
+      await showStatusAlert({
+        icon: "success",
+        title: "Download Dimulai",
+        text: `File SPK #${id} sedang diunduh.`,
+        toast: true,
+      });
     } catch (error) {
       console.error("Error downloading file:", error);
-      alert(error.response?.data?.error || "Gagal mengunduh SPK.");
+      await showStatusAlert({
+        icon: "error",
+        title: "Download Gagal",
+        text: formatAlertMessage(error.response?.data?.error || "Gagal mengunduh SPK."),
+      });
     }
   };
 
@@ -1085,9 +1317,19 @@ const SpkCmt = () => {
 
       // Hapus URL blob setelah selesai
       window.URL.revokeObjectURL(blobUrl);
+      await showStatusAlert({
+        icon: "success",
+        title: "Download Barcode Dimulai",
+        text: `Barcode SPK #${id} sedang diunduh.`,
+        toast: true,
+      });
     } catch (error) {
       console.error("Error downloading barcode:", error);
-      alert(error.response?.data?.error || "Gagal mengunduh barcode SKU.");
+      await showStatusAlert({
+        icon: "error",
+        title: "Download Barcode Gagal",
+        text: formatAlertMessage(error.response?.data?.error || "Gagal mengunduh barcode SKU."),
+      });
     }
   };
 
@@ -1188,18 +1430,82 @@ const SpkCmt = () => {
     setShowForm(true); // Tampilkan form
   };
 
-  const statusColors = {
-    Pending: "orange",
-    Completed: "#93D7A9",
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "belum_diambil":
+        return "Belum Diambil";
+      case "sudah_diambil":
+        return "Sudah Diambil";
+      case "pending":
+        return "Pending";
+      case "Completed":
+        return "Completed";
+      default:
+        return status || "Belum Diambil";
+    }
   };
 
-  const getStatusColor = (status, sisaHari) => {
-    if (status === "In Progress" || status === "Pending") {
-      if (sisaHari >= 14) return "#A0DCDC"; // Hijau
-      if (sisaHari >= 7) return "#EF9651"; // Kuning
-      return "#A31D1D"; // Merah
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "belum_diambil":
+        return "#f59e0b";
+      case "sudah_diambil":
+        return "#2563eb";
+      case "pending":
+        return "#d97706";
+      case "Completed":
+        return "#059669";
+      default:
+        return "#64748b";
     }
-    return "#88BC78"; // Status lain
+  };
+
+  const getSisaHariColor = (sisaHari) => {
+    if (sisaHari === null || sisaHari === undefined || sisaHari === "") {
+      return "#64748b";
+    }
+
+    if (Number(sisaHari) < 0) {
+      return "#b91c1c";
+    }
+
+    if (Number(sisaHari) <= 3) {
+      return "#ea580c";
+    }
+
+    if (Number(sisaHari) <= 7) {
+      return "#ca8a04";
+    }
+
+    return "#0f766e";
+  };
+
+  const getDetailStatusClass = (status) => {
+    switch (status) {
+      case "belum_diambil":
+        return "spkcmt-detail-badge--warning";
+      case "sudah_diambil":
+        return "spkcmt-detail-badge--info";
+      case "pending":
+        return "spkcmt-detail-badge--danger";
+      case "Completed":
+        return "spkcmt-detail-badge--success";
+      default:
+        return "spkcmt-detail-badge--neutral";
+    }
+  };
+
+  const parseAksesorisItems = (aksesoris) => {
+    if (!aksesoris) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(aksesoris);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
   };
 
   const handlePengirimanDetailClick = (spk, type) => {
@@ -1241,7 +1547,11 @@ const SpkCmt = () => {
   };
   const submitPendingStatus = async () => {
     if (!pendingUntil) {
-      alert("Tanggal pending harus diisi");
+      await showStatusAlert({
+        icon: "warning",
+        title: "Tanggal Pending Wajib Diisi",
+        text: "Silakan pilih tanggal pending terlebih dahulu.",
+      });
       return;
     }
 
@@ -1254,425 +1564,409 @@ const SpkCmt = () => {
         alasan_pending: pendingNote || null,
       });
 
-      setSpkCmtData((prev) => prev.map((spk) => (spk.id_spk === selectedSpk.id_spk ? { ...spk, status: "pending" } : spk)));
+      updateSpkInTable({
+        ...selectedSpk,
+        status: "pending",
+        pending_until: pendingUntil,
+        alasan_pending: pendingNote || null,
+      });
 
       // Refresh status count
-      const params = {};
-      if (selectedPenjahit) {
-        params.id_penjahit = selectedPenjahit;
-      }
-      const countResponse = await API.get("/spk-cmt/status-count", { params });
-      setStatusCount(countResponse.data);
+      await refreshStatusCount();
 
       closePendingModal();
+      await showStatusAlert({
+        icon: "success",
+        title: "Status Pending Disimpan",
+        text: "Status pending berhasil diperbarui.",
+        toast: true,
+      });
     } catch (error) {
-      alert(error.response?.data?.message || "Gagal set pending");
+      await showStatusAlert({
+        icon: "error",
+        title: "Set Pending Gagal",
+        text: formatAlertMessage(error.response?.data?.message || "Gagal set pending"),
+      });
     } finally {
       setLoadingPending(false);
     }
   };
 
+  const activeFilterCount = [searchTerm, selectedStatus, selectedPenjahit, selectedProduk, selectedKategori].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setSelectedStatus("");
+    setSelectedPenjahit("");
+    setSelectedProduk("");
+    setSelectedKategori("");
+    setSelectedSisaHari("");
+    setDeadlineStatusFilter("");
+    setKirimMingguIniFilter("");
+    setCurrentPage(1);
+    setSearchParams({});
+  };
+
+  const totalSpkOverview = (statusCount.belum_diambil || 0) + (statusCount.sudah_diambil || 0) + (statusCount.pending || 0) + (statusCount.completed || 0);
+  const detailSkuList = selectedSpk?.skus || [];
+  const detailWarnaList = selectedSpk?.warna || [];
+  const detailAksesorisList = parseAksesorisItems(selectedSpk?.aksesoris);
+  const detailStatusLabel = selectedSpk ? getStatusLabel(selectedSpk.status) : "-";
+  const detailStatusClass = selectedSpk ? getDetailStatusClass(selectedSpk.status) : "spkcmt-detail-badge--neutral";
+  const detailPendingInfo = selectedSpk?.status === "pending" && selectedSpk?.pending_until ? formatTanggal(selectedSpk.pending_until) : "-";
+
   return (
-    <div className="spkcmt-container">
-      <div className="spkcmt-header">
-        <h1>📋 Data SPK CMT</h1>
-        <div
-          className="notif-wrapper"
-          onClick={() => {
-            setShowPopup(!showPopup);
-            if (!showPopup) {
-              markNotificationsAsRead();
-            }
-          }}
-        >
-          <FaBell className="notif-icon" />
-          {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-        </div>
-
-        {showPopup && (
-          <div className="spkcmt-notif-popup" onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: "20px", borderBottom: "2px solid #f0f0f0" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#667eea" }}>🔔 Notifikasi</h3>
+    <div className="spkcmt-page">
+      <div className="spkcmt-shell">
+        <header className="spkcmt-topbar">
+          <div className="spkcmt-title-group">
+            <div className="spkcmt-brand-icon">
+              <FaBarcode />
             </div>
-            {notifications.length > 0 ? (
-              <ul className="spkcmt-notif-list">
-                {notifications.map((notif) => (
-                  <li key={notif.id} className="spkcmt-notif-item">
-                    <div className="spkcmt-notif-text">
-                      <strong>User ID:</strong> {notif.user_id} <br />
-                      <strong>SPK ID:</strong> {notif.spk_id} <br />
-                      <strong>Pesan:</strong> {notif.text}
-                    </div>
-                    <span className="spkcmt-notif-time">{notif.time}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>
-                <p style={{ margin: 0 }}>Belum ada notifikasi baru.</p>
-              </div>
-            )}
+            <div className="spkcmt-title-wrap">
+              <div className="spkcmt-module-pill">CMT Module</div>
+              <h1>Data SPK CMT</h1>
+              <p className="spkcmt-header-subtitle">Manajemen SPK CMT, deadline produksi, pengiriman, dan dokumen kerja</p>
+            </div>
+          </div>
 
+          <div className="spkcmt-header-actions">
+            <div className="spkcmt-search-wrap">
+              <input
+                type="text"
+                className="spkcmt-search-input"
+                placeholder="Cari nama produk, nomor seri, atau penjahit..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button type="button" className="spkcmt-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
+                  x
+                </button>
+              )}
+            </div>
             <button
-              className="spkcmt-notif-clear-btn"
+              type="button"
+              className="notif-wrapper"
               onClick={() => {
-                setNotifications([]);
-                localStorage.removeItem("notifications");
+                setShowNotifPopup((prev) => !prev);
+                if (!showNotifPopup) {
+                  markNotificationsAsRead();
+                }
               }}
             >
-              Hapus Notifikasi
+              <FaBell className="notif-icon" />
+              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
             </button>
           </div>
-        )}
-      </div>
 
-      {/* Status Count Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px",
-          padding: "0 16px",
-        }}
-      >
-        <div
-          style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            borderRadius: "12px",
-            padding: "20px",
-            color: "white",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "transform 0.2s ease",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-          onClick={() => setSelectedStatus("belum_diambil")}
-        >
-          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Belum Diambil</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.belum_diambil || 0}</div>
-        </div>
+          {showNotifPopup && (
+            <div className="spkcmt-notif-popup" onClick={(e) => e.stopPropagation()}>
+              <div className="spkcmt-notif-popup-header">
+                <div>
+                  <span className="spkcmt-panel-eyebrow">Notification Center</span>
+                  <h3>Aktivitas Terbaru</h3>
+                </div>
+              </div>
+              {notifications.length > 0 ? (
+                <ul className="spkcmt-notif-list">
+                  {notifications.map((notif) => (
+                    <li key={notif.id} className="spkcmt-notif-item">
+                      <div className="spkcmt-notif-text">
+                        <strong>SPK #{notif.spk_id}</strong>
+                        <span>{notif.text}</span>
+                        <small>User ID: {notif.user_id}</small>
+                      </div>
+                      <span className="spkcmt-notif-time">{notif.time}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="spkcmt-empty-inline">Belum ada notifikasi baru.</div>
+              )}
 
-        <div
-          style={{
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            borderRadius: "12px",
-            padding: "20px",
-            color: "white",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "transform 0.2s ease",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-          onClick={() => setSelectedStatus("sudah_diambil")}
-        >
-          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Sudah Diambil</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.sudah_diambil || 0}</div>
-        </div>
+              <button
+                type="button"
+                className="spkcmt-notif-clear-btn"
+                onClick={() => {
+                  setNotifications([]);
+                  localStorage.removeItem("notifications");
+                }}
+              >
+                Hapus Notifikasi
+              </button>
+            </div>
+          )}
+        </header>
+        <main className="spkcmt-main">
+          <section className="spkcmt-stats">
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Total SPK</div>
+              <div className="spkcmt-stat-value">{totalSpkOverview}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Belum Diambil</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-warning">{statusCount.belum_diambil || 0}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Pending</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-danger">{statusCount.pending || 0}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Completed</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-success">{statusCount.completed || 0}</div>
+            </article>
+          </section>
 
-        <div
-          style={{
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            borderRadius: "12px",
-            padding: "20px",
-            color: "white",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "transform 0.2s ease",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-          onClick={() => setSelectedStatus("pending")}
-        >
-          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Pending</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.pending || 0}</div>
-        </div>
+          <section className="spkcmt-table-wrapper">
+            <div className="spkcmt-table-header">
+              <div>
+                <h3>Semua Data SPK CMT</h3>
+                <p>{activeFilterCount > 0 ? `Menampilkan ${filteredSpk.length} data sesuai filter` : `Menampilkan ${filteredSpk.length} data pada halaman ini`}</p>
+              </div>
+              <button type="button" className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
+                <FaPlus /> Tambah SPK CMT
+              </button>
+            </div>
 
-        <div
-          style={{
-            background: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
-            borderRadius: "12px",
-            padding: "20px",
-            color: "white",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "transform 0.2s ease",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-          onClick={() => setSelectedStatus("Completed")}
-        >
-          <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>Completed</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold" }}>{statusCount.completed || 0}</div>
-        </div>
-      </div>
+            <div className="spkcmt-filter-section">
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Status SPK</option>
+                  <option value="belum_diambil">Belum Diambil</option>
+                  <option value="sudah_diambil">Sudah Diambil</option>
+                  <option value="pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                {selectedStatus && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
+                    {getStatusLabel(selectedStatus)} x
+                  </span>
+                )}
+              </div>
 
-      <div className="spkcmt-filters">
-        <button className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
-          <FaPlus /> Tambah SPK CMT
-        </button>
-        <div className="spkcmt-search">
-          <i className="fas fa-search spkcmt-search-icon"></i>
-          <input type="text" placeholder="Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
-        <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="spkcmt-filter-select">
-          <option value="">All Status</option>
-          <option value="belum_diambil">Belum Diambil</option>
-          <option value="sudah_diambil">Sudah Diambil</option>
-          <option value="pending">Pending</option>
-          <option value="Completed">Completed</option>
-        </select>
-        <select value={selectedPenjahit} onChange={(e) => setSelectedPenjahit(e.target.value)} className="spkcmt-filter-select">
-          <option value="">All CMT</option>
-          {penjahitList.map((penjahit) => (
-            <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-              {penjahit.nama_penjahit}
-            </option>
-          ))}
-        </select>
-        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="spkcmt-filter-select">
-          <option value="asc">Terlama</option>
-          <option value="desc">Terbaru</option>
-        </select>
-        <select value={selectedProduk} onChange={(e) => setSelectedProduk(e.target.value)} className="spkcmt-filter-select">
-          <option value="">All Produk</option>
-          {produkList.map((produk) => (
-            <option key={produk.id} value={produk.id}>
-              {produk.nama_produk}
-            </option>
-          ))}
-        </select>
-        <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="spkcmt-filter-select">
-          <option value="">All Status Produk</option>
-          {kategoriList.map((kategori, index) => (
-            <option key={index} value={kategori}>
-              {kategori}
-            </option>
-          ))}
-        </select>
-      </div>
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedPenjahit} onChange={(e) => setSelectedPenjahit(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Penjahit</option>
+                  {penjahitList.map((penjahit) => (
+                    <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                      {penjahit.nama_penjahit}
+                    </option>
+                  ))}
+                </select>
+                {selectedPenjahit && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedPenjahit("")} title="Hapus filter">
+                    CMT x
+                  </span>
+                )}
+              </div>
 
-      <div className="spkcmt-table-container" style={{ overflowX: "auto", width: "100%" }}>
-        <table className="spkcmt-table spkcmt-table-responsive" style={{ width: "100%", minWidth: "auto", borderCollapse: "separate", borderSpacing: 0 }}>
-          <thead>
-            <tr>
-              <th style={{ padding: "12px 5px", width: "45px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>ID</th>
-              <th style={{ padding: "12px 8px", minWidth: "200px", maxWidth: "250px", textAlign: "left", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>Nama Baju</th>
-              <th style={{ padding: "12px 5px", width: "90px", textAlign: "left", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>Penjahit</th>
-              <th style={{ padding: "12px 5px", width: "85px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-                  <span>Sisa Hari</span>
-                  <button
-                    onClick={handleOrderChange}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: "2px",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      color: "white",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    {sortOrder === "asc" ? <FaArrowDown size={11} /> : <FaArrowUp size={11} />}
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedProduk} onChange={(e) => setSelectedProduk(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Produk</option>
+                  {produkList.map((produk) => (
+                    <option key={produk.id} value={produk.id}>
+                      {produk.nama_produk}
+                    </option>
+                  ))}
+                </select>
+                {selectedProduk && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedProduk("")} title="Hapus filter">
+                    Produk x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Kategori</option>
+                  {kategoriList.map((kategori, index) => (
+                    <option key={index} value={kategori}>
+                      {kategori}
+                    </option>
+                  ))}
+                </select>
+                {selectedKategori && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
+                    Kategori x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="spkcmt-filter-select">
+                  <option value="desc">Urutan Terbaru</option>
+                  <option value="asc">Urutan Terlama</option>
+                </select>
+              </div>
+
+              {activeFilterCount > 0 && (
+                <button type="button" className="spkcmt-btn-secondary" onClick={resetFilters}>
+                  Reset Filter
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="spkcmt-loading">
+                <div className="spkcmt-spinner"></div>
+                <div className="spkcmt-loading-title">Memuat data SPK CMT...</div>
+                <div className="spkcmt-loading-subtitle">Mohon tunggu sebentar</div>
+              </div>
+            ) : error ? (
+              <div className="spkcmt-empty-state spkcmt-empty-block">
+                <div className="spkcmt-empty-icon">!</div>
+                <h3 className="spkcmt-empty-title error">Terjadi Kesalahan</h3>
+                <p className="spkcmt-empty-text">{error}</p>
+                <button type="button" className="spkcmt-btn-primary" onClick={() => window.location.reload()}>
+                  Muat Ulang Halaman
+                </button>
+              </div>
+            ) : filteredSpk.length === 0 ? (
+              <div className="spkcmt-empty-state spkcmt-empty-block">
+                <div className="spkcmt-empty-icon">-</div>
+                <h3 className="spkcmt-empty-title">Belum Ada Data SPK CMT</h3>
+                <p className="spkcmt-empty-text">
+                  {searchTerm || selectedStatus || selectedPenjahit || selectedProduk || selectedKategori
+                    ? "Tidak ada SPK yang sesuai dengan filter yang Anda pilih"
+                    : "Mulai dengan menambahkan SPK CMT pertama Anda"}
+                </p>
+                {activeFilterCount > 0 && (
+                  <button type="button" className="spkcmt-btn-secondary" onClick={resetFilters}>
+                    Hapus Filter
+                  </button>
+                )}
+                {activeFilterCount === 0 && (
+                  <button type="button" className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
+                    <FaPlus /> Tambah SPK Pertama
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="spkcmt-table-scroll">
+                  <table className="spkcmt-table spkcmt-table-responsive">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Nama Baju</th>
+                        <th>Penjahit</th>
+                        <th>
+                          <button type="button" className="spkcmt-sort-trigger" onClick={handleOrderChange}>
+                            <span>Sisa Hari</span>
+                            {sortOrder === "asc" ? <FaArrowDown size={11} /> : <FaArrowUp size={11} />}
+                          </button>
+                        </th>
+                        <th>Waktu</th>
+                        <th className="spkcmt-text-right">Jml Produk</th>
+                        <th className="spkcmt-text-right">Jml Kirim</th>
+                        <th className="spkcmt-text-right">Sisa</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSpk.map((spk, index) => {
+                        const latestPengiriman = spk.pengiriman?.length ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1) : null;
+                        const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
+                        const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+
+                        return (
+                          <tr key={spk.id_spk}>
+                            <td>
+                              <strong className="spkcmt-row-id">{rowNumber}</strong>
+                            </td>
+                            <td>
+                              <div className="spkcmt-row-product">
+                                <strong>{spk.nama_produk || "-"}</strong>
+                                <span>{spk.nomor_seri ? `Nomor seri ${spk.nomor_seri}` : "Nomor seri belum tersedia"}</span>
+                              </div>
+                            </td>
+                            <td>{spk.penjahit?.nama_penjahit || "-"}</td>
+                            <td>
+                              <span className="spkcmt-day-badge" style={{ color: getSisaHariColor(spk.sisa_hari) }}>
+                                {spk.sisa_hari ?? "-"}
+                              </span>
+                            </td>
+                            <td>{spk.waktu_pengerjaan ?? "-"}</td>
+                            <td className="spkcmt-text-right">{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</td>
+                            <td className="spkcmt-text-right">
+                              <button type="button" onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")} className="spkcmt-chip-button spkcmt-chip-button--indigo" title="Klik untuk detail pengiriman">
+                                {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
+                              </button>
+                            </td>
+                            <td className="spkcmt-text-right">
+                              <button type="button" onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} className="spkcmt-chip-button spkcmt-chip-button--emerald" title="Klik untuk detail sisa barang">
+                                {sisaBarang.toLocaleString("id-ID")}
+                              </button>
+                            </td>
+                            <td>
+                              <select
+                                value={spk.status || "belum_diambil"}
+                                onChange={(e) => {
+                                  const newStatus = e.target.value;
+
+                                  if (newStatus === "pending") {
+                                    openPendingModal(spk);
+                                  } else {
+                                    handleStatusChangeDirect(spk.id_spk, newStatus);
+                                  }
+                                }}
+                                className="spkcmt-status-select"
+                                style={{ backgroundColor: getStatusColor(spk.status) }}
+                                title={getStatusLabel(spk.status)}
+                              >
+                                <option value="belum_diambil">Belum Diambil</option>
+                                <option value="sudah_diambil">Sudah Diambil</option>
+                                <option value="pending">Pending</option>
+                                <option value="Completed">Completed</option>
+                              </select>
+                            </td>
+                            <td>
+                              <div className="spkcmt-action-group">
+                                <button type="button" className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleDetailClick(spk)} title="Detail">
+                                  <FaInfoCircle size={13} />
+                                </button>
+                                <button type="button" className="spkcmt-btn-icon spkcmt-btn-icon-deadline" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline">
+                                  <FaClock size={13} />
+                                </button>
+                                <button type="button" className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit">
+                                  <FaEdit size={13} />
+                                </button>
+                                <button type="button" className="spkcmt-btn-icon spkcmt-btn-icon-log" onClick={() => handleLogDeadlineClick(spk.id_spk)} title="Log Deadline">
+                                  <FaHistory size={13} />
+                                </button>
+                                <button type="button" onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF">
+                                  <FaSave size={13} />
+                                </button>
+                                <button type="button" onClick={() => downloadBarcodePdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-barcode" title="Download Barcode SKU">
+                                  <FaBarcode size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="spkcmt-pagination">
+                  <button type="button" className="spkcmt-pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                    Prev
+                  </button>
+                  <span className="spkcmt-pagination-info">
+                    Halaman {currentPage} dari {lastPage}
+                  </span>
+                  <button type="button" className="spkcmt-pagination-btn" disabled={currentPage === lastPage} onClick={() => setCurrentPage(currentPage + 1)}>
+                    Next
                   </button>
                 </div>
-              </th>
-              <th style={{ padding: "12px 5px", width: "60px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Waktu Pengerjaan">WAKTU</th>
-              <th style={{ padding: "12px 5px", width: "85px", textAlign: "right", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Jumlah Produk">JML PRODUK</th>
-              <th style={{ padding: "12px 5px", width: "90px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Jumlah Dikirim">JML KIRIM</th>
-              <th style={{ padding: "12px 5px", width: "65px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }} title="Sisa Barang">SISA</th>
-              <th style={{ padding: "12px 5px", width: "120px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>STATUS</th>
-              <th style={{ padding: "12px 5px", width: "170px", textAlign: "center", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>AKSI</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSpk.map((spk) => {
-              // Hitung sisa barang terbaru dari pengiriman
-              const latestPengiriman = spk.pengiriman?.length ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1) : null;
-              const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
-
-              return (
-                <tr key={spk.id_spk}>
-                  <td style={{ padding: "10px 5px", textAlign: "center", fontWeight: "600", fontSize: "13px" }}>{spk.id_spk}</td>
-                  <td style={{ padding: "10px 8px", maxWidth: "250px", wordWrap: "break-word", lineHeight: "1.5" }}>
-                    <strong style={{ fontSize: "13px" }}>{(spk.nama_produk || "–") + (spk.nomor_seri ? ` / ${spk.nomor_seri}` : "")}</strong>
-                  </td>
-                  <td style={{ padding: "10px 5px", fontSize: "13px" }}>{spk.penjahit?.nama_penjahit || "–"}</td>
-                  <td
-                    style={{
-                      padding: "10px 5px",
-                      color: getStatusColor(spk.status, spk.sisa_hari),
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {spk.sisa_hari ?? "–"}
-                  </td>
-                  <td style={{ padding: "10px 5px", textAlign: "center", fontSize: "13px", fontWeight: "500" }}>{spk.waktu_pengerjaan ?? "–"}</td>
-                  <td style={{ padding: "10px 5px", textAlign: "right", fontSize: "13px" }}>
-                    <strong>{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</strong>
-                  </td>
-                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
-                    <button
-                      onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")}
-                      style={{
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        color: "white",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "12px",
-                        minWidth: "50px",
-                        whiteSpace: "nowrap",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                      title="Klik untuk detail pengiriman"
-                    >
-                      {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
-                    </button>
-                  </td>
-                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
-                    <button
-                      onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")}
-                      style={{
-                        background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                        color: "white",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "12px",
-                        minWidth: "50px",
-                        whiteSpace: "nowrap",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                      title="Klik untuk detail sisa barang"
-                    >
-                      {sisaBarang.toLocaleString("id-ID")}
-                    </button>
-                  </td>
-                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
-                    <select
-                      value={spk.status || "belum_diambil"}
-                      onChange={(e) => {
-                        const newStatus = e.target.value;
-
-                        if (newStatus === "pending") {
-                          // 🔥 buka modal pending, JANGAN update status dulu
-                          openPendingModal(spk);
-                        } else {
-                          // ✅ status normal → update langsung
-                          handleStatusChangeDirect(spk.id_spk, newStatus);
-                        }
-                      }}
-                      className="spkcmt-status-select"
-                      style={{
-                        backgroundColor: getStatusColor(spk.status, spk.sisa_hari),
-                        color: "white",
-                        border: "2px solid transparent",
-                        padding: "6px 8px",
-                        borderRadius: "6px",
-                        fontWeight: "600",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        width: "100%",
-                        maxWidth: "115px",
-                        outline: "none",
-                        transition: "all 0.2s ease",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                      title={spk.status === "belum_diambil" ? "Belum Diambil" : spk.status === "sudah_diambil" ? "Sudah Diambil" : spk.status || "Belum Diambil"}
-                    >
-                      <option value="belum_diambil">Belum Diambil</option>
-                      <option value="sudah_diambil">Sudah Diambil</option>
-                      <option value="pending">Pending</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </td>
-
-                  {/* Kolom Aksi — Termasuk Download */}
-                  <td style={{ padding: "10px 5px", textAlign: "center" }}>
-                    <div className="spkcmt-action-group" style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleDetailClick(spk)} title="Detail" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                        <FaInfoCircle size={13} />
-                      </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-info" onClick={() => handleUpdateDeadlineClick(spk)} title="Update Deadline" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                        <FaClock size={13} />
-                      </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-edit" onClick={() => handleEditClick(spk)} title="Edit" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                        <FaEdit size={13} />
-                      </button>
-                      <button className="spkcmt-btn-icon spkcmt-btn-icon-log" onClick={() => handleLogDeadlineClick(spk.id_spk)} title="Log Deadline" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                        <FaHistory size={13} />
-                      </button>
-                      {/* ✅ Tombol Download PDF */}
-                      <button onClick={() => downloadPdf(spk.id_spk)} className="spkcmt-btn-icon spkcmt-btn-icon-download" title="Download PDF" style={{ minWidth: "30px", minHeight: "30px", display: "flex", alignItems: "center", justifyContent: "center", padding: "5px" }}>
-                        <FaSave size={13} />
-                      </button>
-                      {/* ✅ Tombol Download Barcode SKU */}
-                      <button
-                        onClick={() => downloadBarcodePdf(spk.id_spk)}
-                        className="spkcmt-btn-icon spkcmt-btn-icon-download"
-                        title="Download Barcode SKU"
-                        style={{
-                          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                          minWidth: "30px",
-                          minHeight: "30px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "5px"
-                        }}
-                      >
-                        <FaBarcode size={13} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </>
+            )}
+          </section>
+        </main>
       </div>
-      {/* Pagination */}
-      <div className="spkcmt-pagination">
-        <button className="spkcmt-pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
-          ◀ Prev
-        </button>
-        <span className="spkcmt-pagination-info">
-          Halaman {currentPage} dari {lastPage}
-        </span>
-        <button className="spkcmt-pagination-btn" disabled={currentPage === lastPage} onClick={() => setCurrentPage(currentPage + 1)}>
-          Next ▶
-        </button>
-      </div>
-
       {showChatPopup && (
         <div className="spkcmt-chat-overlay" onClick={handleCloseChat}>
           <div className="spkcmt-chat-popup" onClick={(e) => e.stopPropagation()}>
@@ -1930,51 +2224,18 @@ const SpkCmt = () => {
         <div className="spkcmt-detail-popup" onClick={closePopup}>
           <div className="spkcmt-detail-card" onClick={(e) => e.stopPropagation()}>
             <div className="spkcmt-detail-header">
-              <h2>📋 Detail SPK</h2>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                {/* Tombol Download PDF */}
-                <button
-                  onClick={() => {
-                    downloadPdf(selectedSpk.id_spk);
-                  }}
-                  style={{
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    fontSize: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                  title="Download PDF"
-                >
+              <div className="spkcmt-detail-title">
+                <span className="spkcmt-detail-eyebrow">SPK CMT Overview</span>
+                <h2>Detail SPK #{selectedSpk.id_spk}</h2>
+                <p>{selectedSpk.nama_produk || "Produk belum memiliki nama"}</p>
+              </div>
+
+              <div className="spkcmt-detail-actions">
+                <button type="button" className="spkcmt-detail-action spkcmt-detail-action--pdf" onClick={() => downloadPdf(selectedSpk.id_spk)} title="Download PDF">
                   <FaSave size={14} /> PDF
                 </button>
-                {/* Tombol Download Barcode */}
-                {selectedSpk.skus && selectedSpk.skus.length > 0 && (
-                  <button
-                    onClick={() => {
-                      downloadBarcodePdf(selectedSpk.id_spk);
-                    }}
-                    style={{
-                      background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                      color: "white",
-                      border: "none",
-                      padding: "8px 16px",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                      fontSize: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    title="Download Barcode SKU"
-                  >
+                {detailSkuList.length > 0 && (
+                  <button type="button" className="spkcmt-detail-action spkcmt-detail-action--barcode" onClick={() => downloadBarcodePdf(selectedSpk.id_spk)} title="Download Barcode SKU">
                     <FaBarcode size={14} /> Barcode
                   </button>
                 )}
@@ -1985,155 +2246,168 @@ const SpkCmt = () => {
             </div>
 
             <div className="spkcmt-detail-content">
-              {/* Gambar Produk */}
-              <div>
-                {selectedSpk.gambar_produk ? (
-                  <img src={`http://localhost:8000/storage/${selectedSpk.gambar_produk}`} alt="Gambar Produk" className="spkcmt-detail-image" />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "300px",
-                      background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)",
-                      borderRadius: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#999",
-                      fontSize: "16px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    No Image
+              <aside className="spkcmt-detail-aside">
+                <div className="spkcmt-detail-visual-card">
+                  {selectedSpk.gambar_produk ? (
+                    <img src={`http://localhost:8000/storage/${selectedSpk.gambar_produk}`} alt="Gambar Produk" className="spkcmt-detail-image" />
+                  ) : (
+                    <div className="spkcmt-detail-image-placeholder">
+                      <span>Preview Produk</span>
+                      <strong>Belum ada gambar</strong>
+                    </div>
+                  )}
+
+                  <div className="spkcmt-detail-product-meta">
+                    <h3>{selectedSpk.nama_produk || "Produk belum tersedia"}</h3>
+                    <p>{selectedSpk.nomor_seri ? `Nomor seri ${selectedSpk.nomor_seri}` : "Nomor seri belum tersedia"}</p>
+
+                    <div className="spkcmt-detail-badges">
+                      <span className={`spkcmt-detail-badge ${detailStatusClass}`}>{detailStatusLabel}</span>
+                      <span className="spkcmt-detail-badge spkcmt-detail-badge--neutral">{(selectedSpk.jumlah_produk || 0).toLocaleString("id-ID")} pcs</span>
+                      <span className="spkcmt-detail-badge spkcmt-detail-badge--neutral">{selectedSpk.penjahit?.nama_penjahit || "Penjahit belum dipilih"}</span>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              {/* Detail Produk */}
-              <div className="spkcmt-detail-info">
-                <div className="spkcmt-detail-item">
-                  <strong>Nama Produk</strong>
-                  <span>{selectedSpk.nama_produk || "–"}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Jumlah Produk</strong>
-                  <span>{(selectedSpk.jumlah_produk || 0).toLocaleString("id-ID")}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Total Harga</strong>
-                  <span>{formatRupiah(selectedSpk.total_harga)}</span>
                 </div>
 
-                <div className="spkcmt-detail-item">
-                  <strong>Harga Barang</strong>
-                  <span>{formatRupiah(selectedSpk.harga_per_barang)}</span>
+                <div className="spkcmt-detail-summary-grid">
+                  <div className="spkcmt-detail-summary-card">
+                    <span>Total Nilai</span>
+                    <strong>{formatRupiahDisplay(selectedSpk.total_harga || 0)}</strong>
+                  </div>
+                  <div className="spkcmt-detail-summary-card">
+                    <span>Harga Barang</span>
+                    <strong>{formatRupiahDisplay(selectedSpk.harga_per_barang || 0)}</strong>
+                  </div>
+                  <div className="spkcmt-detail-summary-card">
+                    <span>Harga Jasa / PCS</span>
+                    <strong>{formatRupiahDisplay(selectedSpk.harga_per_jasa || 0)}</strong>
+                  </div>
+                  <div className="spkcmt-detail-summary-card">
+                    <span>Deadline</span>
+                    <strong>{selectedSpk.deadline ? formatTanggal(selectedSpk.deadline) : "-"}</strong>
+                  </div>
                 </div>
+              </aside>
 
-                <div className="spkcmt-detail-item">
-                  <strong>Harga Jasa</strong>
-                  <span>{formatRupiah(selectedSpk.harga_per_jasa)} / PCS</span>
-                </div>
+              <div className="spkcmt-detail-main">
+                <section className="spkcmt-detail-section">
+                  <div className="spkcmt-detail-section-header">
+                    <div>
+                      <span className="spkcmt-detail-eyebrow">Informasi Produksi</span>
+                      <h3>Ringkasan Operasional</h3>
+                    </div>
+                  </div>
 
-                <div className="spkcmt-detail-item">
-                  <strong>Warna</strong>
-                  <span>{selectedSpk.warna && selectedSpk.warna.length > 0 ? selectedSpk.warna.map((w) => `${w.nama_warna} (${w.qty})`).join(", ") : "Tidak ada"}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>SKU</strong>
-                  <span>
-                    {selectedSpk.skus && selectedSpk.skus.length > 0 ? (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
-                        {selectedSpk.skus.map((sku, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              color: "white",
-                              padding: "4px 10px",
-                              borderRadius: "6px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {sku.sku}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      "Tidak ada"
+                  <div className="spkcmt-detail-info-grid">
+                    <div className="spkcmt-detail-item">
+                      <strong>Nama Produk</strong>
+                      <span>{selectedSpk.nama_produk || "-"}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Penjahit</strong>
+                      <span>{selectedSpk.penjahit?.nama_penjahit || "-"}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Jumlah Produk</strong>
+                      <span>{(selectedSpk.jumlah_produk || 0).toLocaleString("id-ID")} pcs</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Waktu Pengerjaan</strong>
+                      <span>{selectedSpk.waktu_pengerjaan || "-"}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Tanggal SPK</strong>
+                      <span>{selectedSpk.created_at ? formatTanggal(selectedSpk.created_at) : "-"}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Deadline</strong>
+                      <span>{selectedSpk.deadline ? formatTanggal(selectedSpk.deadline) : "-"}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Status</strong>
+                      <span>{detailStatusLabel}</span>
+                    </div>
+                    <div className="spkcmt-detail-item">
+                      <strong>Merek</strong>
+                      <span>{selectedSpk.merek || "-"}</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="spkcmt-detail-section">
+                  <div className="spkcmt-detail-section-header">
+                    <div>
+                      <span className="spkcmt-detail-eyebrow">Varian Produk</span>
+                      <h3>Warna dan SKU</h3>
+                    </div>
+                  </div>
+
+                  <div className="spkcmt-detail-stack">
+                    <div className="spkcmt-detail-item">
+                      <strong>Komposisi Warna</strong>
+                      <span>{detailWarnaList.length > 0 ? detailWarnaList.map((warna) => `${warna.nama_warna} (${warna.qty})`).join(", ") : "Tidak ada data warna"}</span>
+                    </div>
+
+                    <div className="spkcmt-detail-item">
+                      <strong>Daftar SKU</strong>
+                      {detailSkuList.length > 0 ? (
+                        <div className="spkcmt-detail-sku-list">
+                          {detailSkuList.map((sku, index) => (
+                            <span key={`${sku.sku}-${index}`} className="spkcmt-detail-sku-chip">
+                              {sku.sku}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>Tidak ada SKU</span>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="spkcmt-detail-section">
+                  <div className="spkcmt-detail-section-header">
+                    <div>
+                      <span className="spkcmt-detail-eyebrow">Pendukung Produksi</span>
+                      <h3>Aksesoris dan Catatan</h3>
+                    </div>
+                  </div>
+
+                  <div className="spkcmt-detail-stack">
+                    <div className="spkcmt-detail-item">
+                      <strong>Aksesoris</strong>
+                      {detailAksesorisList.length > 0 ? (
+                        <div className="spkcmt-detail-sku-list">
+                          {detailAksesorisList.map((item, index) => (
+                            <span key={`${item.nama || "aksesoris"}-${index}`} className="spkcmt-detail-sku-chip spkcmt-detail-sku-chip--soft">
+                              {`${item.nama || "Aksesoris"} (${item.jumlah || 0} ${item.satuan || "pcs"})`}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>{selectedSpk.aksesoris || "Tidak ada aksesoris"}</span>
+                      )}
+                    </div>
+
+                    <div className="spkcmt-detail-item">
+                      <strong>Catatan</strong>
+                      <span>{selectedSpk.catatan || "Tidak ada catatan tambahan"}</span>
+                    </div>
+
+                    {selectedSpk.status === "pending" && (
+                      <>
+                        <div className="spkcmt-detail-item">
+                          <strong>Pending Sampai</strong>
+                          <span>{detailPendingInfo}</span>
+                        </div>
+                        <div className="spkcmt-detail-item">
+                          <strong>Alasan Pending</strong>
+                          <span>{selectedSpk.alasan_pending || "Belum ada alasan pending"}</span>
+                        </div>
+                      </>
                     )}
-                  </span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Tanggal SPK</strong>
-                  <span>
-                    {selectedSpk.created_at
-                      ? new Date(selectedSpk.created_at).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                      : "–"}
-                  </span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Deadline</strong>
-                  <span>
-                    {selectedSpk.deadline
-                      ? new Date(selectedSpk.deadline).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                      : "–"}
-                  </span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Status</strong>
-                  <span>{selectedSpk.status || "–"}</span>
-                </div>
-                {selectedSpk.status === "pending" && selectedSpk.pending_until && (
-                  <div className="spkcmt-detail-item">
-                    <strong>Pending Sampai</strong>
-                    <span>
-                      {new Date(selectedSpk.pending_until).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
                   </div>
-                )}
-                {selectedSpk.status === "pending" && selectedSpk.alasan_pending && (
-                  <div className="spkcmt-detail-item">
-                    <strong>Alasan Pending</strong>
-                    <span>{selectedSpk.alasan_pending}</span>
-                  </div>
-                )}
-                <div className="spkcmt-detail-item">
-                  <strong>Merek</strong>
-                  <span>{selectedSpk.merek || "–"}</span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Aksesoris</strong>
-                  <span>
-                    {(() => {
-                      try {
-                        const parsed = JSON.parse(selectedSpk.aksesoris);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
-                          return parsed.map((item) => `${item.nama} (${item.jumlah} ${item.satuan})`).join(", ");
-                        }
-                        return selectedSpk.aksesoris || "–";
-                      } catch (e) {
-                        return selectedSpk.aksesoris || "–";
-                      }
-                    })()}
-                  </span>
-                </div>
-                <div className="spkcmt-detail-item">
-                  <strong>Catatan</strong>
-                  <span>{selectedSpk.catatan || "–"}</span>
-                </div>
+                </section>
               </div>
             </div>
           </div>
@@ -2303,19 +2577,36 @@ const SpkCmt = () => {
                     <label className="spkcmt-form-label">{newSpk.source_type === "cutting" ? "Distribusi Cutting" : "SPK Jasa"}</label>
 
                     <Select
-                      options={newSpk.source_type === "cutting" ? distribusiOptions : spkJasaOptions}
-                      value={newSpk.source_type === "cutting" ? distribusiOptions.find((opt) => opt.value === newSpk.source_id) || null : spkJasaOptions.find((opt) => opt.value === newSpk.source_id) || null}
+                      options={sourceOptions}
+                      value={sourceOptions.find((opt) => opt.value === newSpk.source_id) || null}
                       onChange={(selected) =>
                         setNewSpk({
                           ...newSpk,
                           source_id: selected ? selected.value : "",
                         })
                       }
-                      placeholder="Pilih atau cari..."
+                      placeholder={newSpk.source_type === "cutting" ? "Cari kode distribusi, nama produk, atau jumlah..." : "Cari SPK jasa atau kode seri..."}
                       isSearchable
                       isClearable
                       isLoading={loadingSource}
                       isDisabled={loadingSource}
+                      filterOption={(candidate, inputValue) => {
+                        const query = inputValue.trim().toLowerCase();
+                        if (!query) return true;
+                        return candidate.data.searchText?.includes(query);
+                      }}
+                      formatOptionLabel={(option, { context }) => {
+                        if (context === "value") {
+                          return option.label;
+                        }
+
+                        return (
+                          <div className="spkcmt-source-option">
+                            <strong>{option.label}</strong>
+                            {option.subtitle && <span>{option.subtitle}</span>}
+                          </div>
+                        );
+                      }}
                       noOptionsMessage={({ inputValue }) => {
                         if (loadingSource) return "Memuat data...";
                         if (inputValue) return `Tidak ditemukan untuk "${inputValue}"`;
@@ -2324,24 +2615,44 @@ const SpkCmt = () => {
                       styles={{
                         control: (base) => ({
                           ...base,
-                          minHeight: "40px",
-                          border: "1px solid #ddd",
-                          borderRadius: "8px",
+                          minHeight: "46px",
+                          border: "1px solid #cfd8e3",
+                          borderRadius: "12px",
                           fontSize: "14px",
+                          boxShadow: "none",
                           "&:hover": {
-                            borderColor: "#667eea",
+                            borderColor: "#2458ce",
                           },
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          padding: "10px 12px",
+                          backgroundColor: state.isFocused ? "#eef4ff" : "#ffffff",
+                          color: "#0f172a",
                         }),
                         menu: (base) => ({
                           ...base,
                           zIndex: 9999,
+                          border: "1px solid #dbe5f1",
+                          borderRadius: "14px",
+                          overflow: "hidden",
+                          boxShadow: "0 18px 36px -26px rgba(15, 23, 42, 0.35)",
                         }),
                         placeholder: (base) => ({
                           ...base,
-                          color: "#999",
+                          color: "#94a3b8",
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          color: "#0f172a",
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          color: "#0f172a",
                         }),
                       }}
                     />
+                    <small className="spkcmt-field-hint">Ketik kode distribusi seperti `AR-05A`, nama produk, atau jumlah pcs untuk mempercepat pencarian.</small>
                   </div>
                 )}
 
@@ -2606,40 +2917,75 @@ const SpkCmt = () => {
       )}
 
       {showLogDeadline && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h4>Riwayat Perubahan Deadline</h4>
-              <button onClick={() => setShowLogDeadline(false)}>✕</button>
+        <div className="spkcmt-modal-overlay" onClick={() => setShowLogDeadline(false)}>
+          <div className="spkcmt-modal spkcmt-log-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="spkcmt-modal-header spkcmt-log-modal-header">
+              <div className="spkcmt-log-modal-title">
+                <span className="spkcmt-detail-eyebrow">Deadline Audit Trail</span>
+                <h3>Riwayat Perubahan Deadline</h3>
+                <p>{selectedLogSpkId ? `SPK #${selectedLogSpkId}` : "Riwayat perubahan jadwal produksi"}</p>
+              </div>
+              <button className="spkcmt-modal-close" onClick={() => setShowLogDeadline(false)}>
+                <FaTimes />
+              </button>
             </div>
 
-            <div className="modal-body">
+            <div className="spkcmt-modal-body spkcmt-log-modal-body">
               {loadingLog ? (
-                <p>Loading...</p>
+                <div className="spkcmt-log-state">
+                  <div className="spkcmt-loading-spinner" />
+                  <strong>Memuat riwayat deadline</strong>
+                  <span>Data perubahan deadline sedang disiapkan.</span>
+                </div>
               ) : Array.isArray(logDeadline) && logDeadline.length === 0 ? (
-                <p>Tidak ada log deadline</p>
+                <div className="spkcmt-log-state spkcmt-log-state--empty">
+                  <div className="spkcmt-log-state-icon">DL</div>
+                  <strong>Belum ada riwayat deadline</strong>
+                  <span>Perubahan deadline untuk SPK ini belum pernah dicatat.</span>
+                </div>
               ) : (
-                <table className="log-deadline-table">
-                  <thead>
-                    <tr>
-                      <th>Deadline Lama</th>
-                      <th>Deadline Baru</th>
-                      <th>Tanggal</th>
-                      <th>Keterangan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logDeadline.map((log) => (
-                      <tr key={log.id_log}>
-                        <td>{log.deadline_lama}</td>
-                        <td>{log.deadline_baru}</td>
-                        <td>{log.tanggal_aktivitas}</td>
-                        <td>{log.keterangan}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <>
+                  <div className="spkcmt-log-summary">
+                    <div className="spkcmt-log-summary-card">
+                      <span>Total Perubahan</span>
+                      <strong>{logDeadline.length}</strong>
+                    </div>
+                    <div className="spkcmt-log-summary-card">
+                      <span>Perubahan Terakhir</span>
+                      <strong>{logDeadline[0]?.tanggal_aktivitas ? formatTanggal(logDeadline[0].tanggal_aktivitas) : "-"}</strong>
+                    </div>
+                  </div>
+
+                  <div className="spkcmt-log-table-wrap">
+                    <table className="spkcmt-log-table">
+                      <thead>
+                        <tr>
+                          <th>Deadline Lama</th>
+                          <th>Deadline Baru</th>
+                          <th>Tanggal Perubahan</th>
+                          <th>Keterangan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {logDeadline.map((log) => (
+                          <tr key={log.id_log}>
+                            <td>{log.deadline_lama ? formatTanggal(log.deadline_lama) : "-"}</td>
+                            <td>{log.deadline_baru ? formatTanggal(log.deadline_baru) : "-"}</td>
+                            <td>{log.tanggal_aktivitas ? formatTanggal(log.tanggal_aktivitas) : "-"}</td>
+                            <td>{log.keterangan || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
+
+              <div className="spkcmt-form-actions spkcmt-log-actions">
+                <button className="spkcmt-btn-cancel" onClick={() => setShowLogDeadline(false)}>
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
