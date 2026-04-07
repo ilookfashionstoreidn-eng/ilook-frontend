@@ -69,6 +69,10 @@ import Sku from "./components/Jahit/Sku";
 import GudangProduk from "./components/Bahan/GudangProduk";
 import StokGudangProduk from "./components/Bahan/StokGudangProduk";
 import PickingQueue from "./components/Bahan/PickingQueue";
+import MasterGudangProduk from "./components/Bahan/MasterGudangProduk";
+import InputSkuGudang from "./components/Bahan/InputSkuGudang";
+import StokLokasiGudang from "./components/Bahan/StokLokasiGudang";
+import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
 import QCLolos from "./components/QC/QCLolos";
@@ -152,6 +156,10 @@ const App = () => {
           <Route path="laporanhasil" element={<LaporanHasil />} />
           <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
           <Route path="sku" element={<Sku />} />
+          <Route path="master-gudang-produk" element={<MasterGudangProduk />} />
+          <Route path="input-sku-gudang" element={<InputSkuGudang />} />
+          <Route path="stok-lokasi-gudang" element={<StokLokasiGudang />} />
+          <Route path="mutasi-gudang-produk" element={<MutasiGudangProduk />} />
           <Route path="gudang-produk" element={<GudangProduk />} />
           <Route path="stok-gudang-produk" element={<StokGudangProduk />} />
           <Route path="picking-queue" element={<PickingQueue />} />

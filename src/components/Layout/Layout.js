@@ -558,20 +558,54 @@ const Layout = () => {
 
 
             <li>
-              <div onClick={toggleGudangProdukMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang-produk" ? "active" : ""}`}>
+              <div
+                onClick={toggleGudangProdukMenu}
+                className={`sidebar-link dropdown-toggle ${[
+                  "master-gudang-produk",
+                  "input-sku-gudang",
+                  "stok-lokasi-gudang",
+                  "mutasi-gudang-produk",
+                  "gudang-produk",
+                  "stok-gudang-produk",
+                  "picking-queue",
+                ].includes(activeMenu)
+                    ? "active"
+                    : ""
+                  }`}
+              >
                 <FaShoppingBag className="icon" /> Gudang Produk
                 <span className={`arrow ${isGudangProdukOpen ? "open" : ""}`}>{isGudangProdukOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
               {isGudangProdukOpen && (
                 <ul className="dropdown-menu show">
                   <li>
+                    <Link to="master-gudang-produk" className={`dropdown-link ${activeMenu === "master-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("master-gudang-produk")}>
+                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Master Layout
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="input-sku-gudang" className={`dropdown-link ${activeMenu === "input-sku-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("input-sku-gudang")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input SKU Gudang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-lokasi-gudang" className={`dropdown-link ${activeMenu === "stok-lokasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("stok-lokasi-gudang")}>
+                      <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok per Lokasi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="mutasi-gudang-produk" className={`dropdown-link ${activeMenu === "mutasi-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("mutasi-gudang-produk")}>
+                      <FaBoxOpen className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Mutasi Gudang
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="gudang-produk" className={`dropdown-link ${activeMenu === "gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("gudang-produk")}>
-                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk
+                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk Lama
                     </Link>
                   </li>
                   <li>
                     <Link to="stok-gudang-produk" className={`dropdown-link ${activeMenu === "stok-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-gudang-produk")}>
-                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Produk
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Lama
                     </Link>
                   </li>
                   <li>
