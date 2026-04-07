@@ -5,6 +5,15 @@ import { FaBarcode, FaCheck, FaQrcode } from "react-icons/fa";
 import { useRef } from "react";
 import { FiCheckCircle, FiPackage, FiSearch } from "react-icons/fi";
 
+const isOrderReadyForValidation = (items) =>
+  items.length > 0 &&
+  items.every(
+    (item) =>
+      item.scanned_qty === item.ordered_qty &&
+      item.serials.length === item.ordered_qty &&
+      item.serials.every((serial) => serial && serial.trim() !== "")
+  );
+
 const Packing = () => {
  const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState(null);
@@ -13,11 +22,20 @@ const Packing = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [nomorSeri, setNomorSeri] = useState("");
+  const trackingInputRef = useRef(null);
   const barcodeInputRef = useRef(null);
   const serialInputRefs = useRef({});
   const submitButtonRef = useRef(null);
   const [canSubmitByEnter, setCanSubmitByEnter] = useState(false);
+  const [isSubmittingValidation, setIsSubmittingValidation] = useState(false);
 const [prevSerials, setPrevSerials] = useState({});
+
+  const focusTrackingInput = () => {
+    setTimeout(() => {
+      trackingInputRef.current?.focus();
+      trackingInputRef.current?.select();
+    }, 50);
+  };
 
 
 
@@ -43,6 +61,7 @@ const handleSearchOrder = async () => {
   if (!trackingNumber) return;
   setLoading(true);
   setMessage("");
+  setCanSubmitByEnter(false);
 
   try {
     const response = await API.get(`/orders/tracking/${trackingNumber}`);
@@ -86,7 +105,7 @@ const handleSearchOrder = async () => {
 
 
  const handleScanBarcode = (e) => {
-  e.preventDefault();
+  e?.preventDefault();
   const barcode = scannedBarcode.trim();
   if (!barcode) return;
 
@@ -164,15 +183,35 @@ const handleSearchOrder = async () => {
   
   setScannedItems(updatedItems);
   setScannedBarcode("");
+  const readyToSubmit = isOrderReadyForValidation(updatedItems);
+  setCanSubmitByEnter(readyToSubmit);
 
   // Focus ke input barcode berikutnya setelah scan berhasil
   setTimeout(() => {
+    if (readyToSubmit) {
+      submitButtonRef.current?.focus();
+      return;
+    }
+
     barcodeInputRef.current?.focus();
   }, 50);
 };
 
+  const handleBarcodeInputKeyDown = (e) => {
+    if (e.key !== "Enter") return;
+
+    e.preventDefault();
+
+    if (canSubmitByEnter && !scannedBarcode.trim()) {
+      handleSubmitValidation();
+      return;
+    }
+
+    handleScanBarcode();
+  };
+
   const handleSubmitValidation = async () => {
-  if (!order) return;
+  if (!order || isSubmittingValidation) return;
 
   // Validasi semua item sudah lengkap
   for (let item of scannedItems) {
@@ -199,6 +238,8 @@ const handleSearchOrder = async () => {
       return;
     }
   }
+
+  setIsSubmittingValidation(true);
 
   try {
     // Kirim semua item yang sudah lengkap (harus semua item dari order)
@@ -240,6 +281,9 @@ const handleSearchOrder = async () => {
     setOrder(null);
     setScannedItems([]);
     setTrackingNumber("");
+    setScannedBarcode("");
+    setCanSubmitByEnter(false);
+    focusTrackingInput();
 
   } catch (error) {
     // Tampilkan error message yang lebih detail
@@ -259,6 +303,8 @@ const handleSearchOrder = async () => {
     
     setMessage(errorMessage);
     playSound("error");
+  } finally {
+    setIsSubmittingValidation(false);
   }
 };
 
@@ -289,6 +335,7 @@ const handleSearchOrder = async () => {
 
               <div className="tracking-input-wrapper">
         <input
+          ref={trackingInputRef}
           type="text"
           placeholder="Scan / masukkan Tracking Number..."
           value={trackingNumber}
@@ -402,16 +449,14 @@ const handleSearchOrder = async () => {
                     updated[idx].serials.every(s => s.trim() !== "");
 
                   if (!isCurrentItemComplete) {
+                    setCanSubmitByEnter(false);
                     setTimeout(() => {
                       barcodeInputRef.current?.focus();
                     }, 50);
                     return;
                   }
 
-                  const allSkuComplete = updated.every(item =>
-                    item.serials.length === item.ordered_qty &&
-                    item.serials.every(s => s.trim() !== "")
-                  );
+                  const allSkuComplete = isOrderReadyForValidation(updated);
 
                  if (allSkuComplete) {
                   setTimeout(() => {
@@ -420,6 +465,7 @@ const handleSearchOrder = async () => {
                   }, 50);
                   }
                   else {
+                    setCanSubmitByEnter(false);
                     setTimeout(() => {
                     barcodeInputRef.current?.focus();
                     }, 50);
@@ -460,12 +506,7 @@ const handleSearchOrder = async () => {
             placeholder="Scan SPK CMT Barcode..."
             value={scannedBarcode}
             onChange={(e) => setScannedBarcode(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleScanBarcode(e);
-              }
-            }}
+            onKeyDown={handleBarcodeInputKeyDown}
             ref={barcodeInputRef}
             autoFocus
           />
@@ -475,16 +516,13 @@ const handleSearchOrder = async () => {
 
           <div className="packing-actions">
            <button
+            type="button"
             ref={submitButtonRef}
             className="btn-validate"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && canSubmitByEnter) {
-                handleSubmitValidation();
-              }
-            }}
+            disabled={isSubmittingValidation}
             onClick={handleSubmitValidation}
           >
-            Submit Validasi
+            {isSubmittingValidation ? "Memvalidasi..." : "Submit Validasi"}
           </button>
 
 
@@ -492,6 +530,10 @@ const handleSearchOrder = async () => {
               onClick={() => {
                 setOrder(null);
                 setScannedItems([]);
+                setTrackingNumber("");
+                setScannedBarcode("");
+                setCanSubmitByEnter(false);
+                focusTrackingInput();
               }}
               className="btn-cancel"
             >
