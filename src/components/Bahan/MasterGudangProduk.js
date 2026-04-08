@@ -128,6 +128,28 @@ const MasterGudangProduk = () => {
   const selectedLayoutSummary = selectedLayout
     ? countLayoutSummary(selectedLayout, stockSummaryBySlot)
     : { slotCount: 0, filledSlotCount: 0, totalQty: 0 };
+  const selectedLayoutStructure = selectedLayout
+    ? selectedLayout.floors.reduce(
+        (summary, floor) => {
+          const blockCount = floor.blocks?.length || 0;
+          const rackCount = (floor.blocks || []).reduce(
+            (rackTotal, block) => rackTotal + (block.racks?.length || 0),
+            0
+          );
+
+          return {
+            blockCount: summary.blockCount + blockCount,
+            rackCount: summary.rackCount + rackCount,
+          };
+        },
+        { blockCount: 0, rackCount: 0 }
+      )
+    : { blockCount: 0, rackCount: 0 };
+  const selectedFloorRackCount = (selectedFloor?.blocks || []).reduce(
+    (rackTotal, block) => rackTotal + (block.racks?.length || 0),
+    0
+  );
+  const selectedBlockRackCount = selectedBlock?.racks?.length || 0;
 
   const persistSelectedLayout = async (updater, successMessage = "") => {
     if (!selectedLayout) return;
@@ -495,14 +517,15 @@ const MasterGudangProduk = () => {
         <GudangStatCard label="Total Qty" value={globalSummary.totalQty} helper="stok aktif saat ini" />
       </div>
 
-      <div className="gudang-ui-grid two-columns">
-        <div className="gudang-ui-grid">
-          <section className="gudang-ui-panel">
+      <div className="gudang-ui-grid two-columns gudang-master-shell">
+        <div className="gudang-ui-grid gudang-master-sidebar">
+          <section className="gudang-ui-panel gudang-master-sidebar-panel">
             <div className="gudang-ui-panel-head">
               <div>
-                <h2>Gudang Produk</h2>
-                <p>Pilih gudang untuk mengedit layout visualnya.</p>
+                <h2>Daftar Gudang</h2>
+                <p>Pilih master yang akan dikelola pada workspace aktif.</p>
               </div>
+              <span className="gudang-ui-badge placement">{state.layouts.length} gudang</span>
             </div>
 
             <div className="gudang-ui-list">
@@ -521,18 +544,18 @@ const MasterGudangProduk = () => {
                       {buildLayoutOptionLabel(layout)}
                     </span>
                   </div>
-                  <p>{layout.description || layout.address || "Belum ada deskripsi."}</p>
+                  <p>{layout.description || layout.address || "Belum ada catatan gudang."}</p>
                   <small>PIC: {layout.pic || "-"}</small>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="gudang-ui-form-card">
+          <section className="gudang-ui-form-card gudang-master-sidebar-panel">
             <div className="gudang-ui-panel-head">
               <div>
-                <h3>Tambah Gudang Baru</h3>
-                <p>Data akan langsung disimpan ke backend sebagai master baru.</p>
+                <h3>Gudang Baru</h3>
+                <p>Tambahkan master baru tanpa meninggalkan halaman ini.</p>
               </div>
             </div>
 
@@ -589,33 +612,65 @@ const MasterGudangProduk = () => {
           </section>
         </div>
 
-        <div className="gudang-ui-grid">
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>{selectedLayout?.name || "Belum ada gudang dipilih"}</h2>
-                <p>
-                  {selectedLayout?.description || selectedLayout?.address || "Pilih gudang untuk mulai mengatur layout."}
-                </p>
-              </div>
-            </div>
+        <div className="gudang-ui-grid gudang-master-main">
+          <section className="gudang-ui-panel gudang-master-overview-panel">
 
             {selectedLayout ? (
               <>
-                <div className="gudang-ui-chip-row">
-                  <span className="gudang-ui-chip">{selectedLayout.floors.length} lantai</span>
-                  <span className="gudang-ui-chip">{selectedLayoutSummary.slotCount} slot</span>
-                  <span className="gudang-ui-chip">{selectedLayoutSummary.filledSlotCount} slot terisi</span>
-                  <span className="gudang-ui-chip">{selectedLayoutSummary.totalQty} pcs aktif</span>
+                <div className="gudang-master-overview">
+                  <div className="gudang-master-overview-main">
+                    <span className="gudang-master-kicker">Gudang Aktif</span>
+                    <h2>{selectedLayout.name}</h2>
+                    <p>
+                      {selectedLayout.description || selectedLayout.address || "Struktur gudang siap dikelola dari panel operasional di bawah."}
+                    </p>
+
+                    <div className="gudang-master-meta-row">
+                      <span>Alamat: {selectedLayout.address || "-"}</span>
+                      <span>PIC: {selectedLayout.pic || "-"}</span>
+                      <span>Lantai aktif: {selectedFloor?.label || "-"}</span>
+                      <span>Blok aktif: {selectedBlock?.label || "-"}</span>
+                    </div>
+
+                    <div className="gudang-ui-chip-row gudang-master-chip-row">
+                      <span className="gudang-ui-chip">{selectedLayout.floors.length} lantai</span>
+                      <span className="gudang-ui-chip">{selectedLayoutStructure.blockCount} blok</span>
+                      <span className="gudang-ui-chip">{selectedLayoutStructure.rackCount} rak</span>
+                      <span className="gudang-ui-chip">{selectedLayoutSummary.slotCount} slot</span>
+                    </div>
+                  </div>
+
+                  <div className="gudang-master-overview-stats">
+                    <div className="gudang-master-overview-stat">
+                      <span>Slot Terisi</span>
+                      <strong>{selectedLayoutSummary.filledSlotCount}</strong>
+                      <small>lokasi punya stok aktif</small>
+                    </div>
+                    <div className="gudang-master-overview-stat">
+                      <span>Total Qty</span>
+                      <strong>{selectedLayoutSummary.totalQty}</strong>
+                      <small>qty aktif pada layout ini</small>
+                    </div>
+                    <div className="gudang-master-overview-stat">
+                      <span>Lantai Dipilih</span>
+                      <strong>{selectedFloor ? selectedFloor.number : "-"}</strong>
+                      <small>{selectedFloorRackCount} rak pada lantai aktif</small>
+                    </div>
+                    <div className="gudang-master-overview-stat">
+                      <span>Blok Dipilih</span>
+                      <strong>{selectedBlock?.code || "-"}</strong>
+                      <small>{selectedBlockRackCount} rak pada blok aktif</small>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="gudang-ui-grid split-hero" style={{ marginTop: 18 }}>
+                <div className="gudang-ui-grid split-hero gudang-master-form-grid" style={{ marginTop: 18 }}>
                   <div className="gudang-ui-grid">
                     <section className="gudang-ui-form-card">
                       <div className="gudang-ui-section-head">
                         <div>
                           <h3>Tambah Lantai</h3>
-                          <p>Setiap lantai bisa punya beberapa blok.</p>
+                          <p>Nomor lantai disimpan sebagai struktur dasar gudang.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddFloor}>
@@ -653,11 +708,11 @@ const MasterGudangProduk = () => {
                     <section className="gudang-ui-form-card">
                       <div className="gudang-ui-section-head">
                         <div>
-                          <h3>Lantai Aktif</h3>
-                          <p>Pilih lantai untuk menambahkan blok dan rak.</p>
+                          <h3>Struktur Lantai</h3>
+                          <p>Pilih lantai kerja untuk pengelolaan blok dan rak.</p>
                         </div>
                       </div>
-                      <div className="gudang-ui-list">
+                      <div className="gudang-ui-list gudang-master-floor-list">
                         {(selectedLayout.floors || []).map((floor) => (
                           <div
                             key={floor.id}
@@ -692,7 +747,7 @@ const MasterGudangProduk = () => {
                       <div className="gudang-ui-section-head">
                         <div>
                           <h3>Tambah Blok</h3>
-                          <p>Tambahkan blok di lantai yang sedang dipilih.</p>
+                          <p>Blok akan ditempatkan pada lantai yang sedang dipilih.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddBlock}>
@@ -732,7 +787,7 @@ const MasterGudangProduk = () => {
                       <div className="gudang-ui-section-head">
                         <div>
                           <h3>Tambah Rak</h3>
-                          <p>Set jumlah baris, lalu sistem generate slot otomatis.</p>
+                          <p>Rak baru otomatis menyiapkan slot sesuai jumlah baris.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddRack}>
@@ -783,18 +838,18 @@ const MasterGudangProduk = () => {
                   </div>
                 </div>
 
-                <div className="gudang-ui-grid split-hero" style={{ marginTop: 18 }}>
-                  <section className="gudang-ui-panel">
+                <div className="gudang-master-workspace-grid" style={{ marginTop: 18 }}>
+                  <section className="gudang-ui-panel gudang-master-operations-panel">
                     <div className="gudang-ui-section-head">
                       <div>
-                        <h3>Blok dan Rak Aktif</h3>
-                        <p>Kelola blok pada lantai yang sedang dipilih.</p>
+                        <h3>Struktur Blok dan Rak</h3>
+                        <p>Kelola isi lantai aktif dari satu panel kerja.</p>
                       </div>
                     </div>
 
                     {selectedFloor ? (
-                      <div className="gudang-ui-grid">
-                        <div className="gudang-ui-list">
+                      <div className="gudang-ui-grid gudang-master-scroll-region">
+                        <div className="gudang-ui-list gudang-master-block-list">
                           {(selectedFloor.blocks || []).map((block) => (
                             <div
                               key={block.id}
@@ -816,30 +871,63 @@ const MasterGudangProduk = () => {
                                   <FaTrash />
                                 </button>
                               </div>
-                              <small>{(block.racks || []).length} rak</small>
+                              <div className="gudang-ui-block-summary">
+                                <small>{(block.racks || []).length} rak</small>
+                                {block.id === selectedBlock?.id ? (
+                                  <span className="gudang-ui-chip">Dipilih</span>
+                                ) : null}
+                              </div>
 
-                              {block.id === selectedBlock?.id && block.racks?.length ? (
-                                <div className="gudang-ui-list" style={{ marginTop: 10 }}>
-                                  {block.racks.map((rack) => (
-                                    <div key={rack.id} className="gudang-ui-detail-box">
-                                      <div className="gudang-ui-list-item-head">
-                                        <div>
-                                          <h4>
-                                            Rak {String(rack.number).padStart(2, "0")}
-                                          </h4>
-                                          <small>{rack.rows} baris | {rack.label}</small>
-                                        </div>
-                                        <button
-                                          type="button"
-                                          className="gudang-ui-icon-button"
-                                          onClick={() => deleteRack(rack.id)}
-                                        >
-                                          <FaTrash />
-                                        </button>
-                                      </div>
+                              {block.id === selectedBlock?.id ? (
+                                block.racks?.length ? (
+                                  <div className="gudang-ui-rack-collection">
+                                    <div className="gudang-ui-rack-collection-head">
+                                      <span className="gudang-ui-badge placement">
+                                        {block.racks.length} rak aktif
+                                      </span>
+                                      <small className="gudang-ui-rack-collection-note">
+                                        Ditampilkan ringkas untuk menjaga area kerja tetap rapi.
+                                      </small>
                                     </div>
-                                  ))}
-                                </div>
+
+                                    <div className="gudang-ui-rack-grid-compact">
+                                      {block.racks
+                                        .slice()
+                                        .sort((left, right) => left.number - right.number)
+                                        .map((rack) => (
+                                          <div key={rack.id} className="gudang-ui-rack-compact-card">
+                                            <div className="gudang-ui-rack-compact-top">
+                                              <div className="gudang-ui-rack-compact-main">
+                                                <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
+                                                <span>{rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}</span>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                className="gudang-ui-icon-button gudang-ui-rack-delete-button"
+                                                onClick={() => deleteRack(rack.id)}
+                                                title={`Hapus Rak ${String(rack.number).padStart(2, "0")}`}
+                                              >
+                                                <FaTrash />
+                                              </button>
+                                            </div>
+
+                                            <div className="gudang-ui-rack-compact-meta">
+                                              <span className="gudang-ui-rack-mini-chip">
+                                                {rack.rows} baris
+                                              </span>
+                                              <span className="gudang-ui-rack-mini-chip soft">
+                                                Kode {String(rack.number).padStart(2, "0")}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="gudang-ui-rack-empty">
+                                    Blok ini belum punya rak. Tambahkan rak baru dari panel struktur di atas.
+                                  </div>
+                                )
                               ) : null}
                             </div>
                           ))}
@@ -847,99 +935,134 @@ const MasterGudangProduk = () => {
                       </div>
                     ) : (
                       <div className="gudang-ui-empty-panel">
-                        Tambahkan lantai terlebih dahulu untuk mulai mengisi blok.
+                        Tambahkan atau pilih lantai terlebih dahulu untuk mulai mengatur blok.
                       </div>
                     )}
                   </section>
 
-                  <section className="gudang-ui-panel">
-                    <div className="gudang-ui-section-head">
-                      <div>
-                        <h3>Alias Slot</h3>
-                        <p>Klik salah satu slot di peta lalu simpan nama tampilannya.</p>
+                  <div className="gudang-ui-grid gudang-master-visual-stack">
+                    <section className="gudang-ui-panel">
+                      <div className="gudang-ui-section-head">
+                        <div>
+                          <h3>Nama Tampil Slot</h3>
+                          <p>Gunakan alias untuk memberi nama lokasi yang mudah dikenali tim gudang.</p>
+                        </div>
                       </div>
-                    </div>
 
-                    {selectedSlot ? (
-                      <>
-                        <div className="gudang-ui-callout" style={{ marginBottom: 14 }}>
-                          <strong>{buildSlotHeadline(selectedSlot)}</strong>
-                        </div>
-                        <div className="gudang-ui-slot-meta">
-                          <div>
-                            <strong>Kode Sistem</strong>
-                            <span>{selectedSlot.slotCode}</span>
+                      {selectedSlot ? (
+                        <>
+                          <div className="gudang-ui-callout" style={{ marginBottom: 14 }}>
+                            <strong>{buildSlotHeadline(selectedSlot)}</strong>
                           </div>
-                          <div>
-                            <strong>Lokasi</strong>
-                            <span>
-                              {selectedLayout.name} | Blok {selectedSlot.blockCode} | Rak{" "}
-                              {String(selectedSlot.rackNumber).padStart(2, "0")}
-                            </span>
+                          <div className="gudang-ui-slot-meta">
+                            <div>
+                              <strong>Kode Sistem</strong>
+                              <span>{selectedSlot.slotCode}</span>
+                            </div>
+                            <div>
+                              <strong>Lokasi</strong>
+                              <span>
+                                {selectedLayout.name} | Blok {selectedSlot.blockCode} | Rak{" "}
+                                {String(selectedSlot.rackNumber).padStart(2, "0")}
+                              </span>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="gudang-ui-field" style={{ marginTop: 14 }}>
-                          <label>Alias Lokasi</label>
-                          <input
-                            value={slotAliasDraft}
-                            onChange={(event) => setSlotAliasDraft(event.target.value)}
-                            placeholder="Contoh: Rak bestseller lantai 3"
-                          />
+                          <div className="gudang-ui-field" style={{ marginTop: 14 }}>
+                            <label>Alias Lokasi</label>
+                            <input
+                              value={slotAliasDraft}
+                              onChange={(event) => setSlotAliasDraft(event.target.value)}
+                              placeholder="Contoh: Rak bestseller lantai 3"
+                            />
+                          </div>
+                          <div className="gudang-ui-form-actions">
+                            <button type="button" className="gudang-ui-button" onClick={saveSlotAlias}>
+                              <FaSave /> Simpan Alias
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="gudang-ui-empty-panel">
+                          Belum ada slot dipilih. Klik slot pada peta layout untuk mengisi alias lokasi.
                         </div>
-                        <div className="gudang-ui-form-actions">
-                          <button type="button" className="gudang-ui-button" onClick={saveSlotAlias}>
-                            <FaSave /> Simpan Alias
-                          </button>
+                      )}
+                    </section>
+
+                    <section className="gudang-ui-panel gudang-master-map-panel">
+                      <div className="gudang-ui-panel-head">
+                        <div>
+                          <h2>Peta Layout</h2>
+                          <p>Preview posisi blok, rak, dan slot yang tersimpan pada master gudang aktif.</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="gudang-ui-empty-panel">
-                        Belum ada slot dipilih. Klik salah satu slot di peta untuk mengisi alias.
+                        <button
+                          type="button"
+                          className="gudang-ui-button-secondary"
+                          onClick={() => setIsLayoutEditorOpen(true)}
+                          disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
+                        >
+                          <FaEdit /> Edit Layout
+                        </button>
                       </div>
-                    )}
-                  </section>
+
+                      <div className="gudang-layout-designer-note">
+                        Gunakan editor layout untuk mengatur posisi rak secara visual. Preview di bawah akan
+                        selalu menampilkan posisi terakhir yang sudah disimpan.
+                      </div>
+
+                      <GudangLayoutMap
+                        layout={selectedLayout}
+                        selectedSlotId={selectedSlot?.id}
+                        onSelectSlot={(slot) => {
+                          setSelectedSlot(slot);
+                          setSlotAliasDraft(slot?.alias || "");
+                        }}
+                        stockSummaryBySlot={stockSummaryBySlot}
+                      />
+                    </section>
+                  </div>
                 </div>
               </>
             ) : (
               <div className="gudang-ui-empty-panel">
-                Belum ada gudang. Buat gudang baru di panel kiri untuk mulai menyusun layout.
+                Belum ada gudang dipilih. Pilih salah satu master dari panel kiri untuk mulai mengatur layout.
               </div>
             )}
           </section>
 
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>Preview Layout Visual</h2>
-                <p>Slot akan otomatis menghasilkan kode lokasi seperti `L3B043`.</p>
+          {!selectedLayout ? (
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>Peta Layout</h2>
+                  <p>Preview posisi blok, rak, dan slot yang tersimpan pada master gudang aktif.</p>
+                </div>
+                <button
+                  type="button"
+                  className="gudang-ui-button-secondary"
+                  onClick={() => setIsLayoutEditorOpen(true)}
+                  disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
+                >
+                  <FaEdit /> Edit Layout
+                </button>
               </div>
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={() => setIsLayoutEditorOpen(true)}
-                disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
-              >
-                <FaEdit /> Edit Layout
-              </button>
-            </div>
 
-            <div className="gudang-layout-designer-note">
-              Edit layout membuka modal khusus agar rak berubah jadi aset yang bisa diposisikan
-              bebas di dalam blok. Preview di bawah ini akan ikut menampilkan posisi terakhir
-              yang tersimpan.
-            </div>
+              <div className="gudang-layout-designer-note">
+                Gunakan editor layout untuk mengatur posisi rak secara visual. Preview di bawah akan
+                selalu menampilkan posisi terakhir yang sudah disimpan.
+              </div>
 
-            <GudangLayoutMap
-              layout={selectedLayout}
-              selectedSlotId={selectedSlot?.id}
-              onSelectSlot={(slot) => {
-                setSelectedSlot(slot);
-                setSlotAliasDraft(slot?.alias || "");
-              }}
-              stockSummaryBySlot={stockSummaryBySlot}
-            />
-          </section>
+              <GudangLayoutMap
+                layout={selectedLayout}
+                selectedSlotId={selectedSlot?.id}
+                onSelectSlot={(slot) => {
+                  setSelectedSlot(slot);
+                  setSlotAliasDraft(slot?.alias || "");
+                }}
+                stockSummaryBySlot={stockSummaryBySlot}
+              />
+            </section>
+          ) : null}
         </div>
       </div>
 

@@ -58,13 +58,14 @@ const [prevSerials, setPrevSerials] = useState({});
 
   
 const handleSearchOrder = async () => {
-  if (!trackingNumber) return;
+  const tracking = trackingNumber.trim();
+  if (!tracking) return;
   setLoading(true);
   setMessage("");
   setCanSubmitByEnter(false);
 
   try {
-    const response = await API.get(`/orders/tracking/${trackingNumber}`);
+    const response = await API.get(`/orders/tracking/${encodeURIComponent(tracking)}`);
     const orderData = response.data;
 
     if (orderData.status === "packed") {
@@ -83,6 +84,7 @@ const handleSearchOrder = async () => {
        serials: []
     }));
 
+    setTrackingNumber(tracking);
     setOrder(orderData);
     setScannedItems(initialScan);
   } catch (error) {
@@ -242,6 +244,8 @@ const handleSearchOrder = async () => {
   setIsSubmittingValidation(true);
 
   try {
+    const tracking = trackingNumber.trim();
+
     // Kirim semua item yang sudah lengkap (harus semua item dari order)
     // Pastikan hanya item dengan scanned_qty > 0 dan serials tidak kosong
     const filteredItems = scannedItems.filter((item) => item.scanned_qty > 0 && item.serials.length > 0);
@@ -270,7 +274,7 @@ const handleSearchOrder = async () => {
     }
 
     const response = await API.post(
-      `/orders/scan/${trackingNumber}`,
+      `/orders/scan/${encodeURIComponent(tracking)}`,
       payload
     );
 

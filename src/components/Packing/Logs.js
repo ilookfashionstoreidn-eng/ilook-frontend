@@ -5,6 +5,15 @@ import { FaFileExcel, FaQrcode } from "react-icons/fa";
 import { FiCheckCircle, FiLayers, FiSearch, FiUser } from "react-icons/fi";
 import dayjs from "dayjs";
 
+const formatRupiah = (value) => {
+  const amount = Number(value || 0);
+
+  return `Rp ${amount.toLocaleString("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+};
+
 const Logs = () => {
   const [logs, setLogs] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -162,6 +171,56 @@ useEffect(() => {
     tableScrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
   };
 
+  const isRandomLog = (log) => log?.action === "scan_validasi_random";
+
+  const getPackingRows = (log) => {
+    if (isRandomLog(log)) {
+      return (
+        log.order?.packing_results?.flatMap((item) =>
+          (item.serials || []).map((serial) => ({
+            key: `${item.id}-${serial.id || serial.serial_number}`,
+            sku: item.actual_sku,
+            originalSku: item.original_sku,
+            status: item.status,
+            serial_number: serial.serial_number,
+          }))
+        ) || []
+      );
+    }
+
+    return (
+      log.order?.items?.flatMap((item) =>
+        (item.serials || []).map((serial) => ({
+          key: `${item.sku}-${serial.id || serial.serial_number}`,
+          sku: item.sku,
+          originalSku: null,
+          status: "sesuai",
+          serial_number: serial.serial_number,
+        }))
+      ) || []
+    );
+  };
+
+  const getPackedTotalItems = (log) => {
+    if (isRandomLog(log)) {
+      const totalPackedQty = Number(log.order?.total_packed_qty || 0);
+      if (Number.isFinite(totalPackedQty) && totalPackedQty > 0) {
+        return totalPackedQty;
+      }
+
+      return (log.order?.packing_results || []).reduce(
+        (sum, item) => sum + Number(item.scanned_qty || 0),
+        0
+      );
+    }
+
+    return Number(log.order?.total_qty || 0);
+  };
+
+  const getModeLabel = (log) => (isRandomLog(log) ? "Random" : "Normal");
+
+  const getSerialPreview = (log) => getPackingRows(log).map((row) => row.serial_number).join(", ");
+
  return (
    <div className="pklog-page">
     <div className="pklog-shell">
@@ -243,7 +302,7 @@ useEffect(() => {
               <strong>
                 {loadingSummary
                   ? "..."
-                  : `Rp ${parseFloat(summary?.total_amount || 0).toLocaleString("id-ID")}`}
+                  : formatRupiah(summary?.total_amount)}
               </strong>
               <small>akumulasi gross amount</small>
             </article>
@@ -294,6 +353,7 @@ useEffect(() => {
           <thead>
             <tr>
               <th>Tracking Number</th>
+              <th>Mode</th>
               <th>Kasir</th>
               <th>Total Item</th>
               <th>Total Harga</th>
@@ -309,30 +369,26 @@ useEffect(() => {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="pklog-empty">Memuat data...</td>
+                <td colSpan={9} className="pklog-empty">Memuat data...</td>
               </tr>
             )}
             {!loading && logs.length === 0 && (
               <tr>
-                <td colSpan={8} className="pklog-empty">Tidak ada data log pada filter ini.</td>
+                <td colSpan={9} className="pklog-empty">Tidak ada data log pada filter ini.</td>
               </tr>
             )}
             {logs.map((tc) => (
               <tr key={tc.id}>
                 <td>{tc.order?.tracking_number}</td>
+                <td>{getModeLabel(tc)}</td>
                 <td>{tc.performed_by}</td>
-                <td>{tc.order?.total_items}</td>
-                <td>Rp. {tc.order?.total_amount}</td>
+                <td>{getPackedTotalItems(tc)}</td>
+                <td>{formatRupiah(tc.order?.total_amount)}</td>
                <td>
                   {dayjs(tc.created_at).format("DD-MM-YYYY")}
                 </td>
 
-                <td>
-                {tc.order?.items
-                  ?.flatMap((it) => it.serials?.map((s) => s.serial_number))
-                  .join(", ")}
-
-                                </td>
+                <td>{getSerialPreview(tc)}</td>
                 <td>{tc.order?.status}</td>
                   <td>
                     <button className="pklog-btn-detail" onClick={() => handleOpenModal(tc)}>
@@ -382,18 +438,21 @@ useEffect(() => {
               <thead>
                 <tr>
                   <th>SKU</th>
-                 <th>Nomor Seri</th>
+                  <th>Nomor Seri</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-             {selectedLogs.order?.items?.map((item) =>
-              item.serials?.map((serial) => (
-                <tr key={serial.serial_number}>
-                  <td>{item.sku}</td>
-                  <td>{serial.serial_number}</td>
+             {getPackingRows(selectedLogs).map((item) => (
+                <tr key={item.key}>
+                  <td>
+                    {item.sku}
+                    {item.originalSku && item.originalSku !== item.sku ? ` (asli: ${item.originalSku})` : ""}
+                  </td>
+                  <td>{item.serial_number}</td>
+                  <td>{item.status}</td>
                 </tr>
-              ))
-            )}
+              ))}
 
 
               </tbody>

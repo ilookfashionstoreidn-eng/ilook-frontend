@@ -292,6 +292,74 @@
 .status-ok { color: #059669; }
 .status-wait { color: #64748b; }
 
+.pk-page-random .pk-brand-icon {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.24);
+}
+
+.pk-cell-primary {
+  display: block;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pk-cell-note,
+.pk-cell-muted {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pk-cell-note {
+  color: #64748b;
+}
+
+.pk-cell-muted {
+  color: #94a3b8;
+}
+
+.pk-serial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pk-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pk-status-sesuai {
+  color: #047857;
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.pk-status-random {
+  color: #c2410c;
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+.pk-status-bonus {
+  color: #7c3aed;
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+.pk-status-scan {
+  color: #64748b;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
 .product-image {
   width: 110px;
   height: 66px;
