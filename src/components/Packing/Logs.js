@@ -357,7 +357,7 @@ useEffect(() => {
               <th>Kasir</th>
               <th>Total Item</th>
               <th>Total Harga</th>
-              <th>Tanggal</th>
+              <th>Tanggal / Jam</th>
               <th>Nomor Seri</th>
               <th>Status</th>
               <th>Aksi</th>
@@ -384,8 +384,11 @@ useEffect(() => {
                 <td>{tc.performed_by}</td>
                 <td>{getPackedTotalItems(tc)}</td>
                 <td>{formatRupiah(tc.order?.total_amount)}</td>
-               <td>
-                  {dayjs(tc.created_at).format("DD-MM-YYYY")}
+                <td>
+                  <div className="pklog-date-time">
+                    <span>{dayjs(tc.created_at).format("DD-MM-YYYY")}</span>
+                    <small>{dayjs(tc.created_at).format("HH:mm:ss")}</small>
+                  </div>
                 </td>
 
                 <td>{getSerialPreview(tc)}</td>

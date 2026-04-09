@@ -166,6 +166,63 @@
   background: #e8eef6;
 }
 
+.pk-page-belum-barcode .pk-session-banner > .btn-cancel {
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 10px 24px -14px rgba(249, 115, 22, 0.9);
+}
+
+.pk-page-belum-barcode .pk-session-banner > .btn-cancel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+}
+
+.pk-page-belum-barcode .pk-session-lock .btn-search-modern {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  box-shadow: 0 10px 22px -14px rgba(15, 118, 110, 0.9);
+}
+
+.pk-page-belum-barcode .pk-session-lock .btn-search-modern:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0d9488 0%, #2dd4bf 100%);
+}
+
+.pk-page-belum-barcode .tracking-input-wrapper .btn-search-modern {
+  background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+  box-shadow: 0 10px 24px -14px rgba(79, 70, 229, 0.95);
+}
+
+.pk-page-belum-barcode .tracking-input-wrapper .btn-search-modern:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);
+}
+
+.pk-page-belum-barcode .packing-actions .btn-validate {
+  background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+  box-shadow: 0 12px 26px -16px rgba(21, 128, 61, 0.95);
+}
+
+.pk-page-belum-barcode .packing-actions .btn-validate:hover:not(:disabled) {
+  background: linear-gradient(135deg, #166534 0%, #16a34a 100%);
+}
+
+.pk-page-belum-barcode .packing-actions .btn-cancel {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.pk-page-belum-barcode .packing-actions .btn-cancel:hover:not(:disabled) {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.pk-page-belum-barcode .btn-search-modern:disabled,
+.pk-page-belum-barcode .btn-validate:disabled,
+.pk-page-belum-barcode .btn-cancel:disabled {
+  opacity: 0.6;
+  filter: saturate(0.8);
+}
+
 .packing-message {
   border-radius: 10px;
   border: 1px solid #dbeafe;
@@ -429,6 +486,228 @@ td img.product-image {
   gap: 8px;
 }
 
+.pk-page-belum-barcode .pk-brand-icon {
+  background: linear-gradient(135deg, #0f766e 0%, #22c55e 100%);
+  box-shadow: 0 8px 16px rgba(34, 197, 94, 0.24);
+}
+
+.pk-session-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pk-session-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.pk-session-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.pk-session-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pk-session-note,
+.pk-row-helper {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.pk-session-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px dashed #c7d2fe;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.92) 0%, rgba(238, 242, 255, 0.98) 100%);
+}
+
+.pk-session-lock-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.pk-session-lock-copy strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e1b4b;
+}
+
+.pk-session-lock-copy span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+  max-width: 640px;
+}
+
+.pk-row-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.pk-batch-table {
+  min-width: 760px;
+}
+
+.pk-bb-order-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.pk-bb-order-card {
+  border: 1px solid #e5eaf2;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 18px -12px rgba(15, 23, 42, 0.12);
+  padding: 16px;
+}
+
+.pk-bb-order-card h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.pk-bb-detail-table {
+  min-width: 920px;
+}
+
+.pk-empty-session {
+  margin-top: 14px;
+  padding: 18px 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.pk-empty-table {
+  text-align: center;
+  color: #94a3b8;
+}
+
+.pk-action-cell {
+  width: 118px;
+}
+
+.pk-action-cell-stacked {
+  min-width: 128px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pk-bb-tracking-cell {
+  min-width: 150px;
+  vertical-align: middle;
+}
+
+.pk-action-cell-stacked .pk-delete-btn {
+  min-width: 100px;
+}
+
+.pk-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 94px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pk-delete-btn:hover {
+  background: #fee2e2;
+}
+
+.pk-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pk-bb-swal-popup {
+  border-radius: 22px !important;
+}
+
+.pk-bb-swal-input {
+  border-radius: 14px !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+.pk-bb-swal-input:focus {
+  border-color: #14b8a6 !important;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
+}
+
+.pk-bb-swal-popup .swal2-actions {
+  gap: 12px !important;
+  margin-top: 20px !important;
+}
+
+.pk-bb-swal-popup .swal2-actions .swal2-styled {
+  margin: 0 !important;
+}
+
+.pk-bb-swal-confirm,
+.pk-bb-swal-cancel {
+  min-width: 118px !important;
+  height: 42px !important;
+  padding: 0 18px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.pk-bb-swal-confirm {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px -16px rgba(15, 118, 110, 0.95) !important;
+}
+
+.pk-bb-swal-confirm:hover {
+  background: linear-gradient(135deg, #0d9488 0%, #2dd4bf 100%) !important;
+  transform: translateY(-1px);
+}
+
+.pk-bb-swal-cancel {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1px solid #fecdd3 !important;
+}
+
+.pk-bb-swal-cancel:hover {
+  background: #ffe4e6 !important;
+  color: #9f1239 !important;
+}
+
 @media (max-width: 1024px) {
   .pk-kpi-grid {
     grid-template-columns: 1fr;
@@ -453,5 +732,18 @@ td img.product-image {
   .packing-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .pk-session-banner {
+    flex-direction: column;
+  }
+
+  .pk-session-lock {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pk-delete-btn {
+    width: 100%;
   }
 }

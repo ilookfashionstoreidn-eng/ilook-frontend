@@ -49,8 +49,9 @@ import PendapatanJasa from "./components/Jasa/PendapatanJasa";
 import HistoryPendapatanJasa from "./components/Jasa/HistoryPendapatanJasa";
 import HppProduk from "./components/Produk/HppProduk";
 import Packing from "./components/Packing/Packing";
+import PackingBelumBarcode from "./components/Packing/PackingBelumBarcode";
 import PackingRandom from "./components/Packing/PackingRandom";
-import Logs from "./components/Packing/Logs";
+import Logs from "./components/Packing/LogsPage";
 import Bahan from "./components/Bahan/Bahan";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
@@ -140,6 +141,7 @@ const App = () => {
           <Route path="pendapatanhistoryjasa" element={<HistoryPendapatanJasa />} />
           <Route path="hppProduk" element={<HppProduk />} />
           <Route path="packing" element={<Packing />} />
+          <Route path="packing-belum-barcode" element={<PackingBelumBarcode />} />
           <Route path="packing-random" element={<PackingRandom />} />
           <Route path="logs" element={<Logs />} />
           <Route path="bahan" element={<Bahan />} />
