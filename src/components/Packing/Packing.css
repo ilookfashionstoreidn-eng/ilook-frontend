@@ -225,12 +225,27 @@
 
 .packing-message {
   border-radius: 10px;
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #1d4ed8;
   font-size: 12px;
   padding: 10px 12px;
   white-space: pre-line;
+}
+
+.packing-message-info {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.packing-message-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.packing-message-danger {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .pk-kpi-grid {
@@ -486,6 +501,11 @@ td img.product-image {
   gap: 8px;
 }
 
+.pk-bb-scan-actions {
+  margin-top: 0;
+  margin-bottom: 2px;
+}
+
 .pk-page-belum-barcode .pk-brand-icon {
   background: linear-gradient(135deg, #0f766e 0%, #22c55e 100%);
   box-shadow: 0 8px 16px rgba(34, 197, 94, 0.24);
@@ -652,14 +672,68 @@ td img.product-image {
 
 .pk-bb-swal-popup {
   border-radius: 22px !important;
+  width: min(680px, calc(100vw - 24px)) !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
 
+.pk-bb-swal-html {
+  margin: 14px 24px 0 !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+.pk-bb-swal-body {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin-top: 0;
+  box-sizing: border-box;
+}
+
+.pk-bb-swal-field {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pk-bb-swal-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.pk-bb-swal-select,
 .pk-bb-swal-input {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  box-sizing: border-box;
   border-radius: 14px !important;
   border: 1px solid #cbd5e1 !important;
   box-shadow: none !important;
+  background: #fff;
 }
 
+.pk-bb-swal-select {
+  height: 46px;
+  padding: 0 14px;
+  font-size: 15px;
+  color: #0f172a;
+  outline: none;
+}
+
+.pk-bb-swal-input {
+  height: 46px;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  font-size: 15px !important;
+  color: #0f172a !important;
+}
+
+.pk-bb-swal-select:focus,
 .pk-bb-swal-input:focus {
   border-color: #14b8a6 !important;
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;

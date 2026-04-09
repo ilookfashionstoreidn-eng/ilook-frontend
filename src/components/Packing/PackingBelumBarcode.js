@@ -8,6 +8,93 @@ import API from "../../api";
 import "./Packing.css";
 
 const normalizeTrackingNumber = (value = "") => value.trim();
+const SCANNER_HISTORY_STORAGE_KEY = "packing-belum-barcode:scanner-history";
+const MAX_SCANNER_HISTORY = 10;
+
+const getSavedScannerNames = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(SCANNER_HISTORY_STORAGE_KEY);
+    const parsedValue = JSON.parse(rawValue || "[]");
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    const seenNames = new Set();
+
+    return parsedValue
+      .map((name) => String(name || "").trim())
+      .filter((name) => {
+        const normalizedName = name.toLowerCase();
+
+        if (!name || seenNames.has(normalizedName)) {
+          return false;
+        }
+
+        seenNames.add(normalizedName);
+        return true;
+      })
+      .slice(0, MAX_SCANNER_HISTORY);
+  } catch (error) {
+    return [];
+  }
+};
+
+const storeSavedScannerNames = (scannerNames) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      SCANNER_HISTORY_STORAGE_KEY,
+      JSON.stringify(scannerNames)
+    );
+  } catch (error) {
+    // Ignore localStorage write failures and keep the flow running.
+  }
+};
+
+const addScannerNameToHistory = (scannerNames, nextScannerName) => {
+  const normalizedName = String(nextScannerName || "").trim();
+
+  if (!normalizedName) {
+    return scannerNames;
+  }
+
+  return [
+    normalizedName,
+    ...scannerNames.filter(
+      (scannerName) => scannerName.trim().toLowerCase() !== normalizedName.toLowerCase()
+    ),
+  ].slice(0, MAX_SCANNER_HISTORY);
+};
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const getMessageTone = (value = "") => {
+  const normalizedValue = String(value || "").trim().toUpperCase();
+
+  if (normalizedValue.startsWith("WARNING:") || normalizedValue.startsWith("ERROR:")) {
+    return "danger";
+  }
+
+  if (normalizedValue.startsWith("OK:")) {
+    return "success";
+  }
+
+  return "info";
+};
 
 const formatErrorMessage = (error, fallbackMessage) => {
   const data = error?.response?.data;
@@ -22,7 +109,7 @@ const formatErrorMessage = (error, fallbackMessage) => {
 
 const scannerPromptSwalClass = {
   popup: "pk-bb-swal-popup",
-  input: "pk-bb-swal-input",
+  htmlContainer: "pk-bb-swal-html",
   confirmButton: "pk-bb-swal-confirm",
   cancelButton: "pk-bb-swal-cancel",
 };
@@ -32,6 +119,7 @@ const PackingBelumBarcode = () => {
   const trackingInputRef = useRef(null);
   const hasRequestedInitialScannerRef = useRef(false);
 
+  const [savedScannerNames, setSavedScannerNames] = useState(getSavedScannerNames);
   const [scannerName, setScannerName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [scannedOrders, setScannedOrders] = useState([]);
@@ -46,6 +134,27 @@ const PackingBelumBarcode = () => {
     (sum, order) => sum + Number(order.total_qty || 0),
     0
   );
+  const messageTone = getMessageTone(message);
+
+  const playSound = (type) => {
+    const soundMap = {
+      success: "/sounds/success.mp3",
+      error: "/sounds/failed.mp3",
+      scanproduk: "/sounds/scanprodukberhasil.mp3",
+      validasiok: "/sounds/validasiberhasil.mp3",
+    };
+
+    const targetSound = soundMap[type];
+
+    if (!targetSound) {
+      return;
+    }
+
+    const audio = new Audio(targetSound);
+    audio.play().catch(() => {
+      // Ignore autoplay failures so scan flow stays responsive.
+    });
+  };
 
   const focusTrackingInput = () => {
     setTimeout(() => {
@@ -53,6 +162,10 @@ const PackingBelumBarcode = () => {
       trackingInputRef.current?.select();
     }, 50);
   };
+
+  useEffect(() => {
+    storeSavedScannerNames(savedScannerNames);
+  }, [savedScannerNames]);
 
   const requestScannerName = async () => {
     if (isPromptingScanner) {
@@ -62,12 +175,50 @@ const PackingBelumBarcode = () => {
     setIsPromptingScanner(true);
 
     try {
+      const selectId = "pk-bb-scanner-select";
+      const inputId = "pk-bb-scanner-input";
+      const defaultSelectedName =
+        savedScannerNames.find(
+          (savedName) => savedName.toLowerCase() === String(scannerName || "").trim().toLowerCase()
+        ) || savedScannerNames[0] || "";
+
       const result = await Swal.fire({
         title: "Nama Scanner",
         text: "Isi nama scanner terlebih dahulu sebelum mulai scan tracking number.",
-        input: "text",
-        inputValue: scannerName,
-        inputPlaceholder: "Contoh: Budi",
+        html: `
+          <div class="pk-bb-swal-body">
+            ${
+              savedScannerNames.length > 0
+                ? `
+                  <div class="pk-bb-swal-field">
+                    <label class="pk-bb-swal-label" for="${selectId}">Pilih nama yang sudah pernah dipakai</label>
+                    <select id="${selectId}" class="pk-bb-swal-select">
+                      <option value="">Pilih scanner...</option>
+                      ${savedScannerNames
+                        .map(
+                          (savedName) => `
+                            <option value="${escapeHtml(savedName)}"${
+                              savedName === defaultSelectedName ? " selected" : ""
+                            }>${escapeHtml(savedName)}</option>
+                          `
+                        )
+                        .join("")}
+                    </select>
+                  </div>
+                `
+                : ""
+            }
+            <div class="pk-bb-swal-field">
+              <label class="pk-bb-swal-label" for="${inputId}">Atau isi nama scanner baru</label>
+              <input
+                id="${inputId}"
+                class="pk-bb-swal-input"
+                placeholder="Contoh: Budi"
+                value="${escapeHtml(scannerName)}"
+              />
+            </div>
+          </div>
+        `,
         showCancelButton: true,
         allowOutsideClick: false,
         allowEscapeKey: false,
@@ -75,12 +226,38 @@ const PackingBelumBarcode = () => {
         cancelButtonText: "Batal",
         buttonsStyling: false,
         customClass: scannerPromptSwalClass,
-        inputValidator: (value) => {
-          if (!String(value || "").trim()) {
-            return "Nama scanner wajib diisi";
+        didOpen: () => {
+          const popup = Swal.getPopup();
+          const selectElement = popup?.querySelector(`#${selectId}`);
+          const inputElement = popup?.querySelector(`#${inputId}`);
+
+          if (selectElement && inputElement) {
+            selectElement.addEventListener("change", () => {
+              if (!String(inputElement.value || "").trim()) {
+                inputElement.value = String(selectElement.value || "").trim();
+              }
+            });
           }
 
-          return undefined;
+          if (inputElement) {
+            inputElement.focus();
+            inputElement.select();
+          }
+        },
+        preConfirm: () => {
+          const popup = Swal.getPopup();
+          const selectElement = popup?.querySelector(`#${selectId}`);
+          const inputElement = popup?.querySelector(`#${inputId}`);
+          const typedName = String(inputElement?.value || "").trim();
+          const selectedName = String(selectElement?.value || "").trim();
+          const resolvedName = typedName || selectedName;
+
+          if (!resolvedName) {
+            Swal.showValidationMessage("Nama scanner wajib diisi");
+            return false;
+          }
+
+          return resolvedName;
         },
       });
 
@@ -90,6 +267,9 @@ const PackingBelumBarcode = () => {
       }
 
       const confirmedScannerName = String(result.value || "").trim();
+      setSavedScannerNames((prevNames) =>
+        addScannerNameToHistory(prevNames, confirmedScannerName)
+      );
       setScannerName(confirmedScannerName);
       setIsSessionLocked(false);
       focusTrackingInput();
@@ -161,6 +341,7 @@ const PackingBelumBarcode = () => {
         (order) => normalizeTrackingNumber(order.tracking_number) === normalizedTracking
       )
     ) {
+      playSound("error");
       setTrackingNumber("");
       setMessage(`WARNING: Tracking number ${normalizedTracking} sudah ada di daftar sesi ini.`);
       focusTrackingInput();
@@ -176,8 +357,10 @@ const PackingBelumBarcode = () => {
       );
 
       setScannedOrders((prevOrders) => [response.data, ...prevOrders]);
+      playSound("scanproduk");
       setMessage(`OK: Tracking number ${normalizedTracking} berhasil ditambahkan ke sesi scan.`);
     } catch (error) {
+      playSound("error");
       setMessage(formatErrorMessage(error, "Gagal mengambil data order"));
     } finally {
       setLoading(false);
@@ -215,6 +398,7 @@ const PackingBelumBarcode = () => {
       lockSession({
         nextMessage: `OK: ${successMessage}\nMasukkan nama scanner lagi untuk memulai sesi scan berikutnya.`,
       });
+      playSound("validasiok");
 
       await Swal.fire({
         icon: "success",
@@ -228,6 +412,7 @@ const PackingBelumBarcode = () => {
         },
       });
     } catch (error) {
+      playSound("error");
       setMessage(
         formatErrorMessage(error, "Submit scan produk belum barcode gagal")
       );
@@ -262,9 +447,7 @@ const PackingBelumBarcode = () => {
                 <strong className="pk-session-value">
                   {scannerName || "Menunggu nama scanner"}
                 </strong>
-                <span className="pk-session-note">
-                  Nama scanner akan dicatat sebagai `performed_by` pada history scan.
-                </span>
+                
               </div>
 
               <button
@@ -358,7 +541,31 @@ const PackingBelumBarcode = () => {
                 </button>
               </div>
 
-              {message && <div className="packing-message">{message}</div>}
+              <div className="packing-actions pk-bb-scan-actions">
+                <button
+                  type="button"
+                  className="btn-validate"
+                  disabled={isSubmitting || scannedOrders.length === 0}
+                  onClick={handleSubmit}
+                >
+                  {isSubmitting ? "Mengirim..." : "Submit Sesi Scan"}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => lockSession()}
+                  disabled={loading || isSubmitting}
+                >
+                  Batal Sesi
+                </button>
+              </div>
+
+              {message && (
+                <div className={`packing-message packing-message-${messageTone}`}>
+                  {message}
+                </div>
+              )}
             </section>
 
             <section className="pk-card order-section">
@@ -478,26 +685,6 @@ const PackingBelumBarcode = () => {
                   })}
                 </div>
               )}
-
-              <div className="packing-actions">
-                <button
-                  type="button"
-                  className="btn-validate"
-                  disabled={isSubmitting || scannedOrders.length === 0}
-                  onClick={handleSubmit}
-                >
-                  {isSubmitting ? "Mengirim..." : "Submit Sesi Scan"}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => lockSession()}
-                  disabled={loading || isSubmitting}
-                >
-                  Batal Sesi
-                </button>
-              </div>
             </section>
           </main>
         </section>
