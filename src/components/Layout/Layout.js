@@ -619,7 +619,7 @@ const Layout = () => {
             <li>
               <div
                 onClick={togglePackingMenu}
-                className={`sidebar-link dropdown-toggle ${["packing", "packing-random", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
+                className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
               >
                 <FaBoxOpen className="icon" /> Packing
                 <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -634,6 +634,11 @@ const Layout = () => {
                   <li>
                     <Link to="packing-random" className={`dropdown-link ${activeMenu === "packing-random" ? "active" : ""}`} onClick={() => handleMenuClick("packing-random")}>
                       <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Packing Random
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="packing-belum-barcode" className={`dropdown-link ${activeMenu === "packing-belum-barcode" ? "active" : ""}`} onClick={() => handleMenuClick("packing-belum-barcode")}>
+                      <FaQrcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Produk Belum Barcode
                     </Link>
                   </li>
                   <li>

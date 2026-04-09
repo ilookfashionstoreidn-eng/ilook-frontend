@@ -562,6 +562,20 @@
   margin-top: 14px;
 }
 
+.pklog-date-time {
+  display: grid;
+  gap: 2px;
+}
+
+.pklog-date-time span {
+  font-weight: 600;
+}
+
+.pklog-date-time small {
+  color: #64748b;
+  font-size: 10px;
+}
+
 @media (max-width: 1200px) {
   .pklog-filter-selects,
   .pklog-filter-actions {
