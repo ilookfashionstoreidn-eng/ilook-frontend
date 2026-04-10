@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { FaQrcode, FaTrash } from "react-icons/fa";
-import { FiCheckCircle, FiPackage, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiPackage, FiUser, FiAlertTriangle } from "react-icons/fi";
 import API from "../../api";
 import "./Packing.css";
 
 const normalizeTrackingNumber = (value = "") => value.trim();
-const SCANNER_HISTORY_STORAGE_KEY = "packing-belum-barcode:scanner-history";
+const SCANNER_HISTORY_STORAGE_KEY = "packing-no-data-ginee:scanner-history";
 const MAX_SCANNER_HISTORY = 10;
 
 const getSavedScannerNames = () => {
@@ -114,26 +114,24 @@ const scannerPromptSwalClass = {
   cancelButton: "pk-bb-swal-cancel",
 };
 
-const PackingBelumBarcode = () => {
+const ACCESS_KEYWORD = "abc123";
+
+const PackingNoDataGinee = () => {
   const navigate = useNavigate();
   const trackingInputRef = useRef(null);
-  const hasRequestedInitialScannerRef = useRef(false);
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [savedScannerNames, setSavedScannerNames] = useState(getSavedScannerNames);
   const [scannerName, setScannerName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [scannedOrders, setScannedOrders] = useState([]);
+  const [scannedTrackings, setScannedTrackings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isPromptingScanner, setIsPromptingScanner] = useState(false);
   const [isSessionLocked, setIsSessionLocked] = useState(true);
 
-  const totalTrackedOrders = scannedOrders.length;
-  const totalTrackedItems = scannedOrders.reduce(
-    (sum, order) => sum + Number(order.total_qty || 0),
-    0
-  );
+  const totalTrackedItems = scannedTrackings.length;
   const messageTone = getMessageTone(message);
 
   const playSound = (type) => {
@@ -173,8 +171,8 @@ const PackingBelumBarcode = () => {
     setIsPromptingScanner(true);
 
     try {
-      const selectId = "pk-bb-scanner-select";
-      const inputId = "pk-bb-scanner-input";
+      const selectId = "pk-ndg-scanner-select";
+      const inputId = "pk-ndg-scanner-input";
       const defaultSelectedName =
         savedScannerNames.find(
           (savedName) => savedName.toLowerCase() === String(scannerName || "").trim().toLowerCase()
@@ -277,21 +275,61 @@ const PackingBelumBarcode = () => {
     }
   };
 
+  // ── Combined init: password gate → scanner prompt (sequential) ──
   useEffect(() => {
-    if (hasRequestedInitialScannerRef.current) {
-      return;
-    }
+    let cancelled = false;
 
-    hasRequestedInitialScannerRef.current = true;
+    const initSession = async () => {
+      // Step 1: Password gate
+      const pwResult = await Swal.fire({
+        title: "Akses Terbatas",
+        text: "Masukkan kata kunci untuk mengakses fitur No Data Ginee.",
+        input: "password",
+        inputPlaceholder: "Kata kunci...",
+        showCancelButton: true,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        confirmButtonText: "Masuk",
+        cancelButtonText: "Batal",
+        buttonsStyling: false,
+        customClass: scannerPromptSwalClass,
+        preConfirm: (value) => {
+          if (!value) {
+            Swal.showValidationMessage("Kata kunci wajib diisi");
+            return false;
+          }
+          if (value !== ACCESS_KEYWORD) {
+            Swal.showValidationMessage("Kata kunci salah");
+            return false;
+          }
+          return value;
+        },
+      });
 
-    if (!scannerName) {
-      requestScannerName();
-      return;
-    }
+      if (cancelled) {
+        return;
+      }
 
-    setIsSessionLocked(false);
-    focusTrackingInput();
-  }, [scannerName]);
+      if (!pwResult.isConfirmed) {
+        navigate("/packing");
+        return;
+      }
+
+      setIsAuthenticated(true);
+
+      // Step 2: Scanner name prompt (runs immediately after password OK)
+      if (!cancelled) {
+        requestScannerName();
+      }
+    };
+
+    initSession();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (scannerName && !isSessionLocked) {
@@ -302,7 +340,7 @@ const PackingBelumBarcode = () => {
   const lockSession = ({ nextMessage = "" } = {}) => {
     setScannerName("");
     setTrackingNumber("");
-    setScannedOrders([]);
+    setScannedTrackings([]);
     setMessage(nextMessage);
     setIsSessionLocked(true);
   };
@@ -334,9 +372,10 @@ const PackingBelumBarcode = () => {
       return;
     }
 
+    // Check for duplicate in current session
     if (
-      scannedOrders.some(
-        (order) => normalizeTrackingNumber(order.tracking_number) === normalizedTracking
+      scannedTrackings.some(
+        (item) => normalizeTrackingNumber(item.tracking_number) === normalizedTracking
       )
     ) {
       playSound("error");
@@ -346,19 +385,29 @@ const PackingBelumBarcode = () => {
       return;
     }
 
+    // Check for duplicate in database (already submitted in a previous session)
     setLoading(true);
     setMessage("");
 
     try {
-      const response = await API.get(
-        `/packing-belum-barcode/orders/tracking/${encodeURIComponent(normalizedTracking)}`
+      await API.get(
+        `/packing-no-data-ginee/check/${encodeURIComponent(normalizedTracking)}`
       );
 
-      setScannedOrders((prevOrders) => [response.data, ...prevOrders]);
+      // If check passes (200), add to local list
+      setScannedTrackings((prev) => [
+        { tracking_number: normalizedTracking, scanned_at: new Date().toLocaleTimeString("id-ID") },
+        ...prev,
+      ]);
       setMessage(`OK: Tracking number ${normalizedTracking} berhasil ditambahkan ke sesi scan.`);
     } catch (error) {
       playSound("error");
-      setMessage(formatErrorMessage(error, "Gagal mengambil data order"));
+      const data = error?.response?.data;
+      if (error?.response?.status === 409) {
+        setMessage(`WARNING: ${data?.message || `Tracking number ${normalizedTracking} sudah pernah discan sebelumnya.`}`);
+      } else {
+        setMessage(formatErrorMessage(error, "Gagal memeriksa tracking number"));
+      }
     } finally {
       setLoading(false);
       setTrackingNumber("");
@@ -367,15 +416,15 @@ const PackingBelumBarcode = () => {
   };
 
   const handleRemoveTracking = (trackingToRemove) => {
-    setScannedOrders((prevOrders) =>
-      prevOrders.filter((order) => order.tracking_number !== trackingToRemove)
+    setScannedTrackings((prev) =>
+      prev.filter((item) => item.tracking_number !== trackingToRemove)
     );
     setMessage(`INFO: Tracking number ${trackingToRemove} dihapus dari sesi scan.`);
     focusTrackingInput();
   };
 
   const handleSubmit = async () => {
-    if (!scannerName || scannedOrders.length === 0) {
+    if (!scannerName || scannedTrackings.length === 0) {
       return;
     }
 
@@ -383,14 +432,14 @@ const PackingBelumBarcode = () => {
     setMessage("");
 
     try {
-      const response = await API.post("/packing-belum-barcode/orders/submit", {
+      const response = await API.post("/packing-no-data-ginee/submit", {
         scanner_name: scannerName,
-        tracking_numbers: scannedOrders.map((order) => order.tracking_number),
+        tracking_numbers: scannedTrackings.map((item) => item.tracking_number),
       });
 
       const successMessage =
         response.data.message ||
-        "Semua tracking number berhasil dicatat melalui packing belum barcode";
+        "Semua tracking number berhasil dicatat melalui No Data Ginee";
 
       lockSession({
         nextMessage: `OK: ${successMessage}\nMasukkan nama scanner lagi untuk memulai sesi scan berikutnya.`,
@@ -409,7 +458,7 @@ const PackingBelumBarcode = () => {
     } catch (error) {
       playSound("error");
       setMessage(
-        formatErrorMessage(error, "Submit scan produk belum barcode gagal")
+        formatErrorMessage(error, "Submit scan No Data Ginee gagal")
       );
     } finally {
       setIsSubmitting(false);
@@ -426,16 +475,27 @@ const PackingBelumBarcode = () => {
                 <FaQrcode />
               </div>
               <div>
-                <h1>Produk Belum Barcode</h1>
+                <h1>No Data Ginee</h1>
                 <p>
-                  Scan tracking number satu per satu tanpa barcode seri, kumpulkan
-                  dalam satu sesi, lalu submit sekaligus.
+                  Scan tracking number tanpa perlu validasi data order dari Ginee.
+                  Cukup scan, kumpulkan, lalu submit.
                 </p>
               </div>
             </div>
           </header>
 
           <main className="pk-main">
+            <section className="pk-card pk-session-banner" style={{ borderLeft: "4px solid #f59e0b" }}>
+              <div className="pk-session-meta">
+                <span className="pk-session-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <FiAlertTriangle style={{ color: "#f59e0b" }} /> Mode No Data Ginee
+                </span>
+                <small style={{ color: "#94a3b8", marginTop: "2px", display: "block" }}>
+                  Tracking number akan dicatat tanpa validasi ke database Ginee
+                </small>
+              </div>
+            </section>
+
             <section className="pk-card pk-session-banner">
               <div className="pk-session-meta">
                 <span className="pk-session-label">Scanner  Aktif</span>
@@ -467,15 +527,15 @@ const PackingBelumBarcode = () => {
                 <div className="pk-kpi-head">
                   <FiCheckCircle /> Tracking Terscan
                 </div>
-                <strong>{totalTrackedOrders}</strong>
+                <strong>{totalTrackedItems}</strong>
                 <small>jumlah tracking number di sesi berjalan</small>
               </article>
               <article className="pk-kpi-card">
                 <div className="pk-kpi-head">
-                  <FiPackage /> Total Produk
+                  <FiPackage /> Mode
                 </div>
-                <strong>{totalTrackedItems}</strong>
-                <small>akumulasi qty order yang siap disubmit</small>
+                <strong style={{ fontSize: "14px", color: "#f59e0b" }}>No Data Ginee</strong>
+                <small>tanpa validasi order Ginee</small>
               </article>
             </section>
 
@@ -483,8 +543,8 @@ const PackingBelumBarcode = () => {
               <div className="pk-search-head">
                 <h2>Scan Tracking Number</h2>
                 <span>
-                  Setelah satu tracking sukses discan, input akan otomatis kosong dan
-                  siap dipakai lagi untuk scan berikutnya.
+                  Scan tracking number tanpa perlu data order ada di Ginee.
+                  Input akan otomatis kosong setelah scan berhasil.
                 </span>
               </div>
 
@@ -494,8 +554,7 @@ const PackingBelumBarcode = () => {
                     <strong>Sesi scan belum aktif</strong>
                     <span>
                       Masukkan nama scanner terlebih dahulu, lalu lanjut scan
-                      tracking number satu per satu tanpa barcode seri atau SPK
-                      CMT.
+                      tracking number. Data tidak perlu ada di Ginee.
                     </span>
                   </div>
                   <button
@@ -540,7 +599,7 @@ const PackingBelumBarcode = () => {
                 <button
                   type="button"
                   className="btn-validate"
-                  disabled={isSubmitting || scannedOrders.length === 0}
+                  disabled={isSubmitting || scannedTrackings.length === 0}
                   onClick={handleSubmit}
                 >
                   {isSubmitting ? "Mengirim..." : "Submit Sesi Scan"}
@@ -567,117 +626,57 @@ const PackingBelumBarcode = () => {
               <h2>Rekap Sesi Scan</h2>
               <p className="pk-order-meta">
                 <strong>Scanner:</strong> {scannerName || "-"} <br />
-                <strong>Total Tracking:</strong> {totalTrackedOrders} <br />
-                <strong>Total Produk:</strong> {totalTrackedItems}
+                <strong>Total Tracking:</strong> {totalTrackedItems} <br />
+                <strong>Mode:</strong> No Data Ginee
               </p>
 
-              {scannedOrders.length === 0 ? (
+              {scannedTrackings.length === 0 ? (
                 <div className="pk-empty-session">
                   Belum ada tracking number yang discan pada sesi ini.
                 </div>
               ) : (
                 <div className="pk-bb-order-list">
-                  {scannedOrders.map((order) => {
-                    const orderItems = Array.isArray(order.items) ? order.items : [];
-
-                    return (
-                      <div key={order.tracking_number} className="pk-bb-order-card">
-                        <h3>Order #{order.order_number}</h3>
-
-                        <div className="pk-table-wrap">
-                          <table className="packing-table pk-bb-detail-table">
-                            <thead>
-                              <tr>
-                                <th>SKU</th>
-                                <th>Nama Produk</th>
-                                <th>Qty Pesanan</th>
-                                <th>Tracking Number</th>
-                                <th>Gambar</th>
-                                <th>Status</th>
-                                <th>Aksi Hapus</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {orderItems.length === 0 ? (
-                                <tr>
-                                  <td colSpan={6} className="pk-empty-table">
-                                    Order ini belum memiliki detail item.
-                                  </td>
-                                  <td className="pk-action-cell pk-action-cell-stacked">
-                                    <button
-                                      type="button"
-                                      className="pk-delete-btn"
-                                      onClick={() => handleRemoveTracking(order.tracking_number)}
-                                      disabled={isSubmitting}
-                                    >
-                                      <FaTrash /> Hapus
-                                    </button>
-                                  </td>
-                                </tr>
-                              ) : (
-                                orderItems.map((item, itemIndex) => (
-                                  <tr
-                                    key={`${order.tracking_number}-${item.id || item.sku || itemIndex}`}
-                                  >
-                                    <td>
-                                      <span className="pk-cell-primary">{item.sku || "-"}</span>
-                                    </td>
-                                    <td>
-                                      <span className="pk-cell-primary">
-                                        {item.product_name || "-"}
-                                      </span>
-                                    </td>
-                                    <td className="qty-cell ordered">{item.quantity || 0}</td>
-                                    {itemIndex === 0 && (
-                                      <td
-                                        className="pk-bb-tracking-cell"
-                                        rowSpan={orderItems.length}
-                                      >
-                                        <span className="pk-cell-primary">
-                                          {order.tracking_number || "-"}
-                                        </span>
-                                      </td>
-                                    )}
-                                    <td>
-                                      {item.image ? (
-                                        <img
-                                          src={item.image}
-                                          alt={item.product_name || item.sku || "Produk"}
-                                          className="product-image"
-                                        />
-                                      ) : (
-                                        <span className="pk-cell-muted">No Image</span>
-                                      )}
-                                    </td>
-                                    <td>
-                                      <span className="pk-status-pill pk-status-sesuai">
-                                        <FiCheckCircle /> Siap Submit
-                                      </span>
-                                    </td>
-                                    {itemIndex === 0 && (
-                                      <td
-                                        className="pk-action-cell pk-action-cell-stacked"
-                                        rowSpan={orderItems.length}
-                                      >
-                                        <button
-                                          type="button"
-                                          className="pk-delete-btn"
-                                          onClick={() => handleRemoveTracking(order.tracking_number)}
-                                          disabled={isSubmitting}
-                                        >
-                                          <FaTrash /> Hapus
-                                        </button>
-                                      </td>
-                                    )}
-                                  </tr>
-                                ))
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="pk-table-wrap">
+                    <table className="packing-table pk-bb-detail-table">
+                      <thead>
+                        <tr>
+                          <th>No</th>
+                          <th>Tracking Number</th>
+                          <th>Waktu Scan</th>
+                          <th>Status</th>
+                          <th>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scannedTrackings.map((item, index) => (
+                          <tr key={item.tracking_number}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <span className="pk-cell-primary">{item.tracking_number}</span>
+                            </td>
+                            <td>
+                              <span className="pk-cell-muted">{item.scanned_at}</span>
+                            </td>
+                            <td>
+                              <span className="pk-status-pill pk-status-sesuai">
+                                <FiCheckCircle /> Siap Submit
+                              </span>
+                            </td>
+                            <td className="pk-action-cell">
+                              <button
+                                type="button"
+                                className="pk-delete-btn"
+                                onClick={() => handleRemoveTracking(item.tracking_number)}
+                                disabled={isSubmitting}
+                              >
+                                <FaTrash /> Hapus
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </section>
@@ -688,4 +687,4 @@ const PackingBelumBarcode = () => {
   );
 };
 
-export default PackingBelumBarcode;
+export default PackingNoDataGinee;
