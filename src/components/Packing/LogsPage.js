@@ -23,6 +23,10 @@ const getLogMode = (log) => {
     return "belum-barcode";
   }
 
+  if (log?.action === "scan_no_data_ginee") {
+    return "no-data-ginee";
+  }
+
   return "normal";
 };
 
@@ -35,6 +39,10 @@ const getModeLabel = (log) => {
 
   if (mode === "belum-barcode") {
     return "Belum Barcode";
+  }
+
+  if (mode === "no-data-ginee") {
+    return "No Data Ginee";
   }
 
   return "Normal";
@@ -120,6 +128,7 @@ const LogsPage = () => {
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [status, setStatus] = useState("");
+  const [mode, setMode] = useState("");
   const today = new Date().toISOString().slice(0, 10);
   const [selectedLogs, setSelectedLogs] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -138,7 +147,8 @@ const LogsPage = () => {
     stat = status,
     page = 1,
     track = tracking,
-    performed = performedBy
+    performed = performedBy,
+    selectedMode = mode
   ) => {
     try {
       setLoading(true);
@@ -151,6 +161,7 @@ const LogsPage = () => {
           end_date: end,
           ...(performed && { performed_by: performed }),
           ...(stat && { status: stat }),
+          ...(selectedMode && { mode: selectedMode }),
           ...(track && { tracking_number: track }),
         },
       });
@@ -172,7 +183,8 @@ const LogsPage = () => {
     end = today,
     stat = status,
     performed = performedBy,
-    track = tracking
+    track = tracking,
+    selectedMode = mode
   ) => {
     try {
       setLoadingSummary(true);
@@ -182,6 +194,7 @@ const LogsPage = () => {
         start_date: start,
         end_date: end,
         ...(stat && { status: stat }),
+        ...(selectedMode && { mode: selectedMode }),
         ...(performed && { performed_by: performed }),
         ...(track && { tracking_number: track }),
       });
@@ -213,8 +226,8 @@ const LogsPage = () => {
       return;
     }
 
-    fetchSummary(startDate, endDate, status, performedBy, tracking);
-    fetchLogs(startDate, endDate, status, 1, tracking, performedBy);
+    fetchSummary(startDate, endDate, status, performedBy, tracking, mode);
+    fetchLogs(startDate, endDate, status, 1, tracking, performedBy, mode);
   };
 
   const handleExport = async () => {
@@ -225,7 +238,10 @@ const LogsPage = () => {
         params: {
           start_date: startDate,
           end_date: endDate,
-          status: status || null,
+          ...(status && { status }),
+          ...(mode && { mode }),
+          ...(tracking && { tracking_number: tracking }),
+          ...(performedBy && { performed_by: performedBy }),
         },
       });
 
@@ -307,6 +323,14 @@ const LogsPage = () => {
                 </div>
 
                 <div className="pklog-filter-selects">
+                  <select value={mode} onChange={(event) => setMode(event.target.value)}>
+                    <option value="">Semua Mode</option>
+                    <option value="normal">Normal</option>
+                    <option value="random">Random</option>
+                    <option value="belum-barcode">Belum Barcode</option>
+                    <option value="no-data-ginee">No Data Ginee</option>
+                  </select>
+
                   <select value={status} onChange={(event) => setStatus(event.target.value)}>
                     <option value="">Semua Status</option>
                     <option value="READY_TO_SHIP">READY_TO_SHIP</option>
@@ -484,7 +508,8 @@ const LogsPage = () => {
                       status,
                       pagination.current_page - 1,
                       tracking,
-                      performedBy
+                      performedBy,
+                      mode
                     )
                   }
                 >
@@ -504,7 +529,8 @@ const LogsPage = () => {
                       status,
                       pagination.current_page + 1,
                       tracking,
-                      performedBy
+                      performedBy,
+                      mode
                     )
                   }
                 >

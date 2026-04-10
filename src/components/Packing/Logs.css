@@ -182,8 +182,8 @@
 }
 
 .pklog-filter-selects {
-  grid-template-columns: 1fr 1fr;
-  flex: 1 1 240px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: 1 1 360px;
 }
 
 .pklog-filter-actions {

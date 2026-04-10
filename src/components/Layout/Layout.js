@@ -32,6 +32,7 @@ import {
   FaChartLine,
   FaUndo,
 } from "react-icons/fa";
+import { FiAlertTriangle } from "react-icons/fi";
 import API from "../../api";
 
 const Layout = () => {
@@ -619,7 +620,7 @@ const Layout = () => {
             <li>
               <div
                 onClick={togglePackingMenu}
-                className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
+                className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-no-data-ginee", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
               >
                 <FaBoxOpen className="icon" /> Packing
                 <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -639,6 +640,11 @@ const Layout = () => {
                   <li>
                     <Link to="packing-belum-barcode" className={`dropdown-link ${activeMenu === "packing-belum-barcode" ? "active" : ""}`} onClick={() => handleMenuClick("packing-belum-barcode")}>
                       <FaQrcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Produk Belum Barcode
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="packing-no-data-ginee" className={`dropdown-link ${activeMenu === "packing-no-data-ginee" ? "active" : ""}`} onClick={() => handleMenuClick("packing-no-data-ginee")}>
+                      <FiAlertTriangle className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#f59e0b" }} /> No Data Ginee
                     </Link>
                   </li>
                   <li>
