@@ -14,109 +14,21 @@ const formatRupiah = (value) => {
   })}`;
 };
 
-const getLogMode = (log) => {
-  if (log?.action === "scan_validasi_random") {
-    return "random";
-  }
+const getModeLabel = (log) => log?.mode_label || "Normal";
 
-  if (log?.action === "scan_validasi_belum_barcode") {
-    return "belum-barcode";
-  }
-
-  if (log?.action === "scan_no_data_ginee") {
-    return "no-data-ginee";
-  }
-
-  return "normal";
+const triggerBlobDownload = (blob, fileName) => {
+  const url = window.URL.createObjectURL(new Blob([blob]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
-const getModeLabel = (log) => {
-  const mode = getLogMode(log);
-
-  if (mode === "random") {
-    return "Random";
-  }
-
-  if (mode === "belum-barcode") {
-    return "Belum Barcode";
-  }
-
-  if (mode === "no-data-ginee") {
-    return "No Data Ginee";
-  }
-
-  return "Normal";
-};
-
-const getPackedTotalItems = (log) => {
-  if (getLogMode(log) === "random") {
-    const totalPackedQty = Number(log.order?.total_packed_qty || 0);
-    if (Number.isFinite(totalPackedQty) && totalPackedQty > 0) {
-      return totalPackedQty;
-    }
-
-    return (log.order?.packing_results || []).reduce(
-      (sum, item) => sum + Number(item.scanned_qty || 0),
-      0
-    );
-  }
-
-  return Number(log.order?.total_qty || 0);
-};
-
-const getPackingRows = (log) => {
-  const mode = getLogMode(log);
-
-  if (mode === "random") {
-    return (
-      log.order?.packing_results?.flatMap((item) =>
-        (item.serials || []).map((serial) => ({
-          key: `${item.id}-${serial.id || serial.serial_number}`,
-          sku: item.actual_sku,
-          originalSku: item.original_sku,
-          quantity: 1,
-          status: item.status,
-          serial_number: serial.serial_number,
-        }))
-      ) || []
-    );
-  }
-
-  if (mode === "belum-barcode") {
-    return (
-      log.order?.items?.map((item) => ({
-        key: `${log.id}-${item.id || item.sku}`,
-        sku: item.sku,
-        originalSku: null,
-        quantity: Number(item.quantity || 0),
-        status: "belum barcode",
-        serial_number: "-",
-      })) || []
-    );
-  }
-
-  return (
-    log.order?.items?.flatMap((item) =>
-      (item.serials || []).map((serial) => ({
-        key: `${item.sku}-${serial.id || serial.serial_number}`,
-        sku: item.sku,
-        originalSku: null,
-        quantity: 1,
-        status: "sesuai",
-        serial_number: serial.serial_number,
-      }))
-    ) || []
-  );
-};
-
-const getSerialPreview = (log) => {
-  if (getLogMode(log) === "belum-barcode") {
-    return "-";
-  }
-
-  const serials = getPackingRows(log).map((row) => row.serial_number).filter(Boolean);
-  return serials.length > 0 ? serials.join(", ") : "-";
-};
+const PER_PAGE_OPTIONS = [25, 50, 100];
+const KASIR_SUMMARY_BATCH = 5;
 
 const LogsPage = () => {
   const [logs, setLogs] = useState([]);
@@ -131,24 +43,31 @@ const LogsPage = () => {
   const [mode, setMode] = useState("");
   const today = new Date().toISOString().slice(0, 10);
   const [selectedLogs, setSelectedLogs] = useState(null);
+  const [selectedLogDetail, setSelectedLogDetail] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
   const [tracking, setTracking] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [kasirSummary, setKasirSummary] = useState([]);
+  const [exportJob, setExportJob] = useState(null);
   const tableScrollRef = useRef(null);
   const [pagination, setPagination] = useState({
-    current_page: 1,
-    last_page: 1,
+    next_cursor: null,
+    prev_cursor: null,
   });
+  const [perPage, setPerPage] = useState(25);
+  const [visibleKasirCount, setVisibleKasirCount] = useState(KASIR_SUMMARY_BATCH);
 
   const fetchLogs = async (
     start = startDate,
     end = endDate,
     stat = status,
-    page = 1,
+    cursor = null,
     track = tracking,
     performed = performedBy,
-    selectedMode = mode
+    selectedMode = mode,
+    pageSize = perPage
   ) => {
     try {
       setLoading(true);
@@ -156,7 +75,8 @@ const LogsPage = () => {
 
       const response = await API.get("/orders/logs", {
         params: {
-          page,
+          ...(cursor && { cursor }),
+          per_page: pageSize,
           start_date: start,
           end_date: end,
           ...(performed && { performed_by: performed }),
@@ -168,10 +88,11 @@ const LogsPage = () => {
 
       setLogs(response.data.data);
       setPagination({
-        current_page: response.data.current_page,
-        last_page: response.data.last_page,
+        next_cursor: response.data.next_cursor || null,
+        prev_cursor: response.data.prev_cursor || null,
       });
     } catch (fetchError) {
+      setPagination({ next_cursor: null, prev_cursor: null });
       setError("Gagal mengambil data logs.");
     } finally {
       setLoading(false);
@@ -220,6 +141,10 @@ const LogsPage = () => {
     fetchSummary(today, today);
   }, []);
 
+  useEffect(() => {
+    setVisibleKasirCount(KASIR_SUMMARY_BATCH);
+  }, [kasirSummary]);
+
   const handleFilter = () => {
     if (!startDate || !endDate) {
       alert("Silakan pilih tanggal awal dan akhir!");
@@ -227,48 +152,144 @@ const LogsPage = () => {
     }
 
     fetchSummary(startDate, endDate, status, performedBy, tracking, mode);
-    fetchLogs(startDate, endDate, status, 1, tracking, performedBy, mode);
+    fetchLogs(startDate, endDate, status, null, tracking, performedBy, mode, perPage);
+  };
+
+  const handlePerPageChange = (event) => {
+    const nextPerPage = Number(event.target.value) || 25;
+
+    setPerPage(nextPerPage);
+    fetchLogs(startDate, endDate, status, null, tracking, performedBy, mode, nextPerPage);
   };
 
   const handleExport = async () => {
     try {
       setExporting(true);
-      const response = await API.get("/orders/logs/export", {
-        responseType: "blob",
-        params: {
-          start_date: startDate,
-          end_date: endDate,
-          ...(status && { status }),
-          ...(mode && { mode }),
-          ...(tracking && { tracking_number: tracking }),
-          ...(performedBy && { performed_by: performedBy }),
-        },
+      setError(null);
+
+      const response = await API.post("/orders/logs/export", {
+        start_date: startDate,
+        end_date: endDate,
+        ...(status && { status }),
+        ...(mode && { mode }),
+        ...(tracking && { tracking_number: tracking }),
+        ...(performedBy && { performed_by: performedBy }),
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `logs_order_${startDate}_to_${endDate}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
+      const exportData = response.data?.data;
+      setExportJob(exportData || null);
+
+      if (exportData?.can_download) {
+        await downloadExportFile(exportData.id, exportData.file_name);
+      }
     } catch (exportError) {
-      alert("Gagal mengunduh file Excel.");
-    } finally {
+      alert("Gagal memproses export logs.");
       setExporting(false);
     }
   };
 
-  const handleOpenModal = (item) => {
+  const downloadExportFile = async (exportId, fileName) => {
+    try {
+      const response = await API.get(`/orders/logs/export/${exportId}/download`, {
+        responseType: "blob",
+      });
+
+      triggerBlobDownload(response.data, fileName || `packing_logs_${Date.now()}.xlsx`);
+      setExporting(false);
+    } catch (downloadError) {
+      setExporting(false);
+      alert("File export gagal diunduh.");
+    }
+  };
+
+  useEffect(() => {
+    if (!exportJob || !["queued", "processing"].includes(exportJob.status)) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await API.get(`/orders/logs/export/${exportJob.id}`);
+        const latestExport = response.data?.data;
+
+        setExportJob(latestExport || null);
+
+        if (latestExport?.status === "completed" && latestExport?.can_download) {
+          await downloadExportFile(latestExport.id, latestExport.file_name);
+        }
+
+        if (latestExport?.status === "failed") {
+          setExporting(false);
+          alert(latestExport.error_message || "Export logs gagal diproses.");
+        }
+      } catch (pollError) {
+        setExporting(false);
+        alert("Gagal memeriksa status export.");
+      }
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [exportJob]);
+
+  const handleOpenModal = async (item) => {
     setSelectedLogs(item);
+    setSelectedLogDetail(null);
+    setDetailError(null);
     setShowModal(true);
+
+    if (!item?.has_detail) {
+      return;
+    }
+
+    try {
+      setDetailLoading(true);
+      const response = await API.get(
+        `/orders/logs/${item.source_type}/${item.source_id}/detail`
+      );
+
+      setSelectedLogDetail(response.data?.data || null);
+    } catch (fetchError) {
+      setDetailError("Gagal mengambil detail log.");
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedLogs(null);
+    setSelectedLogDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
   };
 
+  const exportStatusLabel = (() => {
+    if (!exportJob) {
+      return null;
+    }
+
+    if (exportJob.status === "queued") {
+      return "Export masuk antrean.";
+    }
+
+    if (exportJob.status === "processing") {
+      return "File export sedang dibuat.";
+    }
+
+    if (exportJob.status === "completed") {
+      return "File export siap dan sedang diunduh.";
+    }
+
+    if (exportJob.status === "failed") {
+      return exportJob.error_message || "Export gagal diproses.";
+    }
+
+    return null;
+  })();
+
   const totalKasirAktif = kasirSummary.length;
+  const visibleKasirSummary = kasirSummary.slice(0, visibleKasirCount);
+  const hasMoreKasirSummary = visibleKasirCount < kasirSummary.length;
 
   const scrollTable = (direction) => {
     if (!tableScrollRef.current) {
@@ -365,6 +386,15 @@ const LogsPage = () => {
               </div>
 
               {error && <div className="pklog-error">{error}</div>}
+              {exportStatusLabel && (
+                <div
+                  className={`pklog-export-status ${
+                    exportJob?.status === "failed" ? "is-error" : ""
+                  }`}
+                >
+                  {exportStatusLabel}
+                </div>
+              )}
             </section>
 
             <section className="pklog-kpi-grid">
@@ -403,24 +433,44 @@ const LogsPage = () => {
               {kasirSummary.length === 0 ? (
                 <div className="pklog-empty">Tidak ada data petugas</div>
               ) : (
-                <div className="pklog-kasir-wrap">
-                  <table className="pklog-kasir-table">
-                    <thead>
-                      <tr>
-                        <th>Petugas</th>
-                        <th>Pesanan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {kasirSummary.map((item) => (
-                        <tr key={`${item.performed_by || "unknown"}-${item.total_orders}`}>
-                          <td>{item.performed_by || "-"}</td>
-                          <td>{item.total_orders}</td>
+                <>
+                  <div className="pklog-kasir-wrap">
+                    <table className="pklog-kasir-table">
+                      <thead>
+                        <tr>
+                          <th>Petugas</th>
+                          <th>Pesanan</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {visibleKasirSummary.map((item) => (
+                          <tr key={`${item.performed_by || "unknown"}-${item.total_orders}`}>
+                            <td>{item.performed_by || "-"}</td>
+                            <td>{item.total_orders}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="pklog-kasir-footer">
+                    <span>
+                      Menampilkan {visibleKasirSummary.length} dari {kasirSummary.length} petugas.
+                    </span>
+
+                    {hasMoreKasirSummary && (
+                      <button
+                        type="button"
+                        className="pklog-btn pklog-btn-secondary"
+                        onClick={() =>
+                          setVisibleKasirCount((current) => current + KASIR_SUMMARY_BATCH)
+                        }
+                      >
+                        Tampilkan 5 Berikutnya
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </section>
 
@@ -473,7 +523,7 @@ const LogsPage = () => {
                           <td>{logItem.order?.tracking_number || "-"}</td>
                           <td>{getModeLabel(logItem)}</td>
                           <td>{logItem.performed_by || "-"}</td>
-                          <td>{getPackedTotalItems(logItem)}</td>
+                          <td>{logItem.total_items || 0}</td>
                           <td>{formatRupiah(logItem.order?.total_amount)}</td>
                           <td>
                             <div className="pklog-date-time">
@@ -481,14 +531,15 @@ const LogsPage = () => {
                               <small>{dayjs(logItem.created_at).format("HH:mm:ss")}</small>
                             </div>
                           </td>
-                          <td>{getSerialPreview(logItem)}</td>
+                          <td>{logItem.serial_preview || "-"}</td>
                           <td>{logItem.order?.status || "-"}</td>
                           <td>
                             <button
                               className="pklog-btn-detail"
                               onClick={() => handleOpenModal(logItem)}
+                              disabled={!logItem.has_detail}
                             >
-                              Detail
+                              {logItem.has_detail ? "Detail" : "Tidak Ada"}
                             </button>
                           </td>
                         </tr>
@@ -499,50 +550,82 @@ const LogsPage = () => {
               </div>
 
               <div className="pagination">
-                <button
-                  disabled={pagination.current_page === 1}
-                  onClick={() =>
-                    fetchLogs(
-                      startDate,
-                      endDate,
-                      status,
-                      pagination.current_page - 1,
-                      tracking,
-                      performedBy,
-                      mode
-                    )
-                  }
-                >
-                  Prev
-                </button>
+                <div className="pagination-page-size">
+                  <label htmlFor="pklog-per-page">Tampilkan</label>
+                  <select
+                    id="pklog-per-page"
+                    value={perPage}
+                    onChange={handlePerPageChange}
+                    disabled={loading}
+                  >
+                    {PER_PAGE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <span>data per halaman</span>
+                </div>
 
-                <span>
-                  Page {pagination.current_page} / {pagination.last_page}
-                </span>
+                <div className="pagination-nav">
+                  <button
+                    disabled={!pagination.prev_cursor || loading}
+                    onClick={() =>
+                      fetchLogs(
+                        startDate,
+                        endDate,
+                        status,
+                        pagination.prev_cursor,
+                        tracking,
+                        performedBy,
+                        mode,
+                        perPage
+                      )
+                    }
+                  >
+                    Prev
+                  </button>
 
-                <button
-                  disabled={pagination.current_page === pagination.last_page}
-                  onClick={() =>
-                    fetchLogs(
-                      startDate,
-                      endDate,
-                      status,
-                      pagination.current_page + 1,
-                      tracking,
-                      performedBy,
-                      mode
-                    )
-                  }
-                >
-                  Next
-                </button>
+                  <span>Gunakan Prev / Next untuk lanjut ke data berikutnya.</span>
+
+                  <button
+                    disabled={!pagination.next_cursor || loading}
+                    onClick={() =>
+                      fetchLogs(
+                        startDate,
+                        endDate,
+                        status,
+                        pagination.next_cursor,
+                        tracking,
+                        performedBy,
+                        mode,
+                        perPage
+                      )
+                    }
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </section>
 
             {showModal && selectedLogs && (
               <div className="pklog-modal-overlay">
                 <div className="pklog-modal-content">
-                  <h3>Detail Scan - ID Logs #{selectedLogs.id}</h3>
+                  <h3>
+                    Detail Scan {selectedLogs.order?.tracking_number
+                      ? `- ${selectedLogs.order.tracking_number}`
+                      : `- ${selectedLogs.id}`}
+                  </h3>
+                  <div className="pklog-modal-meta">
+                    <span>{selectedLogDetail?.mode_label || selectedLogs.mode_label || "-"}</span>
+                    <span>{selectedLogDetail?.performed_by || selectedLogs.performed_by || "-"}</span>
+                    <span>
+                      {dayjs(selectedLogDetail?.created_at || selectedLogs.created_at).format(
+                        "DD-MM-YYYY HH:mm:ss"
+                      )}
+                    </span>
+                  </div>
                   <div className="pklog-modal-table-wrap">
                     <table className="pklog-modal-table">
                       <thead>
@@ -554,12 +637,26 @@ const LogsPage = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {getPackingRows(selectedLogs).length === 0 && (
+                        {detailLoading && (
+                          <tr>
+                            <td colSpan={4}>Memuat detail scan...</td>
+                          </tr>
+                        )}
+                        {!detailLoading && detailError && (
+                          <tr>
+                            <td colSpan={4}>{detailError}</td>
+                          </tr>
+                        )}
+                        {!detailLoading &&
+                          !detailError &&
+                          (selectedLogDetail?.rows || []).length === 0 && (
                           <tr>
                             <td colSpan={4}>Tidak ada detail scan untuk log ini.</td>
                           </tr>
                         )}
-                        {getPackingRows(selectedLogs).map((item) => (
+                        {!detailLoading &&
+                          !detailError &&
+                          (selectedLogDetail?.rows || []).map((item) => (
                           <tr key={item.key}>
                             <td>
                               {item.sku}

@@ -247,6 +247,18 @@
   background: #dcfce7;
 }
 
+.pklog-btn-secondary {
+  background: #ffffff;
+  border-color: #d1dae8;
+  color: #334155;
+}
+
+.pklog-btn-secondary:hover:not(:disabled) {
+  border-color: #4f46e5;
+  color: #4f46e5;
+  background: #f8faff;
+}
+
 .pklog-error {
   margin-top: 10px;
   border: 1px solid #fecaca;
@@ -255,6 +267,22 @@
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 12px;
+}
+
+.pklog-export-status {
+  margin-top: 10px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.pklog-export-status.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .pklog-kpi-grid {
@@ -340,6 +368,21 @@
 
 .pklog-kasir-table tbody tr:hover td {
   background: #f9fbff;
+}
+
+.pklog-kasir-footer {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pklog-kasir-footer span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
 }
 
 .pklog-table-wrap {
@@ -462,18 +505,54 @@
   background: #f8faff;
 }
 
+.pklog-btn-detail:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-color: #d1dae8;
+  color: #94a3b8;
+  background: #f8fafc;
+}
+
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
 }
 
+.pagination-page-size,
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination label,
 .pagination span {
   font-size: 12px;
   color: #475569;
   font-weight: 600;
+}
+
+.pagination-page-size select {
+  min-width: 78px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #d1dae8;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+.pagination-page-size select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .pagination button {
@@ -525,6 +604,23 @@
   margin: 0 0 14px;
   color: #0f172a;
   font-size: 16px;
+}
+
+.pklog-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pklog-modal-meta span {
+  border: 1px solid #dbe3f1;
+  background: #f8fafd;
+  color: #475569;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .pklog-modal-table-wrap {
@@ -628,6 +724,23 @@
 
   .pklog-table-tools-btns {
     margin-left: 0;
+  }
+
+  .pklog-kasir-footer {
+    align-items: stretch;
+  }
+
+  .pklog-kasir-footer .pklog-btn {
+    width: 100%;
+  }
+
+  .pagination {
+    justify-content: flex-start;
+  }
+
+  .pagination-page-size,
+  .pagination-nav {
+    width: 100%;
   }
 }
 
