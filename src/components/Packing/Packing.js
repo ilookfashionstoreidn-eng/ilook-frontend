@@ -61,7 +61,7 @@ const handleSearchOrder = async () => {
   const tracking = trackingNumber.trim();
   if (!tracking) return;
   setLoading(true);
-  setMessage("Mencari order... (jika belum tersinkron, sistem akan mengambil data dari Ginee)");
+  setMessage("");
   setCanSubmitByEnter(false);
 
   try {
