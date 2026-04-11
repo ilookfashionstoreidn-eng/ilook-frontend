@@ -6,122 +6,21 @@ import { getAllSlots, getSlotStockSummaryMap } from "./GudangProdukMockStore";
 import { GudangLayoutMap, buildSlotHeadline } from "./GudangProdukSharedV2";
 import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
-import { buildGudangWorkspaceErrorMessage, placeGudangProdukSku } from "./GudangProdukWorkspaceApi";
+import {
+  buildGudangWorkspaceErrorMessage,
+  ensureGudangProdukSkuActive,
+  placeGudangProdukSku,
+} from "./GudangProdukWorkspaceApi";
 import { showGudangError, showGudangSuccess, showGudangWarning } from "./GudangProdukAlerts";
+import {
+  SERIAL_SKU_AUTO_MATCH_SCORE,
+  buildSerialSkuSuggestions,
+  findBestSerialSkuMatch,
+  isSkuSearchMatch,
+  normalizeLooseText,
+} from "./GudangProdukSerialSkuUtils";
 
 const normalizeSelectValue = (value) => (value === "" ? "" : value);
-const normalizeText = (value) => String(value || "").trim().toUpperCase();
-const normalizeLooseText = (value) =>
-  normalizeText(value)
-    .replace(/[^A-Z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const SERIAL_SKU_AUTO_MATCH_SCORE = 60;
-const SERIAL_SKU_SUGGESTION_SCORE = 25;
-const SERIAL_SKU_STOP_WORDS = new Set(["SET", "SKU", "ALL", "SIZE", "ALLSIZE"]);
-const SERIAL_SKU_SIZE_TOKENS = new Set(["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"]);
-
-const buildTextTokens = (value) =>
-  normalizeLooseText(value)
-    .split(" ")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 1 && !SERIAL_SKU_STOP_WORDS.has(item));
-
-const buildFullTokens = (value) =>
-  normalizeLooseText(value)
-    .split(" ")
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-const areSimilarTokens = (left, right) => {
-  if (!left || !right) return false;
-  if (left === right) return true;
-  if (left.length < 4 || right.length < 4) return false;
-  return left.includes(right) || right.includes(left) || left.slice(0, 4) === right.slice(0, 4);
-};
-
-const countMatchingTokens = (targetTokens, candidateTokens) => {
-  const usedTargetIndexes = new Set();
-
-  return candidateTokens.reduce((total, candidateToken) => {
-    const matchingIndex = targetTokens.findIndex(
-      (targetToken, index) => !usedTargetIndexes.has(index) && areSimilarTokens(targetToken, candidateToken)
-    );
-
-    if (matchingIndex === -1) return total;
-    usedTargetIndexes.add(matchingIndex);
-    return total + 1;
-  }, 0);
-};
-
-const getSkuMatchScore = (sku, serialSkuValue) => {
-  const target = normalizeText(serialSkuValue);
-  const targetLoose = normalizeLooseText(serialSkuValue);
-  const targetCompact = targetLoose.replace(/\s+/g, "");
-
-  if (!targetCompact) return 0;
-
-  const targetTokens = buildTextTokens(serialSkuValue);
-  const targetFullTokens = buildFullTokens(serialSkuValue);
-  let bestScore = 0;
-
-  [sku?.code, sku?.label].forEach((value) => {
-    const candidate = normalizeText(value);
-    const candidateLoose = normalizeLooseText(value);
-    const candidateCompact = candidateLoose.replace(/\s+/g, "");
-
-    if (!candidateCompact) return;
-
-    if (candidate === target || candidateLoose === targetLoose || candidateCompact === targetCompact) {
-      bestScore = Math.max(bestScore, 100);
-      return;
-    }
-
-    if (
-      targetCompact.length >= 6 &&
-      candidateCompact.length >= 6 &&
-      (candidateCompact.includes(targetCompact) || targetCompact.includes(candidateCompact))
-    ) {
-      bestScore = Math.max(bestScore, 85);
-    }
-
-    if (!targetTokens.length) return;
-
-    const candidateTokens = buildTextTokens(value);
-    const candidateFullTokens = buildFullTokens(value);
-    const tokenMatches = countMatchingTokens(targetTokens, candidateTokens);
-    const hasSameSizeToken = candidateFullTokens.some(
-      (token) => SERIAL_SKU_SIZE_TOKENS.has(token) && targetFullTokens.includes(token)
-    );
-
-    if (!tokenMatches && !hasSameSizeToken) return;
-
-    bestScore = Math.max(bestScore, tokenMatches * 25 + (hasSameSizeToken ? 10 : 0));
-  });
-
-  return bestScore;
-};
-
-const findBestSerialSkuMatch = (skus, serialSkuValue) =>
-  skus
-    .map((sku) => ({ sku, score: getSkuMatchScore(sku, serialSkuValue) }))
-    .sort((left, right) => right.score - left.score)[0] || null;
-
-const buildSerialSkuSuggestions = (skus, serialSkuValue) =>
-  skus
-    .map((sku) => ({ sku, score: getSkuMatchScore(sku, serialSkuValue) }))
-    .filter((item) => item.score >= SERIAL_SKU_SUGGESTION_SCORE)
-    .sort((left, right) => {
-      if (left.score !== right.score) return right.score - left.score;
-      return String(left.sku.label || left.sku.code || "").localeCompare(String(right.sku.label || right.sku.code || ""));
-    })
-    .map((item) => item.sku);
-
-const isSkuSearchMatch = (sku, keyword) => {
-  if (!keyword) return true;
-  return [sku?.code, sku?.label].some((value) => normalizeLooseText(value).includes(keyword));
-};
 
 const buildSuggestionDescription = (item) => {
   if (item.hasSameSku) return `SKU ini sudah ada ${item.sameSkuQty} pcs di slot ini.`;
@@ -130,7 +29,7 @@ const buildSuggestionDescription = (item) => {
 };
 
 const InputSeriGudang = ({ embedded = false }) => {
-  const { state, setState, isLoading, error } = useGudangProdukWorkspace();
+  const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace();
   const [layoutId, setLayoutId] = useState("");
   const [serialQuery, setSerialQuery] = useState("");
   const [selectedSerialId, setSelectedSerialId] = useState("");
@@ -143,6 +42,7 @@ const InputSeriGudang = ({ embedded = false }) => {
   const [serialLoading, setSerialLoading] = useState(true);
   const [serialError, setSerialError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isActivatingSerialSku, setIsActivatingSerialSku] = useState(false);
   const [isSerialDropdownOpen, setIsSerialDropdownOpen] = useState(false);
   const serialComboboxRef = useRef(null);
 
@@ -393,6 +293,47 @@ const InputSeriGudang = ({ embedded = false }) => {
     setIsSerialDropdownOpen(true);
   };
 
+  const handleActivateSelectedSerialSku = async () => {
+    if (!selectedSerial?.sku) {
+      await showGudangWarning(
+        "SKU seri belum tersedia",
+        "Kode seri ini belum memiliki SKU yang bisa dijadikan aktif."
+      );
+      return;
+    }
+
+    try {
+      setIsActivatingSerialSku(true);
+
+      const result = await ensureGudangProdukSkuActive(selectedSerial.sku);
+      const nextState = await refresh({ silent: true });
+      const activatedSku = nextState.skus.find(
+        (sku) =>
+          String(sku.code || "").trim().toUpperCase() ===
+          String(selectedSerial.sku || "").trim().toUpperCase()
+      );
+
+      if (activatedSku?.id) {
+        setSelectedSkuId(String(activatedSku.id));
+      }
+
+      await showGudangSuccess(
+        "SKU aktif siap dipakai",
+        `${activatedSku?.label || result.sku?.sku || selectedSerial.sku} sudah dijadikan SKU aktif.`
+      );
+    } catch (activationError) {
+      await showGudangError(
+        "Gagal menjadikan SKU aktif",
+        buildGudangWorkspaceErrorMessage(
+          activationError,
+          "Gagal menjadikan SKU dari kode seri sebagai SKU aktif."
+        )
+      );
+    } finally {
+      setIsActivatingSerialSku(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedSerial || !selectedSku || !selectedLayout || !selectedSlot) {
@@ -514,9 +455,19 @@ const InputSeriGudang = ({ embedded = false }) => {
             <div className="gudang-serial-picker-section">
               <div className="gudang-ui-callout"><FaBarcode /><strong>Kode seri terpilih: {selectedSerial.nomor_seri}{selectedSerial.matchedProduct?.name ? ` / ${selectedSerial.matchedProduct.name}` : ""}</strong></div>
               {!hasAutomaticSkuOptions ? (
-                <div className="gudang-ui-callout gudang-simple-warning-callout">
-                  <FaArrowRight />
-                  <strong>SKU seri: {selectedSerial.sku || "-"} belum ada di SKU aktif gudang. Pilih manual dari daftar aktif di bawah.</strong>
+                <div className="gudang-ui-callout gudang-simple-warning-callout gudang-serial-warning-callout">
+                  <div className="gudang-serial-warning-message">
+                    <FaArrowRight />
+                    <strong>SKU seri: {selectedSerial.sku || "-"} belum ada di SKU aktif gudang. SKU dari sini bisa langsung dijadikan aktif atau pilih manual dari daftar aktif di bawah.</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="gudang-ui-button-secondary"
+                    onClick={handleActivateSelectedSerialSku}
+                    disabled={isActivatingSerialSku}
+                  >
+                    {isActivatingSerialSku ? "Menjadikan aktif..." : "Jadikan SKU Aktif"}
+                  </button>
                 </div>
               ) : null}
               <div className="gudang-simple-sku-section">

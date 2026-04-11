@@ -54,6 +54,40 @@ const buildRackCardStyle = (position, canvas) => ({
   height: `${(position.h / canvas.rows) * 100}%`,
 });
 
+const formatRackNumber = (rackNumber) => `Rak ${String(rackNumber).padStart(2, "0")}`;
+
+const buildRackSlotCode = (floor, block, rack, rowNumber) =>
+  `L${floor?.number || ""}${String(block?.code || "").toUpperCase()}${String(rack?.number || "").padStart(
+    2,
+    "0"
+  )}${rowNumber}`;
+
+const buildRackRangeLabel = (floor, block, rack) => {
+  const totalRows = Number(rack?.rows) || 0;
+  if (!totalRows) return "Belum ada slot";
+
+  const firstSlot = buildRackSlotCode(floor, block, rack, 1);
+  if (totalRows === 1) return firstSlot;
+
+  return `${firstSlot} - ${buildRackSlotCode(floor, block, rack, totalRows)}`;
+};
+
+const buildRackFootprintLabel = (position) => `${position?.w || 2}x${position?.h || 2}`;
+
+const getRackCardDensity = (position) => {
+  const width = Number(position?.w || 0);
+
+  if (width <= 2) {
+    return "micro";
+  }
+
+  if (width <= 3 || Number(position?.h || 0) <= 3) {
+    return "compact";
+  }
+
+  return "regular";
+};
+
 const resizeHandles = [
   { key: "n", className: "north" },
   { key: "s", className: "south" },
@@ -459,11 +493,26 @@ const GudangLayoutEditorModal = ({
                             .join(" ")}
                           onClick={() => setSelectedRackId(rack.id)}
                         >
-                          <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
-                          <span>{rack.label || "Tanpa label"}</span>
-                          <small>
-                            {rack.rows} baris | x{position?.x || 1} y{position?.y || 1}
-                          </small>
+                          <div className="gudang-layout-modal-asset-card-head">
+                            <div className="gudang-layout-modal-asset-card-title">
+                              <strong>{formatRackNumber(rack.number)}</strong>
+                              <span>{rack.label || "Siap diatur di kanvas blok"}</span>
+                            </div>
+                            <span className="gudang-layout-modal-asset-pill">
+                              {rack.rows} baris
+                            </span>
+                          </div>
+
+                          <div className="gudang-layout-modal-asset-meta">
+                            <span className="gudang-layout-modal-asset-tag">
+                              Pos x{position?.x || 1} y{position?.y || 1}
+                            </span>
+                            <span className="gudang-layout-modal-asset-tag">
+                              Uk {buildRackFootprintLabel(position)}
+                            </span>
+                          </div>
+
+                          <small>{buildRackRangeLabel(activeFloor, activeBlock, rack)}</small>
                         </button>
                       );
                     })}
@@ -576,7 +625,8 @@ const GudangLayoutEditorModal = ({
                   <div className="gudang-layout-modal-toolbar-note">
                     <FaLayerGroup />
                     <span>
-                      Sedang edit {activeFloor.label} / {activeBlock.label || `Blok ${activeBlock.code}`}
+                      Sedang edit {activeFloor.label} / {activeBlock.label || `Blok ${activeBlock.code}`} |{" "}
+                      {(activeBlock.racks || []).length} rak
                     </span>
                   </div>
                 </div>
@@ -593,66 +643,87 @@ const GudangLayoutEditorModal = ({
                     className="gudang-layout-editor-canvas"
                     style={buildCanvasStyle(canvas)}
                   >
-                    {(activeBlock.racks || []).map((rack, rackIndex) => (
-                      <div
-                        key={rack.id}
-                        className={[
-                          "gudang-layout-rack-card",
-                          "freeform",
-                          "editor",
-                          rack.id === selectedRack?.id ? "selected" : "",
-                          rack.id === draggedRackId && interactionMode === "move"
-                            ? "dragging"
-                            : "",
-                          rack.id === draggedRackId && interactionMode === "resize"
-                            ? "resizing"
-                            : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        style={buildRackCardStyle(rack.layoutPosition, canvas)}
-                        onClick={() => setSelectedRackId(rack.id)}
-                      >
+                    {(activeBlock.racks || []).map((rack, rackIndex) => {
+                      const rackPosition =
+                        rack.layoutPosition || resolveRackLayoutPosition(rack, rackIndex, activeBlock);
+                      const rackDensity = getRackCardDensity(rackPosition);
+                      const rackNumberLabel = String(rack.number).padStart(2, "0");
+                      const rackDisplayTitle =
+                        rackDensity === "micro" ? `R${rackNumberLabel}` : `Rak ${rackNumberLabel}`;
+                      const previewSlotCode = buildRackSlotCode(activeFloor, activeBlock, rack, 1);
+                      const previewHelper =
+                        rack.rows > 1 ? `Slot pertama dari ${rack.rows} slot` : "1 slot tersimpan";
+                      const previewFooterPrimary =
+                        rackDensity === "regular"
+                          ? buildRackRangeLabel(activeFloor, activeBlock, rack)
+                          : `${rack.rows} slot siap dipakai`;
+
+                      return (
                         <div
-                          className="gudang-layout-rack-head editable"
-                          onPointerDown={(event) =>
-                            beginRackInteraction(event, rack, rackIndex, "move")
-                          }
+                          key={rack.id}
+                          className={[
+                            "gudang-layout-rack-card",
+                            "freeform",
+                            "editor",
+                            rackDensity,
+                            rack.id === selectedRack?.id ? "selected" : "",
+                            rack.id === draggedRackId && interactionMode === "move"
+                              ? "dragging"
+                              : "",
+                            rack.id === draggedRackId && interactionMode === "resize"
+                              ? "resizing"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          style={buildRackCardStyle(rackPosition, canvas)}
+                          onClick={() => setSelectedRackId(rack.id)}
                         >
-                          <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
-                          <span>Drag aset</span>
-                        </div>
-
-                        <div className="gudang-layout-slot-grid compact">
-                          {Array.from({ length: rack.rows }, (_, slotIndex) => {
-                            const rowNumber = slotIndex + 1;
-
-                            return (
-                              <div key={`${rack.id}_${rowNumber}`} className="gudang-layout-slot-chip">
-                                {`L${activeFloor.number}${String(activeBlock.code).toUpperCase()}${String(
-                                  rack.number
-                                ).padStart(2, "0")}${rowNumber}`}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {resizeHandles.map((handle) => (
-                          <button
-                            key={`${rack.id}_${handle.key}`}
-                            type="button"
-                            className={[
-                              "gudang-layout-rack-resize-handle",
-                              handle.className,
-                            ].join(" ")}
+                          <div
+                            className="gudang-layout-rack-head editable editor-mode"
                             onPointerDown={(event) =>
-                              beginRackInteraction(event, rack, rackIndex, "resize", handle.key)
+                              beginRackInteraction(event, rack, rackIndex, "move")
                             }
-                            aria-label={`Resize rak ${rack.number} ${handle.key}`}
-                          />
-                        ))}
-                      </div>
-                    ))}
+                          >
+                            <div className="gudang-layout-rack-title-group">
+                              <strong>{rackDisplayTitle}</strong>
+                              <span>{`Pos x${rackPosition.x} y${rackPosition.y} | Uk ${buildRackFootprintLabel(
+                                rackPosition
+                              )}`}</span>
+                            </div>
+                            <span className="gudang-layout-rack-chip editor-chip">
+                              {rack.rows} SLOT
+                            </span>
+                          </div>
+
+                          <div className="gudang-layout-rack-preview editor-preview">
+                            <div className="gudang-layout-rack-preview-main">
+                              <strong>{previewSlotCode}</strong>
+                              <span>{previewHelper}</span>
+                            </div>
+                            <div className="gudang-layout-rack-preview-footer">
+                              <small>{previewFooterPrimary}</small>
+                              <small>Drag untuk pindah dan resize</small>
+                            </div>
+                          </div>
+
+                          {resizeHandles.map((handle) => (
+                            <button
+                              key={`${rack.id}_${handle.key}`}
+                              type="button"
+                              className={[
+                                "gudang-layout-rack-resize-handle",
+                                handle.className,
+                              ].join(" ")}
+                              onPointerDown={(event) =>
+                                beginRackInteraction(event, rack, rackIndex, "resize", handle.key)
+                              }
+                              aria-label={`Resize rak ${rack.number} ${handle.key}`}
+                            />
+                          ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </section>

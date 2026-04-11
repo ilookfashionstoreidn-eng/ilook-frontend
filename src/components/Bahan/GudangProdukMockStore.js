@@ -248,9 +248,12 @@ export const getDefaultRackLayoutPosition = (rack, rackIndex, block) => {
   const rackCount = Math.max((block?.racks || []).length, 1);
   const preferredColumns = clampNumber(block?.layoutColumns, 1, 4, 3);
   const racksPerRow = Math.min(preferredColumns, rackCount);
-  const defaultWidth = Math.max(2, Math.floor(canvas.columns / Math.max(racksPerRow, 1)));
+  const defaultWidth = Math.max(
+    2,
+    Math.min(3, Math.floor(canvas.columns / Math.max(racksPerRow, 1)))
+  );
   const rowCount = Math.max(Math.ceil(rackCount / Math.max(racksPerRow, 1)), 1);
-  const defaultHeight = Math.max(2, Math.floor(canvas.rows / rowCount));
+  const defaultHeight = 2;
   const columnIndex = rackIndex % Math.max(racksPerRow, 1);
   const rowIndex = Math.floor(rackIndex / Math.max(racksPerRow, 1));
 
