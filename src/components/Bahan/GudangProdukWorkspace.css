@@ -2076,12 +2076,12 @@
   border: 1px solid #dbe5f1;
   border-radius: 14px;
   padding: 12px 14px;
-  background: #f8fbff;
+  background: linear-gradient(180deg, #fbfdff, #f6faff);
   text-align: left;
   cursor: pointer;
   display: grid;
-  gap: 4px;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  gap: 6px;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .gudang-layout-modal-block-button span,
@@ -2107,6 +2107,117 @@
 .gudang-layout-modal-asset-card:hover {
   transform: translateY(-1px);
   border-color: #9bb6eb;
+}
+
+.gudang-layout-modal-asset-card {
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+  gap: 10px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(36, 88, 206, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.98));
+  box-shadow: 0 16px 28px -26px rgba(15, 23, 42, 0.42);
+}
+
+.gudang-layout-modal-asset-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(36, 88, 206, 0.92), rgba(15, 118, 110, 0.92));
+  opacity: 0.85;
+}
+
+.gudang-layout-modal-asset-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gudang-layout-modal-asset-card-title {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.gudang-layout-modal-asset-card-title strong {
+  color: #173a63;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.gudang-layout-modal-asset-card-title span {
+  color: #58708f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.gudang-layout-modal-asset-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #d6e5ff;
+  color: #2458ce;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gudang-layout-modal-asset-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gudang-layout-modal-asset-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(237, 244, 255, 0.9);
+  border: 1px solid #d8e5f6;
+  color: #355589;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gudang-layout-modal-asset-card small {
+  color: #527093;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.gudang-layout-modal-asset-card.active {
+  border-color: #2458ce;
+  background:
+    radial-gradient(circle at top right, rgba(36, 88, 206, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(240, 247, 255, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(36, 88, 206, 0.08),
+    0 20px 32px -24px rgba(15, 23, 42, 0.46),
+    0 18px 28px -24px rgba(36, 88, 206, 0.42);
+}
+
+.gudang-layout-modal-asset-card.active .gudang-layout-modal-asset-pill {
+  background: #2458ce;
+  border-color: #2458ce;
+  color: #ffffff;
+}
+
+.gudang-layout-modal-asset-card.active .gudang-layout-modal-asset-tag {
+  border-color: #bfd3fb;
+  background: rgba(239, 246, 255, 0.95);
 }
 
 .gudang-layout-modal-canvas-panel {
@@ -2170,11 +2281,23 @@
   z-index: 1;
   overflow: visible;
   touch-action: none;
+  padding: 14px 14px 12px;
+  gap: 10px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(36, 88, 206, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(245, 249, 255, 0.98));
+  box-shadow:
+    0 22px 34px -28px rgba(15, 23, 42, 0.58),
+    0 16px 28px -24px rgba(36, 88, 206, 0.24);
 }
 
 .gudang-layout-rack-card.editor.selected {
   border-color: #2458ce;
-  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12), 0 18px 32px -20px rgba(15, 23, 42, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(36, 88, 206, 0.12),
+    0 24px 36px -24px rgba(15, 23, 42, 0.62),
+    0 18px 30px -24px rgba(36, 88, 206, 0.34);
 }
 
 .gudang-layout-rack-card.editor.dragging {
@@ -2189,6 +2312,162 @@
 .gudang-layout-rack-card.editor .gudang-layout-rack-head.editable {
   cursor: grab;
   touch-action: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-head.editable .gudang-layout-rack-title-group {
+  flex: 1;
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-head.editable .gudang-layout-rack-title-group strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-head.editable .gudang-layout-rack-title-group span {
+  color: #58708f;
+  font-size: 11px;
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-chip.editor-chip {
+  background: linear-gradient(135deg, #edf4ff, #f7fbff);
+  border-color: #d8e5f8;
+  color: #2458ce;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-preview.editor-preview {
+  gap: 6px;
+  padding: 10px 11px;
+  overflow: hidden;
+}
+
+.gudang-layout-rack-card.editor .gudang-layout-rack-preview strong,
+.gudang-layout-rack-card.editor .gudang-layout-rack-preview span,
+.gudang-layout-rack-card.editor .gudang-layout-rack-preview small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gudang-layout-rack-card.editor.compact {
+  padding: 12px 11px 10px;
+  gap: 8px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-head.editable {
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-title-group {
+  gap: 3px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-title-group strong {
+  font-size: 12px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-title-group span {
+  font-size: 10px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-chip.editor-chip {
+  padding: 5px 8px;
+  font-size: 9px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-preview.editor-preview {
+  padding: 9px 10px;
+  gap: 6px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-preview strong {
+  font-size: 12px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-preview span,
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-preview small {
+  font-size: 10px;
+}
+
+.gudang-layout-rack-card.editor.compact .gudang-layout-rack-preview-footer small:last-child {
+  display: none;
+}
+
+.gudang-layout-rack-card.editor.micro {
+  padding: 10px 8px 8px;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.gudang-layout-rack-card.editor.micro::before {
+  left: 10px;
+  right: 10px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-head.editable {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 7px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-title-group {
+  width: 100%;
+  justify-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-title-group strong {
+  font-size: 11px;
+  line-height: 1.05;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-title-group span {
+  display: none;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-chip.editor-chip {
+  padding: 4px 7px;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview.editor-preview {
+  padding: 8px 7px;
+  gap: 5px;
+  border-radius: 14px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview-main {
+  justify-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview strong {
+  font-size: 11px;
+  line-height: 1.05;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview span {
+  font-size: 9px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview-footer {
+  justify-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.gudang-layout-rack-card.editor.micro .gudang-layout-rack-preview-footer small {
+  font-size: 9px;
+  line-height: 1.1;
 }
 
 .gudang-layout-rack-card.editor .gudang-layout-rack-head.editable:active {
@@ -2629,6 +2908,26 @@
   display: grid;
   gap: 14px;
   margin-top: 20px;
+}
+
+.gudang-serial-warning-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gudang-serial-warning-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 280px;
+}
+
+.gudang-serial-warning-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .gudang-serial-combobox {

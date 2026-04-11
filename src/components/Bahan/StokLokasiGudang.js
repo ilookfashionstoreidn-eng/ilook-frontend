@@ -1,13 +1,433 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FaBoxes, FaSearchLocation } from "react-icons/fa";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { FaBoxes, FaDownload, FaSearchLocation } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import {
   getAllSlots,
+  getOrderedRacksForBlock,
   getSlotStockSummaryMap,
+  normalizeBlockCanvas,
 } from "./GudangProdukMockStore";
 import { GudangLayoutMap, GudangStatCard, buildSlotHeadline } from "./GudangProdukSharedV2";
 import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
+
+const buildRackKey = (layoutId, floorNumber, blockCode, rackNumber) =>
+  `${layoutId}__F${floorNumber}__B${String(blockCode).toUpperCase()}__R${rackNumber}`;
+
+const formatRackNumber = (rackNumber) => String(rackNumber).padStart(2, "0");
+
+const truncateText = (value, maxLength) => {
+  if (!value) return "";
+  return value.length > maxLength ? `${value.slice(0, Math.max(maxLength - 1, 1))}...` : value;
+};
+
+const getRackPreviewDensity = (slotCount) => {
+  if (slotCount <= 2) return "micro";
+  if (slotCount <= 4) return "compact";
+  return "regular";
+};
+
+const buildRackSkuPreviewText = (skuItems = [], density = "regular") => {
+  if (!skuItems.length) return "Belum ada SKU";
+
+  const limitByDensity = {
+    micro: 1,
+    compact: 2,
+    regular: 3,
+  };
+  const labelLengthByDensity = {
+    micro: 16,
+    compact: 22,
+    regular: 26,
+  };
+  const limit = limitByDensity[density] || limitByDensity.regular;
+  const labelLength = labelLengthByDensity[density] || labelLengthByDensity.regular;
+  const labels = skuItems.slice(0, limit).map((item) => truncateText(item.label, labelLength));
+  const remainingCount = Math.max(skuItems.length - limit, 0);
+
+  return remainingCount ? `${labels.join(", ")} +${remainingCount} SKU` : labels.join(", ");
+};
+
+const buildRackSummaryMap = (slots, selectedSkuId = "") => {
+  const map = {};
+
+  slots.forEach((slot) => {
+    const rackKey = buildRackKey(slot.layoutId, slot.floorNumber, slot.blockCode, slot.rackNumber);
+
+    if (!map[rackKey]) {
+      map[rackKey] = {
+        key: rackKey,
+        layoutId: slot.layoutId,
+        floorNumber: slot.floorNumber,
+        floorLabel: slot.floorLabel,
+        blockCode: String(slot.blockCode).toUpperCase(),
+        blockLabel: slot.blockLabel,
+        rackNumber: slot.rackNumber,
+        rackLabel: slot.rackLabel,
+        slotCount: 0,
+        filledSlotCount: 0,
+        totalQty: 0,
+        slotEntries: [],
+        skuMap: {},
+      };
+    }
+
+    const summary = map[rackKey];
+    summary.slotCount += 1;
+    summary.totalQty += Number(slot.totalQty || 0);
+    if (Number(slot.totalQty || 0) > 0) {
+      summary.filledSlotCount += 1;
+    }
+    summary.slotEntries.push({
+      rowNumber: slot.rowNumber,
+      slotCode: slot.slotCode,
+      slotId: slot.id,
+    });
+
+    (slot.lines || []).forEach((line) => {
+      const skuKey = String(line.skuId || line.sku?.id || line.sku?.code || line.id);
+
+      if (!summary.skuMap[skuKey]) {
+        summary.skuMap[skuKey] = {
+          skuId: line.skuId,
+          code: line.sku?.code || "-",
+          label: line.sku?.label || line.product?.name || "SKU tanpa nama",
+          qty: 0,
+          slotCodes: [],
+          rowNumbers: [],
+        };
+      }
+
+      summary.skuMap[skuKey].qty += Number(line.qty || 0);
+      summary.skuMap[skuKey].slotCodes.push(slot.slotCode);
+      summary.skuMap[skuKey].rowNumbers.push(slot.rowNumber);
+    });
+  });
+
+  Object.values(map).forEach((summary) => {
+    summary.slotEntries.sort((left, right) => left.rowNumber - right.rowNumber);
+    summary.slotCodes = summary.slotEntries.map((entry) => entry.slotCode);
+    summary.skuItems = Object.values(summary.skuMap)
+      .map((item) => ({
+        ...item,
+        slotCodes: Array.from(new Set(item.slotCodes)),
+        rowNumbers: Array.from(new Set(item.rowNumbers)).sort((left, right) => left - right),
+      }))
+      .sort((left, right) => {
+        const leftIsSelected =
+          selectedSkuId && String(left.skuId) === String(selectedSkuId) ? 1 : 0;
+        const rightIsSelected =
+          selectedSkuId && String(right.skuId) === String(selectedSkuId) ? 1 : 0;
+
+        return (
+          rightIsSelected - leftIsSelected ||
+          right.qty - left.qty ||
+          left.label.localeCompare(right.label)
+        );
+      });
+    summary.hasSelectedSku = selectedSkuId
+      ? summary.skuItems.some((item) => String(item.skuId) === String(selectedSkuId))
+      : false;
+    summary.previewText = buildRackSkuPreviewText(
+      summary.skuItems,
+      getRackPreviewDensity(summary.slotCount)
+    );
+    delete summary.skuMap;
+  });
+
+  return map;
+};
+
+const drawPdfChip = (doc, text, x, y, options = {}) => {
+  const {
+    fillColor = [237, 244, 255],
+    textColor = [36, 88, 206],
+    borderColor = [215, 228, 244],
+  } = options;
+  const safeText = String(text || "");
+  const textWidth = doc.getTextWidth(safeText);
+  const width = Math.max(textWidth + 8, 24);
+
+  doc.setFillColor(...fillColor);
+  doc.setDrawColor(...borderColor);
+  doc.roundedRect(x, y, width, 7, 3.5, 3.5, "FD");
+  doc.setTextColor(...textColor);
+  doc.setFontSize(8);
+  doc.text(safeText, x + width / 2, y + 4.7, { align: "center" });
+
+  return width;
+};
+
+const drawPdfLayoutPage = ({
+  doc,
+  layout,
+  floor,
+  block,
+  canvas,
+  rackItems,
+  rackSummaryByKey,
+  selectedSkuLabel,
+}) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 12;
+  const headerX = margin;
+  const headerY = 12;
+  const headerWidth = pageWidth - margin * 2;
+  const headerHeight = 22;
+  const mapX = margin;
+  const mapY = headerY + headerHeight + 6;
+  const mapWidth = pageWidth - margin * 2;
+  const mapHeight = 98;
+  const generatedAtLabel = new Date().toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  doc.setFillColor(249, 251, 255);
+  doc.setDrawColor(219, 230, 244);
+  doc.roundedRect(headerX, headerY, headerWidth, headerHeight, 7, 7, "FD");
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(16);
+  doc.text(layout.name || "Layout Gudang", headerX + 6, headerY + 8);
+
+  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(9);
+  doc.text(
+    `${floor.label || `Lantai ${floor.number}`} | ${block.label || `Blok ${block.code}`} | Dibuat ${generatedAtLabel}`,
+    headerX + 6,
+    headerY + 14
+  );
+
+  let chipX = headerX + 6;
+  chipX += drawPdfChip(doc, `Grid ${canvas.columns} x ${canvas.rows}`, chipX, headerY + 16);
+  chipX += 3;
+  chipX += drawPdfChip(doc, `Rak ${rackItems.length}`, chipX, headerY + 16, {
+    fillColor: [255, 255, 255],
+    textColor: [71, 98, 127],
+    borderColor: [216, 229, 241],
+  });
+
+  if (selectedSkuLabel) {
+    chipX += 3;
+    drawPdfChip(doc, `Highlight SKU: ${truncateText(selectedSkuLabel, 32)}`, chipX, headerY + 16, {
+      fillColor: [236, 253, 245],
+      textColor: [15, 118, 110],
+      borderColor: [183, 228, 216],
+    });
+  }
+
+  doc.setFillColor(252, 253, 255);
+  doc.setDrawColor(217, 228, 242);
+  doc.roundedRect(mapX, mapY, mapWidth, mapHeight, 8, 8, "FD");
+
+  doc.setDrawColor(230, 238, 248);
+  doc.setLineWidth(0.18);
+  for (let column = 1; column < canvas.columns; column += 1) {
+    const x = mapX + (column / canvas.columns) * mapWidth;
+    doc.line(x, mapY, x, mapY + mapHeight);
+  }
+  for (let row = 1; row < canvas.rows; row += 1) {
+    const y = mapY + (row / canvas.rows) * mapHeight;
+    doc.line(mapX, y, mapX + mapWidth, y);
+  }
+
+  rackItems.forEach(({ rack, position }) => {
+    const rackKey = buildRackKey(layout.id, floor.number, block.code, rack.number);
+    const rackSummary = rackSummaryByKey[rackKey];
+    const x = mapX + ((position.x - 1) / canvas.columns) * mapWidth;
+    const y = mapY + ((position.y - 1) / canvas.rows) * mapHeight;
+    const width = (position.w / canvas.columns) * mapWidth;
+    const height = (position.h / canvas.rows) * mapHeight;
+    const density =
+      width <= 22 || height <= 16 ? "micro" : width <= 34 || height <= 24 ? "compact" : "regular";
+    const previewText = rackSummary?.previewText || "Kosong";
+    const previewFontSize = density === "micro" ? 5.4 : density === "compact" ? 6 : 6.8;
+    const previewLines = doc
+      .splitTextToSize(previewText, Math.max(width - 5, 14))
+      .slice(0, density === "micro" ? 2 : density === "compact" ? 3 : 4);
+    const footerText = rackSummary
+      ? `${rackSummary.filledSlotCount}/${rackSummary.slotCount} baris | ${rackSummary.totalQty} pcs`
+      : `${rack.rows} baris`;
+
+    if (rackSummary?.hasSelectedSku) {
+      doc.setFillColor(240, 253, 250);
+      doc.setDrawColor(15, 118, 110);
+    } else if (rackSummary?.totalQty) {
+      doc.setFillColor(248, 250, 255);
+      doc.setDrawColor(36, 88, 206);
+    } else {
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(191, 219, 254);
+    }
+
+    doc.roundedRect(x, y, width, height, 4, 4, "FD");
+
+    doc.setFillColor(rackSummary?.hasSelectedSku ? 15 : 36, rackSummary?.hasSelectedSku ? 118 : 88, rackSummary?.hasSelectedSku ? 110 : 206);
+    doc.roundedRect(x + 2, y + 1, Math.max(width - 4, 2), 1.2, 1, 1, "F");
+
+    doc.setTextColor(18, 53, 91);
+    doc.setFontSize(density === "micro" ? 7 : 8.5);
+    doc.text(`R${formatRackNumber(rack.number)}`, x + width / 2, y + 6, { align: "center" });
+
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(density === "micro" ? 5.2 : 6.2);
+    doc.text(
+      truncateText(rack.label || `${rack.rows} baris`, density === "micro" ? 12 : 20),
+      x + width / 2,
+      y + 10,
+      { align: "center", maxWidth: Math.max(width - 6, 12) }
+    );
+
+    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(previewFontSize);
+    previewLines.forEach((line, index) => {
+      const lineY = y + 14 + index * 3.1;
+      if (lineY <= y + height - 5) {
+        doc.text(line, x + width / 2, lineY, { align: "center", maxWidth: Math.max(width - 5, 14) });
+      }
+    });
+
+    doc.setTextColor(71, 98, 127);
+    doc.setFontSize(5.8);
+    doc.text(footerText, x + width / 2, y + height - 2.5, {
+      align: "center",
+      maxWidth: Math.max(width - 5, 14),
+    });
+  });
+
+  const blockRows = rackItems.map(({ rack }) => {
+    const rackKey = buildRackKey(layout.id, floor.number, block.code, rack.number);
+    const rackSummary = rackSummaryByKey[rackKey];
+
+    return {
+      hasSelectedSku: Boolean(rackSummary?.hasSelectedSku),
+      row: [
+        `Rak ${formatRackNumber(rack.number)}\n${rack.label || "Tanpa label"}`,
+        rackSummary?.slotCodes?.join(", ") || "-",
+        rackSummary?.skuItems?.length
+          ? rackSummary.skuItems
+              .map(
+                (item) =>
+                  `${item.label} (${item.qty} pcs) - ${item.slotCodes.join(", ")}`
+              )
+              .join("\n")
+          : "Kosong",
+        `${rackSummary?.totalQty || 0} pcs`,
+      ],
+    };
+  });
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(10);
+  doc.text("Daftar SKU per Rak", margin, mapY + mapHeight + 8);
+
+  doc.autoTable({
+    startY: mapY + mapHeight + 11,
+    head: [["Rak", "Slot", "SKU di Rak", "Qty"]],
+    body: blockRows.map((item) => item.row),
+    theme: "grid",
+    margin: { left: margin, right: margin },
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 2.2,
+      lineColor: [219, 230, 244],
+      lineWidth: 0.2,
+      textColor: [22, 50, 79],
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [36, 88, 206],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 255],
+    },
+    columnStyles: {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: pageWidth - margin * 2 - 96 },
+      3: { cellWidth: 20, halign: "right" },
+    },
+    didParseCell: (data) => {
+      if (data.section !== "body") return;
+
+      const rowData = blockRows[data.row.index];
+      if (!rowData?.hasSelectedSku) return;
+
+      data.cell.styles.fillColor = [236, 253, 245];
+      data.cell.styles.textColor = [15, 95, 89];
+    },
+  });
+
+  if (doc.lastAutoTable?.finalY && doc.lastAutoTable.finalY < pageHeight - 8) {
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(7);
+    doc.text(
+      "Ringkasan ini mengikuti layout aktif dan menampilkan SKU pada setiap rak.",
+      margin,
+      doc.lastAutoTable.finalY + 6
+    );
+  }
+};
+
+const downloadLayoutPdf = ({ layout, rackSummaries, selectedSkuLabel = "" }) => {
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+  const rackSummaryByKey = rackSummaries.reduce((map, summary) => {
+    map[summary.key] = summary;
+    return map;
+  }, {});
+  const floors = [...(layout?.floors || [])].sort((left, right) => left.number - right.number);
+  let hasRenderedPage = false;
+
+  floors.forEach((floor) => {
+    [...(floor.blocks || [])]
+      .sort((left, right) => String(left.code).localeCompare(String(right.code)))
+      .forEach((block) => {
+        const rackItems = getOrderedRacksForBlock(block);
+
+        if (!hasRenderedPage) {
+          hasRenderedPage = true;
+        } else {
+          doc.addPage("a4", "landscape");
+        }
+
+        drawPdfLayoutPage({
+          doc,
+          layout,
+          floor,
+          block,
+          canvas: normalizeBlockCanvas(block),
+          rackItems,
+          rackSummaryByKey,
+          selectedSkuLabel,
+        });
+      });
+  });
+
+  if (!hasRenderedPage) {
+    doc.setFontSize(16);
+    doc.text(layout?.name || "Layout Gudang", 14, 20);
+    doc.setFontSize(11);
+    doc.text("Layout belum memiliki blok atau rak untuk dicetak.", 14, 30);
+  }
+
+  const safeName = String(layout?.name || "layout-gudang")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+  doc.save(`layout-${safeName || "gudang"}-${timestamp}.pdf`);
+};
 
 const StokLokasiGudang = () => {
   const { state, isLoading, error } = useGudangProdukWorkspace();
@@ -16,6 +436,8 @@ const StokLokasiGudang = () => {
   const [skuFilter, setSkuFilter] = useState("");
   const [showEmpty, setShowEmpty] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [pdfFeedback, setPdfFeedback] = useState(null);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -47,6 +469,21 @@ const StokLokasiGudang = () => {
 
     return slots.filter((slot) => (selectedLayout ? slot.layoutId === selectedLayout.id : true));
   }, [selectedLayout, state, stockSummaryBySlot]);
+  const rackSummaryByKey = useMemo(
+    () => buildRackSummaryMap(slotRows, skuFilter),
+    [slotRows, skuFilter]
+  );
+  const rackSummaries = useMemo(
+    () =>
+      Object.values(rackSummaryByKey).sort(
+        (left, right) =>
+          Number(right.hasSelectedSku) - Number(left.hasSelectedSku) ||
+          left.floorNumber - right.floorNumber ||
+          String(left.blockCode).localeCompare(String(right.blockCode)) ||
+          left.rackNumber - right.rackNumber
+      ),
+    [rackSummaryByKey]
+  );
 
   const filteredRows = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -97,12 +534,49 @@ const StokLokasiGudang = () => {
     }
   }, [selectedLayout, selectedSlot]);
 
+  const handleDownloadPdf = () => {
+    if (!selectedLayout || isExportingPdf) {
+      return;
+    }
+
+    try {
+      setIsExportingPdf(true);
+      setPdfFeedback(null);
+      downloadLayoutPdf({
+        layout: selectedLayout,
+        rackSummaries,
+        selectedSkuLabel,
+      });
+      setPdfFeedback({
+        type: "success",
+        message: `PDF layout ${selectedLayout.name} berhasil disiapkan dan diunduh.`,
+      });
+    } catch (pdfError) {
+      console.error("Gagal membuat PDF layout gudang:", pdfError);
+      setPdfFeedback({
+        type: "error",
+        message: "Gagal membuat PDF layout. Coba ulangi lagi.",
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <GudangProdukBaseShell
       title="Stok per Lokasi Gudang"
       subtitle="Lihat isi setiap slot gudang berdasarkan layout visual. Filter dapat mempersempit tampilan per gudang, per SKU, atau langsung dari slot di peta."
       icon={FaBoxes}
       statusLabel={isLoading ? "Memuat workspace..." : `${summary.filledSlots} slot terisi`}
+      headerActions={[
+        {
+          key: "download-layout-pdf",
+          label: isExportingPdf ? "Menyiapkan PDF..." : "Download PDF Layout",
+          icon: FaDownload,
+          variant: "primary",
+          onClick: handleDownloadPdf,
+        },
+      ]}
       searchValue={searchTerm}
       onSearchChange={setSearchTerm}
       searchPlaceholder="Cari slot, alias, SKU, atau produk..."
@@ -145,9 +619,7 @@ const StokLokasiGudang = () => {
               <label>Filter SKU</label>
               <select
                 value={skuFilter === "" ? "" : String(skuFilter)}
-                onChange={(event) =>
-                  setSkuFilter(event.target.value === "" ? "" : Number(event.target.value))
-                }
+                onChange={(event) => setSkuFilter(event.target.value === "" ? "" : event.target.value)}
               >
                 <option value="">Semua SKU</option>
                 {state.skus.map((sku) => (
@@ -188,6 +660,25 @@ const StokLokasiGudang = () => {
             </div>
           ) : null}
 
+          {pdfFeedback ? (
+            <div
+              className="gudang-ui-callout"
+              style={{
+                marginTop: 16,
+                background:
+                  pdfFeedback.type === "error"
+                    ? "linear-gradient(135deg, rgba(254, 226, 226, 0.9), rgba(255, 255, 255, 0.98))"
+                    : "linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98))",
+                borderColor:
+                  pdfFeedback.type === "error" ? "rgba(220, 38, 38, 0.12)" : "rgba(15, 118, 110, 0.12)",
+                color: pdfFeedback.type === "error" ? "#991b1b" : "#0f5f59",
+              }}
+            >
+              <strong>{pdfFeedback.type === "error" ? "PDF gagal dibuat" : "PDF berhasil dibuat"}</strong>
+              <div style={{ marginTop: 6 }}>{pdfFeedback.message}</div>
+            </div>
+          ) : null}
+
           <div className="gudang-ui-detail-box" style={{ marginTop: 18 }}>
             <h4>Slot Fokus</h4>
             {selectedSlot ? (
@@ -221,6 +712,119 @@ const StokLokasiGudang = () => {
             stockSummaryBySlot={stockSummaryBySlot}
             highlightedSlotIds={highlightedSlotIds}
           />
+
+          <div style={{ marginTop: 18 }}>
+            <div className="gudang-ui-panel-head" style={{ marginBottom: 12 }}>
+              <div>
+                <h2 style={{ fontSize: 16 }}>Daftar SKU per Rak</h2>
+                <p>
+                  Ringkasan seperti blueprint: setiap rak menampilkan SKU yang tersimpan di dalamnya.
+                </p>
+              </div>
+            </div>
+
+            {rackSummaries.length ? (
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                }}
+              >
+                {rackSummaries.map((rack) => {
+                  const selectedRackKey = selectedSlot
+                    ? buildRackKey(
+                        selectedSlot.layoutId,
+                        selectedSlot.floorNumber,
+                        selectedSlot.blockCode,
+                        selectedSlot.rackNumber
+                      )
+                    : "";
+                  const isSelectedRack = selectedRackKey === rack.key;
+
+                  return (
+                    <article
+                      key={rack.key}
+                      className={`gudang-ui-list-item ${isSelectedRack ? "active" : ""}`}
+                      style={{
+                        background: rack.hasSelectedSku
+                          ? "linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(255, 255, 255, 1))"
+                          : undefined,
+                        borderColor: rack.hasSelectedSku ? "#b7e4d8" : undefined,
+                      }}
+                    >
+                      <div className="gudang-ui-list-item-head" style={{ alignItems: "flex-start" }}>
+                        <div>
+                          <h4>{`Rak ${formatRackNumber(rack.rackNumber)}`}</h4>
+                          <p>
+                            {`Lantai ${rack.floorNumber} | Blok ${rack.blockCode} | ${rack.slotCodes.join(", ")}`}
+                          </p>
+                          <small style={{ marginTop: 6 }}>
+                            {rack.rackLabel || "Tanpa label"} | {rack.filledSlotCount}/{rack.slotCount} baris
+                            terisi
+                          </small>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: 8,
+                            justifyItems: "end",
+                          }}
+                        >
+                          <span className="gudang-ui-chip">{rack.totalQty} pcs</span>
+                          {rack.hasSelectedSku ? (
+                            <span
+                              className="gudang-ui-chip"
+                              style={{
+                                background: "#ecfdf5",
+                                borderColor: "#b7e4d8",
+                                color: "#0f766e",
+                              }}
+                            >
+                              SKU cocok
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {rack.skuItems.length ? (
+                        <>
+                          <div className="gudang-ui-pill-list">
+                            {rack.skuItems.map((item) => (
+                              <span
+                                key={`${rack.key}_${item.skuId || item.label}`}
+                                className="gudang-ui-pill"
+                                style={{
+                                  background:
+                                    skuFilter && String(item.skuId) === String(skuFilter)
+                                      ? "#ecfdf5"
+                                      : undefined,
+                                  color:
+                                    skuFilter && String(item.skuId) === String(skuFilter)
+                                      ? "#0f766e"
+                                      : undefined,
+                                }}
+                              >
+                                {item.label} | {item.qty} pcs
+                              </span>
+                            ))}
+                          </div>
+                          <small style={{ display: "block", marginTop: 10, color: "#64748b" }}>
+                            Preview rak: {rack.previewText}
+                          </small>
+                        </>
+                      ) : (
+                        <span style={{ color: "#6b7f95" }}>Rak ini masih kosong.</span>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="gudang-ui-empty-panel">Belum ada rak pada layout ini.</div>
+            )}
+          </div>
         </section>
       </div>
 

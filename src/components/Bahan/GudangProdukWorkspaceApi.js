@@ -70,3 +70,58 @@ export const mutateGudangProdukSku = async (payload) => {
     message: response?.data?.message || "Mutasi berhasil disimpan.",
   };
 };
+
+const normalizeSkuCode = (value) => String(value || "").trim().toUpperCase();
+
+const extractSkuCollection = (response) => {
+  if (Array.isArray(response?.data)) {
+    return response.data;
+  }
+
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data;
+  }
+
+  return [];
+};
+
+export const ensureGudangProdukSkuActive = async (rawSkuCode) => {
+  const skuCode = normalizeSkuCode(rawSkuCode);
+
+  if (!skuCode) {
+    throw new Error("SKU dari kode seri tidak tersedia.");
+  }
+
+  const existingResponse = await API.get("/skus");
+  const existingSku = extractSkuCollection(existingResponse).find(
+    (item) => normalizeSkuCode(item?.sku) === skuCode
+  );
+
+  if (existingSku) {
+    if (existingSku.is_active) {
+      return {
+        sku: existingSku,
+        message: "SKU sudah aktif.",
+      };
+    }
+
+    const updateResponse = await API.patch(`/skus/${existingSku.id}`, {
+      sku: skuCode,
+      is_active: true,
+    });
+
+    return {
+      sku: updateResponse?.data?.data || updateResponse?.data || existingSku,
+      message: updateResponse?.data?.message || "SKU berhasil diaktifkan.",
+    };
+  }
+
+  const createResponse = await API.post("/skus", {
+    sku: skuCode,
+  });
+
+  return {
+    sku: createResponse?.data?.data || createResponse?.data || null,
+    message: createResponse?.data?.message || "SKU berhasil ditambahkan.",
+  };
+};

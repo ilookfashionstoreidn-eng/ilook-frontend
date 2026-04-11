@@ -1,10 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import API from "../../api";
 import {
   FaArrowRight,
+  FaBarcode,
   FaBoxOpen,
   FaCheckCircle,
   FaMapMarkedAlt,
   FaSave,
+  FaSearch,
 } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import {
@@ -21,6 +24,7 @@ import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
 import {
   buildGudangWorkspaceErrorMessage,
+  ensureGudangProdukSkuActive,
   placeGudangProdukSku,
 } from "./GudangProdukWorkspaceApi";
 import {
@@ -28,6 +32,11 @@ import {
   showGudangSuccess,
   showGudangWarning,
 } from "./GudangProdukAlerts";
+import {
+  SERIAL_SKU_AUTO_MATCH_SCORE,
+  buildSerialSkuSuggestions,
+  findBestSerialSkuMatch,
+} from "./GudangProdukSerialSkuUtils";
 import InputSeriGudang from "./InputSeriGudang";
 
 const normalizeSelectValue = (value) => (value === "" ? "" : value);
@@ -45,7 +54,7 @@ const buildSuggestionDescription = (item) => {
 };
 
 const InputSkuGudang = () => {
-  const { state, setState, isLoading, error } = useGudangProdukWorkspace();
+  const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace();
   const [inputMode, setInputMode] = useState("sku");
   const [layoutId, setLayoutId] = useState("");
   const [productId, setProductId] = useState("");
@@ -54,12 +63,68 @@ const InputSkuGudang = () => {
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serialQuery, setSerialQuery] = useState("");
+  const [selectedSerialId, setSelectedSerialId] = useState("");
+  const [serialItems, setSerialItems] = useState([]);
+  const [serialLoading, setSerialLoading] = useState(true);
+  const [serialError, setSerialError] = useState("");
+  const [isSerialDropdownOpen, setIsSerialDropdownOpen] = useState(false);
+  const [isActivatingSerialSku, setIsActivatingSerialSku] = useState(false);
+  const serialComboboxRef = useRef(null);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
       setLayoutId(String(state.layouts[0].id));
     }
   }, [layoutId, state.layouts]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSerials = async () => {
+      try {
+        setSerialLoading(true);
+        const response = await API.get("/seri", { params: { all: 1 } });
+
+        if (!isMounted) return;
+
+        setSerialItems(Array.isArray(response?.data?.data) ? response.data.data : []);
+        setSerialError("");
+      } catch (fetchError) {
+        if (!isMounted) return;
+
+        setSerialError(
+          fetchError?.response?.data?.message ||
+            fetchError?.message ||
+            "Gagal memuat data kode seri jadi."
+        );
+      } finally {
+        if (isMounted) {
+          setSerialLoading(false);
+        }
+      }
+    };
+
+    fetchSerials();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!serialComboboxRef.current?.contains(event.target)) {
+        setIsSerialDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const selectedLayout = useMemo(
     () =>
@@ -69,10 +134,60 @@ const InputSkuGudang = () => {
     [layoutId, state.layouts]
   );
 
+  const serialCatalog = useMemo(
+    () =>
+      serialItems.map((item) => {
+        const bestSkuMatch = findBestSerialSkuMatch(state.skus, item.sku);
+        const matchedSku =
+          bestSkuMatch?.score >= SERIAL_SKU_AUTO_MATCH_SCORE ? bestSkuMatch.sku : null;
+        const matchedProduct = matchedSku?.productId
+          ? state.products.find((product) => String(product.id) === String(matchedSku.productId)) ||
+            null
+          : null;
+
+        return {
+          ...item,
+          quantityHint: Math.max(1, Number(item.jumlah) || 1),
+          matchedSku,
+          matchedSkuId: matchedSku?.id || "",
+          matchedProduct,
+          matchedProductId: matchedProduct?.id || "",
+        };
+      }),
+    [serialItems, state.products, state.skus]
+  );
+
+  const serialResults = useMemo(() => {
+    const keyword = serialQuery.trim().toLowerCase();
+
+    return serialCatalog.filter((item) => {
+      if (!keyword) return true;
+
+      return [
+        item.nomor_seri,
+        item.sku,
+        item.matchedSku?.label,
+        item.matchedProduct?.name,
+      ].some((value) => String(value || "").toLowerCase().includes(keyword));
+    });
+  }, [serialCatalog, serialQuery]);
+
+  const selectedSerial =
+    serialCatalog.find((item) => String(item.id) === String(selectedSerialId)) || null;
+
+  const suggestedSerialSkuOptions = useMemo(() => {
+    if (!selectedSerial || selectedSerial.matchedSkuId) {
+      return [];
+    }
+
+    return buildSerialSkuSuggestions(state.skus, selectedSerial.sku);
+  }, [selectedSerial, state.skus]);
+
   const selectedProduct =
     state.products.find((product) => String(product.id) === String(productId)) || null;
   const selectedSku = state.skus.find((sku) => String(sku.id) === String(skuId)) || null;
-  const skuOptions = productId ? getSkusByProductId(state, productId) : [];
+  const productSkuOptions = productId ? getSkusByProductId(state, productId) : [];
+  const skuOptions = productId ? productSkuOptions : suggestedSerialSkuOptions;
   const allSlots = useMemo(() => getAllSlots(state), [state]);
   const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
   const placementRows = state.activityLog
@@ -80,18 +195,31 @@ const InputSkuGudang = () => {
     .slice(0, 5);
 
   useEffect(() => {
-    if (!productId || !skuOptions.length) {
+    if (!productId || !productSkuOptions.length) {
       if (skuId) {
         setSkuId("");
       }
       return;
     }
 
-    const hasSelectedSku = skuOptions.some((sku) => String(sku.id) === String(skuId));
+    const hasSelectedSku = productSkuOptions.some((sku) => String(sku.id) === String(skuId));
     if (!hasSelectedSku) {
-      setSkuId(String(skuOptions[0].id));
+      setSkuId(String(productSkuOptions[0].id));
     }
-  }, [productId, skuId, skuOptions]);
+  }, [productId, productSkuOptions, skuId]);
+
+  useEffect(() => {
+    if (!selectedSerial) {
+      return;
+    }
+
+    setProductId(
+      selectedSerial.matchedProductId ? String(selectedSerial.matchedProductId) : ""
+    );
+    setSkuId(selectedSerial.matchedSkuId ? String(selectedSerial.matchedSkuId) : "");
+    setQty(selectedSerial.quantityHint);
+    setSelectedSlot(null);
+  }, [selectedSerial]);
 
   useEffect(() => {
     if (!selectedLayout || !selectedSlot) return;
@@ -184,8 +312,12 @@ const InputSkuGudang = () => {
       number: "1",
       title: "Pilih barang",
       description: selectedSku
-        ? `${selectedProduct?.name || "Produk"} - ${selectedSku.label}`
-        : "Pilih gudang, produk, lalu SKU yang ingin masuk.",
+        ? selectedSerial
+          ? `${selectedSerial.nomor_seri} - ${selectedSku.label}`
+          : `${selectedProduct?.name || "Produk"} - ${selectedSku.label}`
+        : selectedSerial
+          ? `${selectedSerial.nomor_seri} dipilih, lanjut cek SKU-nya.`
+          : "Pilih gudang, produk, lalu SKU yang ingin masuk.",
       isComplete: Boolean(selectedSku),
     },
     {
@@ -224,21 +356,36 @@ const InputSkuGudang = () => {
 
     try {
       setIsSubmitting(true);
+
+      const noteParts = [];
+      if (selectedSerial) {
+        noteParts.push(`Kode seri: ${selectedSerial.nomor_seri}`);
+      }
+      if (notes.trim()) {
+        noteParts.push(notes.trim());
+      }
+
       const response = await placeGudangProdukSku({
         layoutId: selectedLayout.id,
         slotId: selectedSlot.id,
         skuId: Number(selectedSku.id),
         qty: Number(qty),
-        notes,
+        notes: noteParts.join(" | "),
       });
       setState(response.workspace);
       await showGudangSuccess(
         "Produk berhasil ditempatkan",
-        `SKU berhasil dimasukkan ke ${selectedSlot.slotCode}.`
+        selectedSerial
+          ? `SKU dari ${selectedSerial.nomor_seri} berhasil dimasukkan ke ${selectedSlot.slotCode}.`
+          : `SKU berhasil dimasukkan ke ${selectedSlot.slotCode}.`
       );
       setQty(1);
       setNotes("");
       setSelectedSlot(null);
+      if (selectedSerial) {
+        setSelectedSerialId("");
+        setSerialQuery("");
+      }
     } catch (submitError) {
       await showGudangError(
         "Gagal menyimpan placement",
@@ -274,6 +421,66 @@ const InputSkuGudang = () => {
     }, 0);
 
     return `${totalQty} pcs tersimpan di ${matchingSlots.length} slot.`;
+  };
+
+  const handleSelectSerial = (item) => {
+    setSelectedSerialId(String(item.id));
+    setSerialQuery(item.nomor_seri);
+    setIsSerialDropdownOpen(false);
+  };
+
+  const handleSerialInputChange = (event) => {
+    setSerialQuery(event.target.value);
+    setSelectedSerialId("");
+    setIsSerialDropdownOpen(true);
+  };
+
+  const handleActivateSelectedSerialSku = async () => {
+    if (!selectedSerial?.sku) {
+      await showGudangWarning(
+        "SKU seri belum tersedia",
+        "Kode seri ini belum memiliki SKU yang bisa dijadikan aktif."
+      );
+      return;
+    }
+
+    try {
+      setIsActivatingSerialSku(true);
+
+      const result = await ensureGudangProdukSkuActive(selectedSerial.sku);
+      const nextState = await refresh({ silent: true });
+      const activatedSku = nextState.skus.find(
+        (sku) =>
+          String(sku.code || "").trim().toUpperCase() ===
+          String(selectedSerial.sku || "").trim().toUpperCase()
+      );
+
+      if (activatedSku?.id) {
+        setSkuId(String(activatedSku.id));
+      }
+
+      await showGudangSuccess(
+        "SKU aktif siap dipakai",
+        `${activatedSku?.label || result.sku?.sku || selectedSerial.sku} sudah dijadikan SKU aktif.`
+      );
+    } catch (activationError) {
+      await showGudangError(
+        "Gagal menjadikan SKU aktif",
+        buildGudangWorkspaceErrorMessage(
+          activationError,
+          "Gagal menjadikan SKU dari kode seri sebagai SKU aktif."
+        )
+      );
+    } finally {
+      setIsActivatingSerialSku(false);
+    }
+  };
+
+  const handleSelectSku = (sku) => {
+    if (sku?.productId) {
+      setProductId(String(sku.productId));
+    }
+    setSkuId(String(sku.id));
   };
 
   return (
@@ -382,6 +589,10 @@ const InputSkuGudang = () => {
               <strong>{selectedLayout?.name || "-"}</strong>
             </div>
             <div className="gudang-simple-summary-item">
+              <span>Kode Seri</span>
+              <strong>{selectedSerial?.nomor_seri || "-"}</strong>
+            </div>
+            <div className="gudang-simple-summary-item">
               <span>Produk</span>
               <strong>{selectedProduct?.name || "-"}</strong>
             </div>
@@ -424,11 +635,61 @@ const InputSkuGudang = () => {
           <div className="gudang-ui-panel-head">
             <div>
               <h2>1. Pilih Barang</h2>
-              <p>Field dibuat lebih ringkas supaya user tinggal pilih barang lalu lanjut ke lokasi.</p>
+              <p>SKU bisa dipilih manual dari produk atau diambil cepat dari kode seri jadi.</p>
             </div>
           </div>
 
           <div className="gudang-ui-form-grid">
+            <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
+              <label>Kode Seri Jadi (Opsional)</label>
+              <div className="gudang-serial-combobox" ref={serialComboboxRef}>
+                <div className="gudang-simple-searchbox">
+                  <FaSearch />
+                  <input
+                    value={serialQuery}
+                    onChange={handleSerialInputChange}
+                    onFocus={() => setIsSerialDropdownOpen(true)}
+                    placeholder="Cari kode seri jadi, SKU, atau nama produk..."
+                  />
+                </div>
+                {isSerialDropdownOpen ? (
+                  <div className="gudang-serial-dropdown">
+                    {serialLoading ? (
+                      <div className="gudang-serial-option muted">
+                        Memuat daftar kode seri jadi...
+                      </div>
+                    ) : serialResults.length ? (
+                      serialResults.slice(0, 10).map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`gudang-serial-option ${
+                            String(selectedSerialId) === String(item.id) ? "active" : ""
+                          }`}
+                          onClick={() => handleSelectSerial(item)}
+                        >
+                          <strong>{item.nomor_seri}</strong>
+                          <span>
+                            {item.matchedProduct?.name || "Produk belum ditemukan"} /{" "}
+                            {item.matchedSku?.label || item.sku}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="gudang-serial-option muted">
+                        Tidak ada kode seri yang cocok dengan pencarian ini.
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+              {serialError ? (
+                <div className="gudang-simple-inline-note" style={{ marginTop: 8 }}>
+                  {serialError}
+                </div>
+              ) : null}
+            </div>
+
             <div className="gudang-ui-field">
               <label>Gudang Tujuan</label>
               <select
@@ -478,13 +739,70 @@ const InputSkuGudang = () => {
             </div>
           </div>
 
+          {selectedSerial ? (
+            <div className="gudang-serial-picker-section">
+              <div className="gudang-ui-callout">
+                <FaBarcode />
+                <strong>
+                  Kode seri terpilih: {selectedSerial.nomor_seri}
+                  {selectedSerial.matchedProduct?.name
+                    ? ` / ${selectedSerial.matchedProduct.name}`
+                    : ""}
+                </strong>
+              </div>
+              <div
+                className={`gudang-ui-callout ${
+                  selectedSerial.matchedSkuId
+                    ? ""
+                    : "gudang-simple-warning-callout gudang-serial-warning-callout"
+                }`}
+              >
+                {selectedSerial.matchedSkuId ? (
+                  <>
+                    <FaArrowRight />
+                    <strong>
+                      {`${selectedSerial.matchedSku?.label} sudah dipilih otomatis dari kode seri dan bisa langsung diinputkan.`}
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    <div className="gudang-serial-warning-message">
+                      <FaArrowRight />
+                      <strong>
+                        {suggestedSerialSkuOptions.length
+                          ? "SKU dari kode seri belum cocok otomatis. SKU dari sini bisa dijadikan aktif atau pilih saran SKU di bawah."
+                          : `SKU seri: ${
+                              selectedSerial.sku || "-"
+                            } belum ditemukan di SKU aktif. SKU dari sini bisa dijadikan aktif atau pilih produk/SKU manual di bawah.`}
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      className="gudang-ui-button-secondary"
+                      onClick={handleActivateSelectedSerialSku}
+                      disabled={isActivatingSerialSku}
+                    >
+                      {isActivatingSerialSku ? "Menjadikan aktif..." : "Jadikan SKU Aktif"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="gudang-simple-sku-section">
             <div className="gudang-simple-section-label">
               <strong>SKU yang bisa dipilih</strong>
-              <span>{productId ? "Klik salah satu SKU agar user tidak perlu buka dropdown lagi." : "Pilih produk dulu agar daftar SKU muncul."}</span>
+              <span>
+                {selectedSerial && !productId && suggestedSerialSkuOptions.length
+                  ? "Daftar ini adalah saran SKU dari kode seri yang dipilih. Klik salah satu agar produk dan SKU langsung terisi."
+                  : productId
+                    ? "Klik salah satu SKU agar user tidak perlu buka dropdown lagi."
+                    : "Pilih produk dulu atau gunakan kode seri jadi agar daftar SKU muncul."}
+              </span>
             </div>
 
-            {productId ? (
+            {productId || suggestedSerialSkuOptions.length ? (
               skuOptions.length ? (
                 <div className="gudang-simple-sku-grid">
                   {skuOptions.map((sku) => (
@@ -494,7 +812,7 @@ const InputSkuGudang = () => {
                       className={`gudang-simple-sku-card ${
                         String(selectedSku?.id) === String(sku.id) ? "active" : ""
                       }`}
-                      onClick={() => setSkuId(String(sku.id))}
+                      onClick={() => handleSelectSku(sku)}
                     >
                       <strong>{sku.label}</strong>
                       <span>{sku.code || `SKU #${sku.id}`}</span>
@@ -503,10 +821,16 @@ const InputSkuGudang = () => {
                   ))}
                 </div>
               ) : (
-                <div className="gudang-ui-empty-panel">Produk ini belum memiliki SKU.</div>
+                <div className="gudang-ui-empty-panel">
+                  {productId
+                    ? "Produk ini belum memiliki SKU."
+                    : "Belum ada saran SKU yang cocok dari kode seri ini."}
+                </div>
               )
             ) : (
-              <div className="gudang-ui-empty-panel">Pilih produk untuk menampilkan pilihan SKU.</div>
+              <div className="gudang-ui-empty-panel">
+                Pilih produk atau kode seri jadi untuk menampilkan pilihan SKU.
+              </div>
             )}
           </div>
         </section>
