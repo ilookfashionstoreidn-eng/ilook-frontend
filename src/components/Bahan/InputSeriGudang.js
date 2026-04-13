@@ -160,7 +160,9 @@ const InputSeriGudang = ({ embedded = false }) => {
     (s) => String(s.code || "").toUpperCase() === rawSeriSkuLabel.toUpperCase()
   );
 
-  const selectedSku = state.skus.find((s) => String(s.id) === String(selectedSkuId)) || null;
+  const selectedSku = selectedSkuId === "__raw__" 
+    ? { id: "__raw__", label: rawSeriSkuLabel } 
+    : (state.skus.find((s) => String(s.id) === String(selectedSkuId)) || null);
 
   /* auto-select SKU when serial changes */
   useEffect(() => {
