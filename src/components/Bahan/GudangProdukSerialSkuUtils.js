@@ -6,7 +6,7 @@ export const normalizeLooseText = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export const SERIAL_SKU_AUTO_MATCH_SCORE = 60;
+export const SERIAL_SKU_AUTO_MATCH_SCORE = 100;
 export const SERIAL_SKU_SUGGESTION_SCORE = 25;
 
 const SERIAL_SKU_STOP_WORDS = new Set(["SET", "SKU", "ALL", "SIZE", "ALLSIZE"]);

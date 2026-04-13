@@ -251,10 +251,12 @@ const InputSeriGudang = ({ embedded = false }) => {
     try {
       setIsSubmitting(true);
 
-      let finalSkuId = selectedSku?.id;
+      // Deteksi "__raw__": SKU dari seri yang belum terdaftar di state.skus
+      const isRawSku = selectedSkuId === "__raw__";
+      let finalSkuId = isRawSku ? null : selectedSku?.id;
 
-      // Jika user memilih SKU dari raw seri (belum ada di state), aktivasi dulu secara silent
-      if (!finalSkuId && rawSeriSkuLabel) {
+      // Jika __raw__ atau belum ada SKU valid, aktivasi dulu secara silent
+      if ((isRawSku || !finalSkuId) && rawSeriSkuLabel) {
         const activated = await ensureGudangProdukSkuActive(rawSeriSkuLabel);
         const nextState = await refresh({ silent: true });
         const found = nextState.skus.find(
@@ -263,8 +265,9 @@ const InputSeriGudang = ({ embedded = false }) => {
         finalSkuId = found?.id || activated?.sku?.id;
       }
 
-      if (!finalSkuId) {
-        await showGudangWarning("SKU tidak ditemukan", "Pilih SKU terlebih dahulu.");
+      const parsedSkuId = parseInt(finalSkuId, 10);
+      if (!parsedSkuId || isNaN(parsedSkuId)) {
+        await showGudangWarning("SKU tidak valid", "SKU tidak ditemukan atau belum terdaftar. Coba pilih ulang kode seri.");
         return;
       }
 
@@ -274,7 +277,7 @@ const InputSeriGudang = ({ embedded = false }) => {
       const response = await placeGudangProdukSku({
         layoutId: selectedLayout.id,
         slotId:   selectedSlot.id,
-        skuId:    Number(finalSkuId),
+        skuId:    parsedSkuId,
         qty:      Number(qty),
         notes:    serialNotes.join(" | "),
       });
@@ -595,19 +598,6 @@ const InputSeriGudang = ({ embedded = false }) => {
                   </div>
                 )}
 
-                <details style={{ marginTop: 8 }}>
-                  <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2458ce", userSelect: "none", padding: "8px 0" }}>
-                    Tampilkan layout visual gudang
-                  </summary>
-                  <div style={{ marginTop: 12 }}>
-                    <GudangLayoutMap
-                      layout={selectedLayout}
-                      selectedSlotId={selectedSlot?.id}
-                      onSelectSlot={setSelectedSlot}
-                      stockSummaryBySlot={stockSummaryBySlot}
-                    />
-                  </div>
-                </details>
               </>
             ) : (
               <div className="gudang-ui-empty-panel">
@@ -684,6 +674,24 @@ const InputSeriGudang = ({ embedded = false }) => {
               </button>
             </form>
           </section>
+
+          {selectedSku && (
+            <section className="gudang-ui-panel">
+              <details>
+                <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2458ce", userSelect: "none", padding: "8px 0" }}>
+                  Tampilkan layout visual gudang
+                </summary>
+                <div style={{ marginTop: 12 }}>
+                  <GudangLayoutMap
+                    layout={selectedLayout}
+                    selectedSlotId={selectedSlot?.id}
+                    onSelectSlot={setSelectedSlot}
+                    stockSummaryBySlot={stockSummaryBySlot}
+                  />
+                </div>
+              </details>
+            </section>
+          )}
 
           {/* Log terbaru */}
           {placementRows.length > 0 && (

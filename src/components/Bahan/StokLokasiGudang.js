@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { FaBoxes, FaDownload, FaSearchLocation } from "react-icons/fa";
+import { FaBoxes, FaDownload, FaSearchLocation, FaSearch, FaTimes } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import {
   getAllSlots,
@@ -434,10 +434,30 @@ const StokLokasiGudang = () => {
   const [layoutId, setLayoutId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [skuFilter, setSkuFilter] = useState("");
+  const [skuQuery, setSkuQuery] = useState("");
+  const [isSkuDropdownOpen, setIsSkuDropdownOpen] = useState(false);
   const [showEmpty, setShowEmpty] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [pdfFeedback, setPdfFeedback] = useState(null);
+  const skuComboboxRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!skuComboboxRef.current?.contains(e.target)) setIsSkuDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredSkus = useMemo(() => {
+    const kw = skuQuery.trim().toLowerCase();
+    if (!kw) return state.skus;
+    return state.skus.filter((sku) =>
+      String(sku.label || "").toLowerCase().includes(kw) ||
+      String(sku.code || "").toLowerCase().includes(kw)
+    );
+  }, [state.skus, skuQuery]);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -616,19 +636,87 @@ const StokLokasiGudang = () => {
                 </select>
               </div>
 
-              <div className="gudang-ui-field">
+              <div className="gudang-ui-field" style={{ position: "relative" }} ref={skuComboboxRef}>
                 <label>Filter SKU</label>
-                <select
-                  value={skuFilter === "" ? "" : String(skuFilter)}
-                  onChange={(event) => setSkuFilter(event.target.value === "" ? "" : event.target.value)}
-                >
-                  <option value="">Semua SKU</option>
-                  {state.skus.map((sku) => (
-                    <option key={sku.id} value={sku.id}>
-                      {sku.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ position: "relative" }}>
+                  <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+                  <input
+                    type="text"
+                    className="gudang-ui-search-input"
+                    style={{ paddingLeft: 40, width: "100%", background: "#fff", cursor: "pointer" }}
+                    value={skuQuery}
+                    onChange={(e) => {
+                      setSkuQuery(e.target.value);
+                      setIsSkuDropdownOpen(true);
+                      if (skuFilter) setSkuFilter("");
+                    }}
+                    onFocus={() => setIsSkuDropdownOpen(true)}
+                    placeholder={selectedSkuLabel ? truncateText(selectedSkuLabel, 35) : "Cari dan pilih SKU..."}
+                  />
+                  {skuFilter && !skuQuery && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSkuFilter("");
+                        setSkuQuery("");
+                      }}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
+                    ><FaTimes /></button>
+                  )}
+                </div>
+
+                {isSkuDropdownOpen && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+                    background: "#fff", border: "1px solid #d1dbe8", borderRadius: 10,
+                    padding: 8, maxHeight: 280, overflowY: "auto",
+                    boxShadow: "0 10px 25px rgba(15,23,42,0.1)",
+                  }}>
+                    {filteredSkus.length ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => { setSkuFilter(""); setSkuQuery(""); setIsSkuDropdownOpen(false); }}
+                          style={{
+                            width: "100%", display: "block", textAlign: "left", border: "none",
+                            background: skuFilter === "" ? "#f0fdf4" : "transparent",
+                            color: skuFilter === "" ? "#166534" : "#0f172a",
+                            borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2,
+                            fontWeight: skuFilter === "" ? 700 : 500, fontSize: 13
+                          }}
+                        >
+                          Semua SKU
+                        </button>
+                        {filteredSkus.map((sku) => (
+                          <button
+                            key={sku.id}
+                            type="button"
+                            onClick={() => {
+                              setSkuFilter(String(sku.id));
+                              setSkuQuery("");
+                              setIsSkuDropdownOpen(false);
+                            }}
+                            style={{
+                              width: "100%", display: "block", textAlign: "left", border: "none",
+                              background: String(skuFilter) === String(sku.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent",
+                              borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2,
+                            }}
+                          >
+                            <div style={{ fontWeight: String(skuFilter) === String(sku.id) ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
+                              {sku.label}
+                            </div>
+                            {sku.code && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{sku.code}</div>}
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>
+                        SKU tidak ditemukan.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
