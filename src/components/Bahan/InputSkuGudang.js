@@ -514,17 +514,23 @@ const InputSkuGudang = () => {
           </div>
         </div>
 
-        <div className="gudang-serial-mode-switch">
+        <div style={{ display: "flex", gap: "10px", background: "#f1f5f9", padding: "6px", borderRadius: "12px", width: "max-content", flexWrap: "wrap" }}>
           <button
             type="button"
-            className={`gudang-serial-mode-button ${inputMode === "sku" ? "active" : ""}`}
+            style={{ 
+              border: "none", background: inputMode === "sku" ? "#fff" : "transparent", color: inputMode === "sku" ? "#0f172a" : "#64748b",
+              fontWeight: "700", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", boxShadow: inputMode === "sku" ? "0 2px 4px rgba(0,0,0,0.05)" : "none", transition: "0.2s"
+            }}
             onClick={() => setInputMode("sku")}
           >
             Input per SKU
           </button>
           <button
             type="button"
-            className={`gudang-serial-mode-button ${inputMode === "seri" ? "active" : ""}`}
+            style={{ 
+              border: "none", background: inputMode === "seri" ? "#fff" : "transparent", color: inputMode === "seri" ? "#0f172a" : "#64748b",
+              fontWeight: "700", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", boxShadow: inputMode === "seri" ? "0 2px 4px rgba(0,0,0,0.05)" : "none", transition: "0.2s"
+            }}
             onClick={() => setInputMode("seri")}
           >
             Input dari Kode Seri
@@ -535,415 +541,372 @@ const InputSkuGudang = () => {
       {inputMode === "seri" ? (
         <InputSeriGudang embedded />
       ) : (
-        <>
-      <div className="gudang-ui-grid gudang-simple-flow-grid">
-        <section className="gudang-ui-panel gudang-simple-progress-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>Alur Input Cepat</h2>
-              <p>User cukup ikuti 3 langkah di bawah ini tanpa harus paham istilah layout gudang.</p>
-            </div>
-          </div>
-
-          <div className="gudang-simple-step-grid">
-            {progressSteps.map((step) => (
-              <div
-                key={step.key}
-                className={`gudang-simple-step-card ${step.isComplete ? "complete" : ""}`}
-              >
-                <div className="gudang-simple-step-badge">{step.number}</div>
+        <div className="gudang-master-workspace-grid">
+          <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
                 <div>
-                  <strong>{step.title}</strong>
-                  <p>{step.description}</p>
+                  <h2>1. Pilih Barang & Produk</h2>
+                  <p>SKU bisa dipilih manual dari produk atau diambil cepat dari kode seri jadi.</p>
                 </div>
-                {step.isComplete ? <FaCheckCircle className="gudang-simple-step-icon" /> : null}
               </div>
-            ))}
-          </div>
 
-          <div className="gudang-ui-callout gudang-simple-callout">
-            {selectedSku ? (
-              <>
-                <FaArrowRight />
-                <strong>
-                  {selectedSku.label} siap ditempatkan ke {selectedSlot?.slotCode || "slot yang dipilih"}.
-                </strong>
-              </>
-            ) : (
-              "Mulai dari pilih produk terlebih dahulu, lalu sistem akan menampilkan SKU yang bisa dipilih."
-            )}
-          </div>
-        </section>
+              <div className="gudang-ui-form-grid" style={{ marginBottom: "20px" }}>
+                <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
+                  <label>Kode Seri Jadi (Opsional)</label>
+                  <div style={{ position: "relative" }} ref={serialComboboxRef}>
+                    <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+                      <FaSearch style={{ position: "absolute", left: "14px", color: "#64748b" }} />
+                      <input
+                        className="gudang-ui-search-input"
+                        style={{ paddingLeft: "38px" }}
+                        value={serialQuery}
+                        onChange={handleSerialInputChange}
+                        onFocus={() => setIsSerialDropdownOpen(true)}
+                        placeholder="Cari kode seri jadi, SKU, atau nama produk..."
+                      />
+                    </div>
+                    {isSerialDropdownOpen ? (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "#fff", border: "1px solid #d1dbe8", borderRadius: "12px", padding: "8px", marginTop: "4px", maxHeight: "300px", overflowY: "auto", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
+                        {serialLoading ? (
+                          <div style={{ padding: "12px", color: "#64748b", fontSize: "13px" }}>
+                            Memuat daftar kode seri jadi...
+                          </div>
+                        ) : serialResults.length ? (
+                          serialResults.slice(0, 10).map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`gudang-ui-list-item clickable ${
+                                String(selectedSerialId) === String(item.id) ? "active" : ""
+                              }`}
+                              onClick={() => handleSelectSerial(item)}
+                              style={{ marginBottom: "4px", border: "none", width: "100%", padding: "10px 14px", display: "block" }}
+                            >
+                              <strong style={{ display: "block", fontSize: "14px", color: "#16324f" }}>{item.nomor_seri}</strong>
+                              <span style={{ fontSize: "12px", color: "#64748b" }}>
+                                {item.matchedProduct?.name || "Produk belum ditemukan"} /{" "}
+                                {item.matchedSku?.label || item.sku}
+                              </span>
+                            </button>
+                          ))
+                        ) : (
+                          <div style={{ padding: "12px", color: "#64748b", fontSize: "13px" }}>
+                            Tidak ada kode seri yang cocok dengan pencarian ini.
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                  {serialError ? (
+                    <div style={{ fontSize: "12px", color: "#b91c1c", marginTop: "8px" }}>
+                      {serialError}
+                    </div>
+                  ) : null}
+                </div>
 
-        <section className="gudang-ui-panel gudang-simple-summary-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>Ringkasan Input</h2>
-              <p>Panel ini membantu user mengecek ulang sebelum klik simpan.</p>
-            </div>
-          </div>
+                <div className="gudang-ui-field">
+                  <label>Gudang Tujuan</label>
+                  <select
+                    value={layoutId === "" ? "" : String(layoutId)}
+                    onChange={(event) => setLayoutId(normalizeSelectValue(event.target.value))}
+                  >
+                    {state.layouts.map((layout) => (
+                      <option key={layout.id} value={layout.id}>
+                        {layout.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className="gudang-simple-summary-list">
-            <div className="gudang-simple-summary-item">
-              <span>Gudang</span>
-              <strong>{selectedLayout?.name || "-"}</strong>
-            </div>
-            <div className="gudang-simple-summary-item">
-              <span>Kode Seri</span>
-              <strong>{selectedSerial?.nomor_seri || "-"}</strong>
-            </div>
-            <div className="gudang-simple-summary-item">
-              <span>Produk</span>
-              <strong>{selectedProduct?.name || "-"}</strong>
-            </div>
-            <div className="gudang-simple-summary-item">
-              <span>SKU</span>
-              <strong>{selectedSku?.label || "-"}</strong>
-            </div>
-            <div className="gudang-simple-summary-item">
-              <span>Qty</span>
-              <strong>{qty || 0} pcs</strong>
-            </div>
-            <div className="gudang-simple-summary-item">
-              <span>Lokasi Tujuan</span>
-              <strong>{selectedSlot?.slotCode || "-"}</strong>
-            </div>
-          </div>
+                <div className="gudang-ui-field">
+                  <label>Produk</label>
+                  <select
+                    value={productId === "" ? "" : String(productId)}
+                    onChange={(event) => setProductId(normalizeSelectValue(event.target.value))}
+                  >
+                    <option value="">Pilih produk</option>
+                    {state.products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className={`gudang-simple-review-badge ${isFormReady ? "ready" : ""}`}>
-            {isFormReady
-              ? "Data sudah lengkap dan aman untuk disimpan."
-              : "Lengkapi barang dan lokasi agar input bisa disimpan."}
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="gudang-ui-form-actions gudang-simple-submit-row">
-              <button
-                type="submit"
-                className="gudang-ui-button"
-                disabled={!isFormReady || isSubmitting}
-              >
-                <FaSave /> Simpan ke Gudang
-              </button>
-            </div>
-          </form>
-        </section>
-      </div>
-
-      <div className="gudang-ui-grid split-hero">
-        <section className="gudang-ui-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>1. Pilih Barang</h2>
-              <p>SKU bisa dipilih manual dari produk atau diambil cepat dari kode seri jadi.</p>
-            </div>
-          </div>
-
-          <div className="gudang-ui-form-grid">
-            <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
-              <label>Kode Seri Jadi (Opsional)</label>
-              <div className="gudang-serial-combobox" ref={serialComboboxRef}>
-                <div className="gudang-simple-searchbox">
-                  <FaSearch />
+                <div className="gudang-ui-field">
+                  <label>Jumlah Masuk</label>
                   <input
-                    value={serialQuery}
-                    onChange={handleSerialInputChange}
-                    onFocus={() => setIsSerialDropdownOpen(true)}
-                    placeholder="Cari kode seri jadi, SKU, atau nama produk..."
+                    type="number"
+                    min="1"
+                    value={qty}
+                    onChange={(event) => setQty(Math.max(1, Number(event.target.value) || 1))}
                   />
                 </div>
-                {isSerialDropdownOpen ? (
-                  <div className="gudang-serial-dropdown">
-                    {serialLoading ? (
-                      <div className="gudang-serial-option muted">
-                        Memuat daftar kode seri jadi...
+
+                <div className="gudang-ui-field">
+                  <label>Catatan Opsional</label>
+                  <textarea
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="Contoh: stok datang dari QC, stok transfer, atau stok retur"
+                  />
+                </div>
+              </div>
+
+              {selectedSerial ? (
+                <div style={{ marginBottom: "20px", display: "grid", gap: "10px" }}>
+                  <div className="gudang-ui-callout" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <FaBarcode />
+                    <strong>
+                      Kode seri terpilih: {selectedSerial.nomor_seri}
+                      {selectedSerial.matchedProduct?.name
+                        ? ` / ${selectedSerial.matchedProduct.name}`
+                        : ""}
+                    </strong>
+                  </div>
+                  <div
+                    className="gudang-ui-callout"
+                    style={{
+                      background: selectedSerial.matchedSkuId ? "#ecfdf5" : "#fff5f5",
+                      borderColor: selectedSerial.matchedSkuId ? "#b7e4d8" : "#fecaca",
+                      color: selectedSerial.matchedSkuId ? "#0f766e" : "#b91c1c",
+                      display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", justifyContent: "space-between"
+                    }}
+                  >
+                    {selectedSerial.matchedSkuId ? (
+                      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <FaArrowRight />
+                        <strong>
+                          {`${selectedSerial.matchedSku?.label} otomatis terpilih berdasarkan kode seri.`}
+                        </strong>
                       </div>
-                    ) : serialResults.length ? (
-                      serialResults.slice(0, 10).map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={`gudang-serial-option ${
-                            String(selectedSerialId) === String(item.id) ? "active" : ""
-                          }`}
-                          onClick={() => handleSelectSerial(item)}
-                        >
-                          <strong>{item.nomor_seri}</strong>
-                          <span>
-                            {item.matchedProduct?.name || "Produk belum ditemukan"} /{" "}
-                            {item.matchedSku?.label || item.sku}
-                          </span>
-                        </button>
-                      ))
                     ) : (
-                      <div className="gudang-serial-option muted">
-                        Tidak ada kode seri yang cocok dengan pencarian ini.
-                      </div>
+                      <>
+                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <FaArrowRight />
+                          <strong>
+                            {suggestedSerialSkuOptions.length
+                              ? "SKU dari kode seri belum cocok otomatis."
+                              : `SKU seri: ${selectedSerial.sku || "-"} belum ditemukan di SKU aktif.`}
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="gudang-ui-button"
+                          style={{ background: "#b91c1c", padding: "8px 12px", fontSize: "12px" }}
+                          onClick={handleActivateSelectedSerialSku}
+                          disabled={isActivatingSerialSku}
+                        >
+                          {isActivatingSerialSku ? "Memproses..." : "Aktifkan SKU"}
+                        </button>
+                      </>
                     )}
                   </div>
-                ) : null}
-              </div>
-              {serialError ? (
-                <div className="gudang-simple-inline-note" style={{ marginTop: 8 }}>
-                  {serialError}
                 </div>
               ) : null}
-            </div>
 
-            <div className="gudang-ui-field">
-              <label>Gudang Tujuan</label>
-              <select
-                value={layoutId === "" ? "" : String(layoutId)}
-                onChange={(event) => setLayoutId(normalizeSelectValue(event.target.value))}
-              >
-                {state.layouts.map((layout) => (
-                  <option key={layout.id} value={layout.id}>
-                    {layout.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="gudang-ui-field">
-              <label>Produk</label>
-              <select
-                value={productId === "" ? "" : String(productId)}
-                onChange={(event) => setProductId(normalizeSelectValue(event.target.value))}
-              >
-                <option value="">Pilih produk</option>
-                {state.products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="gudang-ui-field">
-              <label>Jumlah Masuk</label>
-              <input
-                type="number"
-                min="1"
-                value={qty}
-                onChange={(event) => setQty(Math.max(1, Number(event.target.value) || 1))}
-              />
-            </div>
-
-            <div className="gudang-ui-field">
-              <label>Catatan Opsional</label>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Contoh: stok datang dari QC, stok transfer, atau stok retur"
-              />
-            </div>
-          </div>
-
-          {selectedSerial ? (
-            <div className="gudang-serial-picker-section">
-              <div className="gudang-ui-callout">
-                <FaBarcode />
-                <strong>
-                  Kode seri terpilih: {selectedSerial.nomor_seri}
-                  {selectedSerial.matchedProduct?.name
-                    ? ` / ${selectedSerial.matchedProduct.name}`
-                    : ""}
-                </strong>
-              </div>
-              <div
-                className={`gudang-ui-callout ${
-                  selectedSerial.matchedSkuId
-                    ? ""
-                    : "gudang-simple-warning-callout gudang-serial-warning-callout"
-                }`}
-              >
-                {selectedSerial.matchedSkuId ? (
-                  <>
-                    <FaArrowRight />
-                    <strong>
-                      {`${selectedSerial.matchedSku?.label} sudah dipilih otomatis dari kode seri dan bisa langsung diinputkan.`}
-                    </strong>
-                  </>
-                ) : (
-                  <>
-                    <div className="gudang-serial-warning-message">
-                      <FaArrowRight />
-                      <strong>
-                        {suggestedSerialSkuOptions.length
-                          ? "SKU dari kode seri belum cocok otomatis. SKU dari sini bisa dijadikan aktif atau pilih saran SKU di bawah."
-                          : `SKU seri: ${
-                              selectedSerial.sku || "-"
-                            } belum ditemukan di SKU aktif. SKU dari sini bisa dijadikan aktif atau pilih produk/SKU manual di bawah.`}
-                      </strong>
-                    </div>
-                    <button
-                      type="button"
-                      className="gudang-ui-button-secondary"
-                      onClick={handleActivateSelectedSerialSku}
-                      disabled={isActivatingSerialSku}
-                    >
-                      {isActivatingSerialSku ? "Menjadikan aktif..." : "Jadikan SKU Aktif"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="gudang-simple-sku-section">
-            <div className="gudang-simple-section-label">
-              <strong>SKU yang bisa dipilih</strong>
-              <span>
-                {selectedSerial && !productId && suggestedSerialSkuOptions.length
-                  ? "Daftar ini adalah saran SKU dari kode seri yang dipilih. Klik salah satu agar produk dan SKU langsung terisi."
-                  : productId
-                    ? "Klik salah satu SKU agar user tidak perlu buka dropdown lagi."
-                    : "Pilih produk dulu atau gunakan kode seri jadi agar daftar SKU muncul."}
-              </span>
-            </div>
-
-            {productId || suggestedSerialSkuOptions.length ? (
-              skuOptions.length ? (
-                <div className="gudang-simple-sku-grid">
-                  {skuOptions.map((sku) => (
-                    <button
-                      key={sku.id}
-                      type="button"
-                      className={`gudang-simple-sku-card ${
-                        String(selectedSku?.id) === String(sku.id) ? "active" : ""
-                      }`}
-                      onClick={() => handleSelectSku(sku)}
-                    >
-                      <strong>{sku.label}</strong>
-                      <span>{sku.code || `SKU #${sku.id}`}</span>
-                      <small>{getSkuLayoutSummary(sku)}</small>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="gudang-ui-empty-panel">
-                  {productId
-                    ? "Produk ini belum memiliki SKU."
-                    : "Belum ada saran SKU yang cocok dari kode seri ini."}
-                </div>
-              )
-            ) : (
-              <div className="gudang-ui-empty-panel">
-                Pilih produk atau kode seri jadi untuk menampilkan pilihan SKU.
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="gudang-ui-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>2. Pilih Lokasi</h2>
-              <p>Lokasi disederhanakan dengan rekomendasi cepat, lalu tetap bisa dicek di layout visual.</p>
-            </div>
-          </div>
-
-          {selectedSku ? (
-            <>
-              <div className="gudang-ui-callout gudang-simple-location-note">
-                <FaMapMarkedAlt />
-                <strong>
-                  {sameSkuSlots.length
-                    ? `SKU ini sudah tersimpan ${sameSkuTotalQty} pcs di ${sameSkuSlots.length} slot pada gudang ini.`
-                    : "SKU ini belum pernah disimpan di gudang ini, jadi sistem memprioritaskan slot kosong."}
-                </strong>
-              </div>
-
-              <div className="gudang-simple-section-label">
-                <strong>Rekomendasi lokasi cepat</strong>
-                <span>Pilih salah satu jika ingin input lebih cepat tanpa membaca seluruh peta.</span>
-              </div>
-
-              <div className="gudang-simple-slot-grid">
-                {suggestedSlots.map((item) => (
-                  <button
-                    key={item.slot.id}
-                    type="button"
-                    className={`gudang-simple-slot-card ${
-                      String(selectedSlot?.id) === String(item.slot.id) ? "active" : ""
-                    }`}
-                    onClick={() => setSelectedSlot(item.slot)}
-                  >
-                    <strong>{item.slot.slotCode}</strong>
-                    <span>{buildSlotHeadline(item.slot)}</span>
-                    <small>{buildSuggestionDescription(item)}</small>
-                  </button>
-                ))}
-              </div>
-
-              <div className="gudang-ui-grid gudang-simple-slot-detail-grid">
-                <div className="gudang-ui-detail-box">
-                  <h4>Slot Terpilih</h4>
-                  {selectedSlot ? (
-                    <>
-                      <p>{buildSlotHeadline(selectedSlot)}</p>
-                      {selectedSlot.alias ? <p className="gudang-simple-inline-note">Alias: {selectedSlot.alias}</p> : null}
-                    </>
-                  ) : (
-                    <p>Belum ada slot dipilih. Klik rekomendasi atau pilih langsung dari layout di sebelah.</p>
-                  )}
+              <div style={{ borderTop: "1px solid #e4e9f0", paddingTop: "18px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "14px" }}>
+                  <strong style={{ color: "#375a7f", fontSize: "13px", textTransform: "uppercase" }}>SKU Aktif yang Bisa Dipilih</strong>
+                  <span style={{ fontSize: "13px", color: "#6b7f95" }}>
+                    {selectedSerial && !productId && suggestedSerialSkuOptions.length
+                      ? "Pilih salah satu saran SKU. Produk dan SKU akan terisi otomatis."
+                      : productId
+                        ? "Pilih SKU untuk dimasukkan ke gudang."
+                        : "Pilih produk / kode seri untuk memunculkan opsi SKU."}
+                  </span>
                 </div>
 
-                <div className="gudang-ui-detail-box">
-                  <h4>Isi Slot Saat Ini</h4>
-                  {selectedSlotLines.length ? (
-                    <div className="gudang-ui-pill-list">
-                      {selectedSlotLines.map((line) => (
-                        <span key={line.id} className="gudang-ui-pill">
-                          {line.sku?.label} | {line.qty} pcs
-                        </span>
+                {productId || suggestedSerialSkuOptions.length ? (
+                  skuOptions.length ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "10px" }}>
+                      {skuOptions.map((sku) => (
+                        <button
+                          key={sku.id}
+                          type="button"
+                          className={`gudang-layout-slot-button ${
+                            String(selectedSku?.id) === String(sku.id) ? "selected filled" : ""
+                          }`}
+                          onClick={() => handleSelectSku(sku)}
+                        >
+                          <strong style={{ fontSize: "14px", display: "block" }}>{sku.label}</strong>
+                          <span style={{ fontSize: "12px", color: "#64748b", display: "block", marginBottom: "6px" }}>{sku.code || `SKU #${sku.id}`}</span>
+                          <span className="gudang-ui-pill" style={{ display: "inline-block", background: "#f8fbff", border: "1px solid #dce8f4", color: "#3a6a9b", fontSize: "11px" }}>
+                            {getSkuLayoutSummary(sku)}
+                          </span>
+                        </button>
                       ))}
                     </div>
                   ) : (
-                    <p>Slot masih kosong dan siap dipakai.</p>
-                  )}
+                    <div className="gudang-ui-empty-panel">
+                      {productId ? "Produk ini belum memiliki SKU." : "Belum ada saran SKU yang cocok."}
+                    </div>
+                  )
+                ) : (
+                  <div className="gudang-ui-empty-panel">
+                    Pilih produk atau kode seri jadi untuk menampilkan pilihan SKU.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>2. Pilih Lokasi & Rekomendasi</h2>
+                  <p>Klik salah satu rekomendasi slot di bawah, atau pilih dari layout visual.</p>
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="gudang-ui-empty-panel">
-              Setelah SKU dipilih, rekomendasi lokasi akan muncul di sini.
-            </div>
-          )}
-        </section>
-      </div>
 
-      <section className="gudang-ui-panel" style={{ marginTop: 20 }}>
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Layout Gudang</h2>
-            <p>Klik slot pada peta bila user ingin memastikan posisi lokasi secara visual.</p>
+              {selectedSku ? (
+                <>
+                  <div className="gudang-ui-callout" style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "20px" }}>
+                    <FaMapMarkedAlt />
+                    <strong>
+                      {sameSkuSlots.length
+                        ? `Aturan Gudang: 1 SKU tidak boleh di banyak rak. SKU ini wajib disimpan di ${sameSkuSlots[0].slotCode} (${sameSkuTotalQty} pcs eksisting).`
+                        : "SKU ini belum pernah disimpan di gudang ini. Prioritas slot kosong."}
+                    </strong>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "12px", marginBottom: "24px" }}>
+                    {suggestedSlots.map((item) => (
+                      <button
+                        key={item.slot.id}
+                        type="button"
+                        className={`gudang-layout-slot-button ${
+                          String(selectedSlot?.id) === String(item.slot.id) ? "selected" : ""
+                        }`}
+                        onClick={() => setSelectedSlot(item.slot)}
+                      >
+                        <strong style={{ fontSize: "15px", display: "block" }}>{item.slot.slotCode}</strong>
+                        <span style={{ fontSize: "12px", color: "#64748b", display: "block", marginBottom: "6px" }}>{buildSlotHeadline(item.slot)}</span>
+                        <span className="gudang-ui-pill" style={{ display: "inline-block", background: item.hasSameSku ? "#ecfdf5" : "#f1f5f9", borderColor: item.hasSameSku ? "#b7e4d8" : "#cbd5e1", color: item.hasSameSku ? "#0f766e" : "#475569", fontSize: "11px" }}>
+                          {buildSuggestionDescription(item)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="gudang-ui-grid two-columns" style={{ marginBottom: "24px", gridTemplateColumns: "1fr 1fr" }}>
+                    <div className="gudang-ui-detail-box">
+                      <h4 style={{ margin: "0 0 10px", color: "#17457c", fontSize: "14px" }}>Slot Terpilih</h4>
+                      {selectedSlot ? (
+                        <>
+                          <p style={{ margin: 0, fontWeight: "bold", color: "#0f172a" }}>{buildSlotHeadline(selectedSlot)}</p>
+                          {selectedSlot.alias ? <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "12px" }}>Alias: {selectedSlot.alias}</p> : null}
+                        </>
+                      ) : (
+                        <p style={{ margin: 0, color: "#64748b", fontSize: "13px" }}>Belum ada slot yang dipilih.</p>
+                      )}
+                    </div>
+                    <div className="gudang-ui-detail-box">
+                      <h4 style={{ margin: "0 0 10px", color: "#17457c", fontSize: "14px" }}>Isi Slot Saat Ini</h4>
+                      {selectedSlotLines.length ? (
+                        <div className="gudang-ui-pill-list">
+                          {selectedSlotLines.map((line) => (
+                            <span key={line.id} className="gudang-ui-pill">
+                              {line.sku?.label} | {line.qty} pcs
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, color: "#64748b", fontSize: "13px" }}>Slot masih kosong & siap diisi.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <hr style={{ border: "none", borderTop: "1px dashed #cbd5e1", margin: "24px 0" }} />
+
+                  <div className="gudang-ui-panel-head">
+                    <div>
+                      <h3>Visual Layout Gudang</h3>
+                      <p>Visualisasi pemetaan slot pada layout yang sedang aktif.</p>
+                    </div>
+                  </div>
+                  <GudangLayoutMap
+                    layout={selectedLayout}
+                    selectedSlotId={selectedSlot?.id}
+                    onSelectSlot={setSelectedSlot}
+                    stockSummaryBySlot={stockSummaryBySlot}
+                  />
+                </>
+              ) : (
+                <div className="gudang-ui-empty-panel">
+                  Setelah SKU dipilih, rekomendasi lokasi & visual layout akan muncul di sini.
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div className="gudang-master-visual-stack">
+            <section className="gudang-ui-panel gudang-master-overview-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>Ringkasan Input</h2>
+                  <p>Pastikan data valid sebelum simpan.</p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+                {[
+                  { label: "Gudang", value: selectedLayout?.name || "-" },
+                  { label: "Kode Seri", value: selectedSerial?.nomor_seri || "-" },
+                  { label: "Produk", value: selectedProduct?.name || "-" },
+                  { label: "SKU", value: selectedSku?.label || "-" },
+                  { label: "Qty", value: `${qty || 0} pcs` },
+                  { label: "Lokasi", value: selectedSlot?.slotCode || "-" }
+                ].map((item, index) => (
+                  <div key={index} style={{ display: "flex", justifyContent: "space-between", paddingBottom: "10px", borderBottom: "1px solid #eef2f6", fontSize: "13px" }}>
+                    <span style={{ color: "#64748b" }}>{item.label}</span>
+                    <strong style={{ color: "#0f172a", textAlign: "right", maxWidth: "60%" }}>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="gudang-ui-callout" style={{ 
+                marginBottom: "20px", 
+                background: isFormReady ? "#ecfdf5" : "#fffbeb", 
+                borderColor: isFormReady ? "#b7e4d8" : "#fde68a",
+                color: isFormReady ? "#0f766e" : "#b45309",
+                display: "flex", gap: "10px", alignItems: "center"
+              }}>
+                <FaCheckCircle style={{ fontSize: "18px", flexShrink: 0 }} />
+                <span style={{ fontSize: "13px", fontWeight: "600", lineHeight: "1.4" }}>
+                  {isFormReady ? "Data sudah lengkap dan aman disave." : "Lengkapi barang dan lokasi agar form input bisa disimpan."}
+                </span>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <button
+                  type="submit"
+                  className="gudang-ui-button"
+                  disabled={!isFormReady || isSubmitting}
+                  style={{ width: "100%", padding: "14px", fontSize: "14px", display: "flex", justifyContent: "center", gap: "8px", alignItems: "center", opacity: isFormReady ? 1 : 0.6 }}
+                >
+                  <FaSave /> {isSubmitting ? "Menyimpan..." : "Simpan Placement"}
+                </button>
+              </form>
+            </section>
+
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head" style={{ marginBottom: "14px" }}>
+                <div>
+                  <h3 style={{ margin: 0, color: "#17457c", fontSize: "16px" }}>Log Terbaru</h3>
+                </div>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <GudangActivityTable
+                  rows={placementRows}
+                  resolveSlotLabel={resolveSlotLabel}
+                  resolveSkuLabel={resolveSkuLabel}
+                />
+              </div>
+            </section>
           </div>
         </div>
-
-        <GudangLayoutMap
-          layout={selectedLayout}
-          selectedSlotId={selectedSlot?.id}
-          onSelectSlot={setSelectedSlot}
-          stockSummaryBySlot={stockSummaryBySlot}
-        />
-      </section>
-
-      <section className="gudang-ui-panel" style={{ marginTop: 20 }}>
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Riwayat Placement Terbaru</h2>
-            <p>Riwayat singkat ini membantu user memastikan input terakhir sudah tercatat.</p>
-          </div>
-        </div>
-
-        <GudangActivityTable
-          rows={placementRows}
-          resolveSlotLabel={resolveSlotLabel}
-          resolveSkuLabel={resolveSkuLabel}
-        />
-      </section>
-        </>
       )}
     </GudangProdukBaseShell>
   );

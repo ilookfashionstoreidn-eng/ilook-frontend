@@ -133,9 +133,10 @@ const MutasiGudangProduk = () => {
         notes,
       });
       setState(response.workspace);
+      const matchedLabel = state.skus.find((sku) => String(sku.id) === String(selectedSourceLine.skuId))?.label || selectedSourceLine.skuId;
       await showGudangSuccess(
         "Mutasi berhasil disimpan",
-        `Mutasi berhasil: ${selectedSourceLine.sku?.label} ke ${destinationSlot.slotCode}.`
+        `Mutasi berhasil: ${matchedLabel} ke ${destinationSlot.slotCode}.`
       );
       setQty(1);
       setNotes("");
@@ -179,151 +180,27 @@ const MutasiGudangProduk = () => {
         <GudangStatCard label="Qty Slot Tujuan" value={summary.targetQty} helper="isi target sebelum mutasi" />
       </div>
 
-      <div className="gudang-ui-grid split-hero">
-        <section className="gudang-ui-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>Form Mutasi</h2>
-              <p>Pilih lokasi asal lebih dulu, lalu tentukan slot tujuan.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="gudang-ui-form-grid">
-              <div className="gudang-ui-field">
-                <label>Gudang Asal</label>
-                <select value={sourceLayoutId} onChange={(event) => setSourceLayoutId(event.target.value)}>
-                  {state.layouts.map((layout) => (
-                    <option key={layout.id} value={layout.id}>
-                      {layout.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="gudang-ui-field">
-                <label>Gudang Tujuan</label>
-                <select
-                  value={destinationLayoutId}
-                  onChange={(event) => setDestinationLayoutId(event.target.value)}
-                >
-                  {state.layouts.map((layout) => (
-                    <option key={layout.id} value={layout.id}>
-                      {layout.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="gudang-ui-field">
-                <label>SKU pada Slot Asal</label>
-                <select
-                  value={sourceSkuId === "" ? "" : String(sourceSkuId)}
-                  onChange={(event) => setSourceSkuId(normalizeSelectNumber(event.target.value))}
-                  disabled={!sourceLines.length}
-                >
-                  <option value="">{sourceLines.length ? "Pilih SKU" : "Pilih slot asal dahulu"}</option>
-                  {sourceLines.map((line) => (
-                    <option key={line.skuId} value={line.skuId}>
-                      {line.sku?.label} | {line.qty} pcs
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="gudang-ui-field">
-                <label>Qty Mutasi</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={selectedSourceLine?.qty || 1}
-                  value={qty}
-                  onChange={(event) =>
-                    setQty(
-                      Math.min(
-                        selectedSourceLine?.qty || Number.MAX_SAFE_INTEGER,
-                        Math.max(1, Number(event.target.value) || 1)
-                      )
-                    )
-                  }
-                />
-              </div>
-
-              <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
-                <label>Catatan</label>
-                <textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Contoh: redistribusi ke gudang showroom"
-                />
-              </div>
-            </div>
-
-            <div className="gudang-ui-callout" style={{ marginTop: 18 }}>
-              {sourceSlot && destinationSlot && selectedSourceLine ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <FaExchangeAlt />
-                  <strong>
-                    {selectedSourceLine.sku?.label} | {qty} pcs
-                  </strong>
-                  <span>dari</span>
-                  <strong>{sourceSlot.slotCode}</strong>
-                  <FaArrowRight />
-                  <strong>{destinationSlot.slotCode}</strong>
-                </div>
-              ) : (
-                "Tentukan lokasi asal, SKU, dan lokasi tujuan untuk memulai mutasi."
-              )}
-            </div>
-
-            <div className="gudang-ui-form-actions">
-              <button type="submit" className="gudang-ui-button" disabled={isSubmitting}>
-                <FaExchangeAlt /> Simpan Mutasi
-              </button>
-            </div>
-          </form>
-
-          <div className="gudang-ui-grid" style={{ marginTop: 18 }}>
-            <div className="gudang-ui-detail-box">
-              <h4>Slot Asal</h4>
-              {sourceSlot ? (
-                <>
-                  <p>{buildSlotHeadline(sourceSlot)}</p>
-                  <div className="gudang-ui-pill-list" style={{ marginTop: 12 }}>
-                    {sourceLines.map((line) => (
-                      <span key={line.id} className="gudang-ui-pill">
-                        {line.sku?.label} | {line.qty} pcs
-                      </span>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p>Belum ada slot asal dipilih.</p>
-              )}
-            </div>
-
-            <div className="gudang-ui-detail-box">
-              <h4>Slot Tujuan</h4>
-              {destinationSlot ? (
-                <>
-                  <p>{buildSlotHeadline(destinationSlot)}</p>
-                  <p style={{ marginTop: 8 }}>
-                    Isi saat ini: {stockSummaryBySlot[destinationSlot.id]?.qty || 0} pcs
-                  </p>
-                </>
-              ) : (
-                <p>Belum ada slot tujuan dipilih.</p>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="gudang-ui-grid">
+      <div className="gudang-master-workspace-grid">
+        {/* KOLOM KIRI: Peta dan Tabel Utama */}
+        <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          
           <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
+            <div className="gudang-ui-panel-head" style={{ marginBottom: 12, alignItems: "flex-start" }}>
               <div>
-                <h2>Peta Asal</h2>
-                <p>Klik slot yang berisi stok sebagai sumber mutasi.</p>
+                <h2>1. Tentukan Lokasi Sumber</h2>
+                <p>Pilih gudang asal dan klik slot di peta yang berisi stok SKU yang ingin dipindahkan.</p>
+              </div>
+              <div style={{ minWidth: 220 }}>
+                <select 
+                  className="gudang-ui-field" 
+                  style={{ width: "100%", margin: 0, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, backgroundColor: "#f8fafc" }}
+                  value={sourceLayoutId} 
+                  onChange={(event) => setSourceLayoutId(event.target.value)}
+                >
+                  {state.layouts.map((layout) => (
+                    <option key={layout.id} value={layout.id}>{layout.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <GudangLayoutMap
@@ -335,10 +212,22 @@ const MutasiGudangProduk = () => {
           </section>
 
           <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
+            <div className="gudang-ui-panel-head" style={{ marginBottom: 12, alignItems: "flex-start" }}>
               <div>
-                <h2>Peta Tujuan</h2>
-                <p>Klik slot tujuan pada gudang yang diinginkan.</p>
+                <h2>2. Tentukan Lokasi Tujuan</h2>
+                <p>Pilih gudang tujuan dan klik slot kosong atau slot yang sudah ada produk sejenis.</p>
+              </div>
+              <div style={{ minWidth: 220 }}>
+                <select 
+                  className="gudang-ui-field" 
+                  style={{ width: "100%", margin: 0, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, backgroundColor: "#f8fafc" }}
+                  value={destinationLayoutId}
+                  onChange={(event) => setDestinationLayoutId(event.target.value)}
+                >
+                  {state.layouts.map((layout) => (
+                    <option key={layout.id} value={layout.id}>{layout.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <GudangLayoutMap
@@ -348,23 +237,127 @@ const MutasiGudangProduk = () => {
               stockSummaryBySlot={stockSummaryBySlot}
             />
           </section>
-        </section>
-      </div>
 
-      <section className="gudang-ui-panel" style={{ marginTop: 20 }}>
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Riwayat Mutasi Terbaru</h2>
-            <p>{formatGudangDate(mutationRows[0]?.createdAt || null)}</p>
-          </div>
+          <section className="gudang-ui-panel">
+            <div className="gudang-ui-panel-head">
+              <div>
+                <h2>Riwayat Mutasi Terbaru</h2>
+                <p>{formatGudangDate(mutationRows[0]?.createdAt || null)}</p>
+              </div>
+            </div>
+            <GudangActivityTable
+              rows={mutationRows}
+              resolveSlotLabel={resolveSlotLabel}
+              resolveSkuLabel={resolveSkuLabel}
+            />
+          </section>
         </div>
 
-        <GudangActivityTable
-          rows={mutationRows}
-          resolveSlotLabel={resolveSlotLabel}
-          resolveSkuLabel={resolveSkuLabel}
-        />
-      </section>
+        {/* KOLOM KANAN: Form Mutasi Sticky */}
+        <div className="gudang-master-visual-stack">
+          <form className="gudang-ui-panel" style={{ position: "sticky", top: 20 }} onSubmit={handleSubmit}>
+            <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+              <div>
+                <h2 style={{ color: "#2458ce" }}>Form Tiket Mutasi</h2>
+                <p>Selesaikan perpindahan stok.</p>
+              </div>
+            </div>
+
+            {/* Kotak Sumber */}
+            <div style={{ marginBottom: 16, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: "#f8fafc" }}>
+              <strong style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase" }}>Slot Sumber (Asal)</strong>
+              {sourceSlot ? (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>{sourceSlot.slotCode}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12 }}>{resolveSlotLabel(sourceSlot.id)}</div>
+                  
+                  <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 11 }}>Pilih Varian di Slot ini</label>
+                    <select
+                      value={sourceSkuId === "" ? "" : String(sourceSkuId)}
+                      onChange={(event) => setSourceSkuId(event.target.value)}
+                      disabled={!sourceLines.length}
+                      style={{ padding: "6px 10px", fontSize: 13 }}
+                    >
+                      <option value="">{sourceLines.length ? "--- Pilih SKU ---" : "Slot ini kosong"}</option>
+                      {sourceLines.map((line) => (
+                        <option key={line.skuId} value={line.skuId}>
+                          {resolveSkuLabel(line.skuId)} ({line.qty} pcs)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>← Klik slot di Peta Asal</div>
+              )}
+            </div>
+
+            <div style={{ textAlign: "center", color: "#cbd5e1", marginBottom: 16 }}>
+              <FaArrowRight style={{ transform: "rotate(90deg)" }} />
+            </div>
+
+            {/* Kotak Tujuan */}
+            <div style={{ marginBottom: 20, border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: destinationSlot ? "#ecfdf5" : "#f8fafc" }}>
+              <strong style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase" }}>Slot Tujuan</strong>
+              {destinationSlot ? (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#0f766e", marginBottom: 2 }}>{destinationSlot.slotCode}</div>
+                  <div style={{ fontSize: 11, color: "#0f5f59" }}>{resolveSlotLabel(destinationSlot.id)} · Isi Saat Ini: {stockSummaryBySlot[destinationSlot.id]?.qty || 0} pcs</div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>← Klik slot di Peta Tujuan</div>
+              )}
+            </div>
+
+            <hr style={{ border: 0, borderTop: "1px dashed #cbd5e1", margin: "0 -20px 20px" }} />
+
+            {/* Form Input */}
+            <div className="gudang-ui-field" style={{ marginBottom: 14 }}>
+              <label>Jumlah Pindah (Qty)</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="number"
+                  min="1"
+                  max={selectedSourceLine?.qty || 1}
+                  value={qty}
+                  disabled={!selectedSourceLine}
+                  onChange={(event) =>
+                    setQty(
+                      Math.min(
+                        selectedSourceLine?.qty || Number.MAX_SAFE_INTEGER,
+                        Math.max(1, Number(event.target.value) || 1)
+                      )
+                    )
+                  }
+                  style={{ flex: 1, fontSize: 15, fontWeight: 700 }}
+                />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}>/ {selectedSourceLine?.qty || 0}</span>
+              </div>
+            </div>
+
+            <div className="gudang-ui-field" style={{ marginBottom: 20 }}>
+              <label>Catatan Opsional</label>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Alasan mutasi..."
+                style={{ fontSize: 13, minHeight: 60 }}
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className="gudang-ui-button" 
+              disabled={isSubmitting || !sourceSlot || !destinationSlot || !selectedSourceLine}
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              <FaExchangeAlt /> {isSubmitting ? "Memproses..." : "Eksekusi Mutasi"}
+            </button>
+            
+          </form>
+        </div>
+      </div>
     </GudangProdukBaseShell>
   );
 };
