@@ -6,6 +6,7 @@ import { FaQrcode, FaTrash } from "react-icons/fa";
 import { FiCheckCircle, FiPackage, FiUser, FiAlertTriangle } from "react-icons/fi";
 import API from "../../api";
 import "./Packing.css";
+import PackingNoDataGineeSerialMode from "./PackingNoDataGineeSerialMode";
 
 const normalizeTrackingNumber = (value = "") => value.trim();
 const SCANNER_HISTORY_STORAGE_KEY = "packing-no-data-ginee:scanner-history";
@@ -120,6 +121,8 @@ const PackingNoDataGinee = () => {
   const navigate = useNavigate();
   const trackingInputRef = useRef(null);
 
+  const [mode, setMode] = useState("tracking_only");
+  const [serialModeResetKey, setSerialModeResetKey] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [savedScannerNames, setSavedScannerNames] = useState(getSavedScannerNames);
   const [scannerName, setScannerName] = useState("");
@@ -332,15 +335,16 @@ const PackingNoDataGinee = () => {
   }, []);
 
   useEffect(() => {
-    if (scannerName && !isSessionLocked) {
+    if (mode === "tracking_only" && scannerName && !isSessionLocked) {
       focusTrackingInput();
     }
-  }, [scannerName, isSessionLocked]);
+  }, [scannerName, isSessionLocked, mode]);
 
   const lockSession = ({ nextMessage = "" } = {}) => {
     setScannerName("");
     setTrackingNumber("");
     setScannedTrackings([]);
+    setSerialModeResetKey((prevValue) => prevValue + 1);
     setMessage(nextMessage);
     setIsSessionLocked(true);
   };
@@ -515,6 +519,36 @@ const PackingNoDataGinee = () => {
               </button>
             </section>
 
+            <section className="pk-card pk-search-card">
+              <div className="pk-search-head">
+                <h2>Pilih Mode</h2>
+                <span>
+                  Gunakan mode tracking biasa untuk scan cepat, atau mode serial untuk
+                  scan <code>SKU | NOMOR_SERI</code> saat data order telat masuk.
+                </span>
+              </div>
+
+              <div className="packing-actions pk-bb-scan-actions">
+                <button
+                  type="button"
+                  className={mode === "tracking_only" ? "btn-validate" : "btn-cancel"}
+                  onClick={() => setMode("tracking_only")}
+                >
+                  Tracking Only
+                </button>
+
+                <button
+                  type="button"
+                  className={mode === "serial_scan" ? "btn-validate" : "btn-cancel"}
+                  onClick={() => setMode("serial_scan")}
+                >
+                  Scan Serial
+                </button>
+              </div>
+            </section>
+
+            {mode === "tracking_only" ? (
+              <>
             <section className="pk-kpi-grid">
               <article className="pk-kpi-card">
                 <div className="pk-kpi-head">
@@ -680,6 +714,16 @@ const PackingNoDataGinee = () => {
                 </div>
               )}
             </section>
+              </>
+            ) : (
+              <PackingNoDataGineeSerialMode
+                key={serialModeResetKey}
+                scannerName={scannerName}
+                isSessionLocked={isSessionLocked}
+                isPromptingScanner={isPromptingScanner}
+                onUnlockSession={handleUnlockSession}
+              />
+            )}
           </main>
         </section>
       </div>

@@ -354,6 +354,15 @@ const InputSkuGudang = () => {
       return;
     }
 
+    const parsedSkuId = parseInt(selectedSku.id, 10);
+    if (!parsedSkuId || isNaN(parsedSkuId)) {
+      await showGudangWarning(
+        "SKU tidak valid",
+        "ID SKU yang dipilih tidak valid. Coba pilih ulang SKU dari daftar."
+      );
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -368,7 +377,7 @@ const InputSkuGudang = () => {
       const response = await placeGudangProdukSku({
         layoutId: selectedLayout.id,
         slotId: selectedSlot.id,
-        skuId: Number(selectedSku.id),
+        skuId: parsedSkuId,
         qty: Number(qty),
         notes: noteParts.join(" | "),
       });
@@ -388,8 +397,8 @@ const InputSkuGudang = () => {
       }
     } catch (submitError) {
       await showGudangError(
-        "Gagal menyimpan placement",
-        buildGudangWorkspaceErrorMessage(submitError, "Gagal menyimpan placement.")
+        "Gagal menyimpan stok",
+        buildGudangWorkspaceErrorMessage(submitError, "Gagal menyimpan stok ke gudang.")
       );
     } finally {
       setIsSubmitting(false);
@@ -477,6 +486,7 @@ const InputSkuGudang = () => {
   };
 
   const handleSelectSku = (sku) => {
+    if (!sku?.id) return;
     if (sku?.productId) {
       setProductId(String(sku.productId));
     }
