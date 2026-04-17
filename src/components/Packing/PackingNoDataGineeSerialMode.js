@@ -7,6 +7,7 @@ import API from "../../api";
 const normalizeTrackingNumber = (value = "") => value.trim();
 const normalizeSku = (value = "") => value.trim().replace(/\s+/g, " ").toUpperCase();
 const normalizeSerialNumber = (value = "") => value.trim();
+const hasSerialBarcodeSeparator = (value = "") => String(value || "").includes("|");
 
 const getMessageTone = (value = "") => {
   const normalizedValue = String(value || "").trim().toUpperCase();
@@ -125,6 +126,11 @@ const PackingNoDataGineeSerialMode = ({
 }) => {
   const trackingInputRef = useRef(null);
   const barcodeInputRef = useRef(null);
+  const barcodeAutoScanTimeoutRef = useRef(null);
+  const barcodeInputStartedAtRef = useRef(0);
+  const barcodeLastInputAtRef = useRef(0);
+  const barcodeChangeCountRef = useRef(0);
+  const isAutoProcessingBarcodeRef = useRef(false);
 
   const [trackingNumber, setTrackingNumber] = useState("");
   const [activeTrackingNumber, setActiveTrackingNumber] = useState("");
@@ -170,6 +176,81 @@ const PackingNoDataGineeSerialMode = ({
     }, 50);
   };
 
+  const clearBarcodeAutoScanTimeout = () => {
+    if (barcodeAutoScanTimeoutRef.current) {
+      clearTimeout(barcodeAutoScanTimeoutRef.current);
+      barcodeAutoScanTimeoutRef.current = null;
+    }
+  };
+
+  const resetBarcodeTypingMeta = ({ keepProcessingLock = false } = {}) => {
+    clearBarcodeAutoScanTimeout();
+    barcodeInputStartedAtRef.current = 0;
+    barcodeLastInputAtRef.current = 0;
+    barcodeChangeCountRef.current = 0;
+
+    if (!keepProcessingLock) {
+      isAutoProcessingBarcodeRef.current = false;
+    }
+  };
+
+  const handleBarcodeChange = (nextValue) => {
+    const nextRawValue = String(nextValue || "");
+    const now = Date.now();
+
+    if (!nextRawValue.trim()) {
+      resetBarcodeTypingMeta();
+      setBarcodeValue(nextRawValue);
+      return;
+    }
+
+    if (!barcodeInputStartedAtRef.current) {
+      barcodeInputStartedAtRef.current = now;
+      barcodeChangeCountRef.current = 0;
+    }
+
+    barcodeChangeCountRef.current += 1;
+    barcodeLastInputAtRef.current = now;
+    setBarcodeValue(nextRawValue);
+  };
+
+  const shouldAutoProcessBarcode = (rawValue) => {
+    const normalizedValue = String(rawValue || "").trim();
+
+    if (
+      !normalizedValue ||
+      !activeTrackingNumber ||
+      loading ||
+      isSubmitting ||
+      isSessionLocked ||
+      isAutoProcessingBarcodeRef.current
+    ) {
+      return false;
+    }
+
+    const parsedBarcode = parseSerialBarcodeValue(normalizedValue);
+    const isSerialBarcode = !parsedBarcode.error;
+    const isNonSerialSubmitTrigger =
+      scannedItems.length > 0 && !hasSerialBarcodeSeparator(normalizedValue);
+
+    if (!isSerialBarcode && !isNonSerialSubmitTrigger) {
+      return false;
+    }
+
+    const inputStartedAt = barcodeInputStartedAtRef.current;
+    const lastInputAt = barcodeLastInputAtRef.current || Date.now();
+    const changeCount = barcodeChangeCountRef.current;
+    const duration = inputStartedAt ? Math.max(lastInputAt - inputStartedAt, 0) : 0;
+    const averageInterval =
+      changeCount > 1 ? duration / Math.max(changeCount - 1, 1) : duration;
+
+    if (changeCount <= 1) {
+      return duration <= 50;
+    }
+
+    return averageInterval <= 35;
+  };
+
   useEffect(() => {
     if (scannerName && !isSessionLocked) {
       if (activeTrackingNumber) {
@@ -181,11 +262,16 @@ const PackingNoDataGineeSerialMode = ({
     }
   }, [scannerName, isSessionLocked, activeTrackingNumber]);
 
+  useEffect(() => () => {
+    clearBarcodeAutoScanTimeout();
+  }, []);
+
   const resetSession = ({ preserveMessage = false } = {}) => {
     if (!preserveMessage) {
       setMessage("");
     }
 
+    resetBarcodeTypingMeta();
     setTrackingNumber("");
     setActiveTrackingNumber("");
     setBarcodeValue("");
@@ -193,16 +279,22 @@ const PackingNoDataGineeSerialMode = ({
     setOrderPreview(null);
   };
 
-  const handleStartSession = async () => {
-    const normalizedTracking = normalizeTrackingNumber(trackingNumber);
+  const handleStartSession = async (
+    incomingTrackingNumber = trackingNumber,
+    { clearMessage = true } = {}
+  ) => {
+    const normalizedTracking = normalizeTrackingNumber(incomingTrackingNumber);
 
     if (!normalizedTracking) {
       focusTrackingInput();
-      return;
+      return { success: false, message: "" };
     }
 
     setLoading(true);
-    setMessage("");
+
+    if (clearMessage) {
+      setMessage("");
+    }
 
     try {
       const response = await API.get(
@@ -211,28 +303,30 @@ const PackingNoDataGineeSerialMode = ({
       const nextOrderPreview = response.data?.order || null;
 
       if (nextOrderPreview?.is_packed) {
+        const nextMessage = `WARNING: Order #${nextOrderPreview.order_number} sudah packed dan tidak bisa diproses lewat mode serial No Data Ginee.`;
         playSound("error");
-        setMessage(
-          `WARNING: Order #${nextOrderPreview.order_number} sudah packed dan tidak bisa diproses lewat mode serial No Data Ginee.`
-        );
+        setTrackingNumber(normalizedTracking);
+        setMessage(nextMessage);
         focusTrackingInput();
-        return;
+        return { success: false, message: nextMessage };
       }
+
+      const nextMessage = nextOrderPreview
+        ? `INFO: Order #${nextOrderPreview.order_number} sudah ditemukan. Lanjut scan SKU | nomor seri, lalu submit untuk rekonsiliasi otomatis.`
+        : "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk.";
 
       setTrackingNumber(normalizedTracking);
       setActiveTrackingNumber(normalizedTracking);
       setBarcodeValue("");
       setScannedItems([]);
       setOrderPreview(nextOrderPreview);
-      setMessage(
-        nextOrderPreview
-          ? `INFO: Order #${nextOrderPreview.order_number} sudah ditemukan. Lanjut scan SKU | nomor seri, lalu submit untuk rekonsiliasi otomatis.`
-          : "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk."
-      );
+      setMessage(nextMessage);
       focusBarcodeInput();
+      return { success: true, message: nextMessage };
     } catch (error) {
       playSound("error");
       const data = error?.response?.data;
+      let nextMessage = "";
 
       if (error?.response?.status === 409) {
         const statusText = data?.reconciliation_status
@@ -242,26 +336,44 @@ const PackingNoDataGineeSerialMode = ({
           ? ` Order terkait: #${data.order.order_number}.`
           : "";
 
-        setMessage(
-          `WARNING: ${data?.message || "Tracking number sudah pernah discan."}${statusText}${orderText}`
-        );
+        nextMessage = `WARNING: ${data?.message || "Tracking number sudah pernah discan."}${statusText}${orderText}`;
       } else {
-        setMessage(
-          formatErrorMessage(error, "Gagal memulai sesi serial No Data Ginee")
+        nextMessage = formatErrorMessage(
+          error,
+          "Gagal memulai sesi serial No Data Ginee"
         );
       }
+
+      setTrackingNumber(normalizedTracking);
+      setMessage(nextMessage);
+      focusTrackingInput();
+      return { success: false, message: nextMessage };
     } finally {
       setLoading(false);
     }
   };
 
-  const handleScanBarcode = () => {
+  const handleScanBarcode = async (incomingBarcodeValue = barcodeValue) => {
+    clearBarcodeAutoScanTimeout();
+
     if (!activeTrackingNumber) {
       focusTrackingInput();
       return;
     }
 
-    const parsedBarcode = parseSerialBarcodeValue(barcodeValue);
+    const currentBarcodeValue = String(incomingBarcodeValue || "");
+    const nextTrackingCandidate = normalizeTrackingNumber(currentBarcodeValue);
+    const parsedBarcode = parseSerialBarcodeValue(currentBarcodeValue);
+
+    if (
+      parsedBarcode.error &&
+      scannedItems.length > 0 &&
+      nextTrackingCandidate &&
+      !hasSerialBarcodeSeparator(currentBarcodeValue)
+    ) {
+      await handleAutoSubmitFromNonSerialBarcode(nextTrackingCandidate);
+      return;
+    }
 
     if (parsedBarcode.error) {
       playSound("error");
@@ -310,9 +422,16 @@ const PackingNoDataGineeSerialMode = ({
     focusBarcodeInput();
   };
 
-  const handleSubmit = async () => {
-    if (!scannerName || !activeTrackingNumber || scannedItems.length === 0) {
-      return;
+  const handleSubmit = async ({
+    showSuccessModal = true,
+    nextTrackingCandidate = "",
+    submitReason = "",
+  } = {}) => {
+    const trackingToSubmit = activeTrackingNumber;
+    const itemsToSubmit = scannedItems;
+
+    if (!scannerName || !trackingToSubmit || itemsToSubmit.length === 0) {
+      return false;
     }
 
     setIsSubmitting(true);
@@ -322,39 +441,105 @@ const PackingNoDataGineeSerialMode = ({
       const response = await API.post("/packing-no-data-ginee/submit", {
         scan_mode: "serial_scan",
         scanner_name: scannerName,
-        tracking_number: activeTrackingNumber,
-        items: scannedItems.map((item) => ({
+        tracking_number: trackingToSubmit,
+        items: itemsToSubmit.map((item) => ({
           actual_sku: item.actual_sku,
           serial_number: item.serial_number,
         })),
       });
 
-      setMessage(buildSerialSubmitMessage(response.data));
+      const submitMessage = buildSerialSubmitMessage(response.data);
+      const nextMessage = [submitMessage, submitReason].filter(Boolean).join("\n");
+
       resetSession({ preserveMessage: true });
+      setTrackingNumber(nextTrackingCandidate);
+      setMessage(nextMessage || submitMessage);
       playSound("success");
 
-      await Swal.fire({
-        icon: "success",
-        title: "Submit Berhasil",
-        text: response.data?.message || "Scan serial No Data Ginee berhasil disimpan.",
-        confirmButtonText: "OK",
-        buttonsStyling: false,
-        customClass: {
-          popup: "pk-bb-swal-popup",
-          confirmButton: "pk-bb-swal-confirm",
-        },
-      });
+      if (showSuccessModal) {
+        await Swal.fire({
+          icon: "success",
+          title: "Submit Berhasil",
+          text: response.data?.message || "Scan serial No Data Ginee berhasil disimpan.",
+          confirmButtonText: "OK",
+          buttonsStyling: false,
+          customClass: {
+            popup: "pk-bb-swal-popup",
+            confirmButton: "pk-bb-swal-confirm",
+          },
+        });
+      }
 
       focusTrackingInput();
+      return true;
     } catch (error) {
       playSound("error");
       setMessage(
         formatErrorMessage(error, "Submit scan serial No Data Ginee gagal")
       );
+      return false;
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleAutoSubmitFromNonSerialBarcode = async (nextTrackingCandidate) => {
+    const submitReason = [
+      `INFO: Barcode ${nextTrackingCandidate} terdeteksi bukan format serial.`,
+      "Sesi tracking serial sebelumnya otomatis disubmit dan barcode dipindahkan ke field tracking.",
+    ].join("\n");
+
+    return handleSubmit({
+      showSuccessModal: false,
+      nextTrackingCandidate,
+      submitReason,
+    });
+  };
+
+  useEffect(() => {
+    const normalizedBarcodeValue = String(barcodeValue || "").trim();
+
+    if (!normalizedBarcodeValue) {
+      resetBarcodeTypingMeta();
+      return undefined;
+    }
+
+    const parsedBarcode = parseSerialBarcodeValue(normalizedBarcodeValue);
+    const shouldQueueAutoProcess =
+      !parsedBarcode.error ||
+      (scannedItems.length > 0 && !hasSerialBarcodeSeparator(normalizedBarcodeValue));
+
+    if (!shouldQueueAutoProcess) {
+      clearBarcodeAutoScanTimeout();
+      return undefined;
+    }
+
+    clearBarcodeAutoScanTimeout();
+    barcodeAutoScanTimeoutRef.current = setTimeout(async () => {
+      if (!shouldAutoProcessBarcode(normalizedBarcodeValue)) {
+        return;
+      }
+
+      isAutoProcessingBarcodeRef.current = true;
+
+      try {
+        await handleScanBarcode(normalizedBarcodeValue);
+      } finally {
+        resetBarcodeTypingMeta();
+      }
+    }, 150);
+
+    return () => {
+      clearBarcodeAutoScanTimeout();
+    };
+  }, [
+    barcodeValue,
+    activeTrackingNumber,
+    loading,
+    isSubmitting,
+    isSessionLocked,
+    scannedItems.length,
+  ]);
 
   return (
     <>
@@ -431,7 +616,7 @@ const PackingNoDataGineeSerialMode = ({
 
           <button
             type="button"
-            onClick={handleStartSession}
+            onClick={() => handleStartSession()}
             disabled={loading || isSubmitting || !scannerName || isSessionLocked}
             className="btn-search-modern"
           >
@@ -471,6 +656,10 @@ const PackingNoDataGineeSerialMode = ({
 
         <div className="sku-input-wrapper">
           <label className="sku-label">Scan Barcode `SKU | NOMOR_SERI`</label>
+          <small className="pk-cell-muted">
+            Hasil scan serial akan otomatis diproses. Jika barcode berikutnya bukan
+            format serial, sesi ini akan otomatis submit.
+          </small>
 
           <div className="sku-input">
             <input
@@ -478,7 +667,7 @@ const PackingNoDataGineeSerialMode = ({
               type="text"
               placeholder="Contoh: SKU-001 | ABC123456"
               value={barcodeValue}
-              onChange={(event) => setBarcodeValue(event.target.value)}
+              onChange={(event) => handleBarcodeChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -489,7 +678,7 @@ const PackingNoDataGineeSerialMode = ({
             />
             <button
               type="button"
-              onClick={handleScanBarcode}
+              onClick={() => handleScanBarcode()}
               disabled={loading || isSubmitting || !activeTrackingNumber || isSessionLocked}
             >
               Tambah Scan
@@ -502,7 +691,7 @@ const PackingNoDataGineeSerialMode = ({
             type="button"
             className="btn-validate"
             disabled={isSubmitting || scannedItems.length === 0}
-            onClick={handleSubmit}
+            onClick={() => handleSubmit()}
           >
             {isSubmitting ? "Mengirim..." : "Submit Tracking Serial"}
           </button>
