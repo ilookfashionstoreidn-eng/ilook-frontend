@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "./Logs.css";
 import API from "../../api";
 import { FaFileExcel, FaQrcode } from "react-icons/fa";
-import { FiCheckCircle, FiLayers, FiSearch, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiChevronDown, FiLayers, FiSearch, FiUser } from "react-icons/fi";
 import dayjs from "dayjs";
 
 const formatRupiah = (value) => {
@@ -12,6 +12,19 @@ const formatRupiah = (value) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
+};
+
+const formatWholeNumber = (value) => {
+  const amount = Number(value || 0);
+
+  if (!Number.isFinite(amount)) {
+    return "0";
+  }
+
+  return amount.toLocaleString("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 };
 
 const getModeLabel = (log) => log?.mode_label || "Normal";
@@ -29,18 +42,26 @@ const triggerBlobDownload = (blob, fileName) => {
 
 const PER_PAGE_OPTIONS = [25, 50, 100];
 const KASIR_SUMMARY_BATCH = 5;
+const MODE_OPTIONS = [
+  { value: "normal", label: "Normal" },
+  { value: "random", label: "Random" },
+  { value: "belum-barcode", label: "Belum Barcode" },
+  { value: "no-data-ginee", label: "No Data Ginee" },
+];
 
 const LogsPage = () => {
   const [logs, setLogs] = useState([]);
   const [summary, setSummary] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [singleDate, setSingleDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [status, setStatus] = useState("");
-  const [mode, setMode] = useState("");
+  const [selectedModes, setSelectedModes] = useState([]);
+  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
   const [selectedLogs, setSelectedLogs] = useState(null);
   const [selectedLogDetail, setSelectedLogDetail] = useState(null);
@@ -52,12 +73,46 @@ const LogsPage = () => {
   const [kasirSummary, setKasirSummary] = useState([]);
   const [exportJob, setExportJob] = useState(null);
   const tableScrollRef = useRef(null);
+  const modeFilterRef = useRef(null);
   const [pagination, setPagination] = useState({
     next_cursor: null,
     prev_cursor: null,
   });
   const [perPage, setPerPage] = useState(25);
   const [visibleKasirCount, setVisibleKasirCount] = useState(KASIR_SUMMARY_BATCH);
+
+  const openDatePicker = (event) => {
+    const input = event.currentTarget;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch (error) {
+        // Ignore browsers that block repeated picker calls.
+      }
+    }
+  };
+
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleEndDateChange = (event) => {
+    setEndDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleSingleDateChange = (event) => {
+    const selectedDate = event.target.value;
+
+    setSingleDate(selectedDate);
+
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      setEndDate(selectedDate);
+    }
+  };
 
   const fetchLogs = async (
     start = startDate,
@@ -66,7 +121,7 @@ const LogsPage = () => {
     cursor = null,
     track = tracking,
     performed = performedBy,
-    selectedMode = mode,
+    modeFilters = selectedModes,
     pageSize = perPage
   ) => {
     try {
@@ -81,7 +136,7 @@ const LogsPage = () => {
           end_date: end,
           ...(performed && { performed_by: performed }),
           ...(stat && { status: stat }),
-          ...(selectedMode && { mode: selectedMode }),
+          ...(modeFilters.length > 0 && { mode: modeFilters }),
           ...(track && { tracking_number: track }),
         },
       });
@@ -105,7 +160,7 @@ const LogsPage = () => {
     stat = status,
     performed = performedBy,
     track = tracking,
-    selectedMode = mode
+    modeFilters = selectedModes
   ) => {
     try {
       setLoadingSummary(true);
@@ -115,7 +170,7 @@ const LogsPage = () => {
         start_date: start,
         end_date: end,
         ...(stat && { status: stat }),
-        ...(selectedMode && { mode: selectedMode }),
+        ...(modeFilters.length > 0 && { mode: modeFilters }),
         ...(performed && { performed_by: performed }),
         ...(track && { tracking_number: track }),
       });
@@ -123,7 +178,14 @@ const LogsPage = () => {
       if (response.data.data.length > 0) {
         setSummary(response.data.data[0]);
       } else {
-        setSummary({ total_order: 0, total_items: 0, total_amount: 0 });
+        setSummary({
+          total_order: 0,
+          total_order_formatted: "0",
+          total_items: 0,
+          total_items_formatted: "0",
+          total_amount: 0,
+          total_amount_formatted: "0",
+        });
       }
 
       setKasirSummary(response.data.kasir_summary || []);
@@ -145,21 +207,58 @@ const LogsPage = () => {
     setVisibleKasirCount(KASIR_SUMMARY_BATCH);
   }, [kasirSummary]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modeFilterRef.current && !modeFilterRef.current.contains(event.target)) {
+        setIsModeDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const toggleModeSelection = (modeValue) => {
+    setSelectedModes((current) => {
+      if (current.includes(modeValue)) {
+        return current.filter((item) => item !== modeValue);
+      }
+
+      return [...current, modeValue];
+    });
+  };
+
+  const clearModeSelection = () => {
+    setSelectedModes([]);
+  };
+
   const handleFilter = () => {
     if (!startDate || !endDate) {
       alert("Silakan pilih tanggal awal dan akhir!");
       return;
     }
 
-    fetchSummary(startDate, endDate, status, performedBy, tracking, mode);
-    fetchLogs(startDate, endDate, status, null, tracking, performedBy, mode, perPage);
+    fetchSummary(startDate, endDate, status, performedBy, tracking, selectedModes);
+    fetchLogs(startDate, endDate, status, null, tracking, performedBy, selectedModes, perPage);
   };
 
   const handlePerPageChange = (event) => {
     const nextPerPage = Number(event.target.value) || 25;
 
     setPerPage(nextPerPage);
-    fetchLogs(startDate, endDate, status, null, tracking, performedBy, mode, nextPerPage);
+    fetchLogs(
+      startDate,
+      endDate,
+      status,
+      null,
+      tracking,
+      performedBy,
+      selectedModes,
+      nextPerPage
+    );
   };
 
   const handleExport = async () => {
@@ -171,7 +270,7 @@ const LogsPage = () => {
         start_date: startDate,
         end_date: endDate,
         ...(status && { status }),
-        ...(mode && { mode }),
+        ...(selectedModes.length > 0 && { mode: selectedModes }),
         ...(tracking && { tracking_number: tracking }),
         ...(performedBy && { performed_by: performedBy }),
       });
@@ -290,6 +389,12 @@ const LogsPage = () => {
   const totalKasirAktif = kasirSummary.length;
   const visibleKasirSummary = kasirSummary.slice(0, visibleKasirCount);
   const hasMoreKasirSummary = visibleKasirCount < kasirSummary.length;
+  const selectedModeLabel =
+    selectedModes.length === 0
+      ? "Semua Mode"
+      : selectedModes.length === 1
+      ? MODE_OPTIONS.find((option) => option.value === selectedModes[0])?.label || "1 Mode"
+      : `${selectedModes.length} Mode Dipilih`;
 
   const scrollTable = (direction) => {
     if (!tableScrollRef.current) {
@@ -319,17 +424,35 @@ const LogsPage = () => {
           <main className="pklog-main">
             <section className="pklog-card pklog-filter-card">
               <div className="pklog-filter-row">
-                <div className="pklog-filter-dates">
+                <div className="pklog-filter-date-stack">
+                  <span className="pklog-filter-label">Range Tanggal</span>
+                  <div className="pklog-filter-dates">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={handleStartDateChange}
+                      onClick={openDatePicker}
+                      onFocus={openDatePicker}
+                    />
+                    <span className="pklog-dash">-</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={handleEndDateChange}
+                      onClick={openDatePicker}
+                      onFocus={openDatePicker}
+                    />
+                  </div>
+                </div>
+
+                <div className="pklog-filter-date-stack pklog-filter-single-date">
+                  <span className="pklog-filter-label">1 Tanggal</span>
                   <input
                     type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                  />
-                  <span className="pklog-dash">-</span>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(event) => setEndDate(event.target.value)}
+                    value={singleDate}
+                    onChange={handleSingleDateChange}
+                    onClick={openDatePicker}
+                    onFocus={openDatePicker}
                   />
                 </div>
 
@@ -344,13 +467,43 @@ const LogsPage = () => {
                 </div>
 
                 <div className="pklog-filter-selects">
-                  <select value={mode} onChange={(event) => setMode(event.target.value)}>
-                    <option value="">Semua Mode</option>
-                    <option value="normal">Normal</option>
-                    <option value="random">Random</option>
-                    <option value="belum-barcode">Belum Barcode</option>
-                    <option value="no-data-ginee">No Data Ginee</option>
-                  </select>
+                  <div className="pklog-multi-select" ref={modeFilterRef}>
+                    <button
+                      type="button"
+                      className={`pklog-multi-select-trigger ${
+                        isModeDropdownOpen ? "is-open" : ""
+                      }`}
+                      onClick={() => setIsModeDropdownOpen((current) => !current)}
+                    >
+                      <span>{selectedModeLabel}</span>
+                      <FiChevronDown className="pklog-multi-select-chevron" />
+                    </button>
+
+                    {isModeDropdownOpen && (
+                      <div className="pklog-multi-select-panel">
+                        <button
+                          type="button"
+                          className="pklog-multi-select-clear"
+                          onClick={clearModeSelection}
+                        >
+                          Semua Mode
+                        </button>
+
+                        <div className="pklog-multi-select-options">
+                          {MODE_OPTIONS.map((option) => (
+                            <label key={option.value} className="pklog-multi-select-option">
+                              <input
+                                type="checkbox"
+                                checked={selectedModes.includes(option.value)}
+                                onChange={() => toggleModeSelection(option.value)}
+                              />
+                              <span>{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <select value={status} onChange={(event) => setStatus(event.target.value)}>
                     <option value="">Semua Status</option>
@@ -402,14 +555,22 @@ const LogsPage = () => {
                 <div className="pklog-kpi-head">
                   <FiLayers /> Total Pesanan
                 </div>
-                <strong>{loadingSummary ? "..." : summary?.total_order || 0}</strong>
+                <strong>
+                  {loadingSummary
+                    ? "..."
+                    : summary?.total_order_formatted ?? formatWholeNumber(summary?.total_order)}
+                </strong>
                 <small>order pada rentang tanggal</small>
               </article>
               <article className="pklog-kpi-card">
                 <div className="pklog-kpi-head">
                   <FiCheckCircle /> Total Produk
                 </div>
-                <strong>{loadingSummary ? "..." : summary?.total_items || 0}</strong>
+                <strong>
+                  {loadingSummary
+                    ? "..."
+                    : summary?.total_items_formatted ?? formatWholeNumber(summary?.total_items)}
+                </strong>
                 <small>item berhasil dipacking</small>
               </article>
               <article className="pklog-kpi-card">
@@ -423,7 +584,7 @@ const LogsPage = () => {
                 <div className="pklog-kpi-head">
                   <FiUser /> Petugas Aktif
                 </div>
-                <strong>{totalKasirAktif}</strong>
+                <strong>{formatWholeNumber(totalKasirAktif)}</strong>
                 <small>petugas tercatat dalam periode</small>
               </article>
             </section>
@@ -446,7 +607,9 @@ const LogsPage = () => {
                         {visibleKasirSummary.map((item) => (
                           <tr key={`${item.performed_by || "unknown"}-${item.total_orders}`}>
                             <td>{item.performed_by || "-"}</td>
-                            <td>{item.total_orders}</td>
+                            <td>
+                              {item.total_orders_formatted ?? formatWholeNumber(item.total_orders)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -523,7 +686,10 @@ const LogsPage = () => {
                           <td>{logItem.order?.tracking_number || "-"}</td>
                           <td>{getModeLabel(logItem)}</td>
                           <td>{logItem.performed_by || "-"}</td>
-                          <td>{logItem.total_items || 0}</td>
+                          <td>
+                            {logItem.total_items_formatted ??
+                              formatWholeNumber(logItem.total_items)}
+                          </td>
                           <td>{formatRupiah(logItem.order?.total_amount)}</td>
                           <td>
                             <div className="pklog-date-time">
@@ -578,7 +744,7 @@ const LogsPage = () => {
                         pagination.prev_cursor,
                         tracking,
                         performedBy,
-                        mode,
+                        selectedModes,
                         perPage
                       )
                     }
@@ -598,7 +764,7 @@ const LogsPage = () => {
                         pagination.next_cursor,
                         tracking,
                         performedBy,
-                        mode,
+                        selectedModes,
                         perPage
                       )
                     }
@@ -664,7 +830,7 @@ const LogsPage = () => {
                                 ? ` (asli: ${item.originalSku})`
                                 : ""}
                             </td>
-                            <td>{item.quantity}</td>
+                            <td>{formatWholeNumber(item.quantity)}</td>
                             <td>{item.serial_number}</td>
                             <td>{item.status}</td>
                           </tr>

@@ -14,11 +14,25 @@ const formatRupiah = (value) => {
   })}`;
 };
 
+const formatWholeNumber = (value) => {
+  const amount = Number(value || 0);
+
+  if (!Number.isFinite(amount)) {
+    return "0";
+  }
+
+  return amount.toLocaleString("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+};
+
 const Logs = () => {
   const [logs, setLogs] = useState([]);
   const [summary, setSummary] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [singleDate, setSingleDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [error, setError] = useState(null);
@@ -36,6 +50,39 @@ const Logs = () => {
     current_page: 1,
     last_page: 1,
   });
+
+  const openDatePicker = (event) => {
+    const input = event.currentTarget;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch (error) {
+        // Ignore browsers that block repeated picker calls.
+      }
+    }
+  };
+
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleEndDateChange = (event) => {
+    setEndDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleSingleDateChange = (event) => {
+    const selectedDate = event.target.value;
+
+    setSingleDate(selectedDate);
+
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      setEndDate(selectedDate);
+    }
+  };
 
   
 const fetchLogs = async (
@@ -238,10 +285,36 @@ useEffect(() => {
         <main className="pklog-main">
           <section className="pklog-card pklog-filter-card">
             <div className="pklog-filter-row">
-              <div className="pklog-filter-dates">
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                <span className="pklog-dash">-</span>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <div className="pklog-filter-date-stack">
+                <span className="pklog-filter-label">Range Tanggal</span>
+                <div className="pklog-filter-dates">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={handleStartDateChange}
+                    onClick={openDatePicker}
+                    onFocus={openDatePicker}
+                  />
+                  <span className="pklog-dash">-</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={handleEndDateChange}
+                    onClick={openDatePicker}
+                    onFocus={openDatePicker}
+                  />
+                </div>
+              </div>
+
+              <div className="pklog-filter-date-stack pklog-filter-single-date">
+                <span className="pklog-filter-label">1 Tanggal</span>
+                <input
+                  type="date"
+                  value={singleDate}
+                  onChange={handleSingleDateChange}
+                  onClick={openDatePicker}
+                  onFocus={openDatePicker}
+                />
               </div>
 
               <div className="pklog-filter-search">
@@ -289,12 +362,20 @@ useEffect(() => {
           <section className="pklog-kpi-grid">
             <article className="pklog-kpi-card">
               <div className="pklog-kpi-head"><FiLayers /> Total Pesanan</div>
-              <strong>{loadingSummary ? "..." : summary?.total_order || 0}</strong>
+              <strong>
+                {loadingSummary
+                  ? "..."
+                  : summary?.total_order_formatted ?? formatWholeNumber(summary?.total_order)}
+              </strong>
               <small>order pada rentang tanggal</small>
             </article>
             <article className="pklog-kpi-card">
               <div className="pklog-kpi-head"><FiCheckCircle /> Total Produk</div>
-              <strong>{loadingSummary ? "..." : summary?.total_items || 0}</strong>
+              <strong>
+                {loadingSummary
+                  ? "..."
+                  : summary?.total_items_formatted ?? formatWholeNumber(summary?.total_items)}
+              </strong>
               <small>item berhasil dipacking</small>
             </article>
             <article className="pklog-kpi-card">
@@ -308,7 +389,7 @@ useEffect(() => {
             </article>
             <article className="pklog-kpi-card">
               <div className="pklog-kpi-head"><FiUser /> Kasir Aktif</div>
-              <strong>{totalKasirAktif}</strong>
+              <strong>{formatWholeNumber(totalKasirAktif)}</strong>
               <small>kasir tercatat dalam periode</small>
             </article>
           </section>
@@ -330,7 +411,7 @@ useEffect(() => {
                     {kasirSummary.map((item) => (
                       <tr key={item.performed_by}>
                         <td>{item.performed_by}</td>
-                        <td>{item.total_orders}</td>
+                        <td>{item.total_orders_formatted ?? formatWholeNumber(item.total_orders)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -382,7 +463,7 @@ useEffect(() => {
                 <td>{tc.order?.tracking_number}</td>
                 <td>{getModeLabel(tc)}</td>
                 <td>{tc.performed_by}</td>
-                <td>{getPackedTotalItems(tc)}</td>
+                <td>{tc.total_items_formatted ?? formatWholeNumber(getPackedTotalItems(tc))}</td>
                 <td>{formatRupiah(tc.order?.total_amount)}</td>
                 <td>
                   <div className="pklog-date-time">
