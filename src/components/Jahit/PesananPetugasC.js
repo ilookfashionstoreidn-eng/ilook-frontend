@@ -95,7 +95,6 @@ const PesananPetugasC = () => {
   const [showFormPetugasD, setShowFormPetugasD] = useState(false);
   const [selectedPesanan, setSelectedPesanan] = useState(null);
   const [penjahitList, setPenjahitList] = useState([]);
-  const [spkCmtList, setSpkCmtList] = useState([]);
   const [aksesorisList, setAksesorisList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -123,8 +122,6 @@ const PesananPetugasC = () => {
   const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
   const selectedDetailPesanan = Array.isArray(selectedPesanan?.detail_pesanan) ? selectedPesanan.detail_pesanan : [];
   const selectedPenjahit = penjahitList.find((item) => String(item.id_penjahit) === String(newData.penjahit_id));
-  const relatedSpkForPenjahit = spkCmtList.filter((item) => String(item.penjahit?.id_penjahit || item.id_penjahit || "") === String(newData.penjahit_id));
-  const resolvedSpkCmt = relatedSpkForPenjahit[0] || null;
 
   const pendingCount = pageData.filter((item) => item.status === "pending").length;
   const verifiedCount = pageData.filter((item) => item.status === "verified").length;
@@ -174,32 +171,7 @@ const PesananPetugasC = () => {
       }
     };
 
-    const fetchSpkCmtList = async () => {
-      try {
-        const response = await API.get("/spkcmt", {
-          params: {
-            allData: "true",
-          },
-        });
-
-        let data = [];
-        if (response.data?.spk) {
-          if (Array.isArray(response.data.spk)) {
-            data = response.data.spk;
-          } else if (Array.isArray(response.data.spk.data)) {
-            data = response.data.spk.data;
-          }
-        }
-
-        setSpkCmtList(data);
-      } catch (fetchError) {
-        console.error("Error fetching SPK CMT list:", fetchError);
-        setSpkCmtList([]);
-      }
-    };
-
     fetchPenjahitList();
-    fetchSpkCmtList();
     fetchAksesorisList();
   }, []);
 
@@ -260,14 +232,9 @@ const PesananPetugasC = () => {
       return;
     }
 
-    if (!resolvedSpkCmt?.id_spk) {
-      alert("CMT yang dipilih belum memiliki referensi SPK CMT. Silakan pilih CMT lain atau buat SPK CMT terlebih dahulu.");
-      return;
-    }
-
     const payload = {
       user_id: userId,
-      spk_cmt_id: resolvedSpkCmt.id_spk,
+      penjahit_id: newData.penjahit_id,
       detail_pesanan: newData.detail_pesanan,
     };
 
@@ -604,9 +571,7 @@ const PesananPetugasC = () => {
                               </span>
                               <div>
                                 <strong className="ppc-cell-primary">{item.penjahit?.nama_penjahit || "Tidak Diketahui"}</strong>
-                                <span className="ppc-cell-secondary">
-                                  {item.spk_cmt?.nomor_seri ? `SPK ${item.spk_cmt.nomor_seri}` : "Tanpa referensi SPK"}
-                                </span>
+                                {item.spk_cmt?.nomor_seri && <span className="ppc-cell-secondary">SPK {item.spk_cmt.nomor_seri}</span>}
                               </div>
                             </div>
                           </td>
@@ -792,7 +757,6 @@ const PesananPetugasC = () => {
                   <div className="ppc-chip-row">
                     <span className="ppc-chip">Detail {newData.detail_pesanan.length}</span>
                     {selectedPenjahit && <span className="ppc-chip ppc-chip--highlight">{selectedPenjahit.nama_penjahit}</span>}
-                    {resolvedSpkCmt?.nomor_seri && <span className="ppc-chip">SPK {resolvedSpkCmt.nomor_seri}</span>}
                   </div>
                 </div>
 
@@ -820,26 +784,6 @@ const PesananPetugasC = () => {
                     </div>
                   </label>
                 </div>
-
-                {selectedPenjahit && (
-                  <div className="ppc-inline-note">
-                    <FiFileText />
-                    <div>
-                      <strong>
-                        {resolvedSpkCmt?.nomor_seri
-                          ? `Referensi SPK otomatis: ${resolvedSpkCmt.nomor_seri}`
-                          : "Referensi SPK belum ditemukan"}
-                      </strong>
-                      <p>
-                        {resolvedSpkCmt?.nomor_seri
-                          ? relatedSpkForPenjahit.length > 1
-                            ? `Sistem memakai SPK CMT terbaru untuk ${selectedPenjahit.nama_penjahit} karena pilihan di form hanya berdasarkan CMT.`
-                            : `Pesanan ini akan dikaitkan ke SPK CMT milik ${selectedPenjahit.nama_penjahit}.`
-                          : `CMT ${selectedPenjahit.nama_penjahit} belum memiliki SPK CMT yang bisa dipakai untuk menyimpan pesanan.`}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </section>
 
               <section className="ppc-form-section">
@@ -957,7 +901,7 @@ const PesananPetugasC = () => {
                 <div className="ppc-summary-card">
                   <span className="ppc-summary-label">CMT</span>
                   <strong>{selectedPesanan.penjahit?.nama_penjahit || "Tidak Diketahui"}</strong>
-                  <small>{selectedPesanan.spk_cmt?.nomor_seri ? `SPK ${selectedPesanan.spk_cmt.nomor_seri}` : "Tanpa referensi SPK"}</small>
+                  {selectedPesanan.spk_cmt?.nomor_seri && <small>SPK {selectedPesanan.spk_cmt.nomor_seri}</small>}
                 </div>
 
                 <div className="ppc-summary-card">
