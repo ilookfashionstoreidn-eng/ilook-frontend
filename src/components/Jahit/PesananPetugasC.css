@@ -912,37 +912,6 @@
   padding: 14px;
 }
 
-.ppc-inline-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  margin-top: 14px;
-  border-radius: 14px;
-  background: #f8fbff;
-  border: 1px solid #dfe8f7;
-}
-
-.ppc-inline-note svg {
-  color: var(--ppc-primary);
-  font-size: 18px;
-  margin-top: 1px;
-  flex-shrink: 0;
-}
-
-.ppc-inline-note strong {
-  display: block;
-  font-size: 13px;
-  color: var(--ppc-text);
-}
-
-.ppc-inline-note p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ppc-text-soft);
-}
-
 .ppc-detail-list {
   display: flex;
   flex-direction: column;
