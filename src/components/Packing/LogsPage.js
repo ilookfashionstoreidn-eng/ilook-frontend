@@ -245,6 +245,15 @@ const LogsPage = () => {
     fetchLogs(startDate, endDate, status, null, tracking, performedBy, selectedModes, perPage);
   };
 
+  const handleTrackingKeyDown = (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    handleFilter();
+  };
+
   const handlePerPageChange = (event) => {
     const nextPerPage = Number(event.target.value) || 25;
 
@@ -462,6 +471,7 @@ const LogsPage = () => {
                     placeholder="Cari Tracking Number..."
                     value={tracking}
                     onChange={(event) => setTracking(event.target.value)}
+                    onKeyDown={handleTrackingKeyDown}
                     className="pklog-input-tracking"
                   />
                 </div>
@@ -683,23 +693,27 @@ const LogsPage = () => {
                       )}
                       {logs.map((logItem) => (
                         <tr key={logItem.id}>
-                          <td>{logItem.order?.tracking_number || "-"}</td>
-                          <td>{getModeLabel(logItem)}</td>
-                          <td>{logItem.performed_by || "-"}</td>
-                          <td>
+                          <td data-label="Tracking Number">
+                            {logItem.order?.tracking_number || "-"}
+                          </td>
+                          <td data-label="Mode">{getModeLabel(logItem)}</td>
+                          <td data-label="Petugas">{logItem.performed_by || "-"}</td>
+                          <td data-label="Total Item">
                             {logItem.total_items_formatted ??
                               formatWholeNumber(logItem.total_items)}
                           </td>
-                          <td>{formatRupiah(logItem.order?.total_amount)}</td>
-                          <td>
+                          <td data-label="Total Harga">
+                            {formatRupiah(logItem.order?.total_amount)}
+                          </td>
+                          <td data-label="Tanggal / Jam">
                             <div className="pklog-date-time">
                               <span>{dayjs(logItem.created_at).format("DD-MM-YYYY")}</span>
                               <small>{dayjs(logItem.created_at).format("HH:mm:ss")}</small>
                             </div>
                           </td>
-                          <td>{logItem.serial_preview || "-"}</td>
-                          <td>{logItem.order?.status || "-"}</td>
-                          <td>
+                          <td data-label="Nomor Seri">{logItem.serial_preview || "-"}</td>
+                          <td data-label="Status">{logItem.order?.status || "-"}</td>
+                          <td data-label="Aksi">
                             <button
                               className="pklog-btn-detail"
                               onClick={() => handleOpenModal(logItem)}
