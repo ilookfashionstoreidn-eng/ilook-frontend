@@ -141,6 +141,8 @@ const PackingNoDataGinee = () => {
     const soundMap = {
       success: "/sounds/success.mp3",
       error: "/sounds/failed.mp3",
+      scanproduk: "/sounds/scanprodukberhasil.mp3",
+      validasiok: "/sounds/validasiberhasil.mp3",
     };
 
     const targetSound = soundMap[type];
@@ -403,6 +405,7 @@ const PackingNoDataGinee = () => {
         { tracking_number: normalizedTracking, scanned_at: new Date().toLocaleTimeString("id-ID") },
         ...prev,
       ]);
+      playSound("scanproduk");
       setMessage(`OK: Tracking number ${normalizedTracking} berhasil ditambahkan ke sesi scan.`);
     } catch (error) {
       playSound("error");
@@ -448,6 +451,7 @@ const PackingNoDataGinee = () => {
       lockSession({
         nextMessage: `OK: ${successMessage}\nMasukkan nama scanner lagi untuk memulai sesi scan berikutnya.`,
       });
+      playSound("validasiok");
       await Swal.fire({
         icon: "success",
         title: "Submit Berhasil",

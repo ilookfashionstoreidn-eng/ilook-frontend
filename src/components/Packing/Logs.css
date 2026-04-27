@@ -2,8 +2,10 @@
 
 .pklog-page {
   width: 100%;
+  min-height: 100%;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 18px;
   background: #eef2f6;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -17,6 +19,8 @@
   border: 1px solid #f0f3f8;
   box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.7);
   overflow: hidden;
+  container-type: inline-size;
+  container-name: pklog-shell;
 }
 
 .pklog-content {
@@ -35,6 +39,10 @@
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.pklog-title-group > div:last-child {
+  min-width: 0;
 }
 
 .pklog-brand-icon {
@@ -63,6 +71,7 @@
   margin: 4px 0 0;
   font-size: 12px;
   color: #64748b;
+  line-height: 1.5;
 }
 
 .pklog-main {
@@ -580,11 +589,13 @@
 .pklog-table th:nth-child(5),
 .pklog-table td:nth-child(5) { width: 10%; min-width: 95px; }
 .pklog-table th:nth-child(6),
-.pklog-table td:nth-child(6) { width: 24%; min-width: 170px; }
+.pklog-table td:nth-child(6) { width: 14%; min-width: 130px; }
 .pklog-table th:nth-child(7),
-.pklog-table td:nth-child(7) { width: 9%; min-width: 90px; }
+.pklog-table td:nth-child(7) { width: 20%; min-width: 170px; }
 .pklog-table th:nth-child(8),
 .pklog-table td:nth-child(8) { width: 9%; min-width: 88px; }
+.pklog-table th:nth-child(9),
+.pklog-table td:nth-child(9) { width: 9%; min-width: 94px; }
 
 .pklog-table th {
   background: #f8fafd;
@@ -807,6 +818,7 @@
 .pklog-date-time {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .pklog-date-time span {
@@ -816,6 +828,314 @@
 .pklog-date-time small {
   color: #64748b;
   font-size: 10px;
+}
+
+@container pklog-shell (max-width: 1320px) {
+  .pklog-filter-row {
+    grid-template-columns: minmax(280px, 1.25fr) minmax(180px, 0.85fr) minmax(0, 1fr);
+  }
+
+  .pklog-filter-search,
+  .pklog-filter-selects,
+  .pklog-filter-actions {
+    padding-top: 0;
+  }
+
+  .pklog-filter-selects,
+  .pklog-filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .pklog-filter-selects {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pklog-filter-actions {
+    grid-template-columns: repeat(2, minmax(0, 160px));
+    justify-content: start;
+  }
+
+  .pklog-filter-selects > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@container pklog-shell (max-width: 1080px) {
+  .pklog-topbar {
+    padding: 14px 18px;
+  }
+
+  .pklog-main {
+    padding: 16px 18px 20px;
+  }
+
+  .pklog-filter-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .pklog-filter-dates {
+    grid-template-columns: 1fr;
+  }
+
+  .pklog-filter-single-date {
+    max-width: none;
+  }
+
+  .pklog-filter-search,
+  .pklog-filter-selects,
+  .pklog-filter-actions {
+    grid-column: auto;
+    padding-top: 0;
+  }
+
+  .pklog-filter-selects,
+  .pklog-filter-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pklog-filter-row input,
+  .pklog-filter-row select,
+  .pklog-multi-select-trigger,
+  .pklog-btn {
+    width: 100%;
+  }
+
+  .pklog-dash {
+    display: none;
+  }
+
+  .pklog-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pklog-table-tools {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pklog-table-tools-btns {
+    margin-left: 0;
+  }
+
+  .pklog-kasir-footer {
+    align-items: stretch;
+  }
+
+  .pklog-kasir-footer .pklog-btn {
+    width: 100%;
+  }
+
+  .pagination {
+    justify-content: flex-start;
+  }
+
+  .pagination-page-size,
+  .pagination-nav {
+    width: 100%;
+  }
+}
+
+@container pklog-shell (max-width: 760px) {
+  .pklog-topbar {
+    padding: 14px;
+  }
+
+  .pklog-main {
+    padding: 12px 14px 16px;
+  }
+
+  .pklog-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .pklog-title-group {
+    align-items: flex-start;
+  }
+
+  .pklog-title-group h1 {
+    font-size: 18px;
+  }
+
+  .pklog-title-group p {
+    font-size: 11px;
+  }
+
+  .pklog-brand-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+  }
+
+  .pklog-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pklog-kpi-card strong {
+    font-size: 18px;
+  }
+
+  .pklog-kasir-table {
+    min-width: 280px;
+  }
+
+  .pklog-table-tools-btns {
+    width: 100%;
+  }
+
+  .pklog-table-tools-btns button {
+    flex: 1;
+  }
+
+  .pklog-table-wrap {
+    border: 0;
+    overflow: visible !important;
+    background: transparent;
+  }
+
+  .pklog-table-inner {
+    width: 100%;
+  }
+
+  .pklog-table,
+  .pklog-table tbody {
+    display: block;
+    width: 100% !important;
+  }
+
+  .pklog-table {
+    min-width: 0 !important;
+  }
+
+  .pklog-table thead {
+    display: none;
+  }
+
+  .pklog-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pklog-table tbody tr {
+    display: block;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    padding: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.32);
+  }
+
+  .pklog-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0;
+    border-bottom: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    background: transparent;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .pklog-table td + td {
+    margin-top: 8px;
+  }
+
+  .pklog-table td::before {
+    content: attr(data-label);
+    flex: 0 0 108px;
+    max-width: 108px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
+  .pklog-table td[colspan] {
+    display: block;
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  .pklog-table td[colspan]::before {
+    content: none;
+  }
+
+  .pklog-table td[data-label="Tanggal / Jam"] .pklog-date-time {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .pklog-table td[data-label="Aksi"] .pklog-btn-detail {
+    width: 100%;
+  }
+
+  .pagination {
+    align-items: stretch;
+  }
+
+  .pagination-page-size,
+  .pagination-nav {
+    justify-content: space-between;
+  }
+
+  .pagination-page-size {
+    row-gap: 10px;
+  }
+
+  .pagination-page-size label,
+  .pagination-page-size span,
+  .pagination-nav span {
+    width: 100%;
+  }
+
+  .pagination-nav {
+    gap: 10px;
+  }
+
+  .pagination-nav button {
+    flex: 1;
+  }
+
+  .pklog-modal-overlay {
+    padding: 10px;
+  }
+
+  .pklog-modal-content {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    padding: 14px;
+  }
+
+  .pklog-modal-content h3 {
+    font-size: 15px;
+  }
+
+  .pklog-modal-meta span {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .pklog-modal-table {
+    min-width: 420px;
+  }
+}
+
+@container pklog-shell (max-width: 520px) {
+  .pklog-table td::before {
+    flex-basis: 92px;
+    max-width: 92px;
+  }
 }
 
 @media (max-width: 1200px) {
@@ -841,6 +1161,10 @@
   .pklog-filter-selects,
   .pklog-filter-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .pklog-filter-selects > :last-child {
+    grid-column: 1 / -1;
   }
 }
 
@@ -893,6 +1217,10 @@
     display: none;
   }
 
+  .pklog-title-group {
+    align-items: flex-start;
+  }
+
   .pklog-table-tools {
     flex-direction: column;
     align-items: flex-start;
@@ -918,9 +1246,38 @@
   .pagination-nav {
     width: 100%;
   }
+
+  .pagination-nav {
+    justify-content: space-between;
+  }
+
+  .pklog-modal-content {
+    width: min(100%, 760px);
+  }
 }
 
 @media (max-width: 640px) {
+  .pklog-page {
+    padding: 10px;
+  }
+
+  .pklog-shell {
+    border-radius: 16px;
+  }
+
+  .pklog-topbar {
+    padding: 14px;
+  }
+
+  .pklog-main {
+    padding: 12px 14px 16px;
+  }
+
+  .pklog-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
   .pklog-kpi-grid {
     grid-template-columns: 1fr;
   }
@@ -933,5 +1290,173 @@
     width: 40px;
     height: 40px;
     font-size: 17px;
+  }
+
+  .pklog-title-group p {
+    font-size: 11px;
+  }
+
+  .pklog-kpi-card strong {
+    font-size: 18px;
+  }
+
+  .pklog-kasir-table {
+    min-width: 280px;
+  }
+
+  .pklog-table-tools-btns {
+    width: 100%;
+  }
+
+  .pklog-table-tools-btns button {
+    flex: 1;
+  }
+
+  .pklog-table-wrap {
+    border: 0;
+    overflow: visible !important;
+    background: transparent;
+  }
+
+  .pklog-table-inner {
+    width: 100%;
+  }
+
+  .pklog-table,
+  .pklog-table tbody {
+    display: block;
+    width: 100% !important;
+  }
+
+  .pklog-table {
+    min-width: 0 !important;
+  }
+
+  .pklog-table thead {
+    display: none;
+  }
+
+  .pklog-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pklog-table tbody tr {
+    display: block;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    padding: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.32);
+  }
+
+  .pklog-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0;
+    border-bottom: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    background: transparent;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .pklog-table td + td {
+    margin-top: 8px;
+  }
+
+  .pklog-table td::before {
+    content: attr(data-label);
+    flex: 0 0 108px;
+    max-width: 108px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
+  .pklog-table td[colspan] {
+    display: block;
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  .pklog-table td[colspan]::before {
+    content: none;
+  }
+
+  .pklog-table td[data-label="Tanggal / Jam"] .pklog-date-time {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .pklog-table td[data-label="Aksi"] .pklog-btn-detail {
+    width: 100%;
+  }
+
+  .pagination {
+    align-items: stretch;
+  }
+
+  .pagination-page-size,
+  .pagination-nav {
+    justify-content: space-between;
+  }
+
+  .pagination-page-size {
+    row-gap: 10px;
+  }
+
+  .pagination-page-size label,
+  .pagination-page-size span,
+  .pagination-nav span {
+    width: 100%;
+  }
+
+  .pagination-nav {
+    gap: 10px;
+  }
+
+  .pagination-nav button {
+    flex: 1;
+  }
+
+  .pklog-modal-overlay {
+    padding: 10px;
+  }
+
+  .pklog-modal-content {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    padding: 14px;
+  }
+
+  .pklog-modal-content h3 {
+    font-size: 15px;
+  }
+
+  .pklog-modal-meta span {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .pklog-modal-table {
+    min-width: 420px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pklog-table td::before {
+    flex-basis: 92px;
+    max-width: 92px;
   }
 }
