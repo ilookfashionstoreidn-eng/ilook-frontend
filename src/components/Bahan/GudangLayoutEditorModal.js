@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaLayerGroup, FaSave, FaTimes, FaUndo } from "react-icons/fa";
 import {
+  BLOCK_CANVAS_LIMITS,
   getDefaultRackLayoutPosition,
+  getBlockLayoutColumnsLimit,
   normalizeBlockCanvas,
   resolveRackLayoutPosition,
 } from "./GudangProdukMockStore";
@@ -13,10 +15,16 @@ const clampNumber = (value, min, max, fallback) => {
 };
 
 const normalizeBlockDraft = (block) => {
+  const normalizedCanvas = normalizeBlockCanvas(block);
   const draftBlock = {
     ...block,
-    layoutColumns: clampNumber(block?.layoutColumns, 1, 4, 3),
-    layoutCanvas: normalizeBlockCanvas(block),
+    layoutCanvas: normalizedCanvas,
+    layoutColumns: clampNumber(
+      block?.layoutColumns,
+      1,
+      getBlockLayoutColumnsLimit(normalizedCanvas.columns),
+      3
+    ),
   };
 
   return {
@@ -98,6 +106,20 @@ const resizeHandles = [
   { key: "se", className: "south-east" },
   { key: "sw", className: "south-west" },
 ];
+
+const buildNumericOptions = (min, max, currentValue) => {
+  const optionSet = new Set();
+
+  for (let value = min; value <= max; value += 1) {
+    optionSet.add(value);
+  }
+
+  if (Number.isFinite(currentValue)) {
+    optionSet.add(currentValue);
+  }
+
+  return [...optionSet].sort((left, right) => left - right);
+};
 
 const getNextRackLayoutPosition = ({
   interactionMode,
@@ -218,6 +240,32 @@ const GudangLayoutEditorModal = ({
   const canvas = useMemo(
     () => (activeBlock ? normalizeBlockCanvas(activeBlock) : normalizeBlockCanvas(null)),
     [activeBlock]
+  );
+  const layoutColumnLimit = useMemo(
+    () => getBlockLayoutColumnsLimit(canvas.columns),
+    [canvas.columns]
+  );
+  const autoGridColumnOptions = useMemo(
+    () => buildNumericOptions(1, layoutColumnLimit, activeBlock?.layoutColumns || 3),
+    [activeBlock?.layoutColumns, layoutColumnLimit]
+  );
+  const canvasColumnOptions = useMemo(
+    () =>
+      buildNumericOptions(
+        BLOCK_CANVAS_LIMITS.minColumns,
+        BLOCK_CANVAS_LIMITS.maxColumns,
+        canvas.columns
+      ),
+    [canvas.columns]
+  );
+  const canvasRowOptions = useMemo(
+    () =>
+      buildNumericOptions(
+        BLOCK_CANVAS_LIMITS.minRows,
+        BLOCK_CANVAS_LIMITS.maxRows,
+        canvas.rows
+      ),
+    [canvas.rows]
   );
 
   useEffect(() => {
@@ -585,7 +633,7 @@ const GudangLayoutEditorModal = ({
                         value={activeBlock.layoutColumns || 3}
                         onChange={(event) => handleLayoutColumnsChange(event.target.value)}
                       >
-                        {[1, 2, 3, 4].map((value) => (
+                        {autoGridColumnOptions.map((value) => (
                           <option key={value} value={value}>
                             {value}
                           </option>
@@ -600,7 +648,7 @@ const GudangLayoutEditorModal = ({
                           handleCanvasSettingChange("columns", event.target.value)
                         }
                       >
-                        {[8, 10, 12, 16, 20].map((value) => (
+                        {canvasColumnOptions.map((value) => (
                           <option key={value} value={value}>
                             {value}
                           </option>
@@ -613,7 +661,7 @@ const GudangLayoutEditorModal = ({
                         value={canvas.rows}
                         onChange={(event) => handleCanvasSettingChange("rows", event.target.value)}
                       >
-                        {[6, 8, 10, 12, 14].map((value) => (
+                        {canvasRowOptions.map((value) => (
                           <option key={value} value={value}>
                             {value}
                           </option>

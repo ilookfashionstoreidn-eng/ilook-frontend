@@ -5,6 +5,15 @@ export const DEFAULT_BLOCK_CANVAS = Object.freeze({
   rows: 10,
 });
 
+export const BLOCK_CANVAS_LIMITS = Object.freeze({
+  minColumns: 6,
+  maxColumns: 40,
+  minRows: 4,
+  maxRows: 40,
+  minRackSpan: 2,
+  maxAutoGridColumns: 20,
+});
+
 const nowIso = () => new Date().toISOString();
 
 export const createId = (prefix = "id") =>
@@ -231,22 +240,42 @@ export const generateSlotCode = (floorNumber, blockCode, rackNumber, rowNumber) 
 export const normalizeBlockCanvas = (block) => ({
   columns: clampNumber(
     block?.layoutCanvas?.columns,
-    6,
-    24,
+    BLOCK_CANVAS_LIMITS.minColumns,
+    BLOCK_CANVAS_LIMITS.maxColumns,
     DEFAULT_BLOCK_CANVAS.columns
   ),
   rows: clampNumber(
     block?.layoutCanvas?.rows,
-    4,
-    18,
+    BLOCK_CANVAS_LIMITS.minRows,
+    BLOCK_CANVAS_LIMITS.maxRows,
     DEFAULT_BLOCK_CANVAS.rows
   ),
 });
 
+export const getBlockLayoutColumnsLimit = (blockOrCanvasColumns) => {
+  const canvasColumns =
+    typeof blockOrCanvasColumns === "number"
+      ? blockOrCanvasColumns
+      : normalizeBlockCanvas(blockOrCanvasColumns).columns;
+
+  return Math.max(
+    Math.min(
+      Math.floor(canvasColumns / BLOCK_CANVAS_LIMITS.minRackSpan),
+      BLOCK_CANVAS_LIMITS.maxAutoGridColumns
+    ),
+    1
+  );
+};
+
 export const getDefaultRackLayoutPosition = (rack, rackIndex, block) => {
   const canvas = normalizeBlockCanvas(block);
   const rackCount = Math.max((block?.racks || []).length, 1);
-  const preferredColumns = clampNumber(block?.layoutColumns, 1, 4, 3);
+  const preferredColumns = clampNumber(
+    block?.layoutColumns,
+    1,
+    getBlockLayoutColumnsLimit(canvas.columns),
+    3
+  );
   const racksPerRow = Math.min(preferredColumns, rackCount);
   const defaultWidth = Math.max(
     2,

@@ -50,6 +50,18 @@ const buildRackSkuPreviewText = (skuItems = [], density = "regular") => {
   return remainingCount ? `${labels.join(", ")} +${remainingCount} SKU` : labels.join(", ");
 };
 
+const clampPdfLines = (lines = [], maxLines = 1) => {
+  if (lines.length <= maxLines) return lines;
+
+  const visibleLines = lines.slice(0, maxLines);
+  const lastLine = String(visibleLines[maxLines - 1] || "")
+    .replace(/[.,;:\s]+$/g, "")
+    .trim();
+
+  visibleLines[maxLines - 1] = `${lastLine || visibleLines[maxLines - 1]}...`;
+  return visibleLines;
+};
+
 const buildRackSummaryMap = (slots, selectedSkuId = "") => {
   const map = {};
 
@@ -244,11 +256,19 @@ const drawPdfLayoutPage = ({
     const height = (position.h / canvas.rows) * mapHeight;
     const density =
       width <= 22 || height <= 16 ? "micro" : width <= 34 || height <= 24 ? "compact" : "regular";
+    const slotCodesText = rackSummary?.slotCodes?.join(", ") || `${rack.rows} slot`;
     const previewText = rackSummary?.previewText || "Kosong";
+    const slotFontSize = density === "micro" ? 4.2 : density === "compact" ? 5 : 5.7;
+    const slotLineHeight = density === "micro" ? 2.1 : 2.6;
+    const slotLines = clampPdfLines(
+      doc.splitTextToSize(slotCodesText, Math.max(width - 5, 14)),
+      density === "micro" ? 3 : 2
+    );
     const previewFontSize = density === "micro" ? 5.4 : density === "compact" ? 6 : 6.8;
-    const previewLines = doc
-      .splitTextToSize(previewText, Math.max(width - 5, 14))
-      .slice(0, density === "micro" ? 2 : density === "compact" ? 3 : 4);
+    const previewLines = clampPdfLines(
+      doc.splitTextToSize(previewText, Math.max(width - 5, 14)),
+      density === "regular" ? 2 : 1
+    );
     const footerText = rackSummary
       ? `${rackSummary.filledSlotCount}/${rackSummary.slotCount} baris | ${rackSummary.totalQty} pcs`
       : `${rack.rows} baris`;
@@ -282,11 +302,28 @@ const drawPdfLayoutPage = ({
       { align: "center", maxWidth: Math.max(width - 6, 12) }
     );
 
+    const contentBottomLimit = y + height - 4.8;
+    const slotStartY = y + 13.2;
+
+    doc.setTextColor(37, 99, 235);
+    doc.setFontSize(slotFontSize);
+    slotLines.forEach((line, index) => {
+      const lineY = slotStartY + index * slotLineHeight;
+      if (lineY <= contentBottomLimit) {
+        doc.text(line, x + width / 2, lineY, {
+          align: "center",
+          maxWidth: Math.max(width - 5, 14),
+        });
+      }
+    });
+
+    const previewStartY = slotStartY + slotLines.length * slotLineHeight + 1;
     doc.setTextColor(51, 65, 85);
     doc.setFontSize(previewFontSize);
     previewLines.forEach((line, index) => {
-      const lineY = y + 14 + index * 3.1;
-      if (lineY <= y + height - 5) {
+      const lineY =
+        previewStartY + index * (density === "micro" ? 2.5 : density === "compact" ? 2.8 : 3.1);
+      if (lineY <= contentBottomLimit) {
         doc.text(line, x + width / 2, lineY, { align: "center", maxWidth: Math.max(width - 5, 14) });
       }
     });
