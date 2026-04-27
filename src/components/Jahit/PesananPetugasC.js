@@ -407,7 +407,7 @@ const PesananPetugasC = () => {
       <div className="ppc-workspace">
         <header className="ppc-header">
           <div className="ppc-header-main">
-            <span className="ppc-module-pill">Aksesoris ERP Desk</span>
+            <span className="ppc-module-pill">Aksesoris Desk</span>
             <div className="ppc-title-row">
               <div className="ppc-brand-icon">
                 <FiShoppingCart />
