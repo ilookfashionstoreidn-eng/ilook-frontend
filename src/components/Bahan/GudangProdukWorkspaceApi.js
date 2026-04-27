@@ -1,4 +1,9 @@
 import API from "../../api";
+import {
+  getBlockLayoutColumnsLimit,
+  normalizeBlockCanvas,
+  resolveRackLayoutPosition,
+} from "./GudangProdukMockStore";
 
 export const emptyGudangWorkspaceState = {
   layouts: [],
@@ -14,6 +19,41 @@ const normalizeWorkspaceState = (payload = {}) => ({
   skus: Array.isArray(payload.skus) ? payload.skus : [],
   stockEntries: Array.isArray(payload.stockEntries) ? payload.stockEntries : [],
   activityLog: Array.isArray(payload.activityLog) ? payload.activityLog : [],
+});
+
+const clampNumber = (value, min, max, fallback) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+};
+
+const sanitizeLayoutPayload = (layout) => ({
+  ...layout,
+  floors: (layout?.floors || []).map((floor) => ({
+    ...floor,
+    blocks: (floor?.blocks || []).map((block) => {
+      const layoutCanvas = normalizeBlockCanvas(block);
+      const layoutColumns = clampNumber(
+        block?.layoutColumns,
+        1,
+        getBlockLayoutColumnsLimit(layoutCanvas.columns),
+        3
+      );
+      const sanitizedBlock = {
+        ...block,
+        layoutCanvas,
+        layoutColumns,
+      };
+
+      return {
+        ...sanitizedBlock,
+        racks: (block?.racks || []).map((rack, rackIndex) => ({
+          ...rack,
+          layoutPosition: resolveRackLayoutPosition(rack, rackIndex, sanitizedBlock),
+        })),
+      };
+    }),
+  })),
 });
 
 export const buildGudangWorkspaceErrorMessage = (error, fallbackMessage) => {
@@ -34,7 +74,7 @@ export const fetchGudangProdukWorkspace = async () => {
 };
 
 export const createGudangProdukLayout = async (payload) => {
-  const response = await API.post("/gudang-produk-workspace/layouts", payload);
+  const response = await API.post("/gudang-produk-workspace/layouts", sanitizeLayoutPayload(payload));
 
   return {
     workspace: normalizeWorkspaceState(response?.data?.data),
@@ -44,7 +84,10 @@ export const createGudangProdukLayout = async (payload) => {
 };
 
 export const saveGudangProdukLayout = async (layout) => {
-  const response = await API.put(`/gudang-produk-workspace/layouts/${layout.id}`, layout);
+  const response = await API.put(
+    `/gudang-produk-workspace/layouts/${layout.id}`,
+    sanitizeLayoutPayload(layout)
+  );
 
   return {
     workspace: normalizeWorkspaceState(response?.data?.data),
