@@ -537,6 +537,43 @@
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
+.seri-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #eef3f9;
+}
+
+.seri-mode-switch button {
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.seri-mode-switch button:hover {
+  color: #1e293b;
+}
+
+.seri-mode-switch button.active {
+  background: #ffffff;
+  color: #2458ce;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -598,6 +635,63 @@
   border-color: #2458ce;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.seri-product-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.seri-product-search svg {
+  position: absolute;
+  left: 13px;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.form-group .seri-product-search input {
+  width: 100%;
+  padding-left: 38px;
+}
+
+.seri-field-error {
+  margin: -2px 0 0;
+  color: #be123c;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.seri-product-preview {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #f0f7ff;
+  padding: 10px 12px;
+}
+
+.seri-product-preview span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.seri-product-preview strong {
+  color: #1d4ed8;
+  font-size: 13px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.seri-product-preview small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .modal-footer {

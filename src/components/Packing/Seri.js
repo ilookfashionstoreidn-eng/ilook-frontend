@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./Seri.css";
 import API from "../../api";
 import { 
   FiSearch, FiPlus, FiDownload, FiHash,
-  FiBox, FiX, FiCheckCircle, FiLayers, FiDatabase, FiFilter, FiGrid
+  FiBox, FiX, FiCheckCircle, FiLayers, FiDatabase, FiFilter, FiGrid, FiEdit3
 } from "react-icons/fi";
 
 const Seri = () => {
@@ -16,6 +16,12 @@ const Seri = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [inputMode, setInputMode] = useState("manual");
+  const [productOptions, setProductOptions] = useState([]);
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productError, setProductError] = useState("");
   
   const [newSeri, setNewSeri] = useState({
     nomor_seri: "",
@@ -38,9 +44,67 @@ const Seri = () => {
     }
   };
 
+  const getProductSkuReference = (product) => {
+    return String(product?.sku_name || product?.sku || product?.product || "").trim();
+  };
+
+  const getProductSerialReference = (product) => {
+    return String(product?.kode_seri || product?.nomor_seri || "").trim();
+  };
+
+  const getProductOptionLabel = (product) => {
+    const skuReference = getProductSkuReference(product);
+    const productName = String(product?.product || "").trim();
+
+    if (skuReference && productName && skuReference !== productName) {
+      return `${skuReference} - ${productName}`;
+    }
+
+    return skuReference || productName || `Product #${product?.id}`;
+  };
+
+  const selectedProduct = useMemo(
+    () => productOptions.find((product) => String(product.id) === String(selectedProductId)),
+    [productOptions, selectedProductId]
+  );
+
+  const fetchProductOptions = useCallback(async (search = "") => {
+    try {
+      setLoadingProducts(true);
+      setProductError("");
+
+      const response = await API.get("/product-list", {
+        params: {
+          search,
+          page: 1,
+          per_page: 100,
+          sortBy: search ? "sku_name" : "id",
+          sortOrder: search ? "asc" : "desc",
+        },
+      });
+
+      setProductOptions(response.data.data || []);
+    } catch (error) {
+      setProductOptions([]);
+      setProductError("Gagal mengambil data Product List.");
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSeri(1);
   }, []);
+
+  useEffect(() => {
+    if (!showForm || inputMode !== "product-list") return;
+
+    const timeoutId = window.setTimeout(() => {
+      fetchProductOptions(productSearchTerm.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchProductOptions, inputMode, productSearchTerm, showForm]);
 
   const downloadQR = async (id, nomorSeri) => {
     try {
@@ -68,6 +132,16 @@ const Seri = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
+    if (inputMode === "product-list" && !selectedProductId) {
+      alert("Pilih produk dari Product List terlebih dahulu.");
+      return;
+    }
+
+    if (!newSeri.sku.trim()) {
+      alert("SKU referensi wajib diisi.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("nomor_seri", newSeri.nomor_seri);
     formData.append("sku", newSeri.sku);
@@ -89,6 +163,9 @@ const Seri = () => {
         sku: "",
         jumlah: "1",
       });
+      setInputMode("manual");
+      setProductSearchTerm("");
+      setSelectedProductId("");
     } catch (error) {
       console.error("Error:", error.response?.data?.message || error.message);
       alert(error.response?.data?.message || "Terjadi kesalahan saat menambahkan seri.");
@@ -100,6 +177,45 @@ const Seri = () => {
     setNewSeri((prev) => ({
       ...prev,
       [name]: name === "jumlah" ? value.replace(/\D/g, "") : value.toUpperCase(),
+    }));
+  };
+
+  const handleModeChange = (mode) => {
+    setInputMode(mode);
+    setSelectedProductId("");
+    setProductError("");
+
+    if (mode === "product-list") {
+      setProductSearchTerm("");
+      setNewSeri((prev) => ({
+        ...prev,
+        sku: "",
+      }));
+    }
+  };
+
+  const handleProductSelect = (e) => {
+    const productId = e.target.value;
+    const product = productOptions.find((item) => String(item.id) === String(productId));
+
+    setSelectedProductId(productId);
+
+    if (!product) {
+      setNewSeri((prev) => ({
+        ...prev,
+        sku: "",
+      }));
+      return;
+    }
+
+    const skuReference = getProductSkuReference(product).toUpperCase();
+    const serialReference = getProductSerialReference(product).toUpperCase();
+    const fallbackSerialReference = serialReference || skuReference;
+
+    setNewSeri((prev) => ({
+      ...prev,
+      sku: skuReference,
+      nomor_seri: fallbackSerialReference && !prev.nomor_seri ? fallbackSerialReference : prev.nomor_seri,
     }));
   };
 
@@ -263,6 +379,25 @@ const Seri = () => {
               </div>
 
               <form onSubmit={handleFormSubmit} className="modal-form">
+                <div className="seri-mode-switch" role="group" aria-label="Mode input seri">
+                  <button
+                    type="button"
+                    className={inputMode === "manual" ? "active" : ""}
+                    onClick={() => handleModeChange("manual")}
+                  >
+                    <FiEdit3 size={15} />
+                    Manual
+                  </button>
+                  <button
+                    type="button"
+                    className={inputMode === "product-list" ? "active" : ""}
+                    onClick={() => handleModeChange("product-list")}
+                  >
+                    <FiDatabase size={15} />
+                    Product List
+                  </button>
+                </div>
+
                 <div className="form-group">
                   <label>
                     <span className="label-content">
@@ -285,17 +420,58 @@ const Seri = () => {
                     <label>
                       <span className="label-content">
                         <FiLayers size={14} />
-                        <span>SKU Referensi</span>
+                        <span>{inputMode === "product-list" ? "Produk / SKU Referensi" : "SKU Referensi"}</span>
                       </span>
                     </label>
-                    <input 
-                      type="text" 
-                      name="sku" 
-                      required 
-                      placeholder="Contoh: SET Karina"
-                      value={newSeri.sku}
-                      onChange={handleInputChange}
-                    />
+                    {inputMode === "product-list" ? (
+                      <>
+                        <div className="seri-product-search">
+                          <FiSearch size={15} />
+                          <input
+                            type="text"
+                            value={productSearchTerm}
+                            onChange={(event) => {
+                              setProductSearchTerm(event.target.value);
+                              setSelectedProductId("");
+                            }}
+                            placeholder="Cari produk atau SKU..."
+                          />
+                        </div>
+                        <select
+                          name="product_list_id"
+                          required
+                          value={selectedProductId}
+                          onChange={handleProductSelect}
+                          disabled={loadingProducts && productOptions.length === 0}
+                        >
+                          <option value="">
+                            {loadingProducts ? "Memuat Product List..." : "Pilih produk dari Product List"}
+                          </option>
+                          {productOptions.map((product) => (
+                            <option key={product.id} value={product.id}>
+                              {getProductOptionLabel(product)}
+                            </option>
+                          ))}
+                        </select>
+                        {productError && <p className="seri-field-error">{productError}</p>}
+                        {selectedProduct && (
+                          <div className="seri-product-preview">
+                            <span>SKU</span>
+                            <strong>{newSeri.sku || "-"}</strong>
+                            <small>{selectedProduct.product || "-"}</small>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <input 
+                        type="text" 
+                        name="sku" 
+                        required 
+                        placeholder="Contoh: SET Karina"
+                        value={newSeri.sku}
+                        onChange={handleInputChange}
+                      />
+                    )}
                   </div>
 
                   <div className="form-group">
