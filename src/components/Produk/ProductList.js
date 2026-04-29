@@ -32,14 +32,27 @@ const initialForm = {
   materials: [{ ...emptyMaterial }],
   estimasi_cutting: "",
   estimasi_combi: "",
-  ukuran: "",
+  id_s: "",
+  id_m: "",
+  id_l: "",
+  id_xl: "",
   pj_dress: "",
   pj_celana: "",
   pj_baju: "",
+  price_cmt: "",
+  price_cutting: "",
   notes_spk: "",
 };
 
-const numericFields = ["estimasi_cutting", "estimasi_combi", "pj_dress", "pj_celana", "pj_baju"];
+const numericFields = [
+  "estimasi_cutting",
+  "estimasi_combi",
+  "pj_dress",
+  "pj_celana",
+  "pj_baju",
+  "price_cmt",
+  "price_cutting",
+];
 
 const ProductList = () => {
   const [items, setItems] = useState([]);
@@ -129,10 +142,15 @@ const ProductList = () => {
     materials: normalizeMaterials(item.materials),
     estimasi_cutting: item.estimasi_cutting ?? "",
     estimasi_combi: item.estimasi_combi ?? "",
-    ukuran: item.ukuran || "",
+    id_s: item.id_s || "",
+    id_m: item.id_m || "",
+    id_l: item.id_l || "",
+    id_xl: item.id_xl || "",
     pj_dress: item.pj_dress ?? "",
     pj_celana: item.pj_celana ?? "",
     pj_baju: item.pj_baju ?? "",
+    price_cmt: item.price_cmt ?? "",
+    price_cutting: item.price_cutting ?? "",
     notes_spk: item.notes_spk || "",
   });
 
@@ -168,6 +186,24 @@ const ProductList = () => {
     const message = err?.response?.data?.message || fallback;
 
     return status ? `${message} (HTTP ${status})` : message;
+  };
+
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+
+    const numeric = Number(value);
+
+    if (Number.isNaN(numeric)) {
+      return value;
+    }
+
+    return numeric.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    });
   };
 
   const fetchProductLists = async () => {
@@ -398,9 +434,12 @@ const ProductList = () => {
         title: "Import Selesai",
         html: `
           <div class="product-list-import-result">
+            <div><strong>${Number(result.processed || 0).toLocaleString("id-ID")}</strong><span>Diproses</span></div>
             <div><strong>${Number(result.created || 0).toLocaleString("id-ID")}</strong><span>Data baru</span></div>
             <div><strong>${Number(result.updated || 0).toLocaleString("id-ID")}</strong><span>Update</span></div>
             <div><strong>${Number(result.skipped || 0).toLocaleString("id-ID")}</strong><span>Skip</span></div>
+            <div><strong>${Number(result.empty_sku_rows || 0).toLocaleString("id-ID")}</strong><span>SKU kosong</span></div>
+            <div><strong>${Number(result.duplicate_sku_rows || 0).toLocaleString("id-ID")}</strong><span>SKU duplikat</span></div>
           </div>
           ${
             errorList
@@ -479,10 +518,15 @@ const ProductList = () => {
               <DetailItem label="Product Colour" value={selectedItem?.product_colour} />
               <DetailItem label="Estimasi Cutting" value={selectedItem?.estimasi_cutting} suffix=" pcs" />
               <DetailItem label="Estimasi Combi" value={selectedItem?.estimasi_combi} suffix=" pcs" />
-              <DetailItem label="Ukuran" value={selectedItem?.ukuran} />
+              <DetailItem label="ID S" value={selectedItem?.id_s} />
+              <DetailItem label="ID M" value={selectedItem?.id_m} />
+              <DetailItem label="ID L" value={selectedItem?.id_l} />
+              <DetailItem label="ID XL" value={selectedItem?.id_xl} />
               <DetailItem label="PJ Dress" value={selectedItem?.pj_dress} />
               <DetailItem label="PJ Celana" value={selectedItem?.pj_celana} />
               <DetailItem label="PJ Baju" value={selectedItem?.pj_baju} />
+              <DetailItem label="Price CMT" value={formatCurrency(selectedItem?.price_cmt)} />
+              <DetailItem label="Price Cutting" value={formatCurrency(selectedItem?.price_cutting)} />
             </div>
 
             <div className="product-list-detail-section">
@@ -578,7 +622,7 @@ const ProductList = () => {
           </div>
 
           <div className="product-list-form-section">
-            <h3>Estimasi dan Ukuran</h3>
+            <h3>Estimasi, ID Size, dan Price</h3>
             <div className="product-list-form-grid">
               <Field
                 label="Estimasi Cutting"
@@ -594,10 +638,21 @@ const ProductList = () => {
                 value={form.estimasi_combi}
                 onChange={handleInputChange}
               />
-              <Field label="Ukuran" name="ukuran" value={form.ukuran} onChange={handleInputChange} />
+              <Field label="ID S" name="id_s" value={form.id_s} onChange={handleInputChange} />
+              <Field label="ID M" name="id_m" value={form.id_m} onChange={handleInputChange} />
+              <Field label="ID L" name="id_l" value={form.id_l} onChange={handleInputChange} />
+              <Field label="ID XL" name="id_xl" value={form.id_xl} onChange={handleInputChange} />
               <Field label="PJ Dress" name="pj_dress" type="number" value={form.pj_dress} onChange={handleInputChange} />
               <Field label="PJ Celana" name="pj_celana" type="number" value={form.pj_celana} onChange={handleInputChange} />
               <Field label="PJ Baju" name="pj_baju" type="number" value={form.pj_baju} onChange={handleInputChange} />
+              <Field label="Price CMT" name="price_cmt" type="number" value={form.price_cmt} onChange={handleInputChange} />
+              <Field
+                label="Price Cutting"
+                name="price_cutting"
+                type="number"
+                value={form.price_cutting}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
@@ -637,7 +692,7 @@ const ProductList = () => {
           <div>
             <p className="product-list-pill">Produk</p>
             <h1>Product List</h1>
-            <span>Database detail produk, material, estimasi, ukuran, dan notes SPK.</span>
+            <span>Database detail produk, material, estimasi, ID size, price, dan notes SPK.</span>
           </div>
         </div>
 
@@ -647,7 +702,7 @@ const ProductList = () => {
             type="text"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Cari product, SKU name, group, colour, ukuran..."
+            placeholder="Cari product, SKU name, group, colour, ID size..."
           />
           {searchInput && (
             <button type="button" onClick={() => setSearchInput("")}>
@@ -788,7 +843,12 @@ const ProductList = () => {
                   <th>Colour / Size</th>
                   <th>Material</th>
                   <th>Estimasi</th>
-                  <th>Ukuran / PJ</th>
+                  <th>ID S</th>
+                  <th>ID M</th>
+                  <th>ID L</th>
+                  <th>ID XL</th>
+                  <th>PJ</th>
+                  <th>Price</th>
                   <th>Notes SPK</th>
                   <th>Aksi</th>
                 </tr>
@@ -796,13 +856,13 @@ const ProductList = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="9" className="product-list-state-cell">
+                    <td colSpan="14" className="product-list-state-cell">
                       Memuat data Product List...
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="product-list-state-cell">
+                    <td colSpan="14" className="product-list-state-cell">
                       Belum ada data Product List.
                     </td>
                   </tr>
@@ -829,11 +889,18 @@ const ProductList = () => {
                         <span>Cutting: {item.estimasi_cutting ?? "-"}</span>
                         <span className="product-list-muted">Combi: {item.estimasi_combi ?? "-"}</span>
                       </td>
+                      <td>{item.id_s || "-"}</td>
+                      <td>{item.id_m || "-"}</td>
+                      <td>{item.id_l || "-"}</td>
+                      <td>{item.id_xl || "-"}</td>
                       <td>
-                        <span>{item.ukuran || "-"}</span>
                         <span className="product-list-muted">
                           D {item.pj_dress ?? "-"} / C {item.pj_celana ?? "-"} / B {item.pj_baju ?? "-"}
                         </span>
+                      </td>
+                      <td>
+                        <span>CMT: {formatCurrency(item.price_cmt)}</span>
+                        <span className="product-list-muted">Cutting: {formatCurrency(item.price_cutting)}</span>
                       </td>
                       <td className="product-list-notes-cell">{item.notes_spk || "-"}</td>
                       <td>

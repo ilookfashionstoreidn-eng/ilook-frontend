@@ -235,7 +235,10 @@ export const generateSlotId = (layoutId, floorNumber, blockCode, rackNumber, row
   `${layoutId}__F${floorNumber}__B${String(blockCode).toUpperCase()}__R${rackNumber}__ROW${rowNumber}`;
 
 export const generateSlotCode = (floorNumber, blockCode, rackNumber, rowNumber) =>
-  `L${floorNumber}${String(blockCode).toUpperCase()}${String(rackNumber).padStart(2, "0")}${rowNumber}`;
+  `L${floorNumber}${String(blockCode).toUpperCase()}${String(rackNumber).padStart(
+    2,
+    "0"
+  )}/${rowNumber}`;
 
 export const normalizeBlockCanvas = (block) => ({
   columns: clampNumber(

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaLayerGroup, FaSave, FaTimes, FaUndo } from "react-icons/fa";
 import {
   BLOCK_CANVAS_LIMITS,
+  generateSlotCode,
   getDefaultRackLayoutPosition,
   getBlockLayoutColumnsLimit,
   normalizeBlockCanvas,
@@ -65,10 +66,7 @@ const buildRackCardStyle = (position, canvas) => ({
 const formatRackNumber = (rackNumber) => `Rak ${String(rackNumber).padStart(2, "0")}`;
 
 const buildRackSlotCode = (floor, block, rack, rowNumber) =>
-  `L${floor?.number || ""}${String(block?.code || "").toUpperCase()}${String(rack?.number || "").padStart(
-    2,
-    "0"
-  )}${rowNumber}`;
+  generateSlotCode(floor?.number || "", block?.code || "", rack?.number || "", rowNumber);
 
 const buildRackRangeLabel = (floor, block, rack) => {
   const totalRows = Number(rack?.rows) || 0;
