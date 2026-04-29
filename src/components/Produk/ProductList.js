@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {
   FaChevronDown,
+  FaDownload,
   FaEdit,
   FaFileExcel,
   FaInfoCircle,
@@ -54,11 +55,108 @@ const numericFields = [
   "price_cutting",
 ];
 
+const exportColumnGroups = [
+  {
+    title: "Identitas Produk",
+    columns: [
+      { key: "id", label: "ID" },
+      { key: "sku_name", label: "SKU Name" },
+      { key: "product", label: "Product" },
+      { key: "product_group", label: "Product Group" },
+      { key: "product_size", label: "Product Size" },
+      { key: "product_source", label: "Product Source" },
+      { key: "product_colour", label: "Product Colour" },
+    ],
+  },
+  {
+    title: "Material Utama",
+    columns: [
+      { key: "product_material_1", label: "product_material_1" },
+      { key: "product_colour_1", label: "product_colour_1" },
+      { key: "product_material_group_1", label: "product_material_group_1" },
+    ],
+  },
+  {
+    title: "Material Kombinasi",
+    columns: [
+      { key: "product_material_2", label: "product_material_2" },
+      { key: "product_colour_2", label: "product_colour_2" },
+      { key: "product_material_group_2", label: "product_material_group_2" },
+      { key: "product_material_3", label: "product_material_3" },
+      { key: "product_colour_3", label: "product_colour_3" },
+      { key: "product_material_group_3", label: "product_material_group_3" },
+      { key: "product_material_4", label: "product_material_4" },
+      { key: "product_colour_4", label: "product_colour_4" },
+      { key: "product_material_group_4", label: "product_material_group_4" },
+      { key: "product_material_5", label: "product_material_5" },
+      { key: "product_colour_5", label: "product_colour_5" },
+      { key: "product_material_group_5", label: "product_material_group_5" },
+      { key: "product_material_6", label: "product_material_6" },
+      { key: "product_colour_6", label: "product_colour_6" },
+      { key: "product_material_group_6", label: "product_material_group_6" },
+    ],
+  },
+  {
+    title: "Estimasi dan ID Size",
+    columns: [
+      { key: "estimasi_cutting", label: "Estimasi Cutting" },
+      { key: "estimasi_combi", label: "Estimasi Combi" },
+      { key: "id_s", label: "ID S" },
+      { key: "id_m", label: "ID M" },
+      { key: "id_l", label: "ID L" },
+      { key: "id_xl", label: "ID XL" },
+      { key: "pj_dress", label: "PJ Dress" },
+      { key: "pj_celana", label: "PJ Celana" },
+      { key: "pj_baju", label: "PJ Baju" },
+    ],
+  },
+  {
+    title: "Harga dan Catatan",
+    columns: [
+      { key: "notes_spk", label: "notes_spk" },
+      { key: "price_cmt", label: "Price CMT" },
+      { key: "price_cutting", label: "Price Cutting" },
+      { key: "material_count", label: "Total Material" },
+      { key: "created_at", label: "Created At" },
+      { key: "updated_at", label: "Updated At" },
+    ],
+  },
+];
+
+const allExportColumns = exportColumnGroups.flatMap((group) => group.columns.map((column) => column.key));
+const defaultExportColumns = [
+  "sku_name",
+  "product",
+  "product_group",
+  "product_size",
+  "product_source",
+  "product_colour",
+  "product_material_1",
+  "product_colour_1",
+  "product_material_group_1",
+  "product_material_2",
+  "product_colour_2",
+  "product_material_group_2",
+  "estimasi_cutting",
+  "estimasi_combi",
+  "id_s",
+  "id_m",
+  "id_l",
+  "id_xl",
+  "pj_dress",
+  "pj_celana",
+  "pj_baju",
+  "notes_spk",
+  "price_cmt",
+  "price_cutting",
+];
+
 const ProductList = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -75,6 +173,8 @@ const ProductList = () => {
     material_rows: 0,
   });
   const [modalMode, setModalMode] = useState(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [selectedExportColumns, setSelectedExportColumns] = useState(defaultExportColumns);
   const [selectedItem, setSelectedItem] = useState(null);
   const [form, setForm] = useState(initialForm);
   const importInputRef = useRef(null);
@@ -186,6 +286,35 @@ const ProductList = () => {
     const message = err?.response?.data?.message || fallback;
 
     return status ? `${message} (HTTP ${status})` : message;
+  };
+
+  const getBlobErrorMessage = async (err, fallback) => {
+    const data = err?.response?.data;
+
+    if (data instanceof Blob) {
+      const text = await data.text();
+
+      try {
+        const parsed = JSON.parse(text);
+        return parsed.message || fallback;
+      } catch {
+        return text || fallback;
+      }
+    }
+
+    return getApiErrorMessage(err, fallback);
+  };
+
+  const getDownloadFileName = (headers, fallback) => {
+    const disposition = headers?.["content-disposition"] || headers?.["Content-Disposition"] || "";
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+
+    if (utfMatch?.[1]) {
+      return decodeURIComponent(utfMatch[1]);
+    }
+
+    return plainMatch?.[1] || fallback;
   };
 
   const formatCurrency = (value) => {
@@ -383,6 +512,94 @@ const ProductList = () => {
     importInputRef.current?.click();
   };
 
+  const openExportModal = () => {
+    setExportModalOpen(true);
+  };
+
+  const closeExportModal = () => {
+    if (exporting) return;
+    setExportModalOpen(false);
+  };
+
+  const toggleExportColumn = (columnKey) => {
+    setSelectedExportColumns((prev) => {
+      const nextSet = new Set(prev);
+
+      if (prev.includes(columnKey)) {
+        nextSet.delete(columnKey);
+      } else {
+        nextSet.add(columnKey);
+      }
+
+      return allExportColumns.filter((column) => nextSet.has(column));
+    });
+  };
+
+  const selectAllExportColumns = () => {
+    setSelectedExportColumns(allExportColumns);
+  };
+
+  const resetDefaultExportColumns = () => {
+    setSelectedExportColumns(defaultExportColumns);
+  };
+
+  const handleExport = async () => {
+    if (!selectedExportColumns.length) {
+      await showErrorAlert("Kolom Belum Dipilih", "Pilih minimal satu kolom untuk export Excel.");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      Swal.fire({
+        title: "Menyiapkan export...",
+        text: "Mohon tunggu sampai file Excel selesai dibuat.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await API.post(
+        "/product-list/export",
+        {
+          columns: selectedExportColumns,
+          search: debouncedSearchTerm || "",
+          product_group: selectedGroup || "",
+          sortBy: "id",
+          sortOrder: "desc",
+        },
+        {
+          responseType: "blob",
+          timeout: 600000,
+        }
+      );
+
+      const fileName = getDownloadFileName(
+        response.headers,
+        `product-list-${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setExportModalOpen(false);
+      await showSuccessAlert("Export Selesai", "File Excel berhasil dibuat.");
+    } catch (err) {
+      Swal.close();
+      await showErrorAlert("Export Gagal", await getBlobErrorMessage(err, "File Excel gagal diexport."));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleImportChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -464,6 +681,9 @@ const ProductList = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const getMaterialRoleLabel = (index) => (index === 0 ? "Utama" : "Kombinasi");
+  const getMaterialRoleClass = (index) => (index === 0 ? "main" : "combo");
+
   const renderMaterialChips = (materials) => {
     const normalized = normalizeMaterials(materials).filter(
       (item) => item.material || item.colour || item.material_group
@@ -476,7 +696,11 @@ const ProductList = () => {
     return (
       <div className="product-list-material-chips">
         {normalized.slice(0, 3).map((material, index) => (
-          <span className="product-list-material-chip" key={`${material.material}-${index}`}>
+          <span
+            className={`product-list-material-chip ${getMaterialRoleClass(index)}`}
+            key={`${material.material}-${index}`}
+          >
+            <em>{getMaterialRoleLabel(index)}</em>
             {material.material_group ? `${material.material_group}: ` : ""}
             {material.material || "-"}
             {material.colour ? ` / ${material.colour}` : ""}
@@ -534,10 +758,16 @@ const ProductList = () => {
               {materials.length ? (
                 <div className="product-list-detail-materials">
                   {materials.map((material, index) => (
-                    <div className="product-list-detail-material" key={`${material.material}-${index}`}>
+                    <div
+                      className={`product-list-detail-material ${getMaterialRoleClass(index)}`}
+                      key={`${material.material}-${index}`}
+                    >
                       <span>#{index + 1}</span>
-                      <strong>{material.material || "-"}</strong>
-                      <small>{material.colour || "-"} / {material.material_group || "-"}</small>
+                      <div className="product-list-detail-material-copy">
+                        <em>{index === 0 ? "Material Utama" : `Kombinasi ${index}`}</em>
+                        <strong>{material.material || "-"}</strong>
+                        <small>{material.colour || "-"} / {material.material_group || "-"}</small>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -586,15 +816,23 @@ const ProductList = () => {
             <div className="product-list-section-heading">
               <h3>Material Produk</h3>
               <button className="product-list-secondary-button" type="button" onClick={addMaterialRow}>
-                <FaPlus /> Material
+                <FaPlus /> Kombinasi
               </button>
             </div>
             <div className="product-list-material-editor">
               {form.materials.map((material, index) => (
-                <div className="product-list-material-row" key={`material-row-${index}`}>
-                  <span className="product-list-row-index">{index + 1}</span>
+                <div
+                  className={`product-list-material-row ${getMaterialRoleClass(index)}`}
+                  key={`material-row-${index}`}
+                >
+                  <div className="product-list-material-role">
+                    <span className="product-list-row-index">{index + 1}</span>
+                    <span className="product-list-material-role-badge">
+                      {index === 0 ? "Material Utama" : `Kombinasi ${index}`}
+                    </span>
+                  </div>
                   <Field
-                    label="Product Material"
+                    label={index === 0 ? "Material Utama" : "Material Kombinasi"}
                     value={material.material}
                     onChange={(event) => handleMaterialChange(index, "material", event.target.value)}
                   />
@@ -682,6 +920,72 @@ const ProductList = () => {
     );
   };
 
+  const renderExportModal = () => {
+    if (!exportModalOpen) return null;
+
+    return (
+      <div className="product-list-modal-backdrop" onClick={closeExportModal}>
+        <div className="product-list-modal export" onClick={(event) => event.stopPropagation()}>
+          <div className="product-list-modal-header">
+            <div>
+              <p className="product-list-modal-kicker">Export Product List</p>
+              <h2>Pilih kolom Excel</h2>
+            </div>
+            <button className="product-list-icon-button" onClick={closeExportModal} type="button">
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="product-list-form-section">
+            <div className="product-list-export-toolbar">
+              <div>
+                <h3>Kolom Export</h3>
+                <p>{selectedExportColumns.length} dari {allExportColumns.length} kolom dipilih</p>
+              </div>
+              <div className="product-list-export-toolbar-actions">
+                <button className="product-list-ghost-button" type="button" onClick={resetDefaultExportColumns}>
+                  Default
+                </button>
+                <button className="product-list-secondary-button" type="button" onClick={selectAllExportColumns}>
+                  Pilih Semua
+                </button>
+              </div>
+            </div>
+
+            <div className="product-list-export-grid">
+              {exportColumnGroups.map((group) => (
+                <section className="product-list-export-group" key={group.title}>
+                  <h4>{group.title}</h4>
+                  <div className="product-list-export-options">
+                    {group.columns.map((column) => (
+                      <label className="product-list-export-option" key={column.key}>
+                        <input
+                          type="checkbox"
+                          checked={selectedExportColumns.includes(column.key)}
+                          onChange={() => toggleExportColumn(column.key)}
+                        />
+                        <span>{column.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+
+          <div className="product-list-modal-actions">
+            <button className="product-list-ghost-button" type="button" onClick={closeExportModal}>
+              Batal
+            </button>
+            <button className="product-list-primary-button" type="button" onClick={handleExport} disabled={exporting}>
+              <FaDownload /> {exporting ? "Mengexport..." : "Export Excel"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="product-list-page">
       <header className="product-list-header">
@@ -753,6 +1057,14 @@ const ProductList = () => {
                 disabled={importing}
               >
                 <FaFileExcel /> {importing ? "Import..." : "Import Excel"}
+              </button>
+              <button
+                className="product-list-secondary-button export"
+                type="button"
+                onClick={openExportModal}
+                disabled={exporting}
+              >
+                <FaDownload /> {exporting ? "Export..." : "Export Excel"}
               </button>
               <button
                 className="product-list-primary-button product-list-add-button"
@@ -938,6 +1250,7 @@ const ProductList = () => {
       </main>
 
       {renderModal()}
+      {renderExportModal()}
     </div>
   );
 };
