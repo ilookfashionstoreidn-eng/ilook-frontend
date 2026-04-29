@@ -252,12 +252,17 @@ const Layout = () => {
 
 
             <li>
-              <div onClick={toggleHppMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "hpp" ? "active" : ""}`}>
+              <div onClick={toggleHppMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "hpp" || activeMenu === "hppProduk" || activeMenu === "produk-list") ? "active" : ""}`}>
                 <FaShoppingBag className="icon" /> Produk
                 <span className={`arrow ${isHppOpen ? "open" : ""}`}>{isHppOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
               {isHppOpen && (
                 <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="produk-list" className={`dropdown-link ${activeMenu === "produk-list" ? "active" : ""}`} onClick={() => handleMenuClick("produk-list")}>
+                      <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Produk List
+                    </Link>
+                  </li>
                   <li>
                     <Link to="hppProduk" className={`dropdown-link ${activeMenu === "hppProduk" ? "active" : ""}`} onClick={() => handleMenuClick("hppProduk")}>
                       <FaShoppingBag className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hpp Produk
