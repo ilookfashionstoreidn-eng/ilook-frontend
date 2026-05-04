@@ -47,6 +47,7 @@ const MODE_OPTIONS = [
   { value: "random", label: "Random" },
   { value: "belum-barcode", label: "Belum Barcode" },
   { value: "no-data-ginee", label: "No Data Ginee" },
+  { value: "inject-data", label: "Inject Data" },
 ];
 
 const LogsPage = () => {
