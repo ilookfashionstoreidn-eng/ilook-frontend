@@ -53,6 +53,7 @@ import Packing from "./components/Packing/Packing";
 import PackingBelumBarcode from "./components/Packing/PackingBelumBarcode";
 import PackingRandom from "./components/Packing/PackingRandom";
 import PackingNoDataGinee from "./components/Packing/PackingNoDataGinee";
+import PackingInject from "./components/Packing/PackingInject";
 import Logs from "./components/Packing/LogsPage";
 import Bahan from "./components/Bahan/Bahan";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
@@ -147,6 +148,7 @@ const App = () => {
           <Route path="packing-belum-barcode" element={<PackingBelumBarcode />} />
           <Route path="packing-random" element={<PackingRandom />} />
           <Route path="packing-no-data-ginee" element={<PackingNoDataGinee />} />
+          <Route path="packing-inject" element={<PackingInject />} />
           <Route path="logs" element={<Logs />} />
           <Route path="bahan" element={<Bahan />} />
           <Route path="pembelianBahan" element={<PembelianBahan />} />
