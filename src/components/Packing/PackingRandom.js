@@ -91,6 +91,26 @@ const getStatusMeta = (row) => {
   };
 };
 
+const validationSoundByTrackingPrefix = [
+  { prefix: "JT", sound: "validasiJNE" },
+  { prefix: "SP", sound: "validasiShopee" },
+  { prefix: "JX", sound: "validasiJNT" },
+  { prefix: "GT", sound: "validasiGTL" },
+  { prefix: "NJ", sound: "validasiNinja" },
+  { prefix: "TK", sound: "validasiIDExpress" },
+  { prefix: "TG", sound: "validasiJNECargo" },
+  { prefix: "57", sound: "validasiJNTCargo" },
+];
+
+const getValidationSoundType = (trackingNumber) => {
+  const normalizedTracking = trackingNumber.trim().toUpperCase();
+  const matchedSound = validationSoundByTrackingPrefix.find(({ prefix }) =>
+    normalizedTracking.startsWith(prefix)
+  );
+
+  return matchedSound?.sound || "validasiok";
+};
+
 const PackingRandom = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState(null);
@@ -156,6 +176,14 @@ const PackingRandom = () => {
       noproduk: "/sounds/produktidaksesuai.mp3",
       sudahpacking: "/sounds/orderansudahpacking.mp3",
       validasiok: "/sounds/validasiberhasil.mp3",
+      validasiJNE: "/sounds/ValidasiJNE.mp3",
+      validasiShopee: "/sounds/ValidasiShopee.mp3",
+      validasiJNT: "/sounds/ValidasiJNT.mp3",
+      validasiGTL: "/sounds/ValiadsiGTL.mp3",
+      validasiNinja: "/sounds/ValidasiNinja.mp3",
+      validasiIDExpress: "/sounds/IDExpressValidasi.mp3",
+      validasiJNECargo: "/sounds/JNECargoValidasi.mp3",
+      validasiJNTCargo: "/sounds/JNTCargoValidasi.mp3",
       noseri: "/sounds/noseri.mp3",
       isinoseri: "/sounds/isinoseri.mp3",
     };
@@ -530,7 +558,7 @@ const PackingRandom = () => {
       );
 
       setMessage(response.data.message || "✅ Order berhasil divalidasi melalui packing random");
-      playSound("validasiok");
+      playSound(getValidationSoundType(trackingNumber));
       resetForm({ preserveMessage: true });
     } catch (error) {
       let errorMessage = "❌ Validasi packing random gagal";

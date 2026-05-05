@@ -12,6 +12,26 @@ const normalizeTrackingNumber = (value = "") => value.trim();
 const SCANNER_HISTORY_STORAGE_KEY = "packing-no-data-ginee:scanner-history";
 const MAX_SCANNER_HISTORY = 10;
 
+const expeditionSoundByTrackingPrefix = [
+  { prefix: "JT", sound: "validasiJNE" },
+  { prefix: "SP", sound: "validasiShopee" },
+  { prefix: "JX", sound: "validasiJNT" },
+  { prefix: "GT", sound: "validasiGTL" },
+  { prefix: "NJ", sound: "validasiNinja" },
+  { prefix: "TK", sound: "validasiIDExpress" },
+  { prefix: "TG", sound: "validasiJNECargo" },
+  { prefix: "57", sound: "validasiJNTCargo" },
+];
+
+const getExpeditionSoundType = (trackingNumber) => {
+  const normalizedTracking = normalizeTrackingNumber(trackingNumber).toUpperCase();
+  const matchedSound = expeditionSoundByTrackingPrefix.find(({ prefix }) =>
+    normalizedTracking.startsWith(prefix)
+  );
+
+  return matchedSound?.sound || "scanproduk";
+};
+
 const getSavedScannerNames = () => {
   if (typeof window === "undefined") {
     return [];
@@ -120,6 +140,7 @@ const ACCESS_KEYWORD = "abc123";
 const PackingNoDataGinee = () => {
   const navigate = useNavigate();
   const trackingInputRef = useRef(null);
+  const trackingScanDebounceRef = useRef(null);
 
   const [mode, setMode] = useState("tracking_only");
   const [serialModeResetKey, setSerialModeResetKey] = useState(0);
@@ -143,6 +164,14 @@ const PackingNoDataGinee = () => {
       error: "/sounds/failed.mp3",
       scanproduk: "/sounds/scanprodukberhasil.mp3",
       validasiok: "/sounds/validasiberhasil.mp3",
+      validasiJNE: "/sounds/ValidasiJNE.mp3",
+      validasiShopee: "/sounds/ValidasiShopee.mp3",
+      validasiJNT: "/sounds/ValidasiJNT.mp3",
+      validasiGTL: "/sounds/ValiadsiGTL.mp3",
+      validasiNinja: "/sounds/ValidasiNinja.mp3",
+      validasiIDExpress: "/sounds/IDExpressValidasi.mp3",
+      validasiJNECargo: "/sounds/JNECargoValidasi.mp3",
+      validasiJNTCargo: "/sounds/JNTCargoValidasi.mp3",
     };
 
     const targetSound = soundMap[type];
@@ -157,6 +186,13 @@ const PackingNoDataGinee = () => {
     });
   };
 
+  const clearTrackingScanDebounce = () => {
+    if (trackingScanDebounceRef.current) {
+      clearTimeout(trackingScanDebounceRef.current);
+      trackingScanDebounceRef.current = null;
+    }
+  };
+
   const focusTrackingInput = () => {
     setTimeout(() => {
       trackingInputRef.current?.focus();
@@ -167,6 +203,14 @@ const PackingNoDataGinee = () => {
   useEffect(() => {
     storeSavedScannerNames(savedScannerNames);
   }, [savedScannerNames]);
+
+  useEffect(() => {
+    return () => {
+      if (trackingScanDebounceRef.current) {
+        clearTimeout(trackingScanDebounceRef.current);
+      }
+    };
+  }, []);
 
   const requestScannerName = async () => {
     if (isPromptingScanner) {
@@ -343,6 +387,7 @@ const PackingNoDataGinee = () => {
   }, [scannerName, isSessionLocked, mode]);
 
   const lockSession = ({ nextMessage = "" } = {}) => {
+    clearTrackingScanDebounce();
     setScannerName("");
     setTrackingNumber("");
     setScannedTrackings([]);
@@ -360,8 +405,9 @@ const PackingNoDataGinee = () => {
     await requestScannerName();
   };
 
-  const handleScanTracking = async () => {
-    const normalizedTracking = normalizeTrackingNumber(trackingNumber);
+  const handleScanTracking = async (trackingOverride = trackingNumber) => {
+    clearTrackingScanDebounce();
+    const normalizedTracking = normalizeTrackingNumber(trackingOverride);
 
     if (!normalizedTracking) {
       focusTrackingInput();
@@ -405,7 +451,7 @@ const PackingNoDataGinee = () => {
         { tracking_number: normalizedTracking, scanned_at: new Date().toLocaleTimeString("id-ID") },
         ...prev,
       ]);
-      playSound("scanproduk");
+      playSound(getExpeditionSoundType(normalizedTracking));
       setMessage(`OK: Tracking number ${normalizedTracking} berhasil ditambahkan ke sesi scan.`);
     } catch (error) {
       playSound("error");
@@ -422,6 +468,42 @@ const PackingNoDataGinee = () => {
     }
   };
 
+  const handleTrackingInputChange = (event) => {
+    const nextValue = event.target.value;
+    setTrackingNumber(nextValue);
+
+    if (mode !== "tracking_only" || isSessionLocked || !scannerName || loading || isSubmitting) {
+      clearTrackingScanDebounce();
+      return;
+    }
+
+    clearTrackingScanDebounce();
+
+    const normalizedNextValue = normalizeTrackingNumber(nextValue);
+    if (!normalizedNextValue) {
+      return;
+    }
+
+    trackingScanDebounceRef.current = setTimeout(() => {
+      handleScanTracking(normalizedNextValue);
+    }, 300);
+  };
+
+  const handleTrackingInputKeyDown = (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    clearTrackingScanDebounce();
+    handleScanTracking();
+  };
+
+  const handleAddTrackingClick = () => {
+    clearTrackingScanDebounce();
+    handleScanTracking();
+  };
+
   const handleRemoveTracking = (trackingToRemove) => {
     setScannedTrackings((prev) =>
       prev.filter((item) => item.tracking_number !== trackingToRemove)
@@ -431,6 +513,8 @@ const PackingNoDataGinee = () => {
   };
 
   const handleSubmit = async () => {
+    clearTrackingScanDebounce();
+
     if (!scannerName || scannedTrackings.length === 0) {
       return;
     }
@@ -612,12 +696,8 @@ const PackingNoDataGinee = () => {
                   type="text"
                   placeholder="Scan / masukkan Tracking Number..."
                   value={trackingNumber}
-                  onChange={(event) => setTrackingNumber(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      handleScanTracking();
-                    }
-                  }}
+                  onChange={handleTrackingInputChange}
+                  onKeyDown={handleTrackingInputKeyDown}
                   autoFocus
                   className="tracking-input-modern"
                   disabled={loading || isSubmitting || !scannerName || isSessionLocked}
@@ -625,7 +705,7 @@ const PackingNoDataGinee = () => {
 
                 <button
                   type="button"
-                  onClick={handleScanTracking}
+                  onClick={handleAddTrackingClick}
                   disabled={loading || isSubmitting || !scannerName || isSessionLocked}
                   className="btn-search-modern"
                 >
