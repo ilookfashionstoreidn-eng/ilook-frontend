@@ -14,6 +14,26 @@ const isOrderReadyForValidation = (items) =>
       item.serials.every((serial) => serial && serial.trim() !== "")
   );
 
+const validationSoundByTrackingPrefix = [
+  { prefix: "JT", sound: "validasiJNE" },
+  { prefix: "SP", sound: "validasiShopee" },
+  { prefix: "JX", sound: "validasiJNT" },
+  { prefix: "GT", sound: "validasiGTL" },
+  { prefix: "NJ", sound: "validasiNinja" },
+  { prefix: "TK", sound: "validasiIDExpress" },
+  { prefix: "TG", sound: "validasiJNECargo" },
+  { prefix: "57", sound: "validasiJNTCargo" },
+];
+
+const getValidationSoundType = (trackingNumber) => {
+  const normalizedTracking = trackingNumber.trim().toUpperCase();
+  const matchedSound = validationSoundByTrackingPrefix.find(({ prefix }) =>
+    normalizedTracking.startsWith(prefix)
+  );
+
+  return matchedSound?.sound || "validasiok";
+};
+
 const Packing = () => {
  const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState(null);
@@ -47,6 +67,14 @@ const [prevSerials, setPrevSerials] = useState({});
       noproduk: "/sounds/produktidaksesuai.mp3",
       sudahpacking: "/sounds/orderansudahpacking.mp3",
       validasiok: "/sounds/validasiberhasil.mp3",
+      validasiJNE: "/sounds/ValidasiJNE.mp3",
+      validasiShopee: "/sounds/ValidasiShopee.mp3",
+      validasiJNT: "/sounds/ValidasiJNT.mp3",
+      validasiGTL: "/sounds/ValiadsiGTL.mp3",
+      validasiNinja: "/sounds/ValidasiNinja.mp3",
+      validasiIDExpress: "/sounds/IDExpressValidasi.mp3",
+      validasiJNECargo: "/sounds/JNECargoValidasi.mp3",
+      validasiJNTCargo: "/sounds/JNTCargoValidasi.mp3",
       noseri: "/sounds/noseri.mp3",
       isinoseri: "/sounds/isinoseri.mp3",
       
@@ -279,7 +307,7 @@ const handleSearchOrder = async () => {
     );
 
     setMessage(response.data.message || "✅ Order berhasil divalidasi");
-    playSound("validasiok");
+    playSound(getValidationSoundType(tracking));
 
   
     setOrder(null);

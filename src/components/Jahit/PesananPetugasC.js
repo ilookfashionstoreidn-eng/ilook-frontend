@@ -255,7 +255,7 @@ const PesananPetugasC = () => {
     setNewData((prev) => ({
       ...prev,
       [name]: value,
-    }));
+    }));  
   };
 
   const handleDetailChange = (index, field, value) => {
