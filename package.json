@@ -31,7 +31,8 @@
     "react-select": "^5.10.1",
     "react-toastify": "^11.0.3",
     "sweetalert2": "^11.26.24",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "xlsx": "^0.18.5"
   },
   "proxy": "http://localhost:8000",
   "scripts": {

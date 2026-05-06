@@ -51,7 +51,7 @@ const GudangLayoutDesignerMap = ({
       return;
     }
 
-    if (dragState.sourceIndex !== destinationIndex) {
+    if (dragState.sourceIndex !== destinationIndex) {     
       onRackReorder?.({
         floorId,
         blockId,
