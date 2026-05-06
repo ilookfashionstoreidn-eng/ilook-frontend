@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import API from "../../api";
 import {
   FaArrowRight,
   FaBarcode,
   FaBoxOpen,
   FaCheckCircle,
+  FaDownload,
+  FaFileExcel,
   FaMapMarkedAlt,
   FaSave,
   FaSearch,
@@ -28,6 +31,7 @@ import {
   placeGudangProdukSku,
 } from "./GudangProdukWorkspaceApi";
 import {
+  confirmGudangAction,
   showGudangError,
   showGudangSuccess,
   showGudangWarning,
@@ -40,6 +44,78 @@ import {
 import InputSeriGudang from "./InputSeriGudang";
 
 const normalizeSelectValue = (value) => (value === "" ? "" : value);
+
+const IMPORT_COLUMN_ALIASES = {
+  sku: ["sku", "kode_sku", "kode sku", "sku_code", "sku code", "kode barang"],
+  slot: [
+    "slot",
+    "kode_slot",
+    "kode slot",
+    "lokasi",
+    "kode_lokasi",
+    "kode lokasi",
+    "rak",
+  ],
+  qty: ["qty", "quantity", "jumlah", "jumlah_masuk", "jumlah masuk", "pcs"],
+  layout: ["gudang", "warehouse", "layout", "layout_id", "layout id", "gudang_tujuan"],
+  notes: ["catatan", "notes", "note", "keterangan"],
+};
+
+const normalizeImportHeader = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const normalizeImportLookupValue = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+const findImportColumnIndex = (headers, aliases) => {
+  const normalizedHeaders = headers.map(normalizeImportHeader);
+  const normalizedAliases = aliases.map(normalizeImportHeader);
+
+  return normalizedHeaders.findIndex((header) => normalizedAliases.includes(header));
+};
+
+const getImportCellValue = (row, index) => {
+  if (index === undefined || index === null || index < 0) {
+    return "";
+  }
+
+  return row[index] ?? "";
+};
+
+const parseImportQty = (value) => {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }
+
+  const text = String(value || "").trim();
+  if (!text) return null;
+
+  const compactText = text.replace(/\s/g, "");
+  const isThousandsFormat = /^\d{1,3}([.,]\d{3})+$/.test(compactText);
+  const normalizedText = isThousandsFormat
+    ? compactText.replace(/[.,]/g, "")
+    : compactText.replace(",", ".");
+  const parsed = Number(normalizedText);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const addImportLookupItem = (lookup, value, item) => {
+  const key = normalizeImportLookupValue(value);
+  if (!key) return;
+
+  if (!lookup.has(key)) {
+    lookup.set(key, []);
+  }
+
+  lookup.get(key).push(item);
+};
 
 const buildSuggestionDescription = (item) => {
   if (item.hasSameSku) {
@@ -71,6 +147,11 @@ const InputSkuGudang = () => {
   const [isSerialDropdownOpen, setIsSerialDropdownOpen] = useState(false);
   const [isActivatingSerialSku, setIsActivatingSerialSku] = useState(false);
   const serialComboboxRef = useRef(null);
+  const importInputRef = useRef(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const [replaceExistingStock, setReplaceExistingStock] = useState(false);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -190,6 +271,45 @@ const InputSkuGudang = () => {
   const skuOptions = productId ? productSkuOptions : suggestedSerialSkuOptions;
   const allSlots = useMemo(() => getAllSlots(state), [state]);
   const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
+  const skuImportLookup = useMemo(() => {
+    const lookup = new Map();
+
+    state.skus.forEach((sku) => {
+      [sku.id, sku.code, sku.label].forEach((value) => {
+        const key = normalizeImportLookupValue(value);
+        if (key && !lookup.has(key)) {
+          lookup.set(key, sku);
+        }
+      });
+    });
+
+    return lookup;
+  }, [state.skus]);
+  const layoutImportLookup = useMemo(() => {
+    const lookup = new Map();
+
+    state.layouts.forEach((layout) => {
+      [layout.id, layout.name].forEach((value) => {
+        const key = normalizeImportLookupValue(value);
+        if (key && !lookup.has(key)) {
+          lookup.set(key, layout);
+        }
+      });
+    });
+
+    return lookup;
+  }, [state.layouts]);
+  const slotImportLookup = useMemo(() => {
+    const lookup = new Map();
+
+    allSlots.forEach((slot) => {
+      [slot.id, slot.slotCode, slot.alias, buildSlotHeadline(slot)].forEach((value) => {
+        addImportLookupItem(lookup, value, slot);
+      });
+    });
+
+    return lookup;
+  }, [allSlots]);
   const placementRows = state.activityLog
     .filter((item) => item.type === "placement")
     .slice(0, 5);
@@ -305,6 +425,363 @@ const InputSkuGudang = () => {
       })
       .slice(0, 6);
   }, [selectedLayout, selectedLayoutSlots, selectedSku, stockSummaryBySlot]);
+
+  const readImportRows = async (file) => {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array", raw: false, cellDates: false });
+    const sheetName = workbook.SheetNames[0];
+
+    if (!sheetName) {
+      throw new Error("Sheet Excel tidak ditemukan.");
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+      raw: false,
+    });
+  };
+
+  const detectImportColumns = (rows) => {
+    const maxHeaderScan = Math.min(rows.length, 15);
+
+    for (let rowIndex = 0; rowIndex < maxHeaderScan; rowIndex += 1) {
+      const headers = rows[rowIndex] || [];
+      const columnMap = {
+        sku: findImportColumnIndex(headers, IMPORT_COLUMN_ALIASES.sku),
+        slot: findImportColumnIndex(headers, IMPORT_COLUMN_ALIASES.slot),
+        qty: findImportColumnIndex(headers, IMPORT_COLUMN_ALIASES.qty),
+        layout: findImportColumnIndex(headers, IMPORT_COLUMN_ALIASES.layout),
+        notes: findImportColumnIndex(headers, IMPORT_COLUMN_ALIASES.notes),
+      };
+
+      if (columnMap.sku >= 0 && columnMap.slot >= 0 && columnMap.qty >= 0) {
+        return {
+          headerRowIndex: rowIndex,
+          columnMap,
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const resolveImportSku = (value) =>
+    skuImportLookup.get(normalizeImportLookupValue(value)) || null;
+
+  const resolveImportLayout = (value) => {
+    if (!String(value || "").trim()) {
+      return selectedLayout || null;
+    }
+
+    return layoutImportLookup.get(normalizeImportLookupValue(value)) || null;
+  };
+
+  const resolveImportSlot = (value, rowLayout) => {
+    const key = normalizeImportLookupValue(value);
+    const matches = slotImportLookup.get(key) || [];
+    const scopedMatches = rowLayout
+      ? matches.filter((slot) => String(slot.layoutId) === String(rowLayout.id))
+      : matches;
+
+    if (scopedMatches.length === 1) {
+      return {
+        slot: scopedMatches[0],
+        error: "",
+      };
+    }
+
+    if (scopedMatches.length > 1) {
+      return {
+        slot: null,
+        error: "Slot cocok lebih dari satu. Isi kolom Gudang agar lokasi jelas.",
+      };
+    }
+
+    if (rowLayout) {
+      return {
+        slot: null,
+        error: `Slot tidak ditemukan di ${rowLayout.name}.`,
+      };
+    }
+
+    if (matches.length > 1) {
+      return {
+        slot: null,
+        error: "Slot cocok lebih dari satu. Isi kolom Gudang agar lokasi jelas.",
+      };
+    }
+
+    return {
+      slot: null,
+      error: "Slot tidak ditemukan.",
+    };
+  };
+
+  const buildImportRowsFromFile = async (file) => {
+    const rows = await readImportRows(file);
+    const detected = detectImportColumns(rows);
+
+    if (!detected) {
+      throw new Error("Header wajib berisi kolom SKU, Slot, dan Qty.");
+    }
+
+    const { headerRowIndex, columnMap } = detected;
+    const parsedRows = [];
+    const validationErrors = [];
+    const importedSlotBySku = new Map();
+
+    for (let rowIndex = headerRowIndex + 1; rowIndex < rows.length; rowIndex += 1) {
+      const row = rows[rowIndex] || [];
+      const excelRowNumber = rowIndex + 1;
+
+      if (row.every((cell) => !String(cell || "").trim())) {
+        continue;
+      }
+
+      const rawSku = getImportCellValue(row, columnMap.sku);
+      const rawSlot = getImportCellValue(row, columnMap.slot);
+      const rawQty = getImportCellValue(row, columnMap.qty);
+      const rawLayout = getImportCellValue(row, columnMap.layout);
+      const rawNotes = getImportCellValue(row, columnMap.notes);
+
+      if (!String(rawSku || "").trim()) {
+        validationErrors.push(`Row ${excelRowNumber}: SKU wajib diisi.`);
+        continue;
+      }
+
+      if (!String(rawSlot || "").trim()) {
+        validationErrors.push(`Row ${excelRowNumber}: Slot wajib diisi.`);
+        continue;
+      }
+
+      const importSku = resolveImportSku(rawSku);
+      if (!importSku) {
+        validationErrors.push(`Row ${excelRowNumber}: SKU "${rawSku}" tidak ditemukan di SKU aktif.`);
+        continue;
+      }
+
+      const importSkuId = parseInt(importSku.id, 10);
+      if (!importSkuId || isNaN(importSkuId)) {
+        validationErrors.push(`Row ${excelRowNumber}: ID SKU "${rawSku}" tidak valid.`);
+        continue;
+      }
+
+      const importQty = parseImportQty(rawQty);
+      if (!importQty) {
+        validationErrors.push(`Row ${excelRowNumber}: Qty harus angka bulat lebih dari 0.`);
+        continue;
+      }
+
+      const importLayout = resolveImportLayout(rawLayout);
+      if (String(rawLayout || "").trim() && !importLayout) {
+        validationErrors.push(`Row ${excelRowNumber}: Gudang "${rawLayout}" tidak ditemukan.`);
+        continue;
+      }
+
+      const { slot: importSlot, error: slotError } = resolveImportSlot(rawSlot, importLayout);
+      if (!importSlot) {
+        validationErrors.push(`Row ${excelRowNumber}: ${slotError}`);
+        continue;
+      }
+
+      const existingStock = state.stockEntries.find(
+        (entry) =>
+          String(entry.skuId) === String(importSku.id) &&
+          Number(entry.qty || 0) > 0
+      );
+
+      if (existingStock && String(existingStock.slotId) !== String(importSlot.id)) {
+        validationErrors.push(
+          `Row ${excelRowNumber}: SKU sudah tersimpan di ${resolveSlotLabel(existingStock.slotId)}.`
+        );
+        continue;
+      }
+
+      const skuKey = String(importSku.id);
+      const previousImportedSlotId = importedSlotBySku.get(skuKey);
+      if (previousImportedSlotId && String(previousImportedSlotId) !== String(importSlot.id)) {
+        validationErrors.push(
+          `Row ${excelRowNumber}: SKU yang sama tidak boleh diarahkan ke slot berbeda dalam satu file.`
+        );
+        continue;
+      }
+      importedSlotBySku.set(skuKey, importSlot.id);
+
+      parsedRows.push({
+        rowNumber: excelRowNumber,
+        layoutId: importSlot.layoutId,
+        slot: importSlot,
+        sku: importSku,
+        skuId: importSkuId,
+        qty: importQty,
+        notes: [
+          `Import Excel: ${file.name} row ${excelRowNumber}`,
+          String(rawNotes || "").trim(),
+        ]
+          .filter(Boolean)
+          .join(" | "),
+      });
+    }
+
+    return {
+      rows: parsedRows,
+      errors: validationErrors,
+    };
+  };
+
+  const formatImportErrors = (errors) =>
+    errors.slice(0, 6).join("\n") +
+    (errors.length > 6 ? `\n...dan ${errors.length - 6} catatan lain.` : "");
+
+  const isRecoverableImportError = (importError) => importError?.response?.status === 422;
+
+  const handleImportButtonClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleDownloadImportTemplate = () => {
+    const sampleSku = state.skus[0];
+    const sampleSlot = selectedLayoutSlots[0];
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ["sku_name", "qty", "mapping"],
+      [
+        sampleSku?.label || sampleSku?.code || "NAMA SKU",
+        1,
+        sampleSlot?.slotCode || "L3B08/1",
+      ],
+    ]);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "migrate");
+    XLSX.writeFile(workbook, "template-migrasi-stok-gudang.xlsx");
+  };
+
+  const handleImportFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!selectedLayout?.id) {
+      await showGudangWarning(
+        "Gudang belum dipilih",
+        "Pilih gudang tujuan terlebih dahulu sebelum import file Excel."
+      );
+      return;
+    }
+
+    try {
+      setImportResult(null);
+
+      const isConfirmed = await confirmGudangAction({
+        title: "Import SKU ke Gudang?",
+        text: `File "${file.name}" akan diproses ke ${
+          selectedLayout?.name || "gudang terpilih"
+        }. Format wajib: sku_name, qty, mapping.${
+          replaceExistingStock
+            ? " Stok lama SKU yang sudah ada di lokasi lain akan dihapus lebih dulu."
+            : ""
+        }`,
+        confirmButtonText: "Import Excel",
+        cancelButtonText: "Batal",
+      });
+
+      if (!isConfirmed) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("layoutId", selectedLayout.id);
+      formData.append("replaceExistingStock", replaceExistingStock ? "1" : "0");
+      setIsImporting(true);
+      setImportProgress({
+        message: replaceExistingStock
+          ? "Mengirim file dan mengganti stok lama di server..."
+          : "Mengirim dan memproses file di server...",
+      });
+
+      const response = await API.post("/gudang-produk-workspace/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const result = response?.data || {};
+      const createdSkuCount = Number(result.created_skus || 0);
+      const activatedSkuCount = Number(result.activated_skus || 0);
+      const replacedStockEntries = Number(result.replaced_stock_entries || 0);
+      const replacedStockQty = Number(result.replaced_stock_qty || 0);
+      const skippedRows = Number(result.skipped_rows || 0);
+      const skuImportNotes = [
+        createdSkuCount > 0 ? `${createdSkuCount} SKU baru dibuat` : "",
+        activatedSkuCount > 0 ? `${activatedSkuCount} SKU diaktifkan` : "",
+        replacedStockEntries > 0
+          ? `${replacedStockEntries} stok lama dihapus (${replacedStockQty} pcs)`
+          : "",
+        skippedRows > 0 ? `${skippedRows} baris kosong dilewati` : "",
+      ].filter(Boolean);
+
+      setImportResult({
+        total: Number(result.processed || 0),
+        success: Number(result.processed || 0),
+        failed: 0,
+        created: Number(result.created || 0),
+        updated: Number(result.updated || 0),
+        createdSkus: createdSkuCount,
+        activatedSkus: activatedSkuCount,
+        replacedStockEntries,
+        replacedStockQty,
+        skippedRows,
+        errors: [],
+      });
+      setState(result.data || state);
+
+      await showGudangSuccess(
+        "Import Excel selesai",
+        `${Number(result.processed || 0)} baris berhasil dimasukkan ke ${selectedLayout.name}${
+          skuImportNotes.length ? ` (${skuImportNotes.join(", ")})` : ""
+        }.`
+      );
+    } catch (importError) {
+      const responseErrors = importError?.response?.data?.errors;
+      const errorMessages = Array.isArray(responseErrors)
+        ? responseErrors.map((item) =>
+            typeof item === "string"
+              ? item
+              : `Row ${item.row || "-"}: ${item.message || "Data tidak valid."}`
+          )
+        : responseErrors && typeof responseErrors === "object"
+          ? Object.entries(responseErrors).flatMap(([field, messages]) =>
+              (Array.isArray(messages) ? messages : [messages]).map((message) =>
+                `${field}: ${String(message)}`
+              )
+            )
+          : [];
+
+      setImportResult({
+        total: Number(importError?.response?.data?.total_rows || 0),
+        success: 0,
+        failed: errorMessages.length,
+        createdSkus: 0,
+        activatedSkus: 0,
+        replacedStockEntries: 0,
+        replacedStockQty: 0,
+        skippedRows: Number(importError?.response?.data?.skipped_rows || 0),
+        errors: errorMessages,
+      });
+
+      await showGudangError(
+        "Import Excel gagal",
+        errorMessages.length
+          ? `${importError?.response?.data?.message || "File Excel tidak bisa diimport."}\n${formatImportErrors(
+              errorMessages
+            )}`
+          : buildGudangWorkspaceErrorMessage(importError, "File Excel tidak bisa diimport.")
+      );
+    } finally {
+      setIsImporting(false);
+      setImportProgress(null);
+    }
+  };
 
   const progressSteps = [
     {
@@ -501,6 +978,8 @@ const InputSkuGudang = () => {
       statusLabel={
         isLoading
           ? "Memuat workspace..."
+          : isImporting
+            ? "Mengimport Excel..."
           : isSubmitting
             ? "Menyimpan input..."
             : inputMode === "seri"
@@ -551,7 +1030,104 @@ const InputSkuGudang = () => {
       {inputMode === "seri" ? (
         <InputSeriGudang embedded />
       ) : (
-        <div className="gudang-master-workspace-grid">
+        <>
+          <section className="gudang-ui-panel" style={{ marginBottom: 20 }}>
+            <div className="gudang-ui-panel-head">
+              <div>
+                <h2>Import Excel SKU ke Gudang</h2>
+                <p>Gunakan format migrasi: sku_name, qty, mapping. Mapping adalah kode slot pada gudang terpilih.</p>
+              </div>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleImportFileChange}
+                  style={{ display: "none" }}
+                />
+                <button
+                  type="button"
+                  className="gudang-ui-button"
+                  onClick={handleImportButtonClick}
+                  disabled={isImporting || isLoading}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+                >
+                  <FaFileExcel /> {isImporting ? "Import..." : "Import Excel"}
+                </button>
+                <button
+                  type="button"
+                  className="gudang-ui-button-secondary"
+                  onClick={handleDownloadImportTemplate}
+                  disabled={isImporting}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+                >
+                  <FaDownload /> Template
+                </button>
+              </div>
+            </div>
+
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "12px",
+                fontSize: "13px",
+                color: "#334155",
+                fontWeight: 600,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={replaceExistingStock}
+                onChange={(event) => setReplaceExistingStock(event.target.checked)}
+                disabled={isImporting}
+              />
+              Hapus stok lama SKU yang sudah ada sebelum import
+            </label>
+
+            {importProgress ? (
+              <div
+                className="gudang-ui-callout"
+                style={{ marginBottom: importResult ? "12px" : 0 }}
+              >
+                <strong>
+                  {importProgress.message || "Mengimport file Excel..."}
+                </strong>
+              </div>
+            ) : null}
+
+            {importResult ? (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                  gap: "10px",
+                }}
+              >
+                {[
+                  { label: "Total", value: importResult.total },
+                  { label: "Berhasil", value: importResult.success },
+                  { label: "Stok Baru", value: importResult.created || 0 },
+                  { label: "Stok Update", value: importResult.updated || 0 },
+                  { label: "SKU Baru", value: importResult.createdSkus || 0 },
+                  { label: "SKU Aktif", value: importResult.activatedSkus || 0 },
+                  { label: "Stok Lama", value: importResult.replacedStockEntries || 0 },
+                  { label: "Dilewati", value: importResult.skippedRows || 0 },
+                  { label: "Gagal", value: importResult.failed },
+                ].map((item) => (
+                  <div key={item.label} className="gudang-ui-detail-box" style={{ padding: "12px" }}>
+                    <span style={{ display: "block", color: "#64748b", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                      {item.label}
+                    </span>
+                    <strong style={{ color: "#0f172a", fontSize: "20px" }}>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          <div className="gudang-master-workspace-grid">
           <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             
             <section className="gudang-ui-panel">
@@ -916,7 +1492,8 @@ const InputSkuGudang = () => {
               </div>
             </section>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </GudangProdukBaseShell>
   );

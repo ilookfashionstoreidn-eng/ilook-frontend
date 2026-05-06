@@ -3083,3 +3083,327 @@
     grid-template-columns: 1fr;
   }
 }
+
+.gudang-stoklokasi-rack-collection .gudang-ui-rack-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  gap: 12px;
+}
+
+.gudang-stoklokasi-rack-collection .gudang-ui-rack-compact-card.active {
+  border-color: #2458ce;
+  background: linear-gradient(135deg, #f8fbff, #eef5ff);
+}
+
+.gudang-stoklokasi-group-stack {
+  max-height: 720px;
+  overflow-y: auto;
+  display: grid;
+  gap: 14px;
+  padding-right: 4px;
+}
+
+.gudang-stoklokasi-group-stack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gudang-stoklokasi-group-stack::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.gudang-stoklokasi-floor-group {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dbe5f1;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.gudang-stoklokasi-floor-head,
+.gudang-stoklokasi-block-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gudang-stoklokasi-floor-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.gudang-stoklokasi-floor-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.gudang-stoklokasi-block-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.gudang-stoklokasi-block-group {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.gudang-stoklokasi-block-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.gudang-stoklokasi-block-main strong {
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.gudang-stoklokasi-block-main span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gudang-stoklokasi-rack-preview {
+  min-height: 34px;
+}
+
+.gudang-stoklokasi-rack-preview .gudang-ui-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-rack-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gudang-stoklokasi-rack-button {
+  height: 30px;
+  border: 1px solid #bfd3fb;
+  border-radius: 9px;
+  background: #2458ce;
+  color: #ffffff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.gudang-stoklokasi-rack-button:hover {
+  background: #1e4caf;
+  border-color: #1e4caf;
+  transform: translateY(-1px);
+}
+
+.gudang-stoklokasi-rack-button.secondary {
+  background: #ffffff;
+  color: #2458ce;
+}
+
+.gudang-stoklokasi-rack-button.secondary:hover {
+  background: #eff6ff;
+  border-color: #9bb6eb;
+}
+
+.gudang-stoklokasi-rack-detail {
+  max-height: 210px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.gudang-stoklokasi-rack-detail::-webkit-scrollbar,
+.gudang-stoklokasi-slot-pill-shell::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gudang-stoklokasi-rack-detail::-webkit-scrollbar-thumb,
+.gudang-stoklokasi-slot-pill-shell::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.gudang-stoklokasi-rack-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.gudang-stoklokasi-rack-row-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.gudang-stoklokasi-rack-row-main strong {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-rack-row-main span {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-rack-row-qty {
+  flex-shrink: 0;
+  align-self: center;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-focus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scroll-behavior: smooth;
+}
+
+.gudang-stoklokasi-focus-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gudang-stoklokasi-focus-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.gudang-stoklokasi-focus-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gudang-stoklokasi-focus-row.sku-highlight {
+  border-color: #14b8a6;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 62%);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.14), 0 12px 24px rgba(15, 118, 110, 0.12);
+}
+
+.gudang-stoklokasi-focus-sku {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.gudang-stoklokasi-focus-sku small {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 5px 7px;
+}
+
+.gudang-stoklokasi-focus-qty {
+  flex-shrink: 0;
+  align-self: center;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-slot-pill-shell {
+  max-height: 112px;
+  overflow-y: auto;
+  padding-right: 4px;
+  align-content: flex-start;
+}
+
+.gudang-stoklokasi-slot-pill-shell .gudang-ui-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gudang-stoklokasi-table-floor-row td {
+  background: linear-gradient(135deg, #eef5ff, #f8fbff) !important;
+  border-top: 1px solid #dbe5f1;
+  border-bottom: 1px solid #dbe5f1;
+}
+
+.gudang-stoklokasi-table-block-row td {
+  background: #fbfdff !important;
+  border-bottom: 1px solid #e2e8f0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.gudang-stoklokasi-table-group-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gudang-stoklokasi-table-group-line strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.gudang-stoklokasi-table-group-line span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
