@@ -302,8 +302,8 @@ const PackingNoDataGineeSerialMode = ({
       );
       const nextOrderPreview = response.data?.order || null;
 
-      if (nextOrderPreview?.is_packed) {
-        const nextMessage = `WARNING: Order #${nextOrderPreview.order_number} sudah packed dan tidak bisa diproses lewat mode serial No Data Ginee.`;
+      if (nextOrderPreview) {
+        const nextMessage = `WARNING: Tracking number ${normalizedTracking} sudah memiliki data order Ginee (#${nextOrderPreview.order_number}) dan tidak bisa diproses lewat No Data Ginee. Gunakan alur packing normal.`;
         playSound("error");
         setTrackingNumber(normalizedTracking);
         setMessage(nextMessage);
@@ -311,9 +311,7 @@ const PackingNoDataGineeSerialMode = ({
         return { success: false, message: nextMessage };
       }
 
-      const nextMessage = nextOrderPreview
-        ? `INFO: Order #${nextOrderPreview.order_number} sudah ditemukan. Lanjut scan SKU | nomor seri, lalu submit untuk rekonsiliasi otomatis.`
-        : "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk.";
+      const nextMessage = "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk.";
 
       setTrackingNumber(normalizedTracking);
       setActiveTrackingNumber(normalizedTracking);
@@ -573,7 +571,7 @@ const PackingNoDataGineeSerialMode = ({
         <div className="pk-search-head">
           <h2>Mulai Tracking Serial</h2>
           <span>
-            Scan tracking number dulu, lalu lanjut scan barcode dengan format
+            Scan tracking number yang belum punya data order Ginee, lalu lanjut scan barcode dengan format
             <code> SKU | NOMOR_SERI</code>.
           </span>
         </div>

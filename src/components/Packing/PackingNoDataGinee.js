@@ -569,8 +569,8 @@ const PackingNoDataGinee = () => {
               <div>
                 <h1>No Data Ginee</h1>
                 <p>
-                  Scan tracking number tanpa perlu validasi data order dari Ginee.
-                  Cukup scan, kumpulkan, lalu submit.
+                  Scan tracking number hanya jika data order Ginee belum masuk.
+                  Jika order sudah tersedia, gunakan alur packing normal.
                 </p>
               </div>
             </div>
@@ -583,7 +583,7 @@ const PackingNoDataGinee = () => {
                   <FiAlertTriangle style={{ color: "#f59e0b" }} /> Mode No Data Ginee
                 </span>
                 <small style={{ color: "#94a3b8", marginTop: "2px", display: "block" }}>
-                  Tracking number akan dicatat tanpa validasi ke database Ginee
+                  Tracking number ditolak jika data order Ginee sudah tersedia
                 </small>
               </div>
             </section>
@@ -657,7 +657,7 @@ const PackingNoDataGinee = () => {
                   <FiPackage /> Mode
                 </div>
                 <strong style={{ fontSize: "14px", color: "#f59e0b" }}>No Data Ginee</strong>
-                <small>tanpa validasi order Ginee</small>
+                <small>khusus order yang belum masuk Ginee</small>
               </article>
             </section>
 
@@ -665,7 +665,7 @@ const PackingNoDataGinee = () => {
               <div className="pk-search-head">
                 <h2>Scan Tracking Number</h2>
                 <span>
-                  Scan tracking number tanpa perlu data order ada di Ginee.
+                  Scan tracking number yang data order Ginee-nya belum tersedia.
                   Input akan otomatis kosong setelah scan berhasil.
                 </span>
               </div>
@@ -676,7 +676,7 @@ const PackingNoDataGinee = () => {
                     <strong>Sesi scan belum aktif</strong>
                     <span>
                       Masukkan nama scanner terlebih dahulu, lalu lanjut scan
-                      tracking number. Data tidak perlu ada di Ginee.
+                      tracking number yang belum punya data order Ginee.
                     </span>
                   </div>
                   <button
