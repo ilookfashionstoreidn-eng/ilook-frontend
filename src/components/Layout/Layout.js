@@ -42,6 +42,7 @@ const Layout = () => {
   const [isJasaOpen, setIsJasaOpen] = useState(false);
   const [isHppOpen, setIsHppOpen] = useState(false);
   const [isPackingOpen, setIsPackingOpen] = useState(false);
+  const [isReturnOpen, setIsReturnOpen] = useState(false);
 
   const [isGudangOpen, setIsGudangOpen] = useState(false);
   const [isGudangProdukOpen, setIsGudangProdukOpen] = useState(false);
@@ -109,6 +110,9 @@ const Layout = () => {
   };
   const togglePackingMenu = () => {
     setIsPackingOpen(!isPackingOpen);
+  };
+  const toggleReturnMenu = () => {
+    setIsReturnOpen(!isReturnOpen);
   };
   const toggleGudangMenu = () => {
     setIsGudangOpen(!isGudangOpen);
@@ -671,6 +675,30 @@ const Layout = () => {
                   <li>
                     <Link to="seri" className={`dropdown-link ${activeMenu === "seri" ? "active" : ""}`} onClick={() => handleMenuClick("seri")}>
                       <FaQrcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Seri
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            <li>
+              <div
+                onClick={toggleReturnMenu}
+                className={`sidebar-link dropdown-toggle ${["return", "return-logs"].includes(activeMenu) ? "active" : ""}`}
+              >
+                <FaUndo className="icon" /> Return
+                <span className={`arrow ${isReturnOpen ? "open" : ""}`}>{isReturnOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
+              </div>
+              {isReturnOpen && (
+                <ul className="dropdown-menu show">
+                  <li>
+                    <Link to="return" className={`dropdown-link ${activeMenu === "return" ? "active" : ""}`} onClick={() => handleMenuClick("return")}>
+                      <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Return
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="return-logs" className={`dropdown-link ${activeMenu === "return-logs" ? "active" : ""}`} onClick={() => handleMenuClick("return-logs")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Logs Return
                     </Link>
                   </li>
                 </ul>
