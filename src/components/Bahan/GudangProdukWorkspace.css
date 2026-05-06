@@ -3407,3 +3407,391 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+.gudang-liststok-toolbar-panel,
+.gudang-liststok-data-panel {
+  overflow: hidden;
+}
+
+.gudang-liststok-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.gudang-liststok-toolbar-copy {
+  min-width: 0;
+}
+
+.gudang-liststok-toolbar-kicker {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(36, 88, 206, 0.1), rgba(15, 118, 110, 0.08));
+  border: 1px solid rgba(36, 88, 206, 0.12);
+  color: #17457c;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gudang-liststok-toolbar-copy h2 {
+  margin: 14px 0 8px;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.gudang-liststok-toolbar-copy p {
+  margin: 0;
+  max-width: 780px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gudang-liststok-toolbar-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.gudang-liststok-select-field {
+  min-width: 160px;
+  display: grid;
+  gap: 8px;
+}
+
+.gudang-liststok-select-field span {
+  color: #375a7f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gudang-liststok-select-field select {
+  border: 1px solid #d7e4f2;
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: #fbfdff;
+  color: #16324f;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.gudang-liststok-select-field select:focus {
+  border-color: #2458ce;
+  box-shadow: 0 0 0 4px rgba(36, 88, 206, 0.1);
+}
+
+.gudang-liststok-meta-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8eef5;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gudang-liststok-chip-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.gudang-liststok-chip-pending {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.gudang-liststok-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gudang-liststok-legend-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gudang-liststok-legend-item.masuk {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.gudang-liststok-legend-item.keluar {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.gudang-liststok-legend-item.sisa {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.gudang-liststok-callout-error {
+  margin-top: 14px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(255, 255, 255, 0.92));
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #991b1b;
+}
+
+.gudang-liststok-table-stage {
+  position: relative;
+}
+
+.gudang-liststok-loading-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 4;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.2);
+}
+
+.gudang-liststok-table-shell {
+  position: relative;
+}
+
+.gudang-liststok-table {
+  min-width: 1080px;
+  table-layout: fixed;
+}
+
+.gudang-liststok-col-order {
+  width: 7%;
+}
+
+.gudang-liststok-col-sku {
+  width: 39%;
+}
+
+.gudang-liststok-col-qty {
+  width: 14%;
+}
+
+.gudang-liststok-col-location {
+  width: 12%;
+}
+
+.gudang-liststok-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.gudang-liststok-table th,
+.gudang-liststok-table td {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.gudang-liststok-table tbody tr:nth-child(even) td {
+  background: rgba(248, 250, 255, 0.72);
+}
+
+.gudang-liststok-table tbody tr:hover td {
+  background: rgba(36, 88, 206, 0.05) !important;
+}
+
+.gudang-liststok-head-center,
+.gudang-liststok-head-qty {
+  text-align: center !important;
+}
+
+.gudang-liststok-order-cell {
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gudang-liststok-sku {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gudang-liststok-sku-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gudang-liststok-sku-code,
+.gudang-liststok-layout-chip {
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.gudang-liststok-sku-code {
+  background: #eff6ff;
+  color: #1d4ed8;
+  text-transform: uppercase;
+}
+
+.gudang-liststok-layout-chip {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.gudang-liststok-sku strong {
+  color: #16324f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.gudang-liststok-sku small,
+.gudang-liststok-location-stack small {
+  color: #6b7f95;
+  font-size: 12px;
+}
+
+.gudang-liststok-sku mark,
+.gudang-liststok-location-stack mark,
+.gudang-liststok-layout-chip mark {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: #fef08a;
+  color: inherit;
+}
+
+.gudang-liststok-qty-cell {
+  text-align: center;
+}
+
+.gudang-liststok-qty {
+  min-width: 86px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.gudang-liststok-qty.masuk {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.gudang-liststok-qty.keluar {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.gudang-liststok-qty.sisa {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.gudang-liststok-location-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.gudang-liststok-location {
+  width: fit-content;
+  background: #e8f0f8;
+  color: #17457c;
+}
+
+.gudang-liststok-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.gudang-liststok-pagination-info {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gudang-liststok-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1024px) {
+  .gudang-liststok-toolbar {
+    flex-direction: column;
+  }
+
+  .gudang-liststok-toolbar-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .gudang-liststok-toolbar-copy h2 {
+    font-size: 18px;
+  }
+
+  .gudang-liststok-meta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gudang-liststok-legend {
+    justify-content: flex-start;
+  }
+
+  .gudang-liststok-loading-overlay {
+    position: static;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
+
+  .gudang-liststok-table {
+    min-width: 860px;
+  }
+
+  .gudang-liststok-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gudang-liststok-pagination-actions {
+    justify-content: space-between;
+  }
+}
