@@ -408,7 +408,7 @@ const ListStokProductGudang = () => {
                 <thead>
                   <tr>
                     <th className="gudang-liststok-head-center">No</th>
-                    <th>SKU / Product</th>
+                    <th>SKU</th>
                     <th className="gudang-liststok-head-qty">QTY Masuk</th>
                     <th className="gudang-liststok-head-qty">Qty Keluar</th>
                     <th className="gudang-liststok-head-qty">Qty Sisa</th>
@@ -423,17 +423,9 @@ const ListStokProductGudang = () => {
                       </td>
                       <td>
                         <div className="gudang-liststok-sku">
-                          <div className="gudang-liststok-sku-top">
-                            <span className="gudang-liststok-sku-code">
-                              SKU {highlightText(row.sku, activeSearch)}
-                            </span>
-                            {row.layoutName ? (
-                              <span className="gudang-liststok-layout-chip">
-                                {highlightText(row.layoutName, activeSearch)}
-                              </span>
-                            ) : null}
-                          </div>
-                          <strong>{highlightText(row.skuLabel, activeSearch)}</strong>
+                          <span className="gudang-liststok-sku-code">
+                            {highlightText(row.sku, activeSearch)}
+                          </span>
                           <small>
                             Update terakhir {formatDate(row.updatedAt)}
                           </small>
@@ -459,7 +451,6 @@ const ListStokProductGudang = () => {
                           <span className="gudang-ui-pill gudang-liststok-location">
                             {highlightText(row.namaGudang, activeSearch)}
                           </span>
-                          <small>Lokasi rak aktif</small>
                         </div>
                       </td>
                     </tr>
