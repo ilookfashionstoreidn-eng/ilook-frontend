@@ -77,6 +77,7 @@ import PickingQueue from "./components/Bahan/PickingQueue";
 import MasterGudangProduk from "./components/Bahan/MasterGudangProduk";
 import InputSkuGudang from "./components/Bahan/InputSkuGudang";
 import StokLokasiGudang from "./components/Bahan/StokLokasiGudang";
+import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
 import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
@@ -169,6 +170,7 @@ const App = () => {
           <Route path="master-gudang-produk" element={<MasterGudangProduk />} />
           <Route path="input-sku-gudang" element={<InputSkuGudang />} />
           <Route path="stok-lokasi-gudang" element={<StokLokasiGudang />} />
+          <Route path="list-stok-product" element={<ListStokProductGudang />} />
           <Route path="mutasi-gudang-produk" element={<MutasiGudangProduk />} />
           <Route path="gudang-produk" element={<GudangProduk />} />
           <Route path="stok-gudang-produk" element={<StokGudangProduk />} />

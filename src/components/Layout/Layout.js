@@ -570,6 +570,7 @@ const Layout = () => {
                   "master-gudang-produk",
                   "input-sku-gudang",
                   "stok-lokasi-gudang",
+                  "list-stok-product",
                   "mutasi-gudang-produk",
                   "gudang-produk",
                   "stok-gudang-produk",
@@ -597,6 +598,11 @@ const Layout = () => {
                   <li>
                     <Link to="stok-lokasi-gudang" className={`dropdown-link ${activeMenu === "stok-lokasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("stok-lokasi-gudang")}>
                       <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok per Lokasi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="list-stok-product" className={`dropdown-link ${activeMenu === "list-stok-product" ? "active" : ""}`} onClick={() => handleMenuClick("list-stok-product")}>
+                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> List Stok Product
                     </Link>
                   </li>
                   <li>

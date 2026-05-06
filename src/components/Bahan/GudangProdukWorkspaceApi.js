@@ -13,12 +13,39 @@ export const emptyGudangWorkspaceState = {
   activityLog: [],
 };
 
+const emptyGudangStockListSummary = {
+  total_rows: 0,
+  total_qty_masuk: 0,
+  total_qty_keluar: 0,
+  total_qty_sisa: 0,
+  total_locations: 0,
+};
+
+const emptyGudangStockListPagination = {
+  current_page: 1,
+  per_page: 50,
+  total: 0,
+  last_page: 1,
+};
+
 const normalizeWorkspaceState = (payload = {}) => ({
   layouts: Array.isArray(payload.layouts) ? payload.layouts : [],
   products: Array.isArray(payload.products) ? payload.products : [],
   skus: Array.isArray(payload.skus) ? payload.skus : [],
   stockEntries: Array.isArray(payload.stockEntries) ? payload.stockEntries : [],
   activityLog: Array.isArray(payload.activityLog) ? payload.activityLog : [],
+});
+
+const normalizeGudangStockListPayload = (payload = {}) => ({
+  data: Array.isArray(payload.data) ? payload.data : [],
+  summary: {
+    ...emptyGudangStockListSummary,
+    ...(payload.summary || {}),
+  },
+  pagination: {
+    ...emptyGudangStockListPagination,
+    ...(payload.pagination || {}),
+  },
 });
 
 const clampNumber = (value, min, max, fallback) => {
@@ -71,6 +98,11 @@ export const buildGudangWorkspaceErrorMessage = (error, fallbackMessage) => {
 export const fetchGudangProdukWorkspace = async () => {
   const response = await API.get("/gudang-produk-workspace");
   return normalizeWorkspaceState(response?.data?.data);
+};
+
+export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {
+  const response = await API.get("/gudang-produk-workspace/list-stok-product", { params });
+  return normalizeGudangStockListPayload(response?.data);
 };
 
 export const createGudangProdukLayout = async (payload) => {
