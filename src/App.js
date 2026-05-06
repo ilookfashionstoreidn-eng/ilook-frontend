@@ -55,6 +55,8 @@ import PackingRandom from "./components/Packing/PackingRandom";
 import PackingNoDataGinee from "./components/Packing/PackingNoDataGinee";
 import PackingInject from "./components/Packing/PackingInject";
 import Logs from "./components/Packing/LogsPage";
+import ReturnPage from "./components/Packing/Return";
+import ReturnLogs from "./components/Packing/ReturnLogs";
 import Bahan from "./components/Bahan/Bahan";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
@@ -151,6 +153,8 @@ const App = () => {
           <Route path="packing-no-data-ginee" element={<PackingNoDataGinee />} />
           <Route path="packing-inject" element={<PackingInject />} />
           <Route path="logs" element={<Logs />} />
+          <Route path="return" element={<ReturnPage />} />
+          <Route path="return-logs" element={<ReturnLogs />} />
           <Route path="bahan" element={<Bahan />} />
           <Route path="pembelianBahan" element={<PembelianBahan />} />
           <Route path="pabrik" element={<Pabrik />} />
