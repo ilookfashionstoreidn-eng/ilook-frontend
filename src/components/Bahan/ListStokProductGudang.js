@@ -426,9 +426,7 @@ const ListStokProductGudang = () => {
                           <span className="gudang-liststok-sku-code">
                             {highlightText(row.sku, activeSearch)}
                           </span>
-                          <small>
-                            Update terakhir {formatDate(row.updatedAt)}
-                          </small>
+                         
                         </div>
                       </td>
                       <td className="gudang-liststok-qty-cell">

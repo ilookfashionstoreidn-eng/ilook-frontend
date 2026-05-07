@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { FaQrcode, FaTrash } from "react-icons/fa";
@@ -135,7 +134,6 @@ const scannerPromptSwalClass = {
 };
 
 const PackingBelumBarcode = () => {
-  const navigate = useNavigate();
   const trackingInputRef = useRef(null);
   const trackingScanDebounceRef = useRef(null);
   const hasRequestedInitialScannerRef = useRef(false);
@@ -306,7 +304,6 @@ const PackingBelumBarcode = () => {
       });
 
       if (!result.isConfirmed) {
-        navigate("/packing");
         return null;
       }
 

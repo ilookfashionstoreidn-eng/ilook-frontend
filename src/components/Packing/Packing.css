@@ -797,8 +797,270 @@ td img.product-image {
   color: #9f1239 !important;
 }
 
+.pk-access-page,
+.pk-password-page {
+  min-height: calc(100vh - 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pk-access-shell,
+.pk-password-shell {
+  width: min(100%, 980px);
+}
+
+.pk-access-panel,
+.pk-password-hero {
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 28%),
+    linear-gradient(145deg, #ffffff 0%, #f4fbf9 100%);
+  border: 1px solid #d7efe8;
+  border-radius: 24px;
+  box-shadow: 0 28px 48px -30px rgba(15, 23, 42, 0.35);
+}
+
+.pk-access-panel {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 30px;
+  display: grid;
+  gap: 20px;
+}
+
+.pk-access-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  color: #fff;
+  font-size: 28px;
+  box-shadow: 0 18px 30px -18px rgba(15, 118, 110, 0.95);
+}
+
+.pk-access-copy h1,
+.pk-password-title h1 {
+  margin: 6px 0 0;
+  font-size: 30px;
+  color: #0f172a;
+}
+
+.pk-access-copy p,
+.pk-password-title p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.pk-access-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pk-access-form {
+  display: grid;
+  gap: 12px;
+}
+
+.pk-access-form label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.pk-access-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #fff;
+  color: #0f766e;
+}
+
+.pk-access-input-row input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #0f172a;
+  background: transparent;
+}
+
+.pk-access-input-row:focus-within {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
+}
+
+.pk-access-form .btn-search-modern {
+  width: 100%;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  box-shadow: 0 18px 30px -20px rgba(15, 118, 110, 0.95);
+}
+
+.pk-access-error,
+.pk-access-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pk-access-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.pk-access-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.pk-access-meta {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #dbe7e3;
+}
+
+.pk-access-meta span,
+.pk-access-meta small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pk-access-meta strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.pk-password-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.pk-password-hero {
+  padding: 28px;
+  display: grid;
+  gap: 22px;
+}
+
+.pk-password-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pk-password-title .pk-brand-icon {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  box-shadow: 0 18px 30px -18px rgba(15, 118, 110, 0.9);
+}
+
+.pk-password-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pk-password-code {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 20px;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.pk-password-code span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.pk-password-code strong {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  line-height: 1.05;
+  word-break: break-word;
+}
+
+.pk-password-code small {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.pk-password-code .btn-search-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  box-shadow: 0 16px 28px -18px rgba(249, 115, 22, 0.95);
+}
+
+.pk-password-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.pk-password-info {
+  padding: 22px;
+  border-radius: 20px;
+  border: 1px solid #d7efe8;
+  background: #fff;
+  box-shadow: 0 18px 30px -28px rgba(15, 23, 42, 0.4);
+}
+
+.pk-password-info strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.pk-password-info small {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 13px;
+}
+
 @media (max-width: 1024px) {
   .pk-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pk-password-list,
+  .pk-password-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -830,6 +1092,25 @@ td img.product-image {
   .pk-session-lock {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .pk-access-panel,
+  .pk-password-hero,
+  .pk-password-info {
+    padding: 18px;
+  }
+
+  .pk-password-title {
+    flex-direction: column;
+  }
+
+  .pk-password-code {
+    padding: 18px;
+  }
+
+  .pk-password-code .btn-search-modern {
+    width: 100%;
+    justify-content: center;
   }
 
   .pk-delete-btn {

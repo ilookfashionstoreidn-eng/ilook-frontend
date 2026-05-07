@@ -50,9 +50,11 @@ import HistoryPendapatanJasa from "./components/Jasa/HistoryPendapatanJasa";
 import HppProduk from "./components/Produk/HppProduk";
 import ProductList from "./components/Produk/ProductList";
 import Packing from "./components/Packing/Packing";
+import PackingAccessGate from "./components/Packing/PackingAccessGate";
 import PackingBelumBarcode from "./components/Packing/PackingBelumBarcode";
 import PackingRandom from "./components/Packing/PackingRandom";
 import PackingNoDataGinee from "./components/Packing/PackingNoDataGinee";
+import PackingPasswordPage from "./components/Packing/PackingPasswordPage";
 import PackingInject from "./components/Packing/PackingInject";
 import Logs from "./components/Packing/LogsPage";
 import ReturnPage from "./components/Packing/Return";
@@ -147,10 +149,11 @@ const App = () => {
           <Route path="pendapatanhistoryjasa" element={<HistoryPendapatanJasa />} />
           <Route path="hppProduk" element={<HppProduk />} />
           <Route path="produk-list" element={<ProductList />} />
+          <Route path="getPassword" element={<PackingPasswordPage />} />
           <Route path="packing" element={<Packing />} />
-          <Route path="packing-belum-barcode" element={<PackingBelumBarcode />} />
-          <Route path="packing-random" element={<PackingRandom />} />
-          <Route path="packing-no-data-ginee" element={<PackingNoDataGinee />} />
+          <Route path="packing-belum-barcode" element={<PackingAccessGate menuKey="packing-belum-barcode" featureName="Produk Belum Barcode"><PackingBelumBarcode /></PackingAccessGate>} />
+          <Route path="packing-random" element={<PackingAccessGate menuKey="packing-random" featureName="Packing Random"><PackingRandom /></PackingAccessGate>} />
+          <Route path="packing-no-data-ginee" element={<PackingAccessGate menuKey="packing-no-data-ginee" featureName="No Data Ginee"><PackingNoDataGinee /></PackingAccessGate>} />
           <Route path="packing-inject" element={<PackingInject />} />
           <Route path="logs" element={<Logs />} />
           <Route path="return" element={<ReturnPage />} />
