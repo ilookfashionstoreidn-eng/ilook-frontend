@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { FaQrcode, FaTrash } from "react-icons/fa";
@@ -135,16 +134,12 @@ const scannerPromptSwalClass = {
   cancelButton: "pk-bb-swal-cancel",
 };
 
-const ACCESS_KEYWORD = "abc123";
-
 const PackingNoDataGinee = () => {
-  const navigate = useNavigate();
   const trackingInputRef = useRef(null);
   const trackingScanDebounceRef = useRef(null);
 
   const [mode, setMode] = useState("tracking_only");
   const [serialModeResetKey, setSerialModeResetKey] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [savedScannerNames, setSavedScannerNames] = useState(getSavedScannerNames);
   const [scannerName, setScannerName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -307,7 +302,6 @@ const PackingNoDataGinee = () => {
       });
 
       if (!result.isConfirmed) {
-        navigate("/packing");
         return null;
       }
 
@@ -324,52 +318,22 @@ const PackingNoDataGinee = () => {
     }
   };
 
-  // ── Combined init: password gate → scanner prompt (sequential) ──
+  // Route-level access gate handles password checks; this effect only starts the scanner session.
   useEffect(() => {
     let cancelled = false;
 
     const initSession = async () => {
-      // Step 1: Password gate
-      const pwResult = await Swal.fire({
-        title: "Akses Terbatas",
-        text: "Masukkan kata kunci untuk mengakses fitur No Data Ginee.",
-        input: "password",
-        inputPlaceholder: "Kata kunci...",
-        showCancelButton: true,
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        confirmButtonText: "Masuk",
-        cancelButtonText: "Batal",
-        buttonsStyling: false,
-        customClass: scannerPromptSwalClass,
-        preConfirm: (value) => {
-          if (!value) {
-            Swal.showValidationMessage("Kata kunci wajib diisi");
-            return false;
-          }
-          if (value !== ACCESS_KEYWORD) {
-            Swal.showValidationMessage("Kata kunci salah");
-            return false;
-          }
-          return value;
-        },
-      });
-
       if (cancelled) {
         return;
       }
 
-      if (!pwResult.isConfirmed) {
-        navigate("/packing");
+      if (!scannerName) {
+        await requestScannerName();
         return;
       }
 
-      setIsAuthenticated(true);
-
-      // Step 2: Scanner name prompt (runs immediately after password OK)
-      if (!cancelled) {
-        requestScannerName();
-      }
+      setIsSessionLocked(false);
+      focusTrackingInput();
     };
 
     initSession();
