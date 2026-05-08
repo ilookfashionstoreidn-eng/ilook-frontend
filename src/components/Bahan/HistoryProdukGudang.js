@@ -23,6 +23,7 @@ import {
 
 const EMPTY_SUMMARY = {
   total_rows: 0,
+  total_qty: 0,
   total_sku: 0,
   total_seri: 0,
 };
@@ -278,7 +279,7 @@ const HistoryProdukGudang = () => {
           ? "Memuat data..."
           : isRefreshing
           ? "Memperbarui hasil..."
-          : `${formatNumber(summary.total_rows)} kode seri keluar`
+          : `${formatNumber(summary.total_qty || summary.total_rows)} produk keluar`
       }
       searchValue={searchInput}
       onSearchChange={setSearchInput}
@@ -295,8 +296,8 @@ const HistoryProdukGudang = () => {
       <section className="gudang-ui-stat-grid">
         <GudangStatCard
           label="Total Keluar"
-          value={formatNumber(summary.total_rows)}
-          helper="Total data keluar pada filter aktif."
+          value={formatNumber(summary.total_qty || summary.total_rows)}
+          helper="Total qty keluar pada filter aktif."
         />
         <GudangStatCard
           label="SKU Berbeda"
@@ -409,7 +410,7 @@ const HistoryProdukGudang = () => {
         <div className="gudang-ui-panel-head">
           <div>
             <h2>Tabel History Produk</h2>
-            <p>Data berisi SKU, kode seri, dan waktu keluar.</p>
+            <p>Data berisi SKU, qty, kode seri, dan waktu keluar.</p>
           </div>
           {isRefreshing ? (
             <span className="gudang-ui-chip gudang-liststok-chip-pending">
@@ -433,8 +434,8 @@ const HistoryProdukGudang = () => {
                 <table className="gudang-ui-table gudang-history-table">
                   <thead>
                     <tr>
-                      <th>No</th>
                       <th>SKU</th>
+                      <th>Qty</th>
                       <th>Kode Seri</th>
                       <th>Tanggal Keluar</th>
                     </tr>
@@ -442,10 +443,10 @@ const HistoryProdukGudang = () => {
                   <tbody>
                     {visibleRows.map((row) => (
                       <tr key={row.id}>
-                        <td>{formatNumber(row.rowNumber)}</td>
                         <td>
                           <strong>{row.sku || "-"}</strong>
                         </td>
+                        <td>{formatNumber(row.qty || 0)}</td>
                         <td>{row.kodeSeri || "-"}</td>
                         <td>{formatDateTime(row.keluarPada)}</td>
                       </tr>

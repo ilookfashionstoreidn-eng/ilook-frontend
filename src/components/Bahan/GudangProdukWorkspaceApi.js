@@ -30,6 +30,7 @@ const emptyGudangStockListPagination = {
 
 const emptyGudangProdukHistorySummary = {
   total_rows: 0,
+  total_qty: 0,
   total_sku: 0,
   total_seri: 0,
 };
