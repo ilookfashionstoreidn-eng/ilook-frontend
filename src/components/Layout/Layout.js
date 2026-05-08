@@ -576,6 +576,7 @@ const Layout = () => {
                   "stok-lokasi-gudang",
                   "list-stok-product",
                   "mutasi-gudang-produk",
+                  "history-produk-gudang",
                   "gudang-produk",
                   "stok-gudang-produk",
                   "picking-queue",
@@ -612,6 +613,11 @@ const Layout = () => {
                   <li>
                     <Link to="mutasi-gudang-produk" className={`dropdown-link ${activeMenu === "mutasi-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("mutasi-gudang-produk")}>
                       <FaBoxOpen className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Mutasi Gudang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
                     </Link>
                   </li>
                   <li>
