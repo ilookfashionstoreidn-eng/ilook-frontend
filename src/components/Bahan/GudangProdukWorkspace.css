@@ -3751,6 +3751,72 @@
   flex-wrap: wrap;
 }
 
+.gudang-history-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.2fr) minmax(180px, 0.8fr) minmax(180px, 0.7fr) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.gudang-history-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gudang-history-date-field input,
+.gudang-history-date-field select {
+  min-height: 42px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  padding: 0 12px;
+  font: inherit;
+  font-weight: 600;
+}
+
+.gudang-history-date-range {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.gudang-history-date-range span {
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.gudang-history-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.gudang-history-meta-row {
+  margin-top: 16px;
+}
+
+.gudang-history-table-stage {
+  position: relative;
+}
+
+.gudang-history-table th:first-child,
+.gudang-history-table td:first-child {
+  width: 72px;
+  text-align: center;
+}
+
+.gudang-history-table td:nth-child(3) {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  color: #334155;
+}
+
 @media (max-width: 1024px) {
   .gudang-liststok-toolbar {
     flex-direction: column;
@@ -3758,6 +3824,14 @@
 
   .gudang-liststok-toolbar-controls {
     width: 100%;
+    justify-content: flex-start;
+  }
+
+  .gudang-history-filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gudang-history-filter-actions {
     justify-content: flex-start;
   }
 }
@@ -3793,5 +3867,12 @@
 
   .gudang-liststok-pagination-actions {
     justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  .gudang-history-filter-grid,
+  .gudang-history-date-range {
+    grid-template-columns: 1fr;
   }
 }

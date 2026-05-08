@@ -28,6 +28,19 @@ const emptyGudangStockListPagination = {
   last_page: 1,
 };
 
+const emptyGudangProdukHistorySummary = {
+  total_rows: 0,
+  total_sku: 0,
+  total_seri: 0,
+};
+
+const emptyGudangProdukHistoryPagination = {
+  current_page: 1,
+  per_page: 50,
+  total: 0,
+  last_page: 1,
+};
+
 const normalizeWorkspaceState = (payload = {}) => ({
   layouts: Array.isArray(payload.layouts) ? payload.layouts : [],
   products: Array.isArray(payload.products) ? payload.products : [],
@@ -44,6 +57,18 @@ const normalizeGudangStockListPayload = (payload = {}) => ({
   },
   pagination: {
     ...emptyGudangStockListPagination,
+    ...(payload.pagination || {}),
+  },
+});
+
+const normalizeGudangProdukHistoryPayload = (payload = {}) => ({
+  data: Array.isArray(payload.data) ? payload.data : [],
+  summary: {
+    ...emptyGudangProdukHistorySummary,
+    ...(payload.summary || {}),
+  },
+  pagination: {
+    ...emptyGudangProdukHistoryPagination,
     ...(payload.pagination || {}),
   },
 });
@@ -103,6 +128,11 @@ export const fetchGudangProdukWorkspace = async () => {
 export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {
   const response = await API.get("/gudang-produk-workspace/list-stok-product", { params });
   return normalizeGudangStockListPayload(response?.data);
+};
+
+export const fetchGudangProdukHistory = async (params = {}) => {
+  const response = await API.get("/gudang-produk/history", { params });
+  return normalizeGudangProdukHistoryPayload(response?.data);
 };
 
 export const createGudangProdukLayout = async (payload) => {
