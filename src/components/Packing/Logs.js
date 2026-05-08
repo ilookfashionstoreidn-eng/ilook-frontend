@@ -40,7 +40,10 @@ const Logs = () => {
   const [status, setStatus] = useState("");
   const today = new Date().toISOString().slice(0, 10);
   const [selectedLogs, setSelectedLogs] = useState(null);
+  const [selectedLogDetail, setSelectedLogDetail] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
   const [tracking, setTracking] = useState("");
   const [kasirList, setKasirList] = useState([]);
   const [performedBy, setPerformedBy] = useState("");
@@ -195,21 +198,43 @@ const fetchLogs = async (
     }
   };
 
-  const handleOpenModal = (item) => {
-  setSelectedLogs(item);
-  setShowModal(true);
-};
-const handleCloseModal = () => {
-  setShowModal(false);
-  setSelectedLogs(null);
-};
+  const handleOpenModal = async (item) => {
+    setSelectedLogs(item);
+    setSelectedLogDetail(null);
+    setDetailError(null);
+    setShowModal(true);
+
+    if (!item?.source_type || !item?.source_id || item?.has_detail === false) {
+      return;
+    }
+
+    try {
+      setDetailLoading(true);
+      const response = await API.get(
+        `/orders/logs/${item.source_type}/${item.source_id}/detail`
+      );
+
+      setSelectedLogDetail(response.data?.data || null);
+    } catch (error) {
+      setDetailError("Gagal mengambil detail log.");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedLogs(null);
+    setSelectedLogDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  };
 
 
-useEffect(() => {
-  API.get('/users/kasir')
-    .then(res => setKasirList(res.data))
-    .catch(err => console.log(err));
-}, []);
+  useEffect(() => {
+    API.get('/users/kasir')
+      .then(res => setKasirList(res.data))
+      .catch(err => console.log(err));
+  }, []);
 
   const totalKasirAktif = kasirSummary.length;
   const scrollTable = (direction) => {
@@ -228,6 +253,7 @@ useEffect(() => {
             key: `${item.id}-${serial.id || serial.serial_number}`,
             sku: item.actual_sku,
             originalSku: item.original_sku,
+            quantity: 1,
             status: item.status,
             serial_number: serial.serial_number,
           }))
@@ -241,6 +267,7 @@ useEffect(() => {
           key: `${item.sku}-${serial.id || serial.serial_number}`,
           sku: item.sku,
           originalSku: null,
+          quantity: 1,
           status: "sesuai",
           serial_number: serial.serial_number,
         }))
@@ -264,9 +291,11 @@ useEffect(() => {
     return Number(log.order?.total_qty || 0);
   };
 
-  const getModeLabel = (log) => (isRandomLog(log) ? "Random" : "Normal");
+  const getModeLabel = (log) => log?.mode_label || (isRandomLog(log) ? "Random" : "Normal");
 
-  const getSerialPreview = (log) => getPackingRows(log).map((row) => row.serial_number).join(", ");
+  const getSerialPreview = (log) => log?.serial_preview || getPackingRows(log).map((row) => row.serial_number).join(", ");
+
+  const getModalPackingRows = (log) => selectedLogDetail?.rows || getPackingRows(log);
 
  return (
    <div className="pklog-page">
@@ -475,8 +504,12 @@ useEffect(() => {
                 <td>{getSerialPreview(tc)}</td>
                 <td>{tc.order?.status}</td>
                   <td>
-                    <button className="pklog-btn-detail" onClick={() => handleOpenModal(tc)}>
-                    Detail
+                    <button
+                      className="pklog-btn-detail"
+                      onClick={() => handleOpenModal(tc)}
+                      disabled={tc.has_detail === false && getPackingRows(tc).length === 0}
+                    >
+                    {tc.has_detail === false && getPackingRows(tc).length === 0 ? "Tidak Ada" : "Detail"}
                     </button>
                   </td>
               </tr>
@@ -522,17 +555,34 @@ useEffect(() => {
               <thead>
                 <tr>
                   <th>SKU</th>
+                  <th>Qty</th>
                   <th>Nomor Seri</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-             {getPackingRows(selectedLogs).map((item) => (
+             {detailLoading && (
+                <tr>
+                  <td colSpan={4}>Memuat detail scan...</td>
+                </tr>
+              )}
+              {!detailLoading && detailError && (
+                <tr>
+                  <td colSpan={4}>{detailError}</td>
+                </tr>
+              )}
+              {!detailLoading && !detailError && getModalPackingRows(selectedLogs).length === 0 && (
+                <tr>
+                  <td colSpan={4}>Tidak ada detail scan untuk log ini.</td>
+                </tr>
+              )}
+             {!detailLoading && !detailError && getModalPackingRows(selectedLogs).map((item) => (
                 <tr key={item.key}>
                   <td>
                     {item.sku}
                     {item.originalSku && item.originalSku !== item.sku ? ` (asli: ${item.originalSku})` : ""}
                   </td>
+                  <td>{formatWholeNumber(item.quantity)}</td>
                   <td>{item.serial_number}</td>
                   <td>{item.status}</td>
                 </tr>
