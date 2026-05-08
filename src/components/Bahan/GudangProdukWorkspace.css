@@ -3807,7 +3807,12 @@
 
 .gudang-history-table th:first-child,
 .gudang-history-table td:first-child {
-  width: 72px;
+  min-width: 180px;
+}
+
+.gudang-history-table th:nth-child(2),
+.gudang-history-table td:nth-child(2) {
+  width: 88px;
   text-align: center;
 }
 
