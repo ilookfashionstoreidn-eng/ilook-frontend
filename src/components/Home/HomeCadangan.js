@@ -295,7 +295,7 @@ const Home = () => {
 
               <div className="user-profile">
                   <img
-                      src={`http://localhost:8000/storage/${localStorage.getItem('foto') || 'user.png'}`}
+                      src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${localStorage.getItem('foto') || 'user.png'}`}
                       alt=""
                   />
               </div>

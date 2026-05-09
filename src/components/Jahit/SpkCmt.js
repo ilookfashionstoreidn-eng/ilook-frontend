@@ -549,10 +549,7 @@ const SpkCmt = () => {
       setShowChatPopup((prev) => prev || true);
 
       // Fetch chat messages untuk SPK yang dipilih
-      axios
-        .get(`http://localhost:8000/api/spk-chats/${selectedSpkId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        })
+      API.get(`/spk-chats/${selectedSpkId}`)
         .then((response) => {
           setMessages(response.data); // Data dari backend sudah termasuk yang ditandai sebagai dibaca
         })
@@ -567,14 +564,7 @@ const SpkCmt = () => {
 
   useEffect(() => {
     if (selectedSpkId && messages.length > 0) {
-      axios
-        .post(
-          `http://localhost:8000/api/spk-chats/${selectedSpkId}/mark-as-read`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          }
-        )
+      API.post(`/spk-chats/${selectedSpkId}/mark-as-read`, {})
         .then(() => console.log("Marked all messages as read in SPK:", selectedSpkId))
         .catch((err) => console.error("Error marking as read:", err));
     }
@@ -583,10 +573,7 @@ const SpkCmt = () => {
   //useEffect(() => {
   useEffect(() => {
     if (selectedSpkId) {
-      axios
-        .get(`http://localhost:8000/api/spk-chats/${selectedSpkId}/readers`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        })
+      API.get(`/spk-chats/${selectedSpkId}/readers`)
         .then((response) => {
           setReaders(response.data); // Simpan semua readers sekaligus
         })
@@ -596,10 +583,7 @@ const SpkCmt = () => {
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://127.0.0.1:8000/api/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await API.get("/notifications");
 
       console.log("Fetched notifications:", response.data);
 
@@ -621,9 +605,7 @@ const SpkCmt = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/notifications/unread", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
+        const response = await API.get("/notifications/unread");
 
         console.log("Fetched Notifications from API:", response.data.notifications); // Debugging
         const fetchedNotifications = response.data.notifications.map((notif) => ({
@@ -746,13 +728,7 @@ const SpkCmt = () => {
 
   const markNotificationsAsRead = async () => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/notifications/mark-as-read",
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+      await API.post("/notifications/mark-as-read", {});
 
       setUnreadCount(0);
       setUnreadNotifications([]);
@@ -782,9 +758,8 @@ const SpkCmt = () => {
       const socketId = pusherRef.current?.connection?.socket_id;
       console.log("Socket ID:", socketId);
 
-      const response = await axios.post("http://localhost:8000/api/send-message", formData, {
+      const response = await API.post("/send-message", formData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "multipart/form-data",
           "X-Socket-ID": socketId,
         },
@@ -805,9 +780,7 @@ const SpkCmt = () => {
 
   const fetchStaffList = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/spk/${selectedSpkId}/staff-list`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const response = await API.get(`/spk/${selectedSpkId}/staff-list`);
       setStaffList(response.data);
     } catch (error) {
       console.error("Gagal mengambil daftar staff:", error);
@@ -825,13 +798,7 @@ const SpkCmt = () => {
     if (!selectedStaffId || !selectedSpkId) return;
 
     try {
-      const response = await axios.post(
-        `http://localhost:8000/api/spk/${selectedSpkId}/invite-staff/${selectedStaffId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+      const response = await API.post(`/spk/${selectedSpkId}/invite-staff/${selectedStaffId}`, {});
       console.log(response.data);
       await showStatusAlert({
         icon: "success",
@@ -1334,7 +1301,7 @@ const SpkCmt = () => {
   };
 
   const downloadStaffPdf = (id) => {
-    const url = `http://localhost:8000/api/spk-cmt/${id}/download-staff-pdf`;
+    const url = `/api/spk-cmt/${id}/download-staff-pdf`;
     window.open(url, "_blank"); // Membuka file PDF di tab baru
   };
 
@@ -2249,7 +2216,7 @@ const SpkCmt = () => {
               <aside className="spkcmt-detail-aside">
                 <div className="spkcmt-detail-visual-card">
                   {selectedSpk.gambar_produk ? (
-                    <img src={`http://localhost:8000/storage/${selectedSpk.gambar_produk}`} alt="Gambar Produk" className="spkcmt-detail-image" />
+                    <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${selectedSpk.gambar_produk}`} alt="Gambar Produk" className="spkcmt-detail-image" />
                   ) : (
                     <div className="spkcmt-detail-image-placeholder">
                       <span>Preview Produk</span>
@@ -2668,7 +2635,7 @@ const SpkCmt = () => {
                       {previewData.gambar_produk && (
                         <div style={{ marginBottom: "16px", textAlign: "center" }}>
                           <img
-                            src={`http://localhost:8000/storage/${previewData.gambar_produk}`}
+                            src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${previewData.gambar_produk}`}
                             alt={previewData.nama_produk || "Gambar Produk"}
                             style={{
                               maxWidth: "100%",

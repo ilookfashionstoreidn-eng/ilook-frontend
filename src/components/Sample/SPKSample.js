@@ -106,7 +106,7 @@ const SPKSample = () => {
       return path;
     }
 
-    const baseStorage = process.env.REACT_APP_STORAGE_URL || "http://localhost:8000/storage";
+    const baseStorage = process.env.REACT_APP_STORAGE_URL || "/storage";
     return `${baseStorage}/${path}`;
   };
 

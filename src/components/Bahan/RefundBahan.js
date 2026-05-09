@@ -560,7 +560,7 @@ const RefundBahan = () => {
                               <div className="refund-action-group">
                                 {ret.foto_bukti && (
                                   <a
-                                    href={ret.foto_bukti.startsWith("http") ? ret.foto_bukti : `http://localhost:8000/storage/${ret.foto_bukti}`}
+                                    href={ret.foto_bukti.startsWith("http") ? ret.foto_bukti : `${process.env.REACT_APP_FILE_URL || ""}/storage/${ret.foto_bukti}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="refund-link"

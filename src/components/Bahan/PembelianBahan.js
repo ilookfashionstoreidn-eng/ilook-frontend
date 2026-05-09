@@ -3,6 +3,13 @@ import "./PembelianBahan.css";
 import API from "../../api";
 import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes, FaUndo, FaSearch } from "react-icons/fa";
 
+const normalizeApiList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  return [];
+};
+
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
   const [pabrikList, setPabrikList] = useState([]);
@@ -94,16 +101,16 @@ const PembelianBahan = () => {
           API.get("/spk-bahan")
         ]);
 
-        let dataBahan = Array.isArray(resData.data) ? resData.data : resData.data?.data || [];
+        let dataBahan = normalizeApiList(resData.data);
         dataBahan = dataBahan.sort((a, b) => b.id - a.id);
 
         setItems(dataBahan);
-        setPabrikList(resPabrik.data || []);
-        setGudangList(resGudang.data || []);
-        setBahanList(resBahan.data || []);
+        setPabrikList(normalizeApiList(resPabrik.data));
+        setGudangList(normalizeApiList(resGudang.data));
+        setBahanList(normalizeApiList(resBahan.data));
         
         // Filter SPK Bahan yang statusnya bukan 'selesai'
-        const spkBahanData = Array.isArray(resSpkBahan.data) ? resSpkBahan.data : resSpkBahan.data?.data || [];
+        const spkBahanData = normalizeApiList(resSpkBahan.data);
         setSpkBahanList(spkBahanData.filter(spk => spk.status !== 'selesai'));
 
         setIsReady(true); // 🔹 Pastikan semua data siap
@@ -183,8 +190,9 @@ const PembelianBahan = () => {
 
   // === HELPER ===
   const getNamaById = (list, id, field = "nama_bahan") => {
+    if (!Array.isArray(list)) return "-";
     if (!list || list.length === 0) return "-"; // 🔹 Hindari error jika list kosong
-    const found = list.find((x) => x.id === id);
+    const found = list.find((x) => Number(x.id) === Number(id));
     return found ? found[field] || "-" : "-";
   };
 
@@ -394,7 +402,7 @@ const PembelianBahan = () => {
         // Fetch data pembelian bahan yang sudah ada untuk menghitung sisa rol
         try {
           const resPembelian = await API.get("/pembelian-bahan");
-          const pembelianData = Array.isArray(resPembelian.data.data) ? resPembelian.data.data : resPembelian.data.data?.data || [];
+          const pembelianData = normalizeApiList(resPembelian.data);
           
           // Hitung sisa rol per warna
           const sisaRol = {};
@@ -1430,7 +1438,7 @@ const PembelianBahan = () => {
                   <div className="pembelian-bahan-detail-item">
                     <strong>Surat Jalan</strong>
                     <span>
-                      <a href={detailItem.foto_surat_jalan.startsWith("http") ? detailItem.foto_surat_jalan : `http://localhost:8000/storage/${detailItem.foto_surat_jalan}`} target="_blank" rel="noreferrer" style={{ color: "#17457c" }}>
+                      <a href={detailItem.foto_surat_jalan.startsWith("http") ? detailItem.foto_surat_jalan : `${process.env.REACT_APP_FILE_URL || ""}/storage/${detailItem.foto_surat_jalan}`} target="_blank" rel="noreferrer" style={{ color: "#17457c" }}>
                         {detailItem.no_surat_jalan || "Lihat Surat Jalan"}
                       </a>
                     </span>
@@ -1515,7 +1523,7 @@ const PembelianBahan = () => {
                         {ret.foto_bukti && (
                           <div style={{ marginTop: "8px", marginBottom: "8px" }}>
                             <a
-                              href={ret.foto_bukti.startsWith("http") ? ret.foto_bukti : `http://localhost:8000/storage/${ret.foto_bukti}`}
+                              href={ret.foto_bukti.startsWith("http") ? ret.foto_bukti : `${process.env.REACT_APP_FILE_URL || ""}/storage/${ret.foto_bukti}`}
                               target="_blank"
                               rel="noreferrer"
                               style={{ color: "#17457c", fontSize: "12px" }}

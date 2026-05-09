@@ -663,7 +663,7 @@ const removeEditUkuran = (index) => {
             <div>
               <p>Gambar Saat Ini:</p>
               <img
-                src={`${process.env.REACT_APP_API_URL}/storage/${newProduk.gambar_produk}`}
+                src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${newProduk.gambar_produk}`}
                 alt="Gambar Produk"
                 width="100"
               />

@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./SpkBahan.css";
 import API from "../../api";
 import { FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaSearch, FaTag, FaTrash } from "react-icons/fa";
 
 const JENIS_PEMBAYARAN_OPTIONS = ["Cash", "Tempo"];
-const WARNA_OPTIONS = ["Putih", "Hitam", "Merah", "Biru", "Hijau", "Kuning", "Abu-abu", "Coklat", "Pink", "Ungu", "Orange", "Navy", "Maroon", "Beige", "Khaki", "Lainnya"];
 const TOAST_DURATION = 3200;
 const SEARCH_DEBOUNCE_MS = 350;
 const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
 const PER_PAGE_OPTIONS = [25, 50];
+const DEFAULT_WARNA_ROW = { warna: "", jumlah_rol: 1 };
 
 const EMPTY_META = {
   current_page: 1,
@@ -19,10 +19,113 @@ const EMPTY_META = {
   to: 0,
 };
 
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const formatDateInput = (date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const addDaysFromToday = (days) => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + Math.max(0, parseInt(days, 10) || 0));
+  return formatDateInput(date);
+};
+
+const buildGroupOptionsFromBahan = (bahanRows = [], pabrikRows = []) => {
+  const pabrikByName = new Map(
+    pabrikRows
+      .filter((pabrik) => pabrik?.id && (pabrik.nama_pabrik || pabrik.nama))
+      .map((pabrik) => [normalizeText(pabrik.nama_pabrik || pabrik.nama), pabrik])
+  );
+  const groups = new Map();
+
+  bahanRows.forEach((bahan) => {
+    const groupName = String(bahan.group_bahan || "").trim();
+    if (!groupName) return;
+
+    if (!groups.has(groupName)) {
+      groups.set(groupName, {
+        group_bahan: groupName,
+        label: groupName,
+        pabrik: [],
+        bahan: [],
+        warna: [],
+        _pabrikKeys: new Set(),
+        _warnaKeys: new Set(),
+      });
+    }
+
+    const group = groups.get(groupName);
+    const pabrikName = String(bahan.pabrik_bahan || "").trim();
+    const matchedPabrik = pabrikByName.get(normalizeText(pabrikName));
+    const pabrikKey = matchedPabrik?.id ? `id:${matchedPabrik.id}` : pabrikName ? `name:${normalizeText(pabrikName)}` : "";
+
+    if (pabrikKey && !group._pabrikKeys.has(pabrikKey)) {
+      group._pabrikKeys.add(pabrikKey);
+      group.pabrik.push({
+        id: matchedPabrik?.id || null,
+        nama_pabrik: matchedPabrik?.nama_pabrik || pabrikName,
+      });
+    }
+
+    group.bahan.push({
+      id: bahan.id,
+      nama_bahan: bahan.nama_bahan || bahan.nama || `Bahan #${bahan.id}`,
+      warna_bahan: bahan.warna_bahan || "",
+      pabrik_bahan: pabrikName,
+      pabrik_id: matchedPabrik?.id || null,
+    });
+
+    const warnaName = String(bahan.warna_bahan || "").trim();
+    const warnaKey = normalizeText(warnaName);
+    if (warnaName && !group._warnaKeys.has(warnaKey)) {
+      group._warnaKeys.add(warnaKey);
+      group.warna.push(warnaName);
+    }
+  });
+
+  return Array.from(groups.values())
+    .map(({ _pabrikKeys, _warnaKeys, ...group }) => ({
+      ...group,
+      pabrik: group.pabrik.sort((a, b) => String(a.nama_pabrik || "").localeCompare(String(b.nama_pabrik || ""))),
+      bahan: group.bahan.sort((a, b) => String(a.nama_bahan || "").localeCompare(String(b.nama_bahan || ""))),
+      warna: group.warna.sort((a, b) => String(a).localeCompare(String(b))),
+    }))
+    .sort((a, b) => String(a.label || "").localeCompare(String(b.label || "")));
+};
+
+const normalizeMasterGroups = (payload, pabrikRows = []) => {
+  const unwrappedPayload = payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data) ? payload.data : payload;
+  const rawGroups = Array.isArray(unwrappedPayload?.groups)
+    ? unwrappedPayload.groups
+    : Array.isArray(unwrappedPayload)
+      ? unwrappedPayload
+      : [];
+  if (rawGroups.length > 0) {
+    return rawGroups
+      .map((group) => ({
+        group_bahan: String(group.group_bahan || group.label || "").trim(),
+        label: String(group.label || group.group_bahan || "").trim(),
+        pabrik: Array.isArray(group.pabrik) ? group.pabrik : [],
+        bahan: Array.isArray(group.bahan) ? group.bahan : [],
+        warna: Array.isArray(group.warna) ? group.warna : [],
+      }))
+      .filter((group) => group.group_bahan);
+  }
+
+  const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  return buildGroupOptionsFromBahan(rows, pabrikRows);
+};
+
 const SpkBahan = () => {
   const [items, setItems] = useState([]);
   const [pabrikList, setPabrikList] = useState([]);
   const [bahanList, setBahanList] = useState([]);
+  const [groupOptions, setGroupOptions] = useState([]);
 
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +137,9 @@ const SpkBahan = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [groupSearchTerm, setGroupSearchTerm] = useState("");
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
+  const groupFieldRef = useRef(null);
 
   const [meta, setMeta] = useState(EMPTY_META);
   const [kpi, setKpi] = useState({
@@ -44,11 +150,14 @@ const SpkBahan = () => {
   });
 
   const [newItem, setNewItem] = useState({
+    group_bahan: "",
     pabrik_id: "",
+    pabrik_nama: "",
     bahan_id: "",
     jenis_pembayaran: "Cash",
     tanggal_pembayaran: "",
-    warna: [{ warna: "", jumlah_rol: 1 }],
+    tempo_hari: "",
+    warna: [{ ...DEFAULT_WARNA_ROW }],
   });
 
   useEffect(() => {
@@ -65,6 +174,17 @@ const SpkBahan = () => {
     const timer = setTimeout(() => setToast(null), TOAST_DURATION);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (groupFieldRef.current && !groupFieldRef.current.contains(event.target)) {
+        setIsGroupDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -113,20 +233,33 @@ const SpkBahan = () => {
   const fetchMasterData = useCallback(async () => {
     const toArr = (raw) => (Array.isArray(raw?.data) ? raw.data : null) ?? (Array.isArray(raw) ? raw : []);
 
-    const [resPabrik, resBahan] = await Promise.allSettled([API.get("/pabrik"), API.get("/bahan")]);
+    const [resPabrik, resMaster] = await Promise.allSettled([API.get("/pabrik"), API.get("/spk-bahan/master-options")]);
+    let pabrikRows = [];
 
     if (resPabrik.status === "fulfilled") {
       const data = resPabrik.value.data;
-      setPabrikList(toArr(data) || toArr(data?.data));
+      pabrikRows = toArr(data) || toArr(data?.data);
+      setPabrikList(pabrikRows);
     } else {
       setPabrikList([]);
     }
 
-    if (resBahan.status === "fulfilled") {
-      const data = resBahan.value.data;
-      setBahanList(toArr(data) || toArr(data?.data));
+    if (resMaster.status === "fulfilled") {
+      const data = resMaster.value.data || {};
+      const groups = normalizeMasterGroups(data?.data ?? data, pabrikRows);
+      setGroupOptions(groups);
+      setBahanList(groups.flatMap((group) => group.bahan || []));
     } else {
-      setBahanList([]);
+      try {
+        const resBahan = await API.get("/bahan", { params: { per_page: 100 } });
+        const data = resBahan.data;
+        const rows = toArr(data) || toArr(data?.data);
+        setBahanList(rows);
+        setGroupOptions(buildGroupOptionsFromBahan(rows, pabrikRows));
+      } catch {
+        setBahanList([]);
+        setGroupOptions([]);
+      }
     }
   }, []);
 
@@ -177,26 +310,191 @@ const SpkBahan = () => {
     fetchSpkBahan(currentPage);
   }, [fetchSpkBahan, currentPage]);
 
+  const selectedGroup = useMemo(
+    () => groupOptions.find((group) => group.group_bahan === newItem.group_bahan) || null,
+    [groupOptions, newItem.group_bahan]
+  );
+
+  const filteredGroupOptions = useMemo(() => {
+    const query = normalizeText(groupSearchTerm);
+    if (!query) return groupOptions;
+
+    return groupOptions.filter((group) => {
+      const label = normalizeText(group.label || group.group_bahan);
+      const pabrikMatch = Array.isArray(group.pabrik)
+        ? group.pabrik.some((pabrik) => normalizeText(pabrik.nama_pabrik || pabrik.nama).includes(query))
+        : false;
+      const bahanMatch = Array.isArray(group.bahan)
+        ? group.bahan.some((bahan) => normalizeText(bahan.nama_bahan).includes(query) || normalizeText(bahan.warna_bahan).includes(query))
+        : false;
+      return label.includes(query) || pabrikMatch || bahanMatch;
+    });
+  }, [groupOptions, groupSearchTerm]);
+
+  const filteredBahanOptions = useMemo(() => {
+    if (!newItem.group_bahan) return [];
+    if (selectedGroup) return Array.isArray(selectedGroup.bahan) ? selectedGroup.bahan : [];
+    return bahanList.filter((bahan) => bahan.group_bahan === newItem.group_bahan);
+  }, [bahanList, newItem.group_bahan, selectedGroup]);
+
+  const availableWarnaOptions = useMemo(() => {
+    if (!newItem.group_bahan) return [];
+    if (selectedGroup) return Array.isArray(selectedGroup.warna) ? selectedGroup.warna : [];
+
+    return Array.from(
+      new Set(
+        filteredBahanOptions
+          .map((bahan) => String(bahan.warna_bahan || "").trim())
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [filteredBahanOptions, newItem.group_bahan, selectedGroup]);
+
+  const selectedBahan = useMemo(
+    () => filteredBahanOptions.find((bahan) => String(bahan.id) === String(newItem.bahan_id)) || null,
+    [filteredBahanOptions, newItem.bahan_id]
+  );
+
+  const selectedPabrik = useMemo(
+    () => pabrikList.find((pabrik) => String(pabrik.id) === String(newItem.pabrik_id)) || null,
+    [newItem.pabrik_id, pabrikList]
+  );
+  const selectedPabrikLabel = selectedPabrik?.nama_pabrik || selectedPabrik?.nama || newItem.pabrik_nama || "";
+
+  const isTempoPayment = normalizeText(newItem.jenis_pembayaran) === "tempo";
+  const tempoDueDate = isTempoPayment && newItem.tempo_hari ? addDaysFromToday(newItem.tempo_hari) : "";
+
+  const resolvePabrikSelection = useCallback(
+    (bahan, group) => {
+      if (bahan?.pabrik_id) {
+        const found = pabrikList.find((pabrik) => String(pabrik.id) === String(bahan.pabrik_id));
+        return {
+          id: String(bahan.pabrik_id),
+          nama: found?.nama_pabrik || found?.nama || bahan?.pabrik_bahan || "",
+        };
+      }
+
+      const pabrikName = normalizeText(bahan?.pabrik_bahan);
+      if (pabrikName) {
+        const match = pabrikList.find((pabrik) => normalizeText(pabrik.nama_pabrik || pabrik.nama) === pabrikName);
+        return {
+          id: match?.id ? String(match.id) : "",
+          nama: match?.nama_pabrik || match?.nama || bahan?.pabrik_bahan || "",
+        };
+      }
+
+      const firstGroupPabrik = Array.isArray(group?.pabrik) ? group.pabrik.find((pabrik) => pabrik?.id || pabrik?.nama_pabrik || pabrik?.nama) : null;
+      return {
+        id: firstGroupPabrik?.id ? String(firstGroupPabrik.id) : "",
+        nama: firstGroupPabrik?.nama_pabrik || firstGroupPabrik?.nama || "",
+      };
+    },
+    [pabrikList]
+  );
+
   const resetForm = () => {
+    setGroupSearchTerm("");
+    setIsGroupDropdownOpen(false);
     setNewItem({
+      group_bahan: "",
       pabrik_id: "",
+      pabrik_nama: "",
       bahan_id: "",
       jenis_pembayaran: "Cash",
       tanggal_pembayaran: "",
-      warna: [{ warna: "", jumlah_rol: 1 }],
+      tempo_hari: "",
+      warna: [{ ...DEFAULT_WARNA_ROW }],
     });
     setShowForm(false);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "jenis_pembayaran") {
+      setNewItem((prev) => ({
+        ...prev,
+        jenis_pembayaran: value,
+        tanggal_pembayaran: normalizeText(value) === "tempo" ? "" : prev.tanggal_pembayaran,
+        tempo_hari: normalizeText(value) === "tempo" ? prev.tempo_hari : "",
+      }));
+      return;
+    }
+
     setNewItem((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addWarnaRow = () => {
+  const clearGroupSelection = () => {
     setNewItem((prev) => ({
       ...prev,
-      warna: [...prev.warna, { warna: "", jumlah_rol: 1 }],
+      group_bahan: "",
+      pabrik_id: "",
+      pabrik_nama: "",
+      bahan_id: "",
+      warna: [{ ...DEFAULT_WARNA_ROW }],
+    }));
+  };
+
+  const selectGroupOption = (group) => {
+    const firstBahan = Array.isArray(group?.bahan) ? group.bahan[0] : null;
+    const pabrikSelection = resolvePabrikSelection(firstBahan, group);
+
+    setGroupSearchTerm(group?.label || group?.group_bahan || "");
+    setIsGroupDropdownOpen(false);
+    setNewItem((prev) => ({
+      ...prev,
+      group_bahan: group?.group_bahan || "",
+      pabrik_id: pabrikSelection.id,
+      pabrik_nama: pabrikSelection.nama,
+      bahan_id: "",
+      warna: [{ ...DEFAULT_WARNA_ROW }],
+    }));
+  };
+
+  const handleGroupSearchChange = (e) => {
+    const value = e.target.value;
+    setGroupSearchTerm(value);
+    setIsGroupDropdownOpen(true);
+
+    if (!value.trim()) {
+      clearGroupSelection();
+      return;
+    }
+
+    const exactMatch = groupOptions.find((group) => normalizeText(group.label || group.group_bahan) === normalizeText(value));
+    if (exactMatch) {
+      selectGroupOption(exactMatch);
+      return;
+    }
+
+    if (newItem.group_bahan) {
+      clearGroupSelection();
+    }
+  };
+
+  const handleBahanChange = (e) => {
+    const bahanId = e.target.value;
+    const bahan = filteredBahanOptions.find((item) => String(item.id) === String(bahanId)) || null;
+    const pabrikSelection = resolvePabrikSelection(bahan, selectedGroup);
+
+    setNewItem((prev) => ({
+      ...prev,
+      bahan_id: bahanId,
+      pabrik_id: pabrikSelection.id,
+      pabrik_nama: pabrikSelection.nama,
+      warna: [{ ...DEFAULT_WARNA_ROW }],
+    }));
+  };
+
+  const addWarnaRow = () => {
+    if (availableWarnaOptions.length === 0) {
+      showToast("Pilih grup bahan yang memiliki warna di master bahan.", "warning");
+      return;
+    }
+
+    setNewItem((prev) => ({
+      ...prev,
+      warna: [...prev.warna, { ...DEFAULT_WARNA_ROW }],
     }));
   };
 
@@ -218,8 +516,18 @@ const SpkBahan = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!newItem.pabrik_id || !newItem.bahan_id || !newItem.tanggal_pembayaran) {
-      showToast("Pabrik, bahan, dan tanggal pembayaran wajib diisi.", "warning");
+    if (!newItem.group_bahan || !selectedPabrikLabel || !newItem.bahan_id) {
+      showToast("Grup bahan, pabrik, dan bahan wajib diisi.", "warning");
+      return;
+    }
+
+    if (isTempoPayment && (!newItem.tempo_hari || parseInt(newItem.tempo_hari, 10) < 1)) {
+      showToast("Isi jumlah hari tempo pembayaran minimal 1 hari.", "warning");
+      return;
+    }
+
+    if (!isTempoPayment && !newItem.tanggal_pembayaran) {
+      showToast("Tanggal pembayaran wajib diisi.", "warning");
       return;
     }
 
@@ -228,7 +536,13 @@ const SpkBahan = () => {
       .filter((w) => w.warna !== "");
 
     if (validWarna.length === 0) {
-      showToast("Minimal 1 detail warna (nama warna dan jumlah rol) wajib diisi.", "warning");
+      showToast("Minimal 1 detail warna dari grup bahan wajib diisi.", "warning");
+      return;
+    }
+
+    const invalidWarna = validWarna.find((w) => !availableWarnaOptions.some((option) => normalizeText(option) === normalizeText(w.warna)));
+    if (invalidWarna) {
+      showToast(`Warna ${invalidWarna.warna} tidak ada di grup bahan yang dipilih.`, "warning");
       return;
     }
 
@@ -236,10 +550,13 @@ const SpkBahan = () => {
       setSubmitting(true);
 
       const payload = {
-        pabrik_id: parseInt(newItem.pabrik_id, 10),
+        group_bahan: newItem.group_bahan,
+        pabrik_id: newItem.pabrik_id ? parseInt(newItem.pabrik_id, 10) : undefined,
+        pabrik_nama: selectedPabrikLabel,
         bahan_id: parseInt(newItem.bahan_id, 10),
         jenis_pembayaran: newItem.jenis_pembayaran || "Cash",
-        tanggal_pembayaran: newItem.tanggal_pembayaran,
+        tanggal_pembayaran: isTempoPayment ? tempoDueDate : newItem.tanggal_pembayaran,
+        tempo_hari: isTempoPayment ? parseInt(newItem.tempo_hari, 10) : undefined,
         warna: validWarna,
       };
 
@@ -405,7 +722,7 @@ const SpkBahan = () => {
                 <FaSearch />
                 <input
                   type="text"
-                  placeholder="Cari pabrik, bahan, warna, atau status..."
+                  placeholder="Cari grup, pabrik, bahan, warna, atau status..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                 />
@@ -428,6 +745,7 @@ const SpkBahan = () => {
                       <th className="spkb-col-no">No</th>
                       <th className="spkb-col-id">ID SPK</th>
                       <th className="spkb-col-pabrik">Pabrik</th>
+                      <th className="spkb-col-group">Grup Bahan</th>
                       <th className="spkb-col-bahan">Bahan</th>
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
@@ -456,6 +774,7 @@ const SpkBahan = () => {
                               <span className="spkb-chip-label">{row.pabrik?.nama_pabrik || "-"}</span>
                             </span>
                           </td>
+                          <td className="spkb-cell-bold spkb-col-group">{row.group_bahan || row.bahan?.group_bahan || "-"}</td>
                           <td className="spkb-cell-bold spkb-col-bahan">{row.bahan?.nama_bahan || "-"}</td>
                           <td className="spkb-cell-warna">
                             {Array.isArray(row.warna) && row.warna.length > 0 ? (
@@ -548,30 +867,72 @@ const SpkBahan = () => {
             <form onSubmit={handleSubmit} className="spkb-form">
               <div className="spkb-form-row">
                 <div className="spkb-form-group">
-                  <label>Pabrik *</label>
-                  <select name="pabrik_id" value={newItem.pabrik_id} onChange={handleInputChange} required>
-                    <option value="">Pilih Pabrik</option>
-                    {pabrikList.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nama_pabrik || p.nama || `Pabrik #${p.id}`}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Grup Bahan *</label>
+                  <div className="spkb-searchable-select" ref={groupFieldRef}>
+                    <div className="spkb-searchable-select-input">
+                      <FaSearch />
+                      <input
+                        type="text"
+                        value={groupSearchTerm}
+                        onChange={handleGroupSearchChange}
+                        onFocus={() => setIsGroupDropdownOpen(true)}
+                        placeholder="Cari dan pilih grup bahan..."
+                        autoComplete="off"
+                      />
+                    </div>
+
+                    {isGroupDropdownOpen && (
+                      <div className="spkb-searchable-options">
+                        {filteredGroupOptions.length > 0 ? (
+                          filteredGroupOptions.slice(0, 12).map((group) => (
+                            <button
+                              key={group.group_bahan}
+                              type="button"
+                              className="spkb-searchable-option"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                selectGroupOption(group);
+                              }}
+                            >
+                              <span>{group.label || group.group_bahan}</span>
+                              <small>
+                                {Array.isArray(group.bahan) ? group.bahan.length : 0} bahan
+                              </small>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="spkb-searchable-empty">Grup tidak ditemukan.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <input type="hidden" name="group_bahan" value={newItem.group_bahan} required />
                 </div>
                 <div className="spkb-form-group">
-                  <label>Bahan *</label>
-                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleInputChange} required>
-                    <option value="">Pilih Bahan</option>
-                    {bahanList.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.nama_bahan || b.nama || `Bahan #${b.id}`}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Pabrik *</label>
+                  <input type="text" value={selectedPabrikLabel || (newItem.group_bahan ? "Pabrik belum terhubung" : "Pilih grup dahulu")} disabled required />
+                  {selectedPabrikLabel && (
+                    <small>
+                      Otomatis dari master bahan{newItem.pabrik_id ? "" : " dan akan dibuat di master pabrik saat SPK disimpan"}.
+                    </small>
+                  )}
                 </div>
               </div>
 
               <div className="spkb-form-row">
+                <div className="spkb-form-group">
+                  <label>Bahan *</label>
+                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleBahanChange} disabled={!newItem.group_bahan} required>
+                    <option value="">{newItem.group_bahan ? "Pilih Bahan" : "Pilih grup dahulu"}</option>
+                    {filteredBahanOptions.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.nama_bahan || b.nama || `Bahan #${b.id}`}
+                        {b.warna_bahan ? ` - ${b.warna_bahan}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedBahan?.warna_bahan && <small>Bahan terpilih memiliki warna master: {selectedBahan.warna_bahan}</small>}
+                </div>
                 <div className="spkb-form-group">
                   <label>Jenis Pembayaran *</label>
                   <select name="jenis_pembayaran" value={newItem.jenis_pembayaran} onChange={handleInputChange}>
@@ -582,9 +943,19 @@ const SpkBahan = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="spkb-form-row spkb-form-row-single">
                 <div className="spkb-form-group">
-                  <label>Tanggal Pembayaran *</label>
-                  <input type="date" name="tanggal_pembayaran" value={newItem.tanggal_pembayaran} onChange={handleInputChange} required />
+                  <label>{isTempoPayment ? "Tempo Pembayaran (hari) *" : "Tanggal Pembayaran *"}</label>
+                  {isTempoPayment ? (
+                    <>
+                      <input type="number" min={1} name="tempo_hari" value={newItem.tempo_hari} onChange={handleInputChange} placeholder="Contoh: 30" required />
+                      {tempoDueDate && <small>Jatuh tempo otomatis: {formatDate(tempoDueDate)}</small>}
+                    </>
+                  ) : (
+                    <input type="date" name="tanggal_pembayaran" value={newItem.tanggal_pembayaran} onChange={handleInputChange} required />
+                  )}
                 </div>
               </div>
 
@@ -592,9 +963,9 @@ const SpkBahan = () => {
                 <div className="spkb-color-box-head">
                   <div>
                     <h4>Detail Warna</h4>
-                    <p>Isi warna bahan dan jumlah rol per warna.</p>
+                    <p>Warna mengikuti master bahan pada grup yang dipilih.</p>
                   </div>
-                  <button type="button" className="spkb-btn-secondary" onClick={addWarnaRow}>
+                  <button type="button" className="spkb-btn-secondary" onClick={addWarnaRow} disabled={availableWarnaOptions.length === 0}>
                     <FaPlus /> Tambah Baris
                   </button>
                 </div>
@@ -604,20 +975,17 @@ const SpkBahan = () => {
                     <div className="spkb-form-group spkb-color-name">
                       <label>Warna</label>
                       <select
-                        value={WARNA_OPTIONS.includes(w.warna) ? w.warna : "Lainnya"}
-                        onChange={(e) => handleWarnaChange(wi, "warna", e.target.value === "Lainnya" ? "" : e.target.value)}
+                        value={w.warna}
+                        onChange={(e) => handleWarnaChange(wi, "warna", e.target.value)}
+                        disabled={availableWarnaOptions.length === 0}
                       >
-                        <option value="">-- Pilih / Ketik --</option>
-                        {WARNA_OPTIONS.map((o) => (
+                        <option value="">{newItem.group_bahan ? "Pilih Warna" : "Pilih grup dahulu"}</option>
+                        {availableWarnaOptions.map((o) => (
                           <option key={o} value={o}>
                             {o}
                           </option>
                         ))}
-                        <option value="Lainnya">Lainnya</option>
                       </select>
-                      {(!w.warna || w.warna === "Lainnya" || !WARNA_OPTIONS.includes(w.warna)) && (
-                        <input type="text" placeholder="Nama warna" value={WARNA_OPTIONS.includes(w.warna) ? "" : w.warna || ""} onChange={(e) => handleWarnaChange(wi, "warna", e.target.value)} />
-                      )}
                     </div>
                     <div className="spkb-form-group spkb-color-total">
                       <label>Jumlah Rol</label>

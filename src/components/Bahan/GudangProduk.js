@@ -470,7 +470,7 @@ const GudangProduk = () => {
                                        if (p && p.gambar_produk) {
                                            const imgUrl = p.gambar_produk.startsWith('http') 
                                               ? p.gambar_produk 
-                                              : `http://localhost:8000/storage/${p.gambar_produk}`;
+                                              : `${process.env.REACT_APP_FILE_URL || ""}/storage/${p.gambar_produk}`;
                                               
                                            return (
                                               <img 
