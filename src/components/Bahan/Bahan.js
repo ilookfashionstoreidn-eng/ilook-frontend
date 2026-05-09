@@ -371,6 +371,31 @@ const Bahan = () => {
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Bahan berhasil dihapus.", ...swalButtonColors });
     } catch (deleteError) {
       Swal.close();
+      const deleteErrorData = deleteError?.response?.data;
+
+      if (deleteError?.response?.status === 409 && deleteErrorData?.code === "BAHAN_SEDANG_DIGUNAKAN") {
+        const usageRows = Array.isArray(deleteErrorData.usage)
+          ? deleteErrorData.usage
+              .map((item) => `<li><strong>${item.module}</strong>: ${formatNumber(item.count)} data</li>`)
+              .join("")
+          : "";
+
+        Swal.fire({
+          icon: "info",
+          title: deleteErrorData.title || "Bahan Tidak Dapat Dihapus",
+          html: `
+            <div style="text-align:left;line-height:1.55">
+              <p>${deleteErrorData.message || "Data bahan masih dipakai pada transaksi ERP."}</p>
+              ${usageRows ? `<p style="margin-bottom:6px"><strong>Referensi aktif:</strong></p><ul style="margin:0 0 12px 18px;padding:0">${usageRows}</ul>` : ""}
+              <p>${deleteErrorData.detail || ""}</p>
+              
+          `,
+          confirmButtonText: "Mengerti",
+          ...swalButtonColors,
+        });
+        return;
+      }
+
       const errMsg = getApiErrorMessage(deleteError, "Gagal menghapus bahan.");
       Swal.fire({ icon: "error", title: "Gagal Menghapus", text: errMsg, ...swalButtonColors });
     }
