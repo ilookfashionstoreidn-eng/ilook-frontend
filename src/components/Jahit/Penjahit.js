@@ -204,24 +204,15 @@ const Penjahit = () => {
       formData.append("_method", "PUT");
 
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8000/api/penjahit/${newPenjahit.id}`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await API.post(`/penjahit/${newPenjahit.id}`, formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || result.message || "Gagal update penjahit");
-      }
-
+      const result = response.data;
       const updatedPenjahit = result.data || result;
 
       setPenjahits((prev) =>

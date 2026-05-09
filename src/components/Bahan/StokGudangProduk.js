@@ -141,7 +141,7 @@ const StokGudangProduk = () => {
   // Helper to get image URL
   const getImageUrl = (url) => {
     if (!url) return "https://via.placeholder.com/60?text=No+Img";
-    return url.startsWith('http') ? url : `http://localhost:8000/storage/${url}`;
+    return url.startsWith('http') ? url : `${process.env.REACT_APP_FILE_URL || ""}/storage/${url}`;
   };
 
   // Client-side search filtering (if needed on top of server data)

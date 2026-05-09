@@ -1044,7 +1044,7 @@ const HppProduk = () => {
                   {newProduk.gambar_produk && !(newProduk.gambar_produk instanceof File) && (
                     <div className="hpp-form-image-preview">
                       <p>Gambar Saat Ini</p>
-                      <img src={`${process.env.REACT_APP_API_URL}/storage/${newProduk.gambar_produk}`} alt="Gambar Produk" />
+                      <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${newProduk.gambar_produk}`} alt="Gambar Produk" />
                     </div>
                   )}
                 </div>
@@ -1377,7 +1377,7 @@ const HppProduk = () => {
                   {editProduk.gambar_produk && !(editProduk.gambar_produk instanceof File) && (
                     <div className="hpp-form-image-preview">
                       <p>Gambar Saat Ini</p>
-                      <img src={`${process.env.REACT_APP_API_URL}/storage/${editProduk.gambar_produk}`} alt="Gambar Produk" />
+                      <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${editProduk.gambar_produk}`} alt="Gambar Produk" />
                     </div>
                   )}
                 </div>

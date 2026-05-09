@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Penjahit.css";
+import API from "../../api";
 
 const Spk = () => {
   const [spk, setSpk] = useState([]);
@@ -20,15 +21,13 @@ const Spk = () => {
 
   useEffect(() => {
     // Fetch data SPK
-    fetch("http://localhost:8000/api/spkcmt")
-      .then((response) => response.json())
-      .then((data) => setSpk(data))
+    API.get("/spkcmt")
+      .then((response) => setSpk(response.data))
       .catch((error) => console.error("Error fetching SPK data:", error));
   
     // Fetch data Penjahit
-    fetch("http://localhost:8000/api/penjahit")
-      .then((response) => response.json())
-      .then((data) => setPenjahits(data))
+    API.get("/penjahit")
+      .then((response) => setPenjahits(response.data))
       .catch((error) => console.error("Error fetching penjahit data:", error));
   }, []);
   
@@ -47,23 +46,10 @@ const Spk = () => {
   
     console.log("Payload sebelum dikirim:", newSpk);
   
-    fetch("http://localhost:8000/api/spkcmt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newSpk),
-    })
+    API.post("/spkcmt", newSpk)
     .then((response) => {
-      if (!response.ok) {
-        return response.json().then((err) => {
-          console.error("Error response:", err);
-          alert(err.message || "Terjadi kesalahan saat menyimpan data.");
-          throw new Error("Error submitting data");
-        });
-      }
-      return response.json();
-    })
-    .then((data) => {
       // proses data berhasil
+      console.log("SPK saved:", response.data);
     })
     .catch((error) => {
       console.error("Terjadi kesalahan:", error);

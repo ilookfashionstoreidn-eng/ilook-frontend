@@ -26,7 +26,7 @@ const Kinerja = () => {
                   return;
               }
   
-              const response = await fetch("http://localhost:8000/api/kinerja-cmt",
+              const response = await fetch("/api/kinerja-cmt",
                 {
                   method: "GET",
                   headers: {
@@ -51,7 +51,7 @@ const Kinerja = () => {
   }, []);
   
     useEffect(() => {
-        fetch("http://localhost:8000/api/kinerja-cmt")
+        fetch("/api/kinerja-cmt")
           .then((response) => response.json())
           .then((data) => {
             console.log("Data fetched:", data); // Debugging

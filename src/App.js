@@ -93,6 +93,7 @@ import SPKSample from "./components/Sample/SPKSample";
 import SummarySPKSample from "./components/Sample/SummarySPKSample";
 import Blank from "./components/Blank/Blank";
 import Blank2 from "./components/Blank2/Blank2";
+import OrderMonitor from "./components/Order/OrderMonitor";
 
 const App = () => {
   return (
@@ -159,6 +160,7 @@ const App = () => {
           <Route path="logs" element={<Logs />} />
           <Route path="return" element={<ReturnPage />} />
           <Route path="return-logs" element={<ReturnLogs />} />
+          <Route path="order" element={<OrderMonitor />} />
           <Route path="bahan" element={<Bahan />} />
           <Route path="pembelianBahan" element={<PembelianBahan />} />
           <Route path="pabrik" element={<Pabrik />} />

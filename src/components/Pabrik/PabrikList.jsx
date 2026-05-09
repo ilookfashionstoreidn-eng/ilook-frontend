@@ -153,7 +153,7 @@ const PabrikList = () => {
   const getKtpUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
-    return `${process.env.REACT_APP_API_URL}/storage/${path}`;
+    return `${process.env.REACT_APP_FILE_URL || ""}/storage/${path}`;
   };
 
   return (

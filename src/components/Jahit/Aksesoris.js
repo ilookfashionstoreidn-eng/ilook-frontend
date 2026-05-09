@@ -300,7 +300,7 @@ const Aksesoris = () => {
                     <td>
                       {aksesoris.foto_aksesoris ? (
                         <img
-                          src={`${process.env.REACT_APP_API_URL}/storage/${aksesoris.foto_aksesoris}`}
+                          src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${aksesoris.foto_aksesoris}`}
                           alt={aksesoris.nama_aksesoris}
                           className="aksesoris-image"
                         />
@@ -410,7 +410,7 @@ const Aksesoris = () => {
                 {newAksesoris.foto_aksesoris && !(newAksesoris.foto_aksesoris instanceof File) && (
                   <div className="aksesoris-preview-image">
                     <p>Gambar Saat Ini:</p>
-                    <img src={`${process.env.REACT_APP_API_URL}/storage/${newAksesoris.foto_aksesoris}`} alt="Foto Aksesoris" />
+                    <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${newAksesoris.foto_aksesoris}`} alt="Foto Aksesoris" />
                   </div>
                 )}
               </div>
@@ -495,7 +495,7 @@ const Aksesoris = () => {
                 {editAksesoris.foto && !(editAksesoris.foto_aksesoris instanceof File) && (
                   <div className="aksesoris-preview-image">
                     <p>Gambar Saat Ini:</p>
-                    <img src={`${process.env.REACT_APP_API_URL}/storage/${editAksesoris.foto}`} alt="Foto Aksesoris" />
+                    <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${editAksesoris.foto}`} alt="Foto Aksesoris" />
                   </div>
                 )}
               </div>
