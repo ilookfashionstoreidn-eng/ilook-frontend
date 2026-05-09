@@ -21,6 +21,10 @@ const EMPTY_META = {
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
+const getPabrikName = (pabrik) => String(pabrik?.nama_pabrik || pabrik?.nama || "").trim();
+
+const getPabrikOptionValue = (pabrik) => `${pabrik?.id || ""}::${getPabrikName(pabrik)}`;
+
 const formatDateInput = (date) => {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -28,8 +32,9 @@ const formatDateInput = (date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const addDaysFromToday = (days) => {
-  const date = new Date();
+const addDaysFromDate = (dateValue, days) => {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (Number.isNaN(date.getTime())) return "";
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + Math.max(0, parseInt(days, 10) || 0));
   return formatDateInput(date);
@@ -155,7 +160,7 @@ const SpkBahan = () => {
     pabrik_nama: "",
     bahan_id: "",
     jenis_pembayaran: "Cash",
-    tanggal_pembayaran: "",
+    tanggal_pemesanan: "",
     tempo_hari: "",
     warna: [{ ...DEFAULT_WARNA_ROW }],
   });
@@ -315,6 +320,13 @@ const SpkBahan = () => {
     [groupOptions, newItem.group_bahan]
   );
 
+  const selectedPabrik = useMemo(
+    () => pabrikList.find((pabrik) => String(pabrik.id) === String(newItem.pabrik_id)) || null,
+    [newItem.pabrik_id, pabrikList]
+  );
+
+  const selectedPabrikLabel = selectedPabrik?.nama_pabrik || selectedPabrik?.nama || newItem.pabrik_nama || "";
+
   const filteredGroupOptions = useMemo(() => {
     const query = normalizeText(groupSearchTerm);
     if (!query) return groupOptions;
@@ -331,15 +343,71 @@ const SpkBahan = () => {
     });
   }, [groupOptions, groupSearchTerm]);
 
+  const pabrikOptionsForSelectedGroup = useMemo(() => {
+    if (!selectedGroup) return [];
+
+    const unique = new Map();
+    const addPabrik = (pabrik) => {
+      const nama = getPabrikName(pabrik);
+      if (!nama) return;
+      const key = pabrik?.id ? `id:${pabrik.id}` : `name:${normalizeText(nama)}`;
+      if (!unique.has(key)) {
+        unique.set(key, {
+          id: pabrik?.id || null,
+          nama_pabrik: nama,
+        });
+      }
+    };
+
+    if (Array.isArray(selectedGroup.pabrik)) {
+      selectedGroup.pabrik.forEach(addPabrik);
+    }
+
+    if (Array.isArray(selectedGroup.bahan)) {
+      selectedGroup.bahan.forEach((bahan) =>
+        addPabrik({
+          id: bahan.pabrik_id || null,
+          nama_pabrik: bahan.pabrik_bahan || "",
+        })
+      );
+    }
+
+    return Array.from(unique.values()).sort((a, b) => getPabrikName(a).localeCompare(getPabrikName(b)));
+  }, [selectedGroup]);
+
   const filteredBahanOptions = useMemo(() => {
-    if (!newItem.group_bahan) return [];
-    if (selectedGroup) return Array.isArray(selectedGroup.bahan) ? selectedGroup.bahan : [];
-    return bahanList.filter((bahan) => bahan.group_bahan === newItem.group_bahan);
-  }, [bahanList, newItem.group_bahan, selectedGroup]);
+    if (!newItem.group_bahan || !selectedPabrikLabel) return [];
+    const source = selectedGroup ? (Array.isArray(selectedGroup.bahan) ? selectedGroup.bahan : []) : bahanList.filter((bahan) => bahan.group_bahan === newItem.group_bahan);
+    const pabrikKey = normalizeText(selectedPabrikLabel);
+
+    return source.filter((bahan) => {
+      if (newItem.pabrik_id && bahan.pabrik_id) {
+        return String(bahan.pabrik_id) === String(newItem.pabrik_id);
+      }
+
+      return normalizeText(bahan.pabrik_bahan) === pabrikKey;
+    });
+  }, [bahanList, newItem.group_bahan, newItem.pabrik_id, selectedGroup, selectedPabrikLabel]);
+
+  const uniqueBahanOptions = useMemo(() => {
+    const unique = new Map();
+
+    filteredBahanOptions.forEach((bahan) => {
+      const bahanName = String(bahan.nama_bahan || bahan.nama || `Bahan #${bahan.id}`).trim();
+      const key = normalizeText(bahanName);
+      if (key && !unique.has(key)) {
+        unique.set(key, {
+          ...bahan,
+          nama_bahan: bahanName,
+        });
+      }
+    });
+
+    return Array.from(unique.values());
+  }, [filteredBahanOptions]);
 
   const availableWarnaOptions = useMemo(() => {
-    if (!newItem.group_bahan) return [];
-    if (selectedGroup) return Array.isArray(selectedGroup.warna) ? selectedGroup.warna : [];
+    if (!newItem.group_bahan || !selectedPabrikLabel) return [];
 
     return Array.from(
       new Set(
@@ -348,49 +416,10 @@ const SpkBahan = () => {
           .filter(Boolean)
       )
     ).sort((a, b) => a.localeCompare(b));
-  }, [filteredBahanOptions, newItem.group_bahan, selectedGroup]);
-
-  const selectedBahan = useMemo(
-    () => filteredBahanOptions.find((bahan) => String(bahan.id) === String(newItem.bahan_id)) || null,
-    [filteredBahanOptions, newItem.bahan_id]
-  );
-
-  const selectedPabrik = useMemo(
-    () => pabrikList.find((pabrik) => String(pabrik.id) === String(newItem.pabrik_id)) || null,
-    [newItem.pabrik_id, pabrikList]
-  );
-  const selectedPabrikLabel = selectedPabrik?.nama_pabrik || selectedPabrik?.nama || newItem.pabrik_nama || "";
+  }, [filteredBahanOptions, newItem.group_bahan, selectedPabrikLabel]);
 
   const isTempoPayment = normalizeText(newItem.jenis_pembayaran) === "tempo";
-  const tempoDueDate = isTempoPayment && newItem.tempo_hari ? addDaysFromToday(newItem.tempo_hari) : "";
-
-  const resolvePabrikSelection = useCallback(
-    (bahan, group) => {
-      if (bahan?.pabrik_id) {
-        const found = pabrikList.find((pabrik) => String(pabrik.id) === String(bahan.pabrik_id));
-        return {
-          id: String(bahan.pabrik_id),
-          nama: found?.nama_pabrik || found?.nama || bahan?.pabrik_bahan || "",
-        };
-      }
-
-      const pabrikName = normalizeText(bahan?.pabrik_bahan);
-      if (pabrikName) {
-        const match = pabrikList.find((pabrik) => normalizeText(pabrik.nama_pabrik || pabrik.nama) === pabrikName);
-        return {
-          id: match?.id ? String(match.id) : "",
-          nama: match?.nama_pabrik || match?.nama || bahan?.pabrik_bahan || "",
-        };
-      }
-
-      const firstGroupPabrik = Array.isArray(group?.pabrik) ? group.pabrik.find((pabrik) => pabrik?.id || pabrik?.nama_pabrik || pabrik?.nama) : null;
-      return {
-        id: firstGroupPabrik?.id ? String(firstGroupPabrik.id) : "",
-        nama: firstGroupPabrik?.nama_pabrik || firstGroupPabrik?.nama || "",
-      };
-    },
-    [pabrikList]
-  );
+  const tempoDueDate = isTempoPayment && newItem.tanggal_pemesanan && newItem.tempo_hari ? addDaysFromDate(newItem.tanggal_pemesanan, newItem.tempo_hari) : "";
 
   const resetForm = () => {
     setGroupSearchTerm("");
@@ -401,7 +430,7 @@ const SpkBahan = () => {
       pabrik_nama: "",
       bahan_id: "",
       jenis_pembayaran: "Cash",
-      tanggal_pembayaran: "",
+      tanggal_pemesanan: "",
       tempo_hari: "",
       warna: [{ ...DEFAULT_WARNA_ROW }],
     });
@@ -415,7 +444,6 @@ const SpkBahan = () => {
       setNewItem((prev) => ({
         ...prev,
         jenis_pembayaran: value,
-        tanggal_pembayaran: normalizeText(value) === "tempo" ? "" : prev.tanggal_pembayaran,
         tempo_hari: normalizeText(value) === "tempo" ? prev.tempo_hari : "",
       }));
       return;
@@ -436,16 +464,40 @@ const SpkBahan = () => {
   };
 
   const selectGroupOption = (group) => {
-    const firstBahan = Array.isArray(group?.bahan) ? group.bahan[0] : null;
-    const pabrikSelection = resolvePabrikSelection(firstBahan, group);
+    const pabrikOptions = [];
+    const seenPabrik = new Set();
+
+    if (Array.isArray(group?.pabrik)) {
+      group.pabrik.forEach((pabrik) => {
+        const nama = getPabrikName(pabrik);
+        const key = pabrik?.id ? `id:${pabrik.id}` : `name:${normalizeText(nama)}`;
+        if (nama && !seenPabrik.has(key)) {
+          seenPabrik.add(key);
+          pabrikOptions.push(pabrik);
+        }
+      });
+    }
+
+    if (Array.isArray(group?.bahan)) {
+      group.bahan.forEach((bahan) => {
+        const nama = String(bahan.pabrik_bahan || "").trim();
+        const key = bahan.pabrik_id ? `id:${bahan.pabrik_id}` : `name:${normalizeText(nama)}`;
+        if (nama && !seenPabrik.has(key)) {
+          seenPabrik.add(key);
+          pabrikOptions.push({ id: bahan.pabrik_id || null, nama_pabrik: nama });
+        }
+      });
+    }
+
+    const onlyPabrik = pabrikOptions.length === 1 ? pabrikOptions[0] : null;
 
     setGroupSearchTerm(group?.label || group?.group_bahan || "");
     setIsGroupDropdownOpen(false);
     setNewItem((prev) => ({
       ...prev,
       group_bahan: group?.group_bahan || "",
-      pabrik_id: pabrikSelection.id,
-      pabrik_nama: pabrikSelection.nama,
+      pabrik_id: onlyPabrik?.id ? String(onlyPabrik.id) : "",
+      pabrik_nama: onlyPabrik ? getPabrikName(onlyPabrik) : "",
       bahan_id: "",
       warna: [{ ...DEFAULT_WARNA_ROW }],
     }));
@@ -472,16 +524,25 @@ const SpkBahan = () => {
     }
   };
 
+  const handlePabrikChange = (e) => {
+    const selectedValue = e.target.value;
+    const selectedOption = pabrikOptionsForSelectedGroup.find((pabrik) => getPabrikOptionValue(pabrik) === selectedValue) || null;
+
+    setNewItem((prev) => ({
+      ...prev,
+      pabrik_id: selectedOption?.id ? String(selectedOption.id) : "",
+      pabrik_nama: selectedOption ? getPabrikName(selectedOption) : "",
+      bahan_id: "",
+      warna: [{ ...DEFAULT_WARNA_ROW }],
+    }));
+  };
+
   const handleBahanChange = (e) => {
     const bahanId = e.target.value;
-    const bahan = filteredBahanOptions.find((item) => String(item.id) === String(bahanId)) || null;
-    const pabrikSelection = resolvePabrikSelection(bahan, selectedGroup);
 
     setNewItem((prev) => ({
       ...prev,
       bahan_id: bahanId,
-      pabrik_id: pabrikSelection.id,
-      pabrik_nama: pabrikSelection.nama,
       warna: [{ ...DEFAULT_WARNA_ROW }],
     }));
   };
@@ -526,8 +587,8 @@ const SpkBahan = () => {
       return;
     }
 
-    if (!isTempoPayment && !newItem.tanggal_pembayaran) {
-      showToast("Tanggal pembayaran wajib diisi.", "warning");
+    if (!newItem.tanggal_pemesanan) {
+      showToast("Tanggal pemesanan wajib diisi.", "warning");
       return;
     }
 
@@ -555,7 +616,9 @@ const SpkBahan = () => {
         pabrik_nama: selectedPabrikLabel,
         bahan_id: parseInt(newItem.bahan_id, 10),
         jenis_pembayaran: newItem.jenis_pembayaran || "Cash",
-        tanggal_pembayaran: isTempoPayment ? tempoDueDate : newItem.tanggal_pembayaran,
+        tanggal_pemesanan: newItem.tanggal_pemesanan,
+        tanggal_jatuh_tempo: isTempoPayment ? tempoDueDate : undefined,
+        tanggal_pembayaran: isTempoPayment ? tempoDueDate : newItem.tanggal_pemesanan,
         tempo_hari: isTempoPayment ? parseInt(newItem.tempo_hari, 10) : undefined,
         warna: validWarna,
       };
@@ -750,7 +813,8 @@ const SpkBahan = () => {
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
                       <th className="spkb-col-bayar">Pembayaran</th>
-                      <th className="spkb-col-tanggal">Tgl Pembayaran</th>
+                      <th className="spkb-col-tanggal">Tgl Pemesanan</th>
+                      <th className="spkb-col-tanggal">Tgl Jatuh Tempo</th>
                       <th className="spkb-col-lama">Lama Pesan</th>
                       <th className="spkb-col-status">Status</th>
                     </tr>
@@ -796,7 +860,8 @@ const SpkBahan = () => {
                               <FaTag /> {row.jenis_pembayaran || "-"}
                             </span>
                           </td>
-                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_pembayaran)}</td>
+                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
+                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_jatuh_tempo)}</td>
                           <td className="spkb-col-lama">{formatLamaPemesanan(row.lama_pemesanan)}</td>
                           <td className="spkb-col-status">
                             <span className={`spkb-badge spkb-badge-${getStatusClass(row.status)}`}>
@@ -910,28 +975,42 @@ const SpkBahan = () => {
                 </div>
                 <div className="spkb-form-group">
                   <label>Pabrik *</label>
-                  <input type="text" value={selectedPabrikLabel || (newItem.group_bahan ? "Pabrik belum terhubung" : "Pilih grup dahulu")} disabled required />
-                  {selectedPabrikLabel && (
-                    <small>
-                      Otomatis dari master bahan{newItem.pabrik_id ? "" : " dan akan dibuat di master pabrik saat SPK disimpan"}.
-                    </small>
-                  )}
+                  <select
+                    name="pabrik_id"
+                    value={selectedPabrikLabel ? `${newItem.pabrik_id || ""}::${selectedPabrikLabel}` : ""}
+                    onChange={handlePabrikChange}
+                    disabled={!newItem.group_bahan || pabrikOptionsForSelectedGroup.length === 0}
+                    required
+                  >
+                    <option value="">
+                      {!newItem.group_bahan
+                        ? "Pilih grup dahulu"
+                        : pabrikOptionsForSelectedGroup.length === 0
+                          ? "Pabrik belum terhubung"
+                          : "Pilih Pabrik"}
+                    </option>
+                    {pabrikOptionsForSelectedGroup.map((pabrik) => (
+                      <option key={getPabrikOptionValue(pabrik)} value={getPabrikOptionValue(pabrik)}>
+                        {getPabrikName(pabrik)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div className="spkb-form-row">
                 <div className="spkb-form-group">
                   <label>Bahan *</label>
-                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleBahanChange} disabled={!newItem.group_bahan} required>
-                    <option value="">{newItem.group_bahan ? "Pilih Bahan" : "Pilih grup dahulu"}</option>
-                    {filteredBahanOptions.map((b) => (
+                  <select name="bahan_id" value={newItem.bahan_id} onChange={handleBahanChange} disabled={!newItem.group_bahan || !selectedPabrikLabel} required>
+                    <option value="">
+                      {!newItem.group_bahan ? "Pilih grup dahulu" : !selectedPabrikLabel ? "Pilih pabrik dahulu" : "Pilih Bahan"}
+                    </option>
+                    {uniqueBahanOptions.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.nama_bahan || b.nama || `Bahan #${b.id}`}
-                        {b.warna_bahan ? ` - ${b.warna_bahan}` : ""}
                       </option>
                     ))}
                   </select>
-                  {selectedBahan?.warna_bahan && <small>Bahan terpilih memiliki warna master: {selectedBahan.warna_bahan}</small>}
                 </div>
                 <div className="spkb-form-group">
                   <label>Jenis Pembayaran *</label>
@@ -945,16 +1024,20 @@ const SpkBahan = () => {
                 </div>
               </div>
 
-              <div className="spkb-form-row spkb-form-row-single">
+              <div className="spkb-form-row">
                 <div className="spkb-form-group">
-                  <label>{isTempoPayment ? "Tempo Pembayaran (hari) *" : "Tanggal Pembayaran *"}</label>
+                  <label>Tanggal Pemesanan *</label>
+                  <input type="date" name="tanggal_pemesanan" value={newItem.tanggal_pemesanan} onChange={handleInputChange} required />
+                </div>
+                <div className="spkb-form-group">
+                  <label>{isTempoPayment ? "Tempo Pembayaran (hari) *" : "Tanggal Jatuh Tempo"}</label>
                   {isTempoPayment ? (
                     <>
                       <input type="number" min={1} name="tempo_hari" value={newItem.tempo_hari} onChange={handleInputChange} placeholder="Contoh: 30" required />
                       {tempoDueDate && <small>Jatuh tempo otomatis: {formatDate(tempoDueDate)}</small>}
                     </>
                   ) : (
-                    <input type="date" name="tanggal_pembayaran" value={newItem.tanggal_pembayaran} onChange={handleInputChange} required />
+                    <input type="text" value="-" disabled />
                   )}
                 </div>
               </div>
@@ -979,7 +1062,7 @@ const SpkBahan = () => {
                         onChange={(e) => handleWarnaChange(wi, "warna", e.target.value)}
                         disabled={availableWarnaOptions.length === 0}
                       >
-                        <option value="">{newItem.group_bahan ? "Pilih Warna" : "Pilih grup dahulu"}</option>
+                        <option value="">{newItem.group_bahan && selectedPabrikLabel ? "Pilih Warna" : "Pilih grup dan pabrik dahulu"}</option>
                         {availableWarnaOptions.map((o) => (
                           <option key={o} value={o}>
                             {o}

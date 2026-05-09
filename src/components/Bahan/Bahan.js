@@ -23,7 +23,8 @@ const SATUAN_OPTIONS = [
 ];
 
 const DEFAULT_PER_PAGE = 25;
-const TEMPLATE_HEADERS = ["nama_bahan", "group_bahan", "pabrik_bahan", "warna_bahan", "stok_bahan"];
+const TEMPLATE_HEADERS = ["nama_bahan", "deskripsi", "group_bahan", "pabrik_bahan", "warna_bahan", "stok_bahan"];
+const REQUIRED_TEMPLATE_HEADERS = ["nama_bahan", "group_bahan", "pabrik_bahan", "warna_bahan", "stok_bahan"];
 const swalButtonColors = {
   confirmButtonColor: "#2458ce",
   cancelButtonColor: "#64748b",
@@ -445,7 +446,7 @@ const Bahan = () => {
     }
 
     const headers = rows[0].map(normalizeExcelHeader);
-    const missingHeaders = TEMPLATE_HEADERS.filter((header) => !headers.includes(header));
+    const missingHeaders = REQUIRED_TEMPLATE_HEADERS.filter((header) => !headers.includes(header));
 
     if (missingHeaders.length > 0) {
       throw new Error(`Template tidak sesuai. Kolom wajib belum ada: ${missingHeaders.join(", ")}.`);
@@ -462,16 +463,16 @@ const Bahan = () => {
         return {
           row_number: index + 2,
           nama_bahan: String(getCell("nama_bahan") || "").trim(),
+          deskripsi: String(getCell("deskripsi") || "").trim(),
           group_bahan: String(getCell("group_bahan") || "").trim(),
           pabrik_bahan: String(getCell("pabrik_bahan") || "").trim(),
           warna_bahan: String(getCell("warna_bahan") || "").trim(),
           stok_bahan: parseNumberInput(getCell("stok_bahan")),
           harga: 0,
           satuan: "kg",
-          deskripsi: "",
         };
       })
-      .filter((row) => row.nama_bahan || row.group_bahan || row.pabrik_bahan || row.warna_bahan || row.stok_bahan);
+      .filter((row) => row.nama_bahan || row.deskripsi || row.group_bahan || row.pabrik_bahan || row.warna_bahan || row.stok_bahan);
   };
 
   const handleImportFileChange = async (event) => {
@@ -544,7 +545,7 @@ const Bahan = () => {
   const handleDownloadTemplate = async () => {
     const worksheet = XLSX.utils.aoa_to_sheet([
       TEMPLATE_HEADERS,
-      ["CONTOH KAIN COTTON LEBAR 210", "COTTON", "PABRIK A", "NAVY", 10],
+      ["CONTOH KAIN COTTON LEBAR 210", "GRAMASI 170-180 LEBAR 210", "COTTON", "PABRIK A", "NAVY", 10],
     ]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "bahan");
@@ -786,14 +787,14 @@ const Bahan = () => {
                         <td>
                           <strong>{indexOfFirstItem + index + 1}</strong>
                         </td>
-                        <td className="bahan-plain-cell">
+                        <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
                           {item.group_bahan || "-"}
                         </td>
-                        <td>{item.pabrik_bahan || "-"}</td>
-                        <td className="bahan-name-cell">
+                        <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
+                        <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
                           <strong>{item.nama_bahan}</strong>
                         </td>
-                        <td>{item.deskripsi || "-"}</td>
+                        <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
                         <td>
                           <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
                         </td>
@@ -805,7 +806,7 @@ const Bahan = () => {
                         <td>
                           <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
                         </td>
-                        <td className="bahan-plain-cell bahan-color-cell">
+                        <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
                           {item.warna_bahan || "-"}
                         </td>
                         <td>
