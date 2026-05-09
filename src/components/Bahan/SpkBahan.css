@@ -225,7 +225,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1440px;
+  min-width: 1540px;
 }
 
 .spkb-table th {
@@ -871,7 +871,7 @@
   }
 
   .spkb-table {
-    min-width: 1360px;
+    min-width: 1460px;
   }
 }
 

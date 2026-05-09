@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import "./PembelianBahan.css";
 import API from "../../api";
 import { FaPlus, FaEdit, FaEye, FaDownload, FaShoppingCart, FaBarcode, FaTimes, FaUndo, FaSearch } from "react-icons/fa";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const normalizeApiList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -9,6 +11,31 @@ const normalizeApiList = (payload) => {
   if (Array.isArray(payload?.data?.data)) return payload.data.data;
   return [];
 };
+
+const swalButtonColors = {
+  confirmButtonColor: "#2458ce",
+  cancelButtonColor: "#64748b",
+};
+
+const showAlert = (icon, title, text) =>
+  Swal.fire({
+    icon,
+    title,
+    text,
+    ...swalButtonColors,
+  });
+
+const showConfirm = (title, text, confirmButtonText = "Ya, lanjutkan") =>
+  Swal.fire({
+    icon: "question",
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText: "Batal",
+    reverseButtons: true,
+    ...swalButtonColors,
+  });
 
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
@@ -441,7 +468,7 @@ const PembelianBahan = () => {
       }
     } catch (error) {
       console.error("Error loading SPK Bahan:", error);
-      alert("Gagal memuat data SPK Bahan");
+      showAlert("error", "Gagal Memuat SPK", "Gagal memuat data SPK Bahan.");
     }
   };
 
@@ -452,7 +479,7 @@ const PembelianBahan = () => {
       if (!beratRol[spkBahanWarnaId]) {
         beratRol[spkBahanWarnaId] = [];
       }
-      beratRol[spkBahanWarnaId] = [...beratRol[spkBahanWarnaId], 0];
+      beratRol[spkBahanWarnaId] = [...beratRol[spkBahanWarnaId], ""];
       return { ...prev, berat_rol: beratRol };
     });
   };
@@ -539,14 +566,14 @@ const PembelianBahan = () => {
 
     // Validasi SPK Bahan
     if (!newItem.spk_bahan_id) {
-      alert("Silakan pilih SPK Bahan terlebih dahulu.");
+      showAlert("warning", "SPK Belum Dipilih", "Silakan pilih SPK Bahan terlebih dahulu.");
       return;
     }
 
     // Validasi minimal ada 1 rol yang diisi
     const totalRol = Object.values(newItem.berat_rol || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0);
     if (totalRol === 0) {
-      alert("Minimal harus ada 1 rol yang diisi.");
+      showAlert("warning", "Rol Belum Diisi", "Minimal harus ada 1 rol yang diisi.");
       return;
     }
 
@@ -554,7 +581,7 @@ const PembelianBahan = () => {
     if (newItem.no_surat_jalan && newItem.no_surat_jalan.trim() !== "") {
       const isValid = await checkNoSuratJalan(newItem.no_surat_jalan);
       if (!isValid) {
-        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        showAlert("warning", "Nomor Surat Jalan Duplikat", "Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
         return;
       }
     }
@@ -599,14 +626,14 @@ const PembelianBahan = () => {
       
       resetForm();
       setNoSuratJalanError("");
-      alert("Pembelian bahan berhasil ditambahkan!");
+      showAlert("success", "Berhasil", "Pembelian bahan berhasil ditambahkan.");
     } catch (error) {
       if (error.response?.data?.errors?.no_surat_jalan) {
         setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
-        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        showAlert("warning", "Nomor Surat Jalan Duplikat", "Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
       } else {
         const errorMsg = error.response?.data?.message || error.response?.data?.error || "Gagal menambah pembelian bahan.";
-        alert(errorMsg);
+        showAlert("error", "Gagal Menambah", errorMsg);
       }
     }
   };
@@ -618,7 +645,7 @@ const PembelianBahan = () => {
     if (editItem.no_surat_jalan && editItem.no_surat_jalan.trim() !== "") {
       const isValid = await checkNoSuratJalan(editItem.no_surat_jalan, editItem.id);
       if (!isValid) {
-        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        showAlert("warning", "Nomor Surat Jalan Duplikat", "Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
         return;
       }
     }
@@ -648,18 +675,18 @@ const PembelianBahan = () => {
         const w = editItem.warna[i];
         const namaWarna = w.isCustom ? (w.customNama || "").trim() : (w.nama || "").trim();
         if (!namaWarna) {
-          alert(`Warna ${i + 1} harus diisi!`);
+          showAlert("warning", "Warna Belum Diisi", `Warna ${i + 1} harus diisi.`);
           return;
         }
         if (!w.rol || w.rol.length === 0) {
-          alert(`Warna ${i + 1} harus memiliki minimal 1 rol!`);
+          showAlert("warning", "Rol Belum Diisi", `Warna ${i + 1} harus memiliki minimal 1 rol.`);
           return;
         }
         // Validasi bahwa semua rol memiliki nilai yang valid
         for (let j = 0; j < w.rol.length; j++) {
           const berat = parseFloat(w.rol[j]);
           if (isNaN(berat) || berat < 0) {
-            alert(`Warna ${i + 1}, Rol ${j + 1} harus memiliki berat yang valid!`);
+            showAlert("warning", "Berat Tidak Valid", `Warna ${i + 1}, Rol ${j + 1} harus memiliki berat yang valid.`);
             return;
           }
         }
@@ -694,20 +721,20 @@ const PembelianBahan = () => {
       setItems((prev) => prev.map((b) => (b.id === editItem.id ? updatedData : b)));
       resetForm();
       setNoSuratJalanError("");
-      alert("Pembelian bahan berhasil diperbarui!");
+      showAlert("success", "Berhasil", "Pembelian bahan berhasil diperbarui.");
     } catch (error) {
       console.error("Update error:", error);
       console.error("Error response:", error.response?.data);
       if (error.response?.data?.errors?.no_surat_jalan) {
         setNoSuratJalanError(error.response.data.errors.no_surat_jalan[0] || "Nomor surat jalan sudah digunakan.");
-        alert("Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
+        showAlert("warning", "Nomor Surat Jalan Duplikat", "Nomor surat jalan sudah digunakan. Silakan gunakan nomor lain.");
       } else {
         const errorMessages = error.response?.data?.errors 
           ? Object.entries(error.response.data.errors)
               .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
               .join("\n")
           : error.response?.data?.message || "Gagal memperbarui pembelian bahan.";
-        alert(errorMessages);
+        showAlert("error", "Gagal Memperbarui", errorMessages);
       }
     }
   };
@@ -755,7 +782,7 @@ const PembelianBahan = () => {
       });
       setShowEditForm(true);
     } catch (err) {
-      alert("Gagal memuat data untuk edit.");
+      showAlert("error", "Gagal Memuat Data", "Gagal memuat data untuk edit.");
     }
   };
 
@@ -804,7 +831,8 @@ const PembelianBahan = () => {
   };
 
   const handleUpdateReturnStatus = async (returnId, newStatus) => {
-    if (!window.confirm(`Yakin ingin mengubah status menjadi "${newStatus.toUpperCase()}"?`)) {
+    const confirmResult = await showConfirm("Update Status Return", `Yakin ingin mengubah status menjadi "${newStatus.toUpperCase()}"?`, "Ya, update");
+    if (!confirmResult.isConfirmed) {
       return;
     }
 
@@ -814,7 +842,7 @@ const PembelianBahan = () => {
       });
 
       if (res.data?.success) {
-        alert(res.data?.message || "Status berhasil diupdate");
+        showAlert("success", "Status Berhasil Diupdate", res.data?.message || "Status berhasil diupdate.");
         
         // Refresh return history
         if (detailItem) {
@@ -824,7 +852,7 @@ const PembelianBahan = () => {
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || "Gagal mengupdate status";
-      alert(msg);
+      showAlert("error", "Gagal Update Status", msg);
     }
   };
 
@@ -832,12 +860,12 @@ const PembelianBahan = () => {
     e.preventDefault();
     
     if (!returnForm.pembelian_bahan_id) {
-      alert("Pembelian Bahan ID tidak valid");
+      showAlert("warning", "Data Tidak Valid", "Pembelian Bahan ID tidak valid.");
       return;
     }
 
     if (returnForm.tipe_return === "refund" && !returnForm.total_refund) {
-      alert("Total refund wajib diisi untuk tipe refund");
+      showAlert("warning", "Refund Belum Diisi", "Total refund wajib diisi untuk tipe refund.");
       return;
     }
 
@@ -866,7 +894,7 @@ const PembelianBahan = () => {
       });
 
       if (res.data?.success) {
-        alert(res.data?.message || "Return/Refund berhasil dicatat");
+        showAlert("success", "Berhasil", res.data?.message || "Return/Refund berhasil dicatat.");
         setShowReturnForm(false);
         
         // Refresh return history
@@ -883,7 +911,7 @@ const PembelianBahan = () => {
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || "Gagal mencatat return/refund";
-      alert(msg);
+      showAlert("error", "Gagal Menyimpan Return", msg);
     } finally {
       setLoadingReturn(false);
     }
@@ -918,7 +946,7 @@ const PembelianBahan = () => {
         tried.push(`${API.defaults?.baseURL || ""}${ep} [${status}]`);
       }
     }
-    alert(`Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
+    showAlert("error", "Download Barcode Gagal", `Gagal mendownload barcode PDF. URL dicoba: ${tried.join(" | ")}`);
   };
 
   // Handler untuk scan barcode
@@ -977,7 +1005,7 @@ const PembelianBahan = () => {
         berat: parseFloat(beratInput),
       });
 
-      alert("Berat roll berhasil diperbarui!");
+      showAlert("success", "Berhasil", "Berat roll berhasil diperbarui.");
 
       // Reset form
       setScannedBarcode("");
@@ -1006,26 +1034,63 @@ const PembelianBahan = () => {
     setScanError("");
   };
 
+  const totalNilaiPembelian = filtered.reduce((sum, item) => sum + (parseFloat(item.harga) || 0), 0);
+  const totalRollPembelian = filtered.reduce((sum, item) => sum + calculateTotalRoll(item.warna), 0);
+  const isFiltering = Boolean(searchTerm);
+  const visibleRows = currentItems.length;
+
   return (
     <div className="pembelian-bahan-page">
-      <section className="pembelian-bahan-shell">
-        <div className="pembelian-bahan-header">
-          <div className="pembelian-bahan-header-main">
-            <div className="pembelian-bahan-header-icon">
+      <header className="pembelian-bahan-header">
+        <div className="pembelian-bahan-header-top">
+          <div className="pembelian-bahan-title-group">
+            <div className="pembelian-bahan-brand-icon">
               <FaShoppingCart />
             </div>
-            <div className="pembelian-bahan-header-text">
+            <div className="pembelian-bahan-title-wrap">
+              <div className="pembelian-bahan-module-pill">Material Module</div>
               <h1>Pembelian Bahan</h1>
-              <p>Kelola transaksi pembelian, roll bahan, dan dokumen penerimaan dalam satu layar.</p>
+              <p className="pembelian-bahan-header-subtitle">Kelola pembelian, roll bahan, dan dokumen penerimaan</p>
             </div>
           </div>
-          <div className="pembelian-bahan-header-meta">
-            <span>{filtered.length} transaksi</span>
+          <div className="pembelian-bahan-search-bar pembelian-bahan-search-header">
+            <FaSearch className="pembelian-bahan-search-icon" />
+            <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            {searchTerm && (
+              <button className="pembelian-bahan-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian" type="button">
+                <FaTimes />
+              </button>
+            )}
           </div>
         </div>
+      </header>
+
+      <main className="pembelian-bahan-main">
+        <section className="pembelian-bahan-stats">
+          <article className="pembelian-bahan-stat-item">
+            <div className="pembelian-bahan-stat-label">Total Transaksi</div>
+            <div className="pembelian-bahan-stat-value">{filtered.length}</div>
+          </article>
+          <article className="pembelian-bahan-stat-item">
+            <div className="pembelian-bahan-stat-label">Ditampilkan</div>
+            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-info">{visibleRows}</div>
+          </article>
+          <article className="pembelian-bahan-stat-item">
+            <div className="pembelian-bahan-stat-label">Total Roll</div>
+            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-success">{totalRollPembelian}</div>
+          </article>
+          <article className="pembelian-bahan-stat-item">
+            <div className="pembelian-bahan-stat-label">Nilai Pembelian</div>
+            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-info">{formatRupiah(totalNilaiPembelian)}</div>
+          </article>
+        </section>
 
         <div className="pembelian-bahan-table-container">
-          <div className="pembelian-bahan-filter-header">
+          <div className="pembelian-bahan-table-heading">
+            <div>
+              <h3>Semua Data Pembelian Bahan</h3>
+              <p>{isFiltering ? `Menampilkan ${visibleRows} data sesuai pencarian` : `Menampilkan ${visibleRows} data pada halaman ini`}</p>
+            </div>
             <div className="pembelian-bahan-toolbar-actions">
               <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
                 <FaPlus /> Tambah Pembelian
@@ -1034,74 +1099,92 @@ const PembelianBahan = () => {
                 <FaBarcode /> Update Berat Roll
               </button>
             </div>
-            <div className="pembelian-bahan-search-bar">
-              <FaSearch className="pembelian-bahan-search-icon" />
-              <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
+          </div>
+
+          <div className="pembelian-bahan-filter-header">
+            <span className="pembelian-bahan-filter-summary">{isFiltering ? `Filter aktif: ${searchTerm}` : "Semua transaksi pembelian"}</span>
           </div>
 
           {loading ? (
-            <p className="pembelian-bahan-loading">Memuat data...</p>
+            <div className="pembelian-bahan-loading">
+              <div className="pembelian-bahan-spinner"></div>
+              <div className="pembelian-bahan-loading-title">Memuat data pembelian...</div>
+              <div className="pembelian-bahan-loading-subtitle">Mohon tunggu sebentar</div>
+            </div>
           ) : error ? (
-            <p className="pembelian-bahan-error">{error}</p>
+            <div className="pembelian-bahan-empty-state">
+              <div className="pembelian-bahan-empty-icon">!</div>
+              <h3 className="pembelian-bahan-empty-title error">Terjadi Kesalahan</h3>
+              <p className="pembelian-bahan-empty-text">{error}</p>
+            </div>
           ) : !isReady ? (
-            <p className="pembelian-bahan-loading">Menyiapkan data master...</p>
+            <div className="pembelian-bahan-loading">
+              <div className="pembelian-bahan-spinner"></div>
+              <div className="pembelian-bahan-loading-title">Menyiapkan data master...</div>
+              <div className="pembelian-bahan-loading-subtitle">Data bahan, pabrik, dan gudang sedang diproses</div>
+            </div>
+          ) : currentItems.length === 0 ? (
+            <div className="pembelian-bahan-empty-state">
+              <div className="pembelian-bahan-empty-icon">-</div>
+              <h3 className="pembelian-bahan-empty-title">Belum Ada Data Pembelian</h3>
+              <p className="pembelian-bahan-empty-text">{searchTerm ? "Tidak ada transaksi yang sesuai dengan pencarian Anda" : "Mulai dengan menambahkan pembelian bahan pertama"}</p>
+              {searchTerm ? (
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary pembelian-bahan-empty-cta" onClick={() => setSearchTerm("")}>
+                  Hapus Pencarian
+                </button>
+              ) : (
+                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary pembelian-bahan-empty-cta" onClick={() => setShowForm(true)}>
+                  <FaPlus /> Tambah Pembelian
+                </button>
+              )}
+            </div>
           ) : (
             <>
-              <table className="pembelian-bahan-table">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                   
-                    <th>SPK Bahan</th>
-                    <th>Nama Bahan</th>
-                    <th>Harga</th>
-                    <th>Gudang</th>
-                    <th>Pabrik</th>
-                    <th>Tgl Diterima</th>
-                    <th>Barcode</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.map((b, index) => (
-                    <tr key={b.id}>
-                      <td>{indexOfFirstItem + index + 1}</td>
-                     
-                      <td>
-                        {b.spk ? (
-                          <div>
-                            <div>{b.spk.id}</div>
-                         
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
-                     
-                      <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
-                      <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
-                      <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
-                      <td>{b.tanggal_kirim}</td>
-                     
-                      <td>
-                        <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
-                          <FaDownload />
-                        </button>
-                      </td>
-                      <td>
-                        <button className="pembelian-bahan-btn-icon view pembelian-bahan-btn-icon-spaced" title="Lihat Detail" onClick={() => handleDetailClick(b)}>
-                          <FaEye />
-                        </button>
-                        <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
-                          <FaEdit />
-                        </button>
-                      </td>
+              <div className="pembelian-bahan-table-scroll">
+                <table className="pembelian-bahan-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>SPK Bahan</th>
+                      <th>Nama Bahan</th>
+                      <th>Harga</th>
+                      <th>Gudang</th>
+                      <th>Pabrik</th>
+                      <th>Tgl Diterima</th>
+                      <th>Barcode</th>
+                      <th>Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentItems.map((b, index) => (
+                      <tr key={b.id}>
+                        <td><strong>{indexOfFirstItem + index + 1}</strong></td>
+                        <td>{b.spk ? <span className="pembelian-bahan-badge">SPK #{b.spk.id}</span> : "-"}</td>
+                        <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
+                        <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
+                        <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
+                        <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
+                        <td>{b.tanggal_kirim}</td>
+                        <td>
+                          <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
+                            <FaDownload />
+                          </button>
+                        </td>
+                        <td>
+                          <div className="pembelian-bahan-action-buttons">
+                            <button className="pembelian-bahan-btn-icon view" title="Lihat Detail" onClick={() => handleDetailClick(b)}>
+                              <FaEye />
+                            </button>
+                            <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
+                              <FaEdit />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -1127,7 +1210,7 @@ const PembelianBahan = () => {
             </>
           )}
         </div>
-      </section>
+      </main>
 
       {/* Modal Tambah */}
       {showForm && (
@@ -1174,7 +1257,7 @@ const PembelianBahan = () => {
 
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
-                  <label>Harga (Rp)</label>
+                  <label>Invoice (Rp)</label>
                   <input type="text" name="harga" value={newItem.harga} onChange={handleInputChange} required placeholder="Contoh: 50000" />
                   <div className="pembelian-bahan-ppn-row">
                     <input type="checkbox" id="ppn-checkbox" checked={usePPN} onChange={(e) => setUsePPN(e.target.checked)} className="pembelian-bahan-ppn-checkbox" />
@@ -1235,7 +1318,7 @@ const PembelianBahan = () => {
               <div className="pembelian-bahan-form-row">  
                 <div className="pembelian-bahan-form-group">
                   <label>Gramasi</label>
-                  <input type="number" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required />
+                  <input type="text" name="gramasi" value={newItem.gramasi} onChange={handleInputChange} required placeholder="Contoh: 100 - 200" />
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>Lebar Kain</label>
@@ -1251,18 +1334,18 @@ const PembelianBahan = () => {
                   const totalBerat = beratRolArray.reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0);
 
                   return (
-                    <div key={warna.id} className="pembelian-bahan-warna-section" style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ddd", borderRadius: "8px" }}>
+                    <div key={warna.id} className="pembelian-bahan-warna-section">
                       <div className="pembelian-bahan-warna-header">
                         <h4>Warna: {warna.warna}</h4>
-                        <div style={{ fontSize: "13px", color: "#666" }}>
+                        <div className="pembelian-bahan-roll-meta">
                           Jumlah Rol SPK: <strong>{warna.jumlah_rol || 0}</strong> | 
-                          Sisa Rol: <strong style={{ color: sisaRol > 0 ? "#059669" : "#dc2626" }}>{sisaRol}</strong>
+                          Sisa Rol: <strong className={sisaRol > 0 ? "success" : "danger"}>{sisaRol}</strong>
                         </div>
                       </div>
-                      <div style={{ marginTop: "12px" }}>
+                      <div className="pembelian-bahan-roll-list">
                         {beratRolArray.map((berat, ri) => (
-                          <div key={ri} className="pembelian-bahan-rol-item" style={{ marginBottom: "8px", display: "flex", gap: "8px", alignItems: "center" }}>
-                            <label style={{ minWidth: "150px" }}>Berat Rol {ri + 1} (kg):</label>
+                          <div key={ri} className="pembelian-bahan-rol-item">
+                            <label>Berat Rol {ri + 1} (kg)</label>
                             <input
                               type="number"
                               placeholder="Masukkan berat"
@@ -1270,7 +1353,6 @@ const PembelianBahan = () => {
                               onChange={(e) => handleBeratRolChange(warna.id, ri, e.target.value)}
                               step="0.01"
                               min="0"
-                              style={{ flex: 1 }}
                             />
                             <button
                               type="button"
@@ -1286,17 +1368,16 @@ const PembelianBahan = () => {
                           className="pembelian-bahan-btn pembelian-bahan-btn-primary"
                           onClick={() => addRolToWarna(warna.id)}
                           disabled={beratRolArray.length >= sisaRol}
-                          style={{ marginTop: "8px" }}
                         >
                           <FaPlus /> Tambah Rol
                         </button>
                         {beratRolArray.length >= sisaRol && sisaRol > 0 && (
-                          <div style={{ marginTop: "8px", fontSize: "12px", color: "#dc2626" }}>
+                          <div className="pembelian-bahan-roll-limit">
                             Maksimal {sisaRol} rol untuk warna ini
                           </div>
                         )}
                         {totalBerat > 0 && (
-                          <div style={{ marginTop: "8px", fontSize: "13px", color: "#059669" }}>
+                          <div className="pembelian-bahan-roll-total">
                             Total Berat: <strong>{totalBerat.toFixed(2)} kg</strong>
                           </div>
                         )}
@@ -1718,7 +1799,7 @@ const PembelianBahan = () => {
               <div className="pembelian-bahan-form-row">
                 <div className="pembelian-bahan-form-group">
                   <label>Gramasi</label>
-                  <input type="number" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} required />
+                  <input type="text" name="gramasi" value={editItem.gramasi} onChange={handleInputChange} required placeholder="Contoh: 100 - 200" />
                 </div>
                 <div className="pembelian-bahan-form-group">
                   <label>Lebar Kain</label>
