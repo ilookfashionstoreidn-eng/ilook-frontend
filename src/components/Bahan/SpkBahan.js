@@ -40,6 +40,18 @@ const addDaysFromDate = (dateValue, days) => {
   return formatDateInput(date);
 };
 
+const diffDaysFromDateToToday = (dateValue) => {
+  if (!dateValue) return null;
+  const startDate = new Date(dateValue);
+  if (Number.isNaN(startDate.getTime())) return null;
+
+  startDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / 86400000));
+};
+
 const buildGroupOptionsFromBahan = (bahanRows = [], pabrikRows = []) => {
   const pabrikByName = new Map(
     pabrikRows
@@ -652,6 +664,14 @@ const SpkBahan = () => {
     }
   };
 
+  const getLamaPemesanan = (row) => {
+    if (row?.lama_pemesanan !== null && row?.lama_pemesanan !== undefined) {
+      return row.lama_pemesanan;
+    }
+
+    return diffDaysFromDateToToday(row?.tanggal_pemesanan || row?.created_at);
+  };
+
   const formatLamaPemesanan = (hari) => {
     if (hari === null || hari === undefined) return "-";
     return `${hari} hari`;
@@ -862,7 +882,7 @@ const SpkBahan = () => {
                           </td>
                           <td className="spkb-col-tanggal">{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
                           <td className="spkb-col-tanggal">{formatDate(row.tanggal_jatuh_tempo)}</td>
-                          <td className="spkb-col-lama">{formatLamaPemesanan(row.lama_pemesanan)}</td>
+                          <td className="spkb-col-lama">{formatLamaPemesanan(getLamaPemesanan(row))}</td>
                           <td className="spkb-col-status">
                             <span className={`spkb-badge spkb-badge-${getStatusClass(row.status)}`}>
                               <span className="spkb-badge-dot" />
