@@ -1,9 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./SpkBahan.css";
 import API from "../../api";
-import { FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaSearch, FaTag, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 
 const JENIS_PEMBAYARAN_OPTIONS = ["Cash", "Tempo"];
+const STATUS_FILTER_OPTIONS = [
+  { value: "", label: "Semua status" },
+  { value: "proses", label: "Proses" },
+  { value: "selesai", label: "Selesai" },
+];
 const TOAST_DURATION = 3200;
 const SEARCH_DEBOUNCE_MS = 350;
 const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
@@ -32,6 +37,12 @@ const formatDateInput = (date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const toDateInputValue = (dateValue) => {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  return Number.isNaN(date.getTime()) ? "" : formatDateInput(date);
+};
+
 const addDaysFromDate = (dateValue, days) => {
   const date = dateValue ? new Date(dateValue) : new Date();
   if (Number.isNaN(date.getTime())) return "";
@@ -50,6 +61,30 @@ const diffDaysFromDateToToday = (dateValue) => {
   today.setHours(0, 0, 0, 0);
 
   return Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / 86400000));
+};
+
+const diffDaysBetweenDates = (startValue, endValue) => {
+  if (!startValue || !endValue) return null;
+  const startDate = new Date(startValue);
+  const endDate = new Date(endValue);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return null;
+
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+
+  return Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 86400000));
+};
+
+const isDateBeforeDay = (dateValue, compareValue) => {
+  if (!dateValue || !compareValue) return false;
+  const date = new Date(dateValue);
+  const compareDate = new Date(compareValue);
+  if (Number.isNaN(date.getTime()) || Number.isNaN(compareDate.getTime())) return false;
+
+  date.setHours(0, 0, 0, 0);
+  compareDate.setHours(0, 0, 0, 0);
+
+  return date.getTime() < compareDate.getTime();
 };
 
 const buildGroupOptionsFromBahan = (bahanRows = [], pabrikRows = []) => {
@@ -148,8 +183,15 @@ const SpkBahan = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [showForm, setShowForm] = useState(false);
+  const [estimateModal, setEstimateModal] = useState({
+    open: false,
+    row: null,
+    date: "",
+    submitting: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -291,6 +333,7 @@ const SpkBahan = () => {
             page: targetPage,
             per_page: perPage,
             search: searchTerm || undefined,
+            status: statusFilter || undefined,
             sort_by: "id",
             sort_dir: "desc",
           },
@@ -316,7 +359,7 @@ const SpkBahan = () => {
         setLoading(false);
       }
     },
-    [currentPage, perPage, searchTerm]
+    [currentPage, perPage, searchTerm, statusFilter]
   );
 
   useEffect(() => {
@@ -649,6 +692,87 @@ const SpkBahan = () => {
     }
   };
 
+  const openEstimateModal = (row) => {
+    setEstimateModal({
+      open: true,
+      row,
+      date: row?.estimasi_pengiriman || "",
+      submitting: false,
+    });
+  };
+
+  const closeEstimateModal = () => {
+    setEstimateModal({
+      open: false,
+      row: null,
+      date: "",
+      submitting: false,
+    });
+  };
+
+  const saveEstimatePengiriman = async (e) => {
+    e.preventDefault();
+
+    if (!estimateModal.row?.id) return;
+
+    const tanggalPemesanan = estimateModal.row.tanggal_pemesanan || estimateModal.row.created_at;
+    if (estimateModal.date && tanggalPemesanan && diffDaysBetweenDates(tanggalPemesanan, estimateModal.date) === null) {
+      showToast("Tanggal estimasi pengiriman tidak valid.", "warning");
+      return;
+    }
+
+    if (estimateModal.date && tanggalPemesanan && isDateBeforeDay(estimateModal.date, tanggalPemesanan)) {
+      showToast("Estimasi pengiriman tidak boleh lebih awal dari tanggal pemesanan.", "warning");
+      return;
+    }
+
+    try {
+      setEstimateModal((prev) => ({ ...prev, submitting: true }));
+      const res = await API.patch(`/spk-bahan/${estimateModal.row.id}/estimasi-pengiriman`, {
+        estimasi_pengiriman: estimateModal.date || null,
+      });
+
+      const updatedRow = res.data?.data;
+      if (updatedRow) {
+        setItems((prev) => prev.map((item) => (String(item.id) === String(updatedRow.id) ? updatedRow : item)));
+      } else {
+        await fetchSpkBahan(currentPage);
+      }
+
+      closeEstimateModal();
+      showToast(res.data?.message || "Estimasi pengiriman berhasil disimpan.", "success");
+    } catch (err) {
+      const msg = err.response?.data?.message || (err.response?.data?.errors ? Object.values(err.response.data.errors || {}).flat().join(", ") : null) || "Gagal menyimpan estimasi pengiriman.";
+      showToast(msg, "error");
+      setEstimateModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
+  const clearEstimatePengiriman = async () => {
+    if (!estimateModal.row?.id) return;
+
+    try {
+      setEstimateModal((prev) => ({ ...prev, submitting: true, date: "" }));
+      const res = await API.patch(`/spk-bahan/${estimateModal.row.id}/estimasi-pengiriman`, {
+        estimasi_pengiriman: null,
+      });
+
+      const updatedRow = res.data?.data;
+      if (updatedRow) {
+        setItems((prev) => prev.map((item) => (String(item.id) === String(updatedRow.id) ? updatedRow : item)));
+      } else {
+        await fetchSpkBahan(currentPage);
+      }
+
+      closeEstimateModal();
+      showToast(res.data?.message || "Estimasi pengiriman berhasil dihapus.", "success");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Gagal menghapus estimasi pengiriman.";
+      showToast(msg, "error");
+      setEstimateModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
   const formatWarnaSummary = (warnaArr) => {
     if (!warnaArr || !Array.isArray(warnaArr) || warnaArr.length === 0) return "-";
     return warnaArr.map((w) => `${w.warna || "-"} (${w.jumlah_rol || 0})`).join(", ");
@@ -665,6 +789,10 @@ const SpkBahan = () => {
   };
 
   const getLamaPemesanan = (row) => {
+    if (row?.estimasi_pengiriman) {
+      return diffDaysBetweenDates(row?.tanggal_pemesanan || row?.created_at, row.estimasi_pengiriman);
+    }
+
     if (row?.lama_pemesanan !== null && row?.lama_pemesanan !== undefined) {
       return row.lama_pemesanan;
     }
@@ -685,17 +813,6 @@ const SpkBahan = () => {
     if (cleaned.includes("pending")) return "pending";
     if (cleaned.includes("batal")) return "dibatalkan";
     return cleaned.replace(/\s+/g, "-");
-  };
-
-  const getPembayaranClass = (jenisPembayaran) => {
-    const cleaned = (jenisPembayaran || "").toLowerCase().trim();
-    if (!cleaned) return "default";
-    if (cleaned.includes("cash")) return "cash";
-    if (cleaned.includes("tunai")) return "tunai";
-    if (cleaned.includes("tempo")) return "tempo";
-    if (cleaned.includes("transfer")) return "transfer";
-    if (cleaned.includes("kredit")) return "kredit";
-    return "default";
   };
 
   const getWarnaClass = (warnaName) => {
@@ -801,11 +918,28 @@ const SpkBahan = () => {
                 </select>
               </label>
 
+              <label className="spkb-filter-box">
+                <span>Status</span>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {STATUS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value || "all"} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <label className="spkb-search-box">
                 <FaSearch />
                 <input
                   type="text"
-                  placeholder="Cari grup, pabrik, bahan, warna, atau status..."
+                  placeholder="Cari pabrik, bahan, warna, atau status..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                 />
@@ -827,14 +961,12 @@ const SpkBahan = () => {
                     <tr>
                       <th className="spkb-col-no">No</th>
                       <th className="spkb-col-id">ID SPK</th>
+                      <th className="spkb-col-tanggal">Tgl Pemesanan</th>
                       <th className="spkb-col-pabrik">Pabrik</th>
-                      <th className="spkb-col-group">Grup Bahan</th>
                       <th className="spkb-col-bahan">Bahan</th>
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
-                      <th className="spkb-col-bayar">Pembayaran</th>
-                      <th className="spkb-col-tanggal">Tgl Pemesanan</th>
-                      <th className="spkb-col-tanggal">Tgl Jatuh Tempo</th>
+                      <th className="spkb-col-estimasi">Estimasi Pengiriman</th>
                       <th className="spkb-col-lama">Lama Pesan</th>
                       <th className="spkb-col-status">Status</th>
                     </tr>
@@ -852,14 +984,16 @@ const SpkBahan = () => {
                         <tr key={row.id}>
                           <td className="spkb-col-no">{number}</td>
                           <td className="spkb-id spkb-col-id">#{row.id}</td>
+                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
                           <td className="spkb-cell-pabrik">
                             <span className="spkb-chip" title={row.pabrik?.nama_pabrik || "-"}>
                               <FaIndustry />
                               <span className="spkb-chip-label">{row.pabrik?.nama_pabrik || "-"}</span>
                             </span>
                           </td>
-                          <td className="spkb-cell-bold spkb-col-group">{row.group_bahan || row.bahan?.group_bahan || "-"}</td>
-                          <td className="spkb-cell-bold spkb-col-bahan">{row.bahan?.nama_bahan || "-"}</td>
+                          <td className="spkb-cell-bold spkb-col-bahan" title={row.bahan?.nama_bahan || "-"}>
+                            {row.bahan?.nama_bahan || "-"}
+                          </td>
                           <td className="spkb-cell-warna">
                             {Array.isArray(row.warna) && row.warna.length > 0 ? (
                               <div className="spkb-warna-list">
@@ -872,17 +1006,20 @@ const SpkBahan = () => {
                               </div>
                             ) : (
                               formatWarnaSummary(row.warna)
-                            )}
-                          </td>
-                          <td className="spkb-cell-bold spkb-col-rol">{rowRol || "-"}</td>
-                          <td className="spkb-col-bayar">
-                            <span className={`spkb-chip spkb-chip-pay spkb-chip-pay-${getPembayaranClass(row.jenis_pembayaran)}`}>
-                              <FaTag /> {row.jenis_pembayaran || "-"}
-                            </span>
-                          </td>
-                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
-                          <td className="spkb-col-tanggal">{formatDate(row.tanggal_jatuh_tempo)}</td>
-                          <td className="spkb-col-lama">{formatLamaPemesanan(getLamaPemesanan(row))}</td>
+                          )}
+                        </td>
+                        <td className="spkb-cell-bold spkb-col-rol">{rowRol || "-"}</td>
+                        <td className="spkb-col-estimasi">
+                          <button
+                            type="button"
+                            className={`spkb-estimate-btn ${row.estimasi_pengiriman ? "spkb-estimate-btn-filled" : "spkb-estimate-btn-empty"}`}
+                            onClick={() => openEstimateModal(row)}
+                          >
+                            <FaCalendarAlt />
+                            <span>{row.estimasi_pengiriman ? formatDate(row.estimasi_pengiriman) : "Input tanggal"}</span>
+                          </button>
+                        </td>
+                        <td className="spkb-col-lama">{formatLamaPemesanan(getLamaPemesanan(row))}</td>
                           <td className="spkb-col-status">
                             <span className={`spkb-badge spkb-badge-${getStatusClass(row.status)}`}>
                               <span className="spkb-badge-dot" />
@@ -1050,14 +1187,11 @@ const SpkBahan = () => {
                   <input type="date" name="tanggal_pemesanan" value={newItem.tanggal_pemesanan} onChange={handleInputChange} required />
                 </div>
                 <div className="spkb-form-group">
-                  <label>{isTempoPayment ? "Tempo Pembayaran (hari) *" : "Tanggal Jatuh Tempo"}</label>
+                  <label>{isTempoPayment ? "Tempo Pembayaran (hari) *" : "Tempo Pembayaran"}</label>
                   {isTempoPayment ? (
-                    <>
-                      <input type="number" min={1} name="tempo_hari" value={newItem.tempo_hari} onChange={handleInputChange} placeholder="Contoh: 30" required />
-                      {tempoDueDate && <small>Jatuh tempo otomatis: {formatDate(tempoDueDate)}</small>}
-                    </>
+                    <input type="number" min={1} name="tempo_hari" value={newItem.tempo_hari} onChange={handleInputChange} placeholder="Contoh: 30" required />
                   ) : (
-                    <input type="text" value="-" disabled />
+                    <input type="text" value="Tidak ada tempo" disabled />
                   )}
                 </div>
               </div>
@@ -1115,6 +1249,61 @@ const SpkBahan = () => {
                 </button>
                 <button type="submit" className="spkb-btn-primary" disabled={submitting}>
                   {submitting ? "Menyimpan..." : "Simpan SPK"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {estimateModal.open && (
+        <div className="spkb-modal" onClick={estimateModal.submitting ? undefined : closeEstimateModal}>
+          <div className="spkb-modal-content spkb-estimate-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="spkb-modal-head">
+              <h3>Estimasi Pengiriman</h3>
+              <p>Atur tanggal estimasi agar lama pesan dihitung sampai tanggal estimasi.</p>
+            </div>
+
+            <form className="spkb-form" onSubmit={saveEstimatePengiriman}>
+              <div className="spkb-estimate-summary">
+                <div>
+                  <span>ID SPK</span>
+                  <strong>#{estimateModal.row?.id || "-"}</strong>
+                </div>
+                <div>
+                  <span>Tgl Pemesanan</span>
+                  <strong>{formatDate(estimateModal.row?.tanggal_pemesanan || estimateModal.row?.created_at)}</strong>
+                </div>
+              </div>
+
+              <div className="spkb-form-group">
+                <label>Tanggal Estimasi Pengiriman</label>
+                <input
+                  type="date"
+                  value={estimateModal.date}
+                  min={toDateInputValue(estimateModal.row?.tanggal_pemesanan || estimateModal.row?.created_at)}
+                  onChange={(e) => setEstimateModal((prev) => ({ ...prev, date: e.target.value }))}
+                  disabled={estimateModal.submitting}
+                  required
+                />
+                {estimateModal.date && (
+                  <small>
+                    Lama pesan menjadi {formatLamaPemesanan(diffDaysBetweenDates(estimateModal.row?.tanggal_pemesanan || estimateModal.row?.created_at, estimateModal.date))}
+                  </small>
+                )}
+              </div>
+
+              <div className="spkb-form-actions">
+                {estimateModal.row?.estimasi_pengiriman && (
+                  <button type="button" className="spkb-btn-secondary spkb-btn-danger-soft" onClick={clearEstimatePengiriman} disabled={estimateModal.submitting}>
+                    Hapus Estimasi
+                  </button>
+                )}
+                <button type="button" className="spkb-btn-secondary" onClick={closeEstimateModal} disabled={estimateModal.submitting}>
+                  Batal
+                </button>
+                <button type="submit" className="spkb-btn-primary" disabled={estimateModal.submitting}>
+                  {estimateModal.submitting ? "Menyimpan..." : "Simpan Estimasi"}
                 </button>
               </div>
             </form>
