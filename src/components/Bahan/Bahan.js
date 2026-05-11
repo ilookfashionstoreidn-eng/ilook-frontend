@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./Bahan.css";
 import API from "../../api";
 import Swal from "sweetalert2";
@@ -6,14 +6,19 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import * as XLSX from "xlsx";
 import {
   FaBoxOpen,
+  FaArrowLeft,
+  FaCheck,
   FaDownload,
   FaEdit,
   FaEye,
   FaFileImport,
+  FaImage,
   FaPlus,
+  FaSearch,
   FaTag,
   FaTimes,
   FaTrash,
+  FaUpload,
 } from "react-icons/fa";
 import { FiBox } from "react-icons/fi";
 
@@ -23,6 +28,7 @@ const SATUAN_OPTIONS = [
 ];
 
 const DEFAULT_PER_PAGE = 25;
+const MAX_IMAGE_UPLOAD_SIZE = 2 * 1024 * 1024;
 const TEMPLATE_HEADERS = ["nama_bahan", "deskripsi", "group_bahan", "pabrik_bahan", "warna_bahan", "stok_bahan"];
 const REQUIRED_TEMPLATE_HEADERS = ["nama_bahan", "group_bahan", "pabrik_bahan", "warna_bahan", "stok_bahan"];
 const swalButtonColors = {
@@ -82,6 +88,42 @@ const getApiErrorMessage = (error, fallbackMessage) => {
   return error?.response?.data?.message || fallbackMessage;
 };
 
+const getBahanImageUrl = (image) => {
+  const imagePath = image?.image_path || "";
+
+  if (imagePath) {
+    const baseUrl = (process.env.REACT_APP_FILE_URL || process.env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") || "").replace(/\/$/, "");
+    const storagePath = imagePath.includes("/storage/")
+      ? imagePath.slice(imagePath.indexOf("/storage/"))
+      : `/storage/${String(imagePath).replace(/^\/?(storage\/)?/, "")}`;
+
+    return baseUrl ? `${baseUrl}${storagePath}` : storagePath;
+  }
+
+  const rawUrl = image?.image_url || "";
+  if (!rawUrl) return "";
+
+  if (rawUrl.startsWith("blob:") || rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+    try {
+      const parsedUrl = new URL(rawUrl);
+      if (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1") {
+        return parsedUrl.pathname;
+      }
+    } catch (error) {
+      return rawUrl;
+    }
+
+    return rawUrl;
+  }
+
+  const baseUrl = (process.env.REACT_APP_FILE_URL || process.env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") || "").replace(/\/$/, "");
+  const storagePath = rawUrl.includes("/storage/")
+    ? rawUrl.slice(rawUrl.indexOf("/storage/"))
+    : `/storage/${rawUrl.replace(/^\/?(storage\/)?/, "")}`;
+
+  return baseUrl ? `${baseUrl}${storagePath}` : storagePath;
+};
+
 const Bahan = () => {
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -127,6 +169,18 @@ const Bahan = () => {
     stok_bahan: "",
   });
   const [detailItem, setDetailItem] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalStep, setImageModalStep] = useState(1);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [selectedImageBahanIds, setSelectedImageBahanIds] = useState([]);
+  const [imageBahanSearch, setImageBahanSearch] = useState("");
+  const [debouncedImageBahanSearch, setDebouncedImageBahanSearch] = useState("");
+  const [imageBahanOptions, setImageBahanOptions] = useState([]);
+  const [imageBahanLoading, setImageBahanLoading] = useState(false);
+  const [imageBahanError, setImageBahanError] = useState("");
+  const [imageBahanTotal, setImageBahanTotal] = useState(0);
+  const [imageSubmitting, setImageSubmitting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,6 +190,22 @@ const Bahan = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedImageBahanSearch(imageBahanSearch);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [imageBahanSearch]);
+
   const isFiltering = Boolean(debouncedSearchTerm || selectedGroup || selectedPabrik || selectedSatuan);
   const totalPages = lastPage;
   const totalBahan = stats.total_bahan;
@@ -143,6 +213,35 @@ const Bahan = () => {
   const totalWarna = stats.total_warna;
   const totalStok = stats.total_stok;
   const pabrikSelectOptions = pabrikOptions.includes("-") ? pabrikOptions : ["-", ...pabrikOptions];
+  const { bahanWithoutImage, groupedBahanImages } = useMemo(() => {
+    const withoutImage = [];
+    const grouped = new Map();
+
+    items.forEach((item) => {
+      const image = item.bahan_image || item.bahanImage || null;
+      const imageId = item.bahan_image_id || image?.id;
+
+      if (!imageId || !image) {
+        withoutImage.push(item);
+        return;
+      }
+
+      if (!grouped.has(imageId)) {
+        grouped.set(imageId, {
+          id: imageId,
+          image,
+          items: [],
+        });
+      }
+
+      grouped.get(imageId).items.push(item);
+    });
+
+    return {
+      bahanWithoutImage: withoutImage,
+      groupedBahanImages: Array.from(grouped.values()),
+    };
+  }, [items]);
 
   const fetchData = async (page = currentPage) => {
     try {
@@ -185,8 +284,83 @@ const Bahan = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, debouncedSearchTerm, selectedGroup, selectedPabrik, selectedSatuan]);
 
+  useEffect(() => {
+    if (!showImageModal || imageModalStep !== 2) {
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchImageBahanOptions = async () => {
+      try {
+        setImageBahanLoading(true);
+        setImageBahanError("");
+
+        const res = await API.get("/bahan", {
+          params: {
+            page: 1,
+            per_page: 100,
+            search: debouncedImageBahanSearch || undefined,
+          },
+        });
+
+        if (ignore) return;
+
+        const payload = res.data || {};
+        const rows = Array.isArray(payload.data) ? payload.data : [];
+        setImageBahanOptions(rows);
+        setImageBahanTotal(Number(payload.total) || rows.length);
+      } catch (searchError) {
+        if (ignore) return;
+        setImageBahanOptions([]);
+        setImageBahanTotal(0);
+        setImageBahanError(getApiErrorMessage(searchError, "Gagal mencari data bahan."));
+      } finally {
+        if (!ignore) {
+          setImageBahanLoading(false);
+        }
+      }
+    };
+
+    fetchImageBahanOptions();
+
+    return () => {
+      ignore = true;
+    };
+  }, [showImageModal, imageModalStep, debouncedImageBahanSearch]);
+
   const currentItems = items;
   const indexOfFirstItem = (currentPage - 1) * DEFAULT_PER_PAGE;
+  const getItemPageNumber = (item) => {
+    const itemIndex = currentItems.findIndex((row) => row.id === item.id);
+    return indexOfFirstItem + (itemIndex >= 0 ? itemIndex : 0) + 1;
+  };
+  const uniqueGroupValues = (rows, field) => {
+    const values = rows
+      .map((row) => String(row?.[field] ?? "").trim())
+      .filter(Boolean);
+
+    return [...new Set(values)];
+  };
+  const renderGroupedValues = (rows, field, emptyLabel = "-") => {
+    const values = uniqueGroupValues(rows, field);
+
+    if (values.length === 0) {
+      return <span className="bahan-grouped-muted">{emptyLabel}</span>;
+    }
+
+    return (
+      <div className="bahan-grouped-value-list">
+        {values.map((value) => (
+          <span key={value} title={value}>
+            {value}
+          </span>
+        ))}
+      </div>
+    );
+  };
+  const getGroupedStockTotal = (rows) =>
+    rows.reduce((total, item) => total + (Number(item.stok_bahan) || 0), 0);
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -204,6 +378,96 @@ const Bahan = () => {
   const closeDetailModal = () => {
     setShowDetailModal(false);
     setDetailItem(null);
+  };
+
+  const clearImageModalState = () => {
+    setShowImageModal(false);
+    setImageModalStep(1);
+    setImageFile(null);
+    setImagePreview("");
+    setSelectedImageBahanIds([]);
+    setImageBahanSearch("");
+    setDebouncedImageBahanSearch("");
+    setImageBahanOptions([]);
+    setImageBahanError("");
+    setImageBahanTotal(0);
+  };
+
+  const openImageModal = () => {
+    setShowForm(false);
+    setShowEditForm(false);
+    setShowImageModal(true);
+    setImageModalStep(1);
+    setImageBahanOptions([]);
+    setImageBahanError("");
+  };
+
+  const closeImageModal = () => {
+    if (imageSubmitting) return;
+    clearImageModalState();
+  };
+
+  const handleBahanImageFileChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      Swal.fire({ icon: "warning", title: "File tidak valid", text: "File harus berupa gambar.", ...swalButtonColors });
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_UPLOAD_SIZE) {
+      Swal.fire({ icon: "warning", title: "Gambar terlalu besar", text: "Ukuran gambar maksimal 2 MB.", ...swalButtonColors });
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const toggleImageBahanSelection = (bahanId) => {
+    setSelectedImageBahanIds((prev) =>
+      prev.includes(bahanId) ? prev.filter((id) => id !== bahanId) : [...prev, bahanId]
+    );
+  };
+
+  const handleBahanImageSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!imageFile) {
+      setImageModalStep(1);
+      Swal.fire({ icon: "warning", title: "Pilih gambar", text: "Upload gambar bahan terlebih dahulu.", ...swalButtonColors });
+      return;
+    }
+
+    if (selectedImageBahanIds.length === 0) {
+      setImageModalStep(2);
+      Swal.fire({ icon: "warning", title: "Pilih bahan", text: "Pilih minimal satu bahan untuk gambar ini.", ...swalButtonColors });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    selectedImageBahanIds.forEach((id) => {
+      formData.append("bahan_ids[]", id);
+    });
+
+    try {
+      setImageSubmitting(true);
+      await API.post("/bahan/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      clearImageModalState();
+      await fetchData(currentPage);
+      await Swal.fire({ icon: "success", title: "Berhasil", text: "Gambar bahan berhasil ditambahkan.", ...swalButtonColors });
+    } catch (uploadError) {
+      const errMsg = getApiErrorMessage(uploadError, "Gagal menyimpan gambar bahan.");
+      Swal.fire({ icon: "error", title: "Upload gagal", text: errMsg, ...swalButtonColors });
+    } finally {
+      setImageSubmitting(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -619,6 +883,9 @@ const Bahan = () => {
                 <FaFileImport /> Import Excel
                 <input className="bahan-import-input" type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFileChange} />
               </label>
+              <button className="bahan-btn-secondary" onClick={openImageModal}>
+                <FaImage /> Tambah Gambar
+              </button>
               <button
                 className="bahan-btn-primary"
                 onClick={() => {
@@ -765,68 +1032,173 @@ const Bahan = () => {
             </div>
           ) : (
             <>
-              <div className="bahan-table-scroll">
-                <table className="bahan-table">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>Group Bahan</th>
-                      <th>Pabrik</th>
-                      <th>Nama Bahan</th>
-                      <th>Deskripsi</th>
-                      <th>Harga</th>
-                      <th>Satuan</th>
-                      <th>Stok</th>
-                      <th>Warna Bahan</th>
-                      <th className="align-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentItems.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>
-                          <strong>{indexOfFirstItem + index + 1}</strong>
-                        </td>
-                        <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
-                          {item.group_bahan || "-"}
-                        </td>
-                        <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
-                        <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
-                          <strong>{item.nama_bahan}</strong>
-                        </td>
-                        <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
-                        <td>
-                          <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
-                        </td>
-                        <td>
-                          <span className="bahan-status-badge bahan-status-satuan">
-                            <FaTag /> {getSatuanLabel(item.satuan)}
-                          </span>
-                        </td>
-                        <td>
-                          <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
-                        </td>
-                        <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
-                          {item.warna_bahan || "-"}
-                        </td>
-                        <td>
-                          <div className="bahan-actions">
-                            <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
-                              <FaEdit />
-                            </button>
-                            <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
-                              <FaEye />
-                            </button>
-                            <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </td>
+              {groupedBahanImages.length > 0 && (
+                <div className="bahan-table-scroll bahan-image-table-scroll">
+                  <table className="bahan-table bahan-image-table">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Gambar</th>
+                        <th>Group Bahan</th>
+                        <th>Pabrik</th>
+                        <th>Nama Bahan</th>
+                        <th>Deskripsi</th>
+                        <th>Harga</th>
+                        <th>Satuan</th>
+                        <th>Stok</th>
+                        <th>Warna Bahan</th>
+                        <th className="align-center">Aksi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {groupedBahanImages.map((group) => {
+                        const firstItem = group.items[0] || {};
+                        const imageUrl = getBahanImageUrl(group.image);
+
+                        return (
+                          <tr className="bahan-image-table-row" key={group.id}>
+                            <td>
+                              <strong>{getItemPageNumber(firstItem)}</strong>
+                            </td>
+                            <td>
+                              <div className="bahan-table-image-frame">
+                                {imageUrl ? (
+                                  <img src={imageUrl} alt={`Gambar bahan ${group.id}`} />
+                                ) : (
+                                  <div className="bahan-image-placeholder">
+                                    <FaImage />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td>{renderGroupedValues(group.items, "group_bahan")}</td>
+                            <td>{renderGroupedValues(group.items, "pabrik_bahan")}</td>
+                            <td>{renderGroupedValues(group.items, "nama_bahan")}</td>
+                            <td>{renderGroupedValues(group.items, "deskripsi")}</td>
+                            <td>
+                              <div className="bahan-grouped-value-list">
+                                {uniqueGroupValues(group.items, "harga").map((harga) => (
+                                  <strong className="bahan-harga-value" key={harga}>
+                                    {formatRupiah(harga)}
+                                  </strong>
+                                ))}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="bahan-grouped-satuan-list">
+                                {uniqueGroupValues(group.items, "satuan").map((satuan) => (
+                                  <span className="bahan-status-badge bahan-status-satuan" key={satuan}>
+                                    <FaTag /> {getSatuanLabel(satuan)}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td>
+                              <strong className="bahan-stok-value">{formatNumber(getGroupedStockTotal(group.items))}</strong>
+                            </td>
+                            <td>
+                              <div className="bahan-image-stock-list">
+                                {group.items.map((item) => (
+                                  <div key={item.id}>
+                                    <strong>{formatNumber(item.stok_bahan)}</strong>
+                                    <span title={item.warna_bahan || "-"}>{item.warna_bahan || "-"}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="bahan-image-table-actions">
+                                {group.items.map((item) => (
+                                  <div className="bahan-image-action-row" key={item.id}>
+                                    <span title={item.warna_bahan || item.nama_bahan || "-"}>{item.warna_bahan || item.nama_bahan || "-"}</span>
+                                    <div className="bahan-actions">
+                                      <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
+                                        <FaEdit />
+                                      </button>
+                                      <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
+                                        <FaEye />
+                                      </button>
+                                      <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
+                                        <FaTrash />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {bahanWithoutImage.length > 0 && <div className="bahan-table-split-label">Bahan tanpa gambar</div>}
+                </div>
+              )}
+
+              {bahanWithoutImage.length > 0 && (
+                <div className={`bahan-table-scroll ${groupedBahanImages.length > 0 ? "bahan-table-scroll-plain" : ""}`}>
+                  <table className="bahan-table">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Group Bahan</th>
+                        <th>Pabrik</th>
+                        <th>Nama Bahan</th>
+                        <th>Deskripsi</th>
+                        <th>Harga</th>
+                        <th>Satuan</th>
+                        <th>Stok</th>
+                        <th>Warna Bahan</th>
+                        <th className="align-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bahanWithoutImage.map((item) => (
+                        <tr key={item.id}>
+                          <td>
+                            <strong>{getItemPageNumber(item)}</strong>
+                          </td>
+                          <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
+                            {item.group_bahan || "-"}
+                          </td>
+                          <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
+                          <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
+                            <strong>{item.nama_bahan}</strong>
+                          </td>
+                          <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
+                          <td>
+                            <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
+                          </td>
+                          <td>
+                            <span className="bahan-status-badge bahan-status-satuan">
+                              <FaTag /> {getSatuanLabel(item.satuan)}
+                            </span>
+                          </td>
+                          <td>
+                            <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
+                          </td>
+                          <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
+                            {item.warna_bahan || "-"}
+                          </td>
+                          <td>
+                            <div className="bahan-actions">
+                              <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
+                                <FaEdit />
+                              </button>
+                              <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
+                                <FaEye />
+                              </button>
+                              <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {totalPages > 1 && (
                 <div className="bahan-pagination">
@@ -981,6 +1353,158 @@ const Bahan = () => {
               </div>
             </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showImageModal && (
+        <div className="bahan-modal-overlay" onClick={closeImageModal}>
+          <div className="bahan-modal-content bahan-image-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="bahan-modal-header">
+              <h2>Tambah Gambar Bahan</h2>
+              <button className="bahan-modal-close" onClick={closeImageModal} type="button" disabled={imageSubmitting}>
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={handleBahanImageSubmit}>
+              <div className="bahan-modal-body">
+                <div className="bahan-image-steps">
+                  <button
+                    type="button"
+                    className={`bahan-image-step ${imageModalStep === 1 ? "active" : ""} ${imageFile ? "done" : ""}`}
+                    onClick={() => setImageModalStep(1)}
+                    disabled={imageSubmitting}
+                  >
+                    <span>{imageFile ? <FaCheck /> : "1"}</span>
+                    Upload Gambar
+                  </button>
+                  <button
+                    type="button"
+                    className={`bahan-image-step ${imageModalStep === 2 ? "active" : ""} ${selectedImageBahanIds.length > 0 ? "done" : ""}`}
+                    onClick={() => imageFile && setImageModalStep(2)}
+                    disabled={!imageFile || imageSubmitting}
+                  >
+                    <span>{selectedImageBahanIds.length > 0 ? <FaCheck /> : "2"}</span>
+                    Pilih Bahan
+                  </button>
+                </div>
+
+                {imageModalStep === 1 ? (
+                  <div className="bahan-image-upload-panel">
+                    <label className={`bahan-image-dropzone ${imagePreview ? "has-preview" : ""}`}>
+                      <input type="file" accept="image/*" onChange={handleBahanImageFileChange} disabled={imageSubmitting} />
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Preview gambar bahan" />
+                      ) : (
+                        <span className="bahan-image-dropzone-empty">
+                          <FaUpload />
+                          <strong>Upload gambar</strong>
+                          <small>JPG, PNG, atau WEBP maksimal 2 MB</small>
+                        </span>
+                      )}
+                    </label>
+                    {imageFile && (
+                      <div className="bahan-image-file-info">
+                        <span>{imageFile.name}</span>
+                        <strong>{(imageFile.size / 1024 / 1024).toFixed(2)} MB</strong>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bahan-image-select-panel">
+                    <div className="bahan-image-select-header">
+                      <span>
+                        Data bahan
+                        {imageBahanTotal > 0 && (
+                          <small>{imageBahanOptions.length} dari {imageBahanTotal}</small>
+                        )}
+                      </span>
+                      <strong>{selectedImageBahanIds.length} dipilih</strong>
+                    </div>
+                    <div className="bahan-image-search-wrap">
+                      <FaSearch />
+                      <input
+                        type="text"
+                        value={imageBahanSearch}
+                        onChange={(e) => setImageBahanSearch(e.target.value)}
+                        placeholder="Cari nama bahan, group, pabrik, atau warna..."
+                        disabled={imageSubmitting}
+                      />
+                      {imageBahanSearch && (
+                        <button type="button" onClick={() => setImageBahanSearch("")} disabled={imageSubmitting} title="Hapus pencarian">
+                          <FaTimes />
+                        </button>
+                      )}
+                    </div>
+                    <div className="bahan-image-select-list">
+                      {imageBahanLoading ? (
+                        <div className="bahan-image-list-state">
+                          <div className="bahan-spinner"></div>
+                          <span>Mencari data bahan...</span>
+                        </div>
+                      ) : imageBahanError ? (
+                        <div className="bahan-image-list-state error">{imageBahanError}</div>
+                      ) : imageBahanOptions.length === 0 ? (
+                        <div className="bahan-image-list-state">
+                          {debouncedImageBahanSearch ? "Bahan tidak ditemukan." : "Belum ada data bahan."}
+                        </div>
+                      ) : (
+                        imageBahanOptions.map((item) => {
+                          const selected = selectedImageBahanIds.includes(item.id);
+                          const hasImage = Boolean(item.bahan_image_id || item.bahan_image || item.bahanImage);
+                          return (
+                            <label className={`bahan-image-option ${selected ? "selected" : ""}`} key={item.id}>
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleImageBahanSelection(item.id)}
+                                disabled={imageSubmitting}
+                              />
+                              <span className="bahan-image-option-copy">
+                                <strong>{item.nama_bahan || "-"}</strong>
+                                <small>{item.group_bahan || "-"} | {item.pabrik_bahan || "-"} | {item.warna_bahan || "-"}</small>
+                              </span>
+                              {hasImage && <em>Sudah ada gambar</em>}
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="bahan-image-modal-footer">
+                {imageModalStep === 1 ? (
+                  <>
+                    <button type="button" className="bahan-btn-cancel" onClick={closeImageModal} disabled={imageSubmitting}>
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      className="bahan-btn-submit"
+                      onClick={() => {
+                        if (!imageFile) {
+                          Swal.fire({ icon: "warning", title: "Pilih gambar", text: "Upload gambar bahan terlebih dahulu.", ...swalButtonColors });
+                          return;
+                        }
+                        setImageModalStep(2);
+                      }}
+                    >
+                      Lanjut Pilih Bahan
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="bahan-btn-secondary" onClick={() => setImageModalStep(1)} disabled={imageSubmitting}>
+                      <FaArrowLeft /> Kembali
+                    </button>
+                    <button type="submit" className="bahan-btn-submit" disabled={imageSubmitting || selectedImageBahanIds.length === 0}>
+                      {imageSubmitting ? "Menyimpan..." : "Simpan Gambar"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       )}
