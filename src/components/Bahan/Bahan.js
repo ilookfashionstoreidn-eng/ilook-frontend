@@ -162,6 +162,7 @@ const Bahan = () => {
     stok_bahan: "",
   });
   const [detailItem, setDetailItem] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageModalStep, setImageModalStep] = useState(1);
   const [imageFile, setImageFile] = useState(null);
@@ -371,6 +372,18 @@ const Bahan = () => {
   const closeDetailModal = () => {
     setShowDetailModal(false);
     setDetailItem(null);
+  };
+
+  const closePreviewImage = () => {
+    setPreviewImage(null);
+  };
+
+  const openPreviewImage = (imageUrl, title) => {
+    if (!imageUrl) return;
+    setPreviewImage({
+      url: imageUrl,
+      title: title || "Preview gambar bahan",
+    });
   };
 
   const clearImageModalState = () => {
@@ -1032,8 +1045,6 @@ const Bahan = () => {
                       <tr>
                         <th>No</th>
                         <th>Gambar</th>
-                        <th>Group Bahan</th>
-                        <th>Pabrik</th>
                         <th>Nama Bahan</th>
                         <th>Deskripsi</th>
                         <th>Harga</th>
@@ -1047,6 +1058,7 @@ const Bahan = () => {
                       {groupedBahanImages.map((group) => {
                         const firstItem = group.items[0] || {};
                         const imageUrl = getBahanImageUrl(group.image);
+                        const groupTitle = uniqueGroupValues(group.items, "group_bahan").join(" / ") || `Gambar bahan ${group.id}`;
 
                         return (
                           <tr className="bahan-image-table-row" key={group.id}>
@@ -1054,18 +1066,21 @@ const Bahan = () => {
                               <strong>{getItemPageNumber(firstItem)}</strong>
                             </td>
                             <td>
-                              <div className="bahan-table-image-frame">
+                              <button
+                                type="button"
+                                className="bahan-table-image-frame bahan-table-image-button"
+                                onClick={() => openPreviewImage(imageUrl, groupTitle)}
+                                title="Klik untuk melihat gambar"
+                              >
                                 {imageUrl ? (
-                                  <img src={imageUrl} alt={`Gambar bahan ${group.id}`} />
+                                  <img src={imageUrl} alt={groupTitle} />
                                 ) : (
                                   <div className="bahan-image-placeholder">
                                     <FaImage />
                                   </div>
                                 )}
-                              </div>
+                              </button>
                             </td>
-                            <td>{renderGroupedValues(group.items, "group_bahan")}</td>
-                            <td>{renderGroupedValues(group.items, "pabrik_bahan")}</td>
                             <td>{renderGroupedValues(group.items, "nama_bahan")}</td>
                             <td>{renderGroupedValues(group.items, "deskripsi")}</td>
                             <td>
@@ -1090,9 +1105,9 @@ const Bahan = () => {
                               <strong className="bahan-stok-value">{formatNumber(getGroupedStockTotal(group.items))}</strong>
                             </td>
                             <td>
-                              <div className="bahan-image-stock-list">
+                              <div className="bahan-image-item-list">
                                 {group.items.map((item) => (
-                                  <div key={item.id}>
+                                  <div className="bahan-image-item-row" key={item.id}>
                                     <strong>{formatNumber(item.stok_bahan)}</strong>
                                     <span title={item.warna_bahan || "-"}>{item.warna_bahan || "-"}</span>
                                   </div>
@@ -1100,7 +1115,7 @@ const Bahan = () => {
                               </div>
                             </td>
                             <td>
-                              <div className="bahan-image-table-actions">
+                              <div className="bahan-image-item-list bahan-image-item-list-actions">
                                 {group.items.map((item) => (
                                   <div className="bahan-image-action-row" key={item.id}>
                                     <span title={item.warna_bahan || item.nama_bahan || "-"}>{item.warna_bahan || item.nama_bahan || "-"}</span>
@@ -1554,6 +1569,22 @@ const Bahan = () => {
               <button type="button" className="bahan-btn-close" onClick={closeDetailModal}>
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div className="bahan-modal-overlay" onClick={closePreviewImage}>
+          <div className="bahan-modal-content bahan-image-preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="bahan-modal-header">
+              <h3>{previewImage.title}</h3>
+              <button className="bahan-modal-close" onClick={closePreviewImage} type="button">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="bahan-image-preview-body">
+              <img src={previewImage.url} alt={previewImage.title} />
             </div>
           </div>
         </div>
