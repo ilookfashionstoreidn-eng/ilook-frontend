@@ -89,39 +89,32 @@ const getApiErrorMessage = (error, fallbackMessage) => {
 };
 
 const getBahanImageUrl = (image) => {
-  const imagePath = image?.image_path || "";
-
-  if (imagePath) {
-    const baseUrl = (process.env.REACT_APP_FILE_URL || process.env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") || "").replace(/\/$/, "");
-    const storagePath = imagePath.includes("/storage/")
-      ? imagePath.slice(imagePath.indexOf("/storage/"))
-      : `/storage/${String(imagePath).replace(/^\/?(storage\/)?/, "")}`;
-
-    return baseUrl ? `${baseUrl}${storagePath}` : storagePath;
-  }
-
   const rawUrl = image?.image_url || "";
-  if (!rawUrl) return "";
+  if (rawUrl) {
+    if (rawUrl.startsWith("/")) return rawUrl;
+    if (rawUrl.startsWith("blob:")) return rawUrl;
 
-  if (rawUrl.startsWith("blob:") || rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
     try {
       const parsedUrl = new URL(rawUrl);
       if (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1") {
         return parsedUrl.pathname;
       }
+
+      return rawUrl;
     } catch (error) {
       return rawUrl;
     }
-
-    return rawUrl;
   }
 
-  const baseUrl = (process.env.REACT_APP_FILE_URL || process.env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") || "").replace(/\/$/, "");
-  const storagePath = rawUrl.includes("/storage/")
-    ? rawUrl.slice(rawUrl.indexOf("/storage/"))
-    : `/storage/${rawUrl.replace(/^\/?(storage\/)?/, "")}`;
+  const imagePath = image?.image_path || "";
+  const filename = String(imagePath).split("/").filter(Boolean).pop();
 
-  return baseUrl ? `${baseUrl}${storagePath}` : storagePath;
+  if (!filename) {
+    return "";
+  }
+
+  const apiBaseUrl = (process.env.REACT_APP_API_URL || "/api").replace(/\/$/, "");
+  return `${apiBaseUrl}/bahan-images/${encodeURIComponent(filename)}`;
 };
 
 const Bahan = () => {
