@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./SpkBahan.css";
 import API from "../../api";
-import { FaCalendarAlt, FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaPrint, FaSearch, FaTrash } from "react-icons/fa";
+// ADDED: FaPrint dipakai untuk tombol Print PDF sesuai icon set existing.
 
 const JENIS_PEMBAYARAN_OPTIONS = ["Cash", "Tempo"];
 const STATUS_FILTER_OPTIONS = [
@@ -25,6 +26,34 @@ const EMPTY_META = {
 };
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+// ADDED: Gabungkan field penting SPK agar daftar print bisa dicari dari modal.
+const buildPrintSpkSearchText = (row) => {
+  const dateValue = row?.tanggal_pemesanan || row?.created_at || "";
+  let formattedDate = "";
+
+  if (dateValue) {
+    const date = new Date(dateValue);
+    formattedDate = Number.isNaN(date.getTime()) ? String(dateValue) : date.toLocaleDateString("id-ID");
+  }
+
+  const warnaSummary = Array.isArray(row?.warna)
+    ? row.warna.map((warna) => `${warna?.warna || ""} ${warna?.jumlah_rol || ""}`).join(" ")
+    : "";
+
+  return normalizeText([
+    row?.id ? `#${row.id}` : "",
+    row?.id,
+    dateValue,
+    formattedDate,
+    row?.bahan?.nama_bahan,
+    row?.bahan?.group_bahan,
+    row?.bahan?.pabrik_bahan,
+    row?.pabrik?.nama_pabrik,
+    row?.status,
+    warnaSummary,
+  ].filter(Boolean).join(" "));
+};
 
 const getPabrikName = (pabrik) => String(pabrik?.nama_pabrik || pabrik?.nama || "").trim();
 
@@ -192,6 +221,13 @@ const SpkBahan = () => {
     date: "",
     submitting: false,
   });
+  // ADDED: State modal print PDF SPK Bahan.
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedSpkIds, setSelectedSpkIds] = useState([]);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [printItems, setPrintItems] = useState([]);
+  const [isPrintListLoading, setIsPrintListLoading] = useState(false);
+  const [printSearchTerm, setPrintSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -773,6 +809,148 @@ const SpkBahan = () => {
     }
   };
 
+  // ADDED: Ambil semua SPK yang tersedia untuk ditampilkan di modal print.
+  const fetchPrintSpkList = async () => {
+    const normalizeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : []);
+    const normalizeMeta = (payload) => payload?.meta || payload || {};
+    const perPageForPrint = 100;
+
+    setIsPrintListLoading(true);
+
+    try {
+      const firstResponse = await API.get("/spk-bahan", {
+        params: {
+          page: 1,
+          per_page: perPageForPrint,
+          sort_by: "id",
+          sort_dir: "desc",
+        },
+      });
+
+      const firstPayload = firstResponse.data || {};
+      const firstRows = normalizeRows(firstPayload);
+      const firstMeta = normalizeMeta(firstPayload);
+      const lastPage = Math.max(1, parseInt(firstMeta.last_page, 10) || 1);
+
+      if (lastPage <= 1) {
+        setPrintItems(firstRows);
+        return;
+      }
+
+      const pageRequests = Array.from({ length: lastPage - 1 }, (_, index) =>
+        API.get("/spk-bahan", {
+          params: {
+            page: index + 2,
+            per_page: perPageForPrint,
+            sort_by: "id",
+            sort_dir: "desc",
+          },
+        })
+      );
+
+      const restResponses = await Promise.all(pageRequests);
+      const restRows = restResponses.flatMap((response) => normalizeRows(response.data || {}));
+      setPrintItems([...firstRows, ...restRows]);
+    } catch (err) {
+      setPrintItems(items);
+      showToast("Gagal memuat daftar lengkap SPK. Menampilkan data pada halaman ini.", "warning");
+    } finally {
+      setIsPrintListLoading(false);
+    }
+  };
+
+  // ADDED: Buka/tutup modal print PDF sekaligus reset pilihan.
+  const openPrintModal = () => {
+    setSelectedSpkIds([]);
+    setPrintSearchTerm("");
+    setIsPrintModalOpen(true);
+    fetchPrintSpkList();
+  };
+
+  const closePrintModal = () => {
+    if (isDownloading) return;
+    setIsPrintModalOpen(false);
+    setSelectedSpkIds([]);
+    setPrintItems([]);
+    setPrintSearchTerm("");
+  };
+
+  // ADDED: Toggle checkbox per SPK dan select all.
+  const togglePrintSpkSelection = (spkId) => {
+    const normalizedId = parseInt(spkId, 10);
+    if (!normalizedId) return;
+
+    setSelectedSpkIds((prev) =>
+      prev.includes(normalizedId)
+        ? prev.filter((selectedId) => selectedId !== normalizedId)
+        : [...prev, normalizedId]
+    );
+  };
+
+  const toggleAllPrintSelection = (checked) => {
+    const visiblePrintIds = filteredPrintItems
+      .map((row) => parseInt(row.id, 10))
+      .filter(Boolean);
+
+    if (!checked) {
+      setSelectedSpkIds((prev) => prev.filter((selectedId) => !visiblePrintIds.includes(selectedId)));
+      return;
+    }
+
+    setSelectedSpkIds((prev) => Array.from(new Set([...prev, ...visiblePrintIds])));
+  };
+
+  // ADDED: Download PDF sebagai blob dan tutup modal setelah browser men-trigger download.
+  const handleDownloadPrintPdf = async () => {
+    if (selectedSpkIds.length === 0) {
+      showToast("Pilih minimal 1 SPK untuk di-print.", "warning");
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+
+      const response = await API.post(
+        "/spk-bahan/print-pdf",
+        { spk_ids: selectedSpkIds },
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `SPK-Bahan-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setIsPrintModalOpen(false);
+      setSelectedSpkIds([]);
+      setPrintItems([]);
+      setPrintSearchTerm("");
+      showToast("PDF SPK Bahan berhasil diunduh.", "success");
+    } catch (err) {
+      let msg = "Gagal mengunduh PDF SPK Bahan.";
+
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          msg = json?.message || msg;
+        } catch {
+          // ADDED: Abaikan parsing blob error jika bukan JSON.
+        }
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      }
+
+      showToast(msg, "error");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const formatWarnaSummary = (warnaArr) => {
     if (!warnaArr || !Array.isArray(warnaArr) || warnaArr.length === 0) return "-";
     return warnaArr.map((w) => `${w.warna || "-"} (${w.jumlah_rol || 0})`).join(", ");
@@ -798,6 +976,19 @@ const SpkBahan = () => {
     }
 
     return diffDaysFromDateToToday(row?.tanggal_pemesanan || row?.created_at);
+  };
+
+  // ADDED: Ambil sisa dipesan dari payload backend, dengan fallback aman ke total rol jika field belum tersedia.
+  const getSisaDipesan = (row, rowRol) => {
+    const candidates = [row?.pdf_sisa_dipesan, row?.sisa_dipesan, row?.pdf_subtotal?.sisa_dipesan];
+
+    for (const value of candidates) {
+      if (value === null || value === undefined || value === "") continue;
+      const parsed = parseInt(value, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    return rowRol;
   };
 
   const formatLamaPemesanan = (hari) => {
@@ -845,6 +1036,17 @@ const SpkBahan = () => {
     return [1, "...", page - 1, page, page + 1, "...", totalPages];
   }, [meta.current_page, meta.last_page]);
 
+  // ADDED: State turunan untuk checkbox modal print.
+  const filteredPrintItems = useMemo(() => {
+    const keyword = normalizeText(printSearchTerm);
+    if (!keyword) return printItems;
+
+    return printItems.filter((row) => buildPrintSpkSearchText(row).includes(keyword));
+  }, [printItems, printSearchTerm]);
+  const selectedPrintIdSet = useMemo(() => new Set(selectedSpkIds.map((id) => String(id))), [selectedSpkIds]);
+  const printItemIds = useMemo(() => filteredPrintItems.map((row) => parseInt(row.id, 10)).filter(Boolean), [filteredPrintItems]);
+  const isAllPrintSelected = printItemIds.length > 0 && printItemIds.every((id) => selectedPrintIdSet.has(String(id)));
+
   const lastSyncLabel = new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -868,9 +1070,15 @@ const SpkBahan = () => {
           </div>
           <div className="spkb-topbar-right">
             <small>Terakhir sinkron: {lastSyncLabel}</small>
-            <button className="spkb-btn-primary" onClick={() => setShowForm(true)}>
-              <FaPlus /> Tambah SPK
-            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+              {/* // ADDED: Tombol print diposisikan sejajar dengan tombol aksi utama lain. */}
+              <button type="button" className="spkb-btn-secondary" onClick={openPrintModal}>
+                <FaPrint /> Print PDF
+              </button>
+              <button type="button" className="spkb-btn-primary" onClick={() => setShowForm(true)}>
+                <FaPlus /> Tambah SPK
+              </button>
+            </div>
           </div>
         </header>
 
@@ -966,6 +1174,7 @@ const SpkBahan = () => {
                       <th className="spkb-col-bahan">Bahan</th>
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
+                      <th className="spkb-col-sisa">Sisa Di Pesan</th>
                       <th className="spkb-col-estimasi">Estimasi Pengiriman</th>
                       <th className="spkb-col-lama">Lama Pesan</th>
                       <th className="spkb-col-status">Status</th>
@@ -977,6 +1186,7 @@ const SpkBahan = () => {
                         Array.isArray(row.warna) && row.warna.length > 0
                           ? row.warna.reduce((sum, w) => sum + (parseInt(w.jumlah_rol, 10) || 0), 0)
                           : parseInt(row.jumlah, 10) || 0;
+                      const rowSisaDipesan = getSisaDipesan(row, rowRol);
 
                       const number = ((meta.current_page || 1) - 1) * (meta.per_page || perPage) + index + 1;
 
@@ -1009,6 +1219,7 @@ const SpkBahan = () => {
                           )}
                         </td>
                         <td className="spkb-cell-bold spkb-col-rol">{rowRol || "-"}</td>
+                        <td className="spkb-cell-bold spkb-col-sisa">{rowSisaDipesan || rowSisaDipesan === 0 ? rowSisaDipesan : "-"}</td>
                         <td className="spkb-col-estimasi">
                           <button
                             type="button"
@@ -1077,6 +1288,110 @@ const SpkBahan = () => {
           )}
         </section>
       </section>
+
+      {/* // ADDED: Modal multi-select SPK untuk print PDF. */}
+      {isPrintModalOpen && (
+        <div className="spkb-modal" onClick={closePrintModal}>
+          <div className="spkb-modal-content" style={{ width: "min(980px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="spkb-modal-head">
+              <h3>Pilih SPK untuk di-Print</h3>
+              <p>{selectedSpkIds.length} SPK dipilih</p>
+            </div>
+
+            <div className="spkb-form">
+              {isPrintListLoading ? (
+                <p className="spkb-state">Memuat daftar SPK pemesanan...</p>
+              ) : printItems.length === 0 ? (
+                <p className="spkb-state">Belum ada SPK pemesanan yang tersedia untuk di-print.</p>
+              ) : (
+                <>
+                  {/* // ADDED: Search lokal untuk daftar SPK di modal print. */}
+                  <label className="spkb-search-box" style={{ width: "100%" }}>
+                    <FaSearch />
+                    <input
+                      type="text"
+                      placeholder="Cari ID SPK, tanggal, nama bahan, pabrik, warna, atau status..."
+                      value={printSearchTerm}
+                      onChange={(e) => setPrintSearchTerm(e.target.value)}
+                      autoComplete="off"
+                    />
+                  </label>
+                  <p style={{ margin: "-8px 0 0", color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+                    Menampilkan {filteredPrintItems.length} dari {printItems.length} SPK
+                  </p>
+
+                  {filteredPrintItems.length === 0 ? (
+                    <p className="spkb-state">SPK tidak ditemukan. Coba kata kunci lain.</p>
+                  ) : (
+                    <div className="spkb-table-wrap" style={{ border: "1px solid #e2e8f0", borderRadius: 12 }}>
+                      <table className="spkb-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: 130 }}>
+                              <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isAllPrintSelected}
+                                  onChange={(e) => toggleAllPrintSelection(e.target.checked)}
+                                  disabled={isDownloading || filteredPrintItems.length === 0}
+                                />
+                                Select All
+                              </label>
+                            </th>
+                            <th>ID SPK</th>
+                            <th>Tanggal</th>
+                            <th>Nama Bahan</th>
+                            <th>Pabrik</th>
+                            <th>Detail Warna</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredPrintItems.map((row) => (
+                            <tr key={`print-spk-${row.id}`}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPrintIdSet.has(String(row.id))}
+                                  onChange={() => togglePrintSpkSelection(row.id)}
+                                  disabled={isDownloading}
+                                />
+                              </td>
+                              <td className="spkb-id">#{row.id}</td>
+                              <td>{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
+                              <td className="spkb-cell-bold" title={row.bahan?.nama_bahan || "-"}>
+                                {row.bahan?.nama_bahan || "-"}
+                              </td>
+                              <td>{row.pabrik?.nama_pabrik || row.bahan?.pabrik_bahan || "-"}</td>
+                              <td>{formatWarnaSummary(row.warna)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="spkb-form-actions">
+                <span style={{ marginRight: "auto", alignSelf: "center", color: "#64748b", fontWeight: 700 }}>
+                  {selectedSpkIds.length} SPK dipilih
+                </span>
+                <button type="button" className="spkb-btn-secondary" onClick={closePrintModal} disabled={isDownloading}>
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="spkb-btn-primary"
+                  onClick={handleDownloadPrintPdf}
+                  disabled={selectedSpkIds.length === 0 || isDownloading || isPrintListLoading}
+                >
+                  {isDownloading ? "Mengunduh..." : "Download PDF"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="spkb-modal" onClick={resetForm}>
