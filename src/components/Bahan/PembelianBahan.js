@@ -223,6 +223,16 @@ const PembelianBahan = () => {
     return found ? found[field] || "-" : "-";
   };
 
+  const getBahanName = (item) =>
+    item?.bahan?.nama_bahan ||
+    item?.spk?.bahan?.nama_bahan ||
+    getNamaById(bahanList, item?.bahan_id, "nama_bahan");
+
+  const getBahanSatuan = (item) =>
+    item?.bahan?.satuan ||
+    item?.spk?.bahan?.satuan ||
+    getNamaById(bahanList, item?.bahan_id, "satuan");
+
   const formatRupiah = (angka) => {
     if (!angka && angka !== 0) return "-";
     return new Intl.NumberFormat("id-ID", {
@@ -437,10 +447,10 @@ const PembelianBahan = () => {
             spkBahan.warna.forEach((warna) => {
               // Hitung total rol yang sudah dikirim untuk warna ini
               const totalTerkirim = pembelianData
-                .filter(pb => pb.spk?.id === spkBahan.id)
+                .filter((pb) => Number(pb.spk?.id ?? pb.spk_bahan_id) === Number(spkBahan.id))
                 .flatMap(pb => pb.warna || [])
                 .filter(w => w.spk_bahan_warna_id === warna.id)
-                .reduce((sum, w) => sum + (w.rol?.length || 0), 0);
+                .reduce((sum, w) => sum + (w.rol?.length || w.jumlah_rol || 0), 0);
               
               sisaRol[warna.id] = Math.max(0, (warna.jumlah_rol || 0) - totalTerkirim);
             });
@@ -619,10 +629,14 @@ const PembelianBahan = () => {
       const data = Array.isArray(response.data) ? response.data : response.data?.data || response.data;
       
       // Refresh data
-      const resData = await API.get("/pembelian-bahan");
+      const [resData, resSpkBahan] = await Promise.all([
+        API.get("/pembelian-bahan"),
+        API.get("/spk-bahan"),
+      ]);
       let dataBahan = Array.isArray(resData.data.data) ? resData.data.data : resData.data.data?.data || [];
       dataBahan = dataBahan.sort((a, b) => b.id - a.id);
       setItems(dataBahan);
+      setSpkBahanList(normalizeApiList(resSpkBahan.data).filter((spk) => spk.status !== "selesai"));
       
       resetForm();
       setNoSuratJalanError("");
@@ -713,12 +727,14 @@ const PembelianBahan = () => {
 
       // Gunakan POST dengan _method=PUT karena Laravel kadang bermasalah dengan FormData pada PUT
       formData.append("_method", "PUT");
-      const response = await API.post(`/pembelian-bahan/${editItem.id}`, formData, {
+      await API.post(`/pembelian-bahan/${editItem.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const updatedData = response.data.data || response.data;
-      setItems((prev) => prev.map((b) => (b.id === editItem.id ? updatedData : b)));
+      const resData = await API.get("/pembelian-bahan");
+      let dataBahan = normalizeApiList(resData.data);
+      dataBahan = dataBahan.sort((a, b) => b.id - a.id);
+      setItems(dataBahan);
       resetForm();
       setNoSuratJalanError("");
       showAlert("success", "Berhasil", "Pembelian bahan berhasil diperbarui.");
@@ -1160,7 +1176,7 @@ const PembelianBahan = () => {
                       <tr key={b.id}>
                         <td><strong>{indexOfFirstItem + index + 1}</strong></td>
                         <td>{b.spk ? <span className="pembelian-bahan-badge">SPK #{b.spk.id}</span> : "-"}</td>
-                        <td>{getNamaById(bahanList, b.bahan_id, "nama_bahan")}</td>
+                        <td>{getBahanName(b)}</td>
                         <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
                         <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                         <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
@@ -1329,7 +1345,7 @@ const PembelianBahan = () => {
               <h3>Warna & Rol dari SPK</h3>
               {selectedSpkBahan && selectedSpkBahan.warna && selectedSpkBahan.warna.length > 0 ? (
                 selectedSpkBahan.warna.map((warna) => {
-                  const sisaRol = selectedSpkBahan.sisaRol?.[warna.id] || warna.jumlah_rol || 0;
+                  const sisaRol = selectedSpkBahan.sisaRol?.[warna.id] ?? warna.sisa_dipesan ?? warna.jumlah_rol ?? 0;
                   const beratRolArray = newItem.berat_rol[warna.id] || [];
                   const totalBerat = beratRolArray.reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0);
 
@@ -1445,11 +1461,11 @@ const PembelianBahan = () => {
                   </div>
                   <div className="pembelian-bahan-detail-item">
                     <strong>Nama Bahan</strong>
-                    <span>{getNamaById(bahanList, detailItem.bahan_id, "nama_bahan")}</span>
+                    <span>{getBahanName(detailItem)}</span>
                   </div>
                   <div className="pembelian-bahan-detail-item">
                     <strong>Satuan</strong>
-                    <span>{getNamaById(bahanList, detailItem.bahan_id, "satuan")}</span>
+                    <span>{getBahanSatuan(detailItem)}</span>
                   </div>
                   <div className="pembelian-bahan-detail-item">
                     <strong>Harga</strong>
