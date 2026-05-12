@@ -60,6 +60,7 @@ import Logs from "./components/Packing/LogsPage";
 import ReturnPage from "./components/Packing/Return";
 import ReturnLogs from "./components/Packing/ReturnLogs";
 import Bahan from "./components/Bahan/Bahan";
+import BahanList from "./components/Bahan/BahanList";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
@@ -162,6 +163,7 @@ const App = () => {
           <Route path="return-logs" element={<ReturnLogs />} />
           <Route path="order" element={<OrderMonitor />} />
           <Route path="bahan" element={<Bahan />} />
+          <Route path="bahan-list" element={<BahanList />} />
           <Route path="pembelianBahan" element={<PembelianBahan />} />
           <Route path="pabrik" element={<Pabrik />} />
           <Route path="gudang" element={<Gudang />} />

@@ -22,6 +22,7 @@ import {
   FaCreditCard,
   FaCalendarAlt,
   FaClipboardCheck,
+  FaListUl,
   FaUser,
   FaRuler,
   FaCheckSquare,
@@ -280,7 +281,7 @@ const Layout = () => {
 
 
             <li>
-              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "gudang" ? "active" : ""}`}>
+              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${["gudang", "bahan-list"].includes(activeMenu) ? "active" : ""}`}>
                 <FaWarehouse className="icon" /> Gudang Bahan
                 <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
@@ -299,6 +300,11 @@ const Layout = () => {
                   <li>
                     <Link to="bahan" className={`dropdown-link ${activeMenu === "bahan" ? "active" : ""}`} onClick={() => handleMenuClick("bahan")}>
                       <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} />Data Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="bahan-list" className={`dropdown-link ${activeMenu === "bahan-list" ? "active" : ""}`} onClick={() => handleMenuClick("bahan-list")}>
+                      <FaListUl className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> List Bahan
                     </Link>
                   </li>
 
