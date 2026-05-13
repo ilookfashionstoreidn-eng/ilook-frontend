@@ -77,6 +77,13 @@ const formatNumber = (value) =>
 
 const formatRoll = (value) => `${formatNumber(value)} - ROL`;
 
+const getGrandTotalToneClass = (value) => {
+  const numericValue = Number(value) || 0;
+  if (numericValue < 10) return "grand-tone-low";
+  if (numericValue > 10) return "grand-tone-high";
+  return "";
+};
+
 const formatDateTime = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -584,7 +591,11 @@ const BahanList = () => {
                                 </td>
                                 <td className="bahan-list-number-cell">{formatRoll(row.stok_gudang)}</td>
                                 <td className="bahan-list-number-cell">{formatRoll(row.dipesan)}</td>
-                                <td className="bahan-list-number-cell bahan-list-grand-cell">{formatRoll(row.grand_total)}</td>
+                                <td
+                                  className={`bahan-list-number-cell bahan-list-grand-cell ${getGrandTotalToneClass(row.grand_total)}`}
+                                >
+                                  {formatRoll(row.grand_total)}
+                                </td>
                               </tr>
                             );
                           })
@@ -597,7 +608,11 @@ const BahanList = () => {
                             <td colSpan="2" className="bahan-list-total-label">TOTAL</td>
                             <td className="bahan-list-number-cell">{formatRoll(visibleTotals.stok)}</td>
                             <td className="bahan-list-number-cell">{formatRoll(visibleTotals.dipesan)}</td>
-                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.grand)}</td>
+                            <td
+                              className={`bahan-list-number-cell bahan-list-grand-cell ${getGrandTotalToneClass(visibleTotals.grand)}`}
+                            >
+                              {formatRoll(visibleTotals.grand)}
+                            </td>
                           </tr>
                         </tfoot>
                       )}
@@ -606,14 +621,6 @@ const BahanList = () => {
                 </article>
 
                 <aside className="bahan-list-preview-panel">
-                  <div className="bahan-list-preview-head">
-                    <div>
-                      <h3>Preview Gambar</h3>
-                      <p>{selectedPreviewRow?.image_url ? "1 gambar tampil" : "Belum ada gambar"}</p>
-                    </div>
-                    <FaImage />
-                  </div>
-
                   <div className="bahan-list-preview-grid">
                     {!selectedPreviewRow ? (
                       <div className="bahan-list-palette-empty">Tidak ada preview gambar.</div>
@@ -629,12 +636,6 @@ const BahanList = () => {
                             <FaImage />
                           </div>
                         )}
-                        <div className="bahan-list-image-caption">
-                          <strong>{selectedMaterial.group_bahan}</strong>
-                          <span>
-                            {formatNumber(visibleRows.length)} warna / {formatRoll(visibleTotals.grand)}
-                          </span>
-                        </div>
                       </div>
                     )}
                   </div>
