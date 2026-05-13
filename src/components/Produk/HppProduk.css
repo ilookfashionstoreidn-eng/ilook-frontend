@@ -268,6 +268,11 @@
   min-width: 180px;
 }
 
+.hpp-form-input[readonly] {
+  background: #f8fafc;
+  color: #475569;
+}
+
 .hpp-filter-select:focus,
 .hpp-form-input:focus,
 .hpp-form-select:focus,
@@ -408,24 +413,27 @@
 .hpp-table td:nth-child(2) { width: 95px; }
 
 .hpp-table th:nth-child(3),
-.hpp-table td:nth-child(3) { width: 22%; }
+.hpp-table td:nth-child(3) { width: 18%; }
 
 .hpp-table th:nth-child(4),
-.hpp-table td:nth-child(4) { width: 14%; }
+.hpp-table td:nth-child(4) { width: 16%; }
 
 .hpp-table th:nth-child(5),
-.hpp-table td:nth-child(5) { width: 14%; }
+.hpp-table td:nth-child(5) { width: 12%; }
 
 .hpp-table th:nth-child(6),
-.hpp-table td:nth-child(6) { width: 14%; }
+.hpp-table td:nth-child(6) { width: 12%; }
 
 .hpp-table th:nth-child(7),
-.hpp-table td:nth-child(7) { width: 13%; }
+.hpp-table td:nth-child(7) { width: 12%; }
 
 .hpp-table th:nth-child(8),
-.hpp-table td:nth-child(8) { width: 130px; }
+.hpp-table td:nth-child(8) { width: 12%; }
 
-.hpp-table td:nth-child(8) {
+.hpp-table th:nth-child(9),
+.hpp-table td:nth-child(9) { width: 130px; }
+
+.hpp-table td:nth-child(9) {
   white-space: nowrap;
 }
 
@@ -680,7 +688,7 @@
 .hpp-modal-tabs {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding: 6px;
   border: 1px solid #dde6f2;
@@ -717,6 +725,159 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.hpp-searchable-select {
+  position: relative;
+  width: 100%;
+  z-index: 20;
+}
+
+.hpp-searchable-select-trigger {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hpp-searchable-select-trigger span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.hpp-searchable-select-trigger .placeholder {
+  color: #94a3b8;
+}
+
+.hpp-searchable-select-trigger svg {
+  flex: 0 0 auto;
+  color: #64748b;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.hpp-searchable-select.open .hpp-searchable-select-trigger {
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.hpp-searchable-select.open .hpp-searchable-select-trigger svg {
+  transform: rotate(180deg);
+  color: #2458ce;
+}
+
+.hpp-searchable-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  border: 1px solid #dbe5f1;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.hpp-searchable-select-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e4e9f0;
+}
+
+.hpp-searchable-select-search > svg {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.hpp-searchable-select-search input {
+  width: 100%;
+  height: 40px;
+  border: 0;
+  padding: 0 38px 0 34px;
+  background: #fbfdff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 13px;
+}
+
+.hpp-searchable-select-search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.hpp-searchable-select-search button {
+  position: absolute;
+  right: 7px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.hpp-searchable-select-search button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.hpp-searchable-select-options {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.hpp-searchable-option {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #0f172a;
+  min-height: 36px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hpp-searchable-option:hover {
+  background: #edf4ff;
+  color: #2458ce;
+}
+
+.hpp-searchable-option.selected {
+  background: #2458ce;
+  color: #ffffff;
+}
+
+.hpp-searchable-empty {
+  padding: 12px 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .hpp-price-input-wrap {
@@ -775,6 +936,59 @@
   margin-bottom: 8px;
 }
 
+.hpp-sku-panel {
+  grid-column: 1 / -1;
+}
+
+.hpp-sku-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.hpp-sku-list.detail {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.hpp-sku-item {
+  border: 1px solid #dce6f2;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+
+.hpp-sku-code {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.hpp-sku-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.hpp-sku-meta span {
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #2458ce;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hpp-empty-sku-state {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 14px;
+  font-size: 13px;
+}
+
 .hpp-komponen-section {
   grid-column: 1 / -1;
   margin-top: 6px;
@@ -799,6 +1013,33 @@
   border: 1px solid #dde5f0;
   border-radius: 10px;
   background: #ffffff;
+}
+
+.hpp-komponen-row-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.hpp-komponen-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2458ce;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hpp-komponen-role-badge.aksesoris {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .hpp-komponen-row input[readonly] {
@@ -1069,7 +1310,7 @@
   }
 
   .hpp-table {
-    min-width: 980px;
+    min-width: 1120px;
     table-layout: auto;
   }
 
