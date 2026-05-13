@@ -1,14 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./BahanList.css";
 import API from "../../api";
 import {
   FaImage,
+  FaPrint,
   FaSearch,
   FaSync,
   FaWarehouse,
 } from "react-icons/fa";
 
 const PAGE_SIZE = 100;
+const PAGE_FETCH_DELAY_MS = 120;
+const MAX_RATE_LIMIT_RETRIES = 3;
 const EMPTY_WARNA_KEY = "__tanpa_warna__";
 const COLLATOR = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
 
@@ -79,6 +82,7 @@ const formatRoll = (value) => `${formatNumber(value)} - ROL`;
 
 const getGrandTotalToneClass = (value) => {
   const numericValue = Number(value) || 0;
+  if (numericValue === 0) return "grand-tone-zero";
   if (numericValue < 10) return "grand-tone-low";
   if (numericValue > 10) return "grand-tone-high";
   return "";
@@ -185,6 +189,55 @@ const extractLastPage = (payload) => {
 const getApiErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Gagal memuat data bahan list.";
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRateLimitRetryDelay = (error, attempt) => {
+  if (error?.response?.status !== 429) return null;
+
+  const retryAfter = Number(error.response.headers?.["retry-after"]);
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(retryAfter * 1000, 30000);
+  }
+
+  return Math.min(1500 * (attempt + 1), 5000);
+};
+
+const apiGetWithRateLimitRetry = async (endpoint, config, attempt = 0) => {
+  try {
+    return await API.get(endpoint, config);
+  } catch (error) {
+    const retryDelay = getRateLimitRetryDelay(error, attempt);
+    if (retryDelay === null || attempt >= MAX_RATE_LIMIT_RETRIES) {
+      throw error;
+    }
+
+    await sleep(retryDelay);
+    return apiGetWithRateLimitRetry(endpoint, config, attempt + 1);
+  }
+};
+
+const splitCompoundBahanName = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.includes(" - ")) {
+    return { group: raw, pabrik: "" };
+  }
+
+  const [group, ...pabrikParts] = raw.split(" - ");
+  return {
+    group: String(group || "").trim(),
+    pabrik: pabrikParts.join(" - ").trim(),
+  };
+};
+
+const getSpkGroupName = (spk) => {
+  const directGroup = String(spk?.group_bahan || spk?.bahan?.group_bahan || "").trim();
+  if (directGroup) return directGroup;
+  return splitCompoundBahanName(spk?.bahan?.nama_bahan).group;
+};
+
+const getSpkWarnaQty = (warnaRow) =>
+  Number(warnaRow?.jumlah_rol ?? warnaRow?.stok_dipesan ?? warnaRow?.jumlah ?? 0) || 0;
+
 const getBahanImageUrl = (image) => {
   const rawUrl = image?.image_url || "";
   if (rawUrl) {
@@ -225,7 +278,7 @@ const getBahanImageFromRow = (row) => {
 };
 
 const fetchAllPaginated = async (endpoint, params = {}) => {
-  const firstResponse = await API.get(endpoint, {
+  const firstResponse = await apiGetWithRateLimitRetry(endpoint, {
     params: { ...params, page: 1, per_page: PAGE_SIZE },
   });
 
@@ -234,7 +287,8 @@ const fetchAllPaginated = async (endpoint, params = {}) => {
   const lastPage = extractLastPage(firstPayload);
 
   for (let page = 2; page <= lastPage; page += 1) {
-    const response = await API.get(endpoint, {
+    await sleep(PAGE_FETCH_DELAY_MS);
+    const response = await apiGetWithRateLimitRetry(endpoint, {
       params: { ...params, page, per_page: PAGE_SIZE },
     });
     rows.push(...extractRows(response.data || {}));
@@ -243,40 +297,92 @@ const fetchAllPaginated = async (endpoint, params = {}) => {
   return rows;
 };
 
-const buildOrderMapByBahanId = (spkRows) => {
-  const map = new Map();
+const shouldUseLegacyBahanListFallback = (error) => {
+  const status = error?.response?.status;
+  return status === 404 || status === 405;
+};
 
-  spkRows.forEach((spk) => {
+const toSafeFileName = (value) => {
+  const safeName = String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return safeName || "bahan-list";
+};
+
+const getDownloadFileName = (headers, fallbackFileName) => {
+  const disposition =
+    headers?.["content-disposition"] ||
+    headers?.get?.("content-disposition") ||
+    "";
+  const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1]);
+    } catch (error) {
+      return encodedMatch[1];
+    }
+  }
+
+  const fileNameMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return fileNameMatch?.[1] || fallbackFileName;
+};
+
+const downloadBlob = (blob, fileName) => {
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => {
+    window.URL.revokeObjectURL(blobUrl);
+  }, 1000);
+};
+
+const getOrderedQtyForWarnaGroup = (spkRows, material, warnaGroup) => {
+  const materialKey = normalizeText(material.group_bahan);
+  const materialRowIds = new Set(
+    material.sourceRows
+      .map((row) => Number(row?.id))
+      .filter(Boolean)
+  );
+
+  return spkRows.reduce((total, spk) => {
     const bahanId = Number(spk?.bahan_id ?? spk?.bahan?.id);
-    if (!bahanId) return;
+    const matchesById = bahanId && materialRowIds.has(bahanId);
+    const matchesByGroup = materialKey && normalizeText(getSpkGroupName(spk)) === materialKey;
 
-    if (!map.has(bahanId)) {
-      map.set(bahanId, new Map());
+    if (!matchesById && !matchesByGroup) {
+      return total;
     }
 
-    const warnaMap = map.get(bahanId);
     const warnaRows = Array.isArray(spk?.warna) ? spk.warna : [];
 
     if (warnaRows.length === 0) {
+      const selectedRowInThisColor = warnaGroup.sourceRows.some((row) => Number(row?.id) === bahanId);
+      if (!selectedRowInThisColor) return total;
+
       const qty = Number(spk?.jumlah ?? 0);
-      if (qty > 0) {
-        warnaMap.set(EMPTY_WARNA_KEY, (warnaMap.get(EMPTY_WARNA_KEY) || 0) + qty);
-      }
-      return;
+      return total + (qty > 0 ? qty : 0);
     }
 
-    warnaRows.forEach((warnaRow) => {
-      const warnaKey = normalizeWarnaKey(warnaRow?.warna);
-      const qty = Number(warnaRow?.jumlah_rol ?? warnaRow?.stok_dipesan ?? 0);
-      warnaMap.set(warnaKey, (warnaMap.get(warnaKey) || 0) + qty);
-    });
-  });
+    const warnaTotal = warnaRows.reduce((sum, warnaRow) => {
+      if (normalizeWarnaKey(warnaRow?.warna) !== warnaGroup.key) {
+        return sum;
+      }
 
-  return map;
+      return sum + getSpkWarnaQty(warnaRow);
+    }, 0);
+
+    return total + warnaTotal;
+  }, 0);
 };
 
 const buildBahanGroups = (masterRows, spkRows) => {
-  const orderMapByBahanId = buildOrderMapByBahanId(spkRows);
   const materialMap = new Map();
 
   masterRows.forEach((row) => {
@@ -319,13 +425,7 @@ const buildBahanGroups = (masterRows, spkRows) => {
 
       const rows = Array.from(warnaMap.values())
         .map((warnaGroup) => {
-          const dipesan = warnaGroup.sourceRows.reduce((total, row) => {
-            const bahanOrderMap = orderMapByBahanId.get(Number(row?.id));
-            if (!bahanOrderMap) return total;
-            const warnaKey = normalizeWarnaKey(row?.warna_bahan);
-            return total + (Number(bahanOrderMap.get(warnaKey)) || 0);
-          }, 0);
-
+          const dipesan = getOrderedQtyForWarnaGroup(spkRows, material, warnaGroup);
           const image = warnaGroup.sourceRows.map(getBahanImageFromRow).find(Boolean) || null;
           const groupList = uniqueValues(warnaGroup.sourceRows.map((row) => row?.group_bahan));
           const pabrikList = uniqueValues(warnaGroup.sourceRows.map((row) => row?.pabrik_bahan));
@@ -368,42 +468,108 @@ const buildBahanGroups = (masterRows, spkRows) => {
     .sort((a, b) => COLLATOR.compare(a.group_bahan, b.group_bahan));
 };
 
+const normalizeBahanSummaryGroups = (payload) =>
+  extractRows(payload)
+    .map((group) => {
+      const rows = (Array.isArray(group?.rows) ? group.rows : [])
+        .map((row) => {
+          const stokGudang = Number(row?.stok_gudang ?? 0) || 0;
+          const dipesan = Number(row?.dipesan ?? 0) || 0;
+          const grandTotal = Number(row?.grand_total ?? stokGudang + dipesan) || 0;
+
+          return {
+            key: String(row?.key || normalizeWarnaKey(row?.warna)).trim(),
+            warna: String(row?.warna || "Tanpa Warna").trim() || "Tanpa Warna",
+            stok_gudang: stokGudang,
+            dipesan,
+            grand_total: grandTotal,
+            image_url: getBahanImageUrl(row),
+            group_bahan_list: uniqueValues(Array.isArray(row?.group_bahan_list) ? row.group_bahan_list : []),
+            pabrik_bahan_list: uniqueValues(Array.isArray(row?.pabrik_bahan_list) ? row.pabrik_bahan_list : []),
+          };
+        })
+        .sort((a, b) => COLLATOR.compare(a.warna, b.warna));
+
+      const totals = rows.reduce(
+        (acc, row) => ({
+          stok: acc.stok + row.stok_gudang,
+          dipesan: acc.dipesan + row.dipesan,
+          grand: acc.grand + row.grand_total,
+        }),
+        { stok: 0, dipesan: 0, grand: 0 }
+      );
+
+      const groupBahan = String(group?.group_bahan || "").trim();
+
+      return {
+        key: String(group?.key || normalizeText(groupBahan)).trim(),
+        group_bahan: groupBahan,
+        nama_bahan_list: uniqueValues(Array.isArray(group?.nama_bahan_list) ? group.nama_bahan_list : []),
+        group_bahan_list: uniqueValues(Array.isArray(group?.group_bahan_list) ? group.group_bahan_list : []),
+        pabrik_bahan_list: uniqueValues(Array.isArray(group?.pabrik_bahan_list) ? group.pabrik_bahan_list : []),
+        rows,
+        total_warna: Number(group?.total_warna ?? rows.length) || rows.length,
+        total_stok_gudang: Number(group?.total_stok_gudang ?? totals.stok) || totals.stok,
+        total_dipesan: Number(group?.total_dipesan ?? totals.dipesan) || totals.dipesan,
+        total_grand_total: Number(group?.total_grand_total ?? totals.grand) || totals.grand,
+      };
+    })
+    .filter((group) => group.key && group.group_bahan)
+    .sort((a, b) => COLLATOR.compare(a.group_bahan, b.group_bahan));
+
+const fetchBahanListSummary = async () => {
+  const response = await apiGetWithRateLimitRetry("/bahan-list/summary");
+  return normalizeBahanSummaryGroups(response.data || {});
+};
+
+const fetchLegacyBahanGroups = async () => {
+  const bahanData = await fetchAllPaginated("/bahan");
+  const spkData = await fetchAllPaginated("/spk-bahan", { sort_by: "id", sort_dir: "desc" });
+
+  return buildBahanGroups(bahanData, spkData);
+};
+
 const BahanList = () => {
-  const [masterRows, setMasterRows] = useState([]);
-  const [spkRows, setSpkRows] = useState([]);
+  const [bahanGroups, setBahanGroups] = useState([]);
   const [selectedBahanKey, setSelectedBahanKey] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastSyncAt, setLastSyncAt] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const initialLoadStartedRef = useRef(false);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [bahanData, spkData] = await Promise.all([
-        fetchAllPaginated("/bahan"),
-        fetchAllPaginated("/spk-bahan", { sort_by: "id", sort_dir: "desc" }),
-      ]);
+      let groups = [];
+      try {
+        groups = await fetchBahanListSummary();
+      } catch (summaryError) {
+        if (!shouldUseLegacyBahanListFallback(summaryError)) {
+          throw summaryError;
+        }
 
-      setMasterRows(bahanData);
-      setSpkRows(spkData);
+        groups = await fetchLegacyBahanGroups();
+      }
+
+      setBahanGroups(groups);
       setLastSyncAt(new Date().toISOString());
     } catch (loadError) {
       setError(getApiErrorMessage(loadError));
-      setMasterRows([]);
-      setSpkRows([]);
+      setBahanGroups([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
     loadData();
   }, [loadData]);
-
-  const bahanGroups = useMemo(() => buildBahanGroups(masterRows, spkRows), [masterRows, spkRows]);
 
   const filteredBahanGroups = useMemo(() => {
     const query = normalizeText(searchTerm);
@@ -457,6 +623,30 @@ const BahanList = () => {
 
   const materialPabrikLabel = selectedMaterial?.pabrik_bahan_list?.join(", ") || "-";
 
+  const handleDownloadPdf = useCallback(async () => {
+    if (!selectedMaterial || loading || downloadingPdf) return;
+
+    try {
+      setDownloadingPdf(true);
+      const response = await API.get("/bahan-list/summary/pdf", {
+        params: { group_key: selectedMaterial.key },
+        responseType: "blob",
+      });
+
+      const fallbackFileName = `Bahan-List-${toSafeFileName(selectedMaterial.group_bahan)}.pdf`;
+      const fileName = getDownloadFileName(response.headers, fallbackFileName);
+      const pdfBlob = response.data instanceof Blob
+        ? response.data
+        : new Blob([response.data], { type: "application/pdf" });
+
+      downloadBlob(pdfBlob, fileName);
+    } catch (downloadError) {
+      window.alert(getApiErrorMessage(downloadError) || "Gagal download PDF bahan list.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [downloadingPdf, loading, selectedMaterial]);
+
   return (
     <div className="bahan-list-page">
       <div className="bahan-list-shell">
@@ -479,6 +669,15 @@ const BahanList = () => {
               <span>Terakhir Sinkron</span>
               <strong>{formatDateTime(lastSyncAt)}</strong>
             </div>
+            <button
+              type="button"
+              className="bahan-list-print-btn"
+              onClick={handleDownloadPdf}
+              disabled={loading || downloadingPdf || !selectedMaterial}
+            >
+              <FaPrint />
+              {downloadingPdf ? "Mengunduh..." : "Download PDF"}
+            </button>
             <button type="button" className="bahan-list-refresh-btn" onClick={loadData} disabled={loading}>
               <FaSync className={loading ? "is-spinning" : ""} />
               Refresh
