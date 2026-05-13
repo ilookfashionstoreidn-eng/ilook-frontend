@@ -2,11 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./BahanList.css";
 import API from "../../api";
 import {
-  FaBoxes,
-  FaLayerGroup,
-  FaPalette,
+  FaImage,
   FaSearch,
-  FaShoppingCart,
   FaSync,
   FaWarehouse,
 } from "react-icons/fa";
@@ -181,6 +178,45 @@ const extractLastPage = (payload) => {
 const getApiErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Gagal memuat data bahan list.";
 
+const getBahanImageUrl = (image) => {
+  const rawUrl = image?.image_url || "";
+  if (rawUrl) {
+    if (rawUrl.startsWith("/") || rawUrl.startsWith("blob:")) return rawUrl;
+
+    try {
+      const parsedUrl = new URL(rawUrl);
+      if (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1") {
+        return parsedUrl.pathname;
+      }
+
+      return rawUrl;
+    } catch (error) {
+      return rawUrl;
+    }
+  }
+
+  const imagePath = image?.image_path || "";
+  const filename = String(imagePath).split("/").filter(Boolean).pop();
+  if (!filename) return "";
+
+  const apiBaseUrl = (process.env.REACT_APP_API_URL || "/api").replace(/\/$/, "");
+  return `${apiBaseUrl}/bahan-images/${encodeURIComponent(filename)}`;
+};
+
+const getBahanImageFromRow = (row) => {
+  const image = row?.bahan_image || row?.bahanImage || null;
+  if (image) return image;
+
+  if (row?.image_url || row?.image_path) {
+    return {
+      image_url: row.image_url || "",
+      image_path: row.image_path || "",
+    };
+  }
+
+  return null;
+};
+
 const fetchAllPaginated = async (endpoint, params = {}) => {
   const firstResponse = await API.get(endpoint, {
     params: { ...params, page: 1, per_page: PAGE_SIZE },
@@ -237,14 +273,14 @@ const buildBahanGroups = (masterRows, spkRows) => {
   const materialMap = new Map();
 
   masterRows.forEach((row) => {
-    const namaBahan = String(row?.nama_bahan || "").trim();
-    if (!namaBahan) return;
+    const groupBahan = String(row?.group_bahan || row?.nama_bahan || "").trim();
+    if (!groupBahan) return;
 
-    const materialKey = normalizeText(namaBahan);
+    const materialKey = normalizeText(groupBahan);
     if (!materialMap.has(materialKey)) {
       materialMap.set(materialKey, {
         key: materialKey,
-        nama_bahan: namaBahan,
+        group_bahan: groupBahan,
         sourceRows: [],
       });
     }
@@ -283,6 +319,7 @@ const buildBahanGroups = (masterRows, spkRows) => {
             return total + (Number(bahanOrderMap.get(warnaKey)) || 0);
           }, 0);
 
+          const image = warnaGroup.sourceRows.map(getBahanImageFromRow).find(Boolean) || null;
           const groupList = uniqueValues(warnaGroup.sourceRows.map((row) => row?.group_bahan));
           const pabrikList = uniqueValues(warnaGroup.sourceRows.map((row) => row?.pabrik_bahan));
 
@@ -292,6 +329,7 @@ const buildBahanGroups = (masterRows, spkRows) => {
             stok_gudang: warnaGroup.stok_gudang,
             dipesan,
             grand_total: warnaGroup.stok_gudang + dipesan,
+            image_url: getBahanImageUrl(image),
             group_bahan_list: groupList,
             pabrik_bahan_list: pabrikList,
           };
@@ -309,7 +347,8 @@ const buildBahanGroups = (masterRows, spkRows) => {
 
       return {
         key: material.key,
-        nama_bahan: material.nama_bahan,
+        group_bahan: material.group_bahan,
+        nama_bahan_list: uniqueValues(material.sourceRows.map((row) => row?.nama_bahan)),
         group_bahan_list: uniqueValues(material.sourceRows.map((row) => row?.group_bahan)),
         pabrik_bahan_list: uniqueValues(material.sourceRows.map((row) => row?.pabrik_bahan)),
         rows,
@@ -319,7 +358,7 @@ const buildBahanGroups = (masterRows, spkRows) => {
         total_grand_total: totals.grand,
       };
     })
-    .sort((a, b) => COLLATOR.compare(a.nama_bahan, b.nama_bahan));
+    .sort((a, b) => COLLATOR.compare(a.group_bahan, b.group_bahan));
 };
 
 const BahanList = () => {
@@ -363,7 +402,9 @@ const BahanList = () => {
     const query = normalizeText(searchTerm);
     if (!query) return bahanGroups;
 
-    return bahanGroups.filter((group) => normalizeText(group.nama_bahan).includes(query));
+    return bahanGroups.filter((group) =>
+      normalizeText(group.nama_bahan_list?.join(" ")).includes(query)
+    );
   }, [bahanGroups, searchTerm]);
 
   useEffect(() => {
@@ -402,7 +443,11 @@ const BahanList = () => {
     [visibleRows]
   );
 
-  const materialGroupLabel = selectedMaterial?.group_bahan_list?.join(", ") || "-";
+  const selectedPreviewRow = useMemo(
+    () => visibleRows.find((row) => row.image_url) || visibleRows[0] || null,
+    [visibleRows]
+  );
+
   const materialPabrikLabel = selectedMaterial?.pabrik_bahan_list?.join(", ") || "-";
 
   return (
@@ -436,20 +481,20 @@ const BahanList = () => {
 
         <section className="bahan-list-toolbar">
           <label className="bahan-list-select-wrap">
-            <span>Nama Bahan</span>
+            <span>Group Bahan</span>
             <select
               value={selectedBahanKey}
               onChange={(event) => setSelectedBahanKey(event.target.value)}
               disabled={loading || bahanGroups.length === 0}
             >
               {bahanGroups.length === 0 ? (
-                <option value="">Tidak ada data bahan</option>
+                <option value="">Tidak ada data group bahan</option>
               ) : filteredBahanGroups.length === 0 ? (
-                <option value="">Nama bahan tidak ditemukan</option>
+                <option value="">Group bahan tidak ditemukan</option>
               ) : (
                 filteredBahanGroups.map((group) => (
                   <option key={group.key} value={group.key}>
-                    {group.nama_bahan} ({group.total_warna} warna)
+                    {group.group_bahan} ({group.total_warna} warna)
                   </option>
                 ))
               )}
@@ -473,178 +518,128 @@ const BahanList = () => {
           <div className="bahan-list-state error">{error}</div>
         ) : !selectedMaterial ? (
           <div className="bahan-list-state">
-            {searchTerm ? "Nama bahan tidak ditemukan." : "Belum ada data bahan yang bisa ditampilkan."}
+            {searchTerm ? "Group bahan tidak ditemukan." : "Belum ada data group bahan yang bisa ditampilkan."}
           </div>
         ) : (
           <>
-            <section className="bahan-list-material-head">
-              <div>
-                <span>NAMA BAHAN</span>
-                <h2>{selectedMaterial.nama_bahan}</h2>
-              </div>
-              <div className="bahan-list-material-chips">
-                <span>{materialGroupLabel}</span>
-                <span>{materialPabrikLabel}</span>
-                <span>
-                  {visibleRows.length} dari {selectedMaterial.total_warna} warna
-                </span>
-              </div>
-            </section>
+            <section className="bahan-list-content-card">
+              <div className="bahan-list-card-head">
+                <div>
+                  <h3>Tabel Stok Bahan</h3>
+                  <p>Group bahan: {selectedMaterial.group_bahan}</p>
+                </div>
 
-            <section className="bahan-list-kpi-grid">
-              <article className="bahan-list-kpi-card tone-warna">
-                <div className="bahan-list-kpi-icon">
-                  <FaLayerGroup />
-                </div>
-                <div>
-                  <span>Total Warna</span>
-                  <strong>{formatNumber(visibleRows.length)}</strong>
-                </div>
-              </article>
-              <article className="bahan-list-kpi-card tone-stok">
-                <div className="bahan-list-kpi-icon">
-                  <FaWarehouse />
-                </div>
-                <div>
-                  <span>Stok Gudang</span>
-                  <strong>{formatNumber(visibleTotals.stok)}</strong>
-                </div>
-              </article>
-              <article className="bahan-list-kpi-card tone-pesan">
-                <div className="bahan-list-kpi-icon">
-                  <FaShoppingCart />
-                </div>
-                <div>
-                  <span>Dipesan</span>
-                  <strong>{formatNumber(visibleTotals.dipesan)}</strong>
-                </div>
-              </article>
-              <article className="bahan-list-kpi-card tone-grand">
-                <div className="bahan-list-kpi-icon">
-                  <FaBoxes />
-                </div>
-                <div>
-                  <span>Grand Total</span>
-                  <strong>{formatNumber(visibleTotals.grand)}</strong>
-                </div>
-              </article>
-            </section>
-
-            <section className="bahan-list-content-grid">
-              <article className="bahan-list-table-card">
-                <div className="bahan-list-card-head">
-                  <div>
-                    <h3>Tabel Stok Bahan</h3>
-                    <p>{selectedMaterial.nama_bahan}</p>
-                  </div>
+                <div className="bahan-list-content-meta">
                   <span>{formatDateTime(lastSyncAt)}</span>
+                  <span>{materialPabrikLabel}</span>
+                  <span>{visibleRows.length} warna</span>
                 </div>
+              </div>
 
-                <div className="bahan-list-table-wrap">
-                  <table className="bahan-list-table">
-                    {/* FIXED: alignment */}
-                    <colgroup>
-                      <col style={{ width: "5%" }} />
-                      <col style={{ width: "30%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "25%" }} />
-                    </colgroup>
-                    <thead>
-                      {/* FIXED: alignment */}
-                      <tr>
-                        <th className="cell-no">No</th>
-                        <th>Warna</th>
-                        <th>Stok Gudang - Total</th>
-                        <th>Dipesan - Total</th>
-                        <th>Grand Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleRows.length === 0 ? (
-                        <tr>
-                          <td colSpan="5" className="bahan-list-empty-cell">
-                            Tidak ada warna yang sesuai pencarian.
-                          </td>
-                        </tr>
-                      ) : (
-                        visibleRows.map((row, index) => {
-                          const warnaStyle = resolveWarnaStyle(row.warna);
-
-                          return (
-                            /* FIXED: alignment */
-                            <tr key={row.key}>
-                              <td className="cell-no">{index + 1}</td>
-                              <td className="bahan-list-warna-cell">
-                                <span
-                                  className="bahan-list-warna-dot"
-                                  style={{
-                                    backgroundColor: warnaStyle.backgroundColor,
-                                    borderColor: warnaStyle.borderColor,
-                                  }}
-                                />
-                                <strong>{row.warna}</strong>
-                              </td>
-                              <td className="bahan-list-number-cell">{formatRoll(row.stok_gudang)}</td>
-                              <td className="bahan-list-number-cell">{formatRoll(row.dipesan)}</td>
-                              <td className="bahan-list-number-cell bahan-list-grand-cell">{formatRoll(row.grand_total)}</td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                    {visibleRows.length > 0 && (
-                      <tfoot>
+              <div className="bahan-list-content-grid">
+                <article className="bahan-list-table-panel">
+                  <div className="bahan-list-table-wrap">
+                    <table className="bahan-list-table">
+                      <colgroup>
+                        <col style={{ width: "5%" }} />
+                        <col style={{ width: "30%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "25%" }} />
+                      </colgroup>
+                      <thead>
                         {/* FIXED: alignment */}
                         <tr>
-                          <td colSpan="2" className="bahan-list-total-label">TOTAL</td>
-                          <td className="bahan-list-number-cell">{formatRoll(visibleTotals.stok)}</td>
-                          <td className="bahan-list-number-cell">{formatRoll(visibleTotals.dipesan)}</td>
-                          <td className="bahan-list-number-cell">{formatRoll(visibleTotals.grand)}</td>
+                          <th className="cell-no">No</th>
+                          <th>Warna</th>
+                          <th>Stok Gudang - Total</th>
+                          <th>Dipesan - Total</th>
+                          <th>Grand Total</th>
                         </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                </div>
-              </article>
+                      </thead>
+                      <tbody>
+                        {visibleRows.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="bahan-list-empty-cell">
+                              Tidak ada warna yang sesuai pencarian.
+                            </td>
+                          </tr>
+                        ) : (
+                          visibleRows.map((row, index) => {
+                            const warnaStyle = resolveWarnaStyle(row.warna);
 
-              <aside className="bahan-list-palette-card">
-                <div className="bahan-list-card-head">
-                  <div>
-                    <h3>Preview Warna</h3>
-                    <p>{visibleRows.length} warna tampil</p>
+                            return (
+                              /* FIXED: alignment */
+                              <tr key={row.key}>
+                                <td className="cell-no">{index + 1}</td>
+                                <td className="bahan-list-warna-cell">
+                                  <span
+                                    className="bahan-list-warna-dot"
+                                    style={{
+                                      backgroundColor: warnaStyle.backgroundColor,
+                                      borderColor: warnaStyle.borderColor,
+                                    }}
+                                  />
+                                  <strong>{row.warna}</strong>
+                                </td>
+                                <td className="bahan-list-number-cell">{formatRoll(row.stok_gudang)}</td>
+                                <td className="bahan-list-number-cell">{formatRoll(row.dipesan)}</td>
+                                <td className="bahan-list-number-cell bahan-list-grand-cell">{formatRoll(row.grand_total)}</td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                      {visibleRows.length > 0 && (
+                        <tfoot>
+                          {/* FIXED: alignment */}
+                          <tr>
+                            <td colSpan="2" className="bahan-list-total-label">TOTAL</td>
+                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.stok)}</td>
+                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.dipesan)}</td>
+                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.grand)}</td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
                   </div>
-                  <FaPalette />
-                </div>
+                </article>
 
-                <div className="bahan-list-palette-grid">
-                  {visibleRows.length === 0 ? (
-                    <div className="bahan-list-palette-empty">Tidak ada preview warna.</div>
-                  ) : (
-                    visibleRows.map((row) => {
-                      const warnaStyle = resolveWarnaStyle(row.warna);
+                <aside className="bahan-list-preview-panel">
+                  <div className="bahan-list-preview-head">
+                    <div>
+                      <h3>Preview Gambar</h3>
+                      <p>{selectedPreviewRow?.image_url ? "1 gambar tampil" : "Belum ada gambar"}</p>
+                    </div>
+                    <FaImage />
+                  </div>
 
-                      return (
-                        <div
-                          key={`palette-${row.key}`}
-                          className="bahan-list-swatch"
-                          style={{
-                            backgroundColor: warnaStyle.backgroundColor,
-                            borderColor: warnaStyle.borderColor,
-                            color: warnaStyle.color,
-                          }}
-                          title={`${row.warna}: ${formatRoll(row.grand_total)}`}
-                        >
-                          <strong>{row.warna}</strong>
+                  <div className="bahan-list-preview-grid">
+                    {!selectedPreviewRow ? (
+                      <div className="bahan-list-palette-empty">Tidak ada preview gambar.</div>
+                    ) : (
+                      <div
+                        className="bahan-list-image-preview"
+                        title={`${selectedMaterial.group_bahan}: ${formatRoll(visibleTotals.grand)}`}
+                      >
+                        {selectedPreviewRow.image_url ? (
+                          <img src={selectedPreviewRow.image_url} alt={`Preview ${selectedMaterial.group_bahan}`} />
+                        ) : (
+                          <div className="bahan-list-image-placeholder">
+                            <FaImage />
+                          </div>
+                        )}
+                        <div className="bahan-list-image-caption">
+                          <strong>{selectedMaterial.group_bahan}</strong>
                           <span>
-                            {formatNumber(row.stok_gudang)} stok / {formatNumber(row.dipesan)} pesan
+                            {formatNumber(visibleRows.length)} warna / {formatRoll(visibleTotals.grand)}
                           </span>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </aside>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              </div>
             </section>
           </>
         )}
