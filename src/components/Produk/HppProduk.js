@@ -293,6 +293,32 @@ const HppProduk = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  const getImageFileName = (value) => {
+    if (!value) return "";
+
+    if (value instanceof File) {
+      return value.name;
+    }
+
+    const path = String(value);
+    return path.split(/[\\/]/).pop() || path;
+  };
+
+  const renderImageUploadState = (value) => {
+    const fileName = getImageFileName(value);
+
+    if (!fileName) {
+      return <div className="hpp-file-state empty">Belum ada gambar dipilih.</div>;
+    }
+
+    return (
+      <div className="hpp-file-state selected">
+        <span>{value instanceof File ? "File siap diupload" : "Gambar tersimpan"}</span>
+        <strong>{fileName}</strong>
+      </div>
+    );
+  };
+
   const getKomponenBadgeLabel = (komp, index, komponenItems = []) => {
     if (komp?.sumber_komponen === "aksesoris") {
       return "Aksesoris";
@@ -685,7 +711,11 @@ const HppProduk = () => {
 
     const fetchBahans = async () => {
       try {
-        const res = await API.get("/bahan");
+        const res = await API.get("/bahan", {
+          params: {
+            all: 1,
+          },
+        });
         setBahanList(res.data.data || res.data);
       } catch (err) {
         console.error("Gagal fetch bahan:", err);
@@ -1654,6 +1684,7 @@ const HppProduk = () => {
                 <div className="hpp-form-group">
                   <label>Gambar Produk</label>
                   <input type="file" name="gambar_produk" className="hpp-form-input" onChange={handleFileChange} accept="image/*" />
+                  {renderImageUploadState(newProduk.gambar_produk)}
                   {newProduk.gambar_produk && !(newProduk.gambar_produk instanceof File) && (
                     <div className="hpp-form-image-preview">
                       <p>Gambar Saat Ini</p>
@@ -1950,6 +1981,7 @@ const HppProduk = () => {
                 <div className="hpp-form-group">
                   <label>Gambar Produk</label>
                   <input type="file" className="hpp-form-input" accept="image/*" onChange={handleFileChange} />
+                  {renderImageUploadState(editProduk.gambar_produk)}
                   {editProduk.gambar_produk && !(editProduk.gambar_produk instanceof File) && (
                     <div className="hpp-form-image-preview">
                       <p>Gambar Saat Ini</p>
