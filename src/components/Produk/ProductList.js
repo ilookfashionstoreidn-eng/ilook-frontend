@@ -16,6 +16,7 @@ import {
   FaTimes,
   FaTrash,
 } from "react-icons/fa";
+import { FiCopy } from "react-icons/fi"; // [DUPLIKAT] - ditambahkan
 
 const emptyMaterial = {
   material: "",
@@ -150,6 +151,8 @@ const defaultExportColumns = [
   "price_cutting",
 ];
 
+const normalizeSkuNameValue = (value) => String(value ?? "").trim().replace(/\s+/g, " "); // [DUPLIKAT] - ditambahkan
+
 const ProductList = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -175,9 +178,12 @@ const ProductList = () => {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [selectedExportColumns, setSelectedExportColumns] = useState(defaultExportColumns);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isDuplicate, setIsDuplicate] = useState(false); // [DUPLIKAT] - ditambahkan
+  const [duplicateSourceSkuName, setDuplicateSourceSkuName] = useState(""); // [DUPLIKAT] - ditambahkan
   const [form, setForm] = useState(initialForm);
   const importInputRef = useRef(null);
   const groupDropdownRef = useRef(null);
+  const skuNameInputRef = useRef(null); // [DUPLIKAT] - ditambahkan
 
   const groupOptions = useMemo(() => (summary.groups || []).filter(Boolean), [summary.groups]);
   const filteredGroupOptions = useMemo(() => {
@@ -398,20 +404,52 @@ const ProductList = () => {
     setGroupDropdownOpen(false);
   };
 
+  const duplicateProductToForm = (item = {}) => ({ // [DUPLIKAT] - ditambahkan
+    ...item,
+    id: null,
+    created_at: undefined,
+    updated_at: undefined,
+  });
+
+  useEffect(() => { // [DUPLIKAT] - ditambahkan
+    if (!isDuplicate || modalMode !== "add") return;
+
+    const focusTimer = window.setTimeout(() => {
+      skuNameInputRef.current?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [isDuplicate, modalMode]);
+
   const openAddModal = () => {
     setSelectedItem(null);
+    setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
+    setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(initialForm);
     setModalMode("add");
   };
 
   const openEditModal = (item) => {
     setSelectedItem(item);
+    setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
+    setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(toForm(item));
     setModalMode("edit");
   };
 
+  const handleDuplicate = (item) => { // [DUPLIKAT] - ditambahkan
+    const duplicatedItem = duplicateProductToForm(item);
+    setSelectedItem(item);
+    setIsDuplicate(true);
+    setDuplicateSourceSkuName(item?.sku_name || ""); // [DUPLIKAT] - ditambahkan
+    setForm(toForm(duplicatedItem));
+    setModalMode("add");
+  };
+
   const openDetailModal = (item) => {
     setSelectedItem(item);
+    setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
+    setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setModalMode("detail");
   };
 
@@ -419,6 +457,8 @@ const ProductList = () => {
     if (saving && !force) return;
     setModalMode(null);
     setSelectedItem(null);
+    setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
+    setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(initialForm);
   };
 
@@ -461,11 +501,19 @@ const ProductList = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (isDuplicate && normalizeSkuNameValue(form.sku_name) === normalizeSkuNameValue(duplicateSourceSkuName)) { // [DUPLIKAT] - dimodifikasi
+      await showErrorAlert(
+        "SKU Name Belum Diubah",
+        "SKU Name harus diubah dulu sebelum duplikat disimpan."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
       const payload = buildPayload();
 
-      if (modalMode === "edit" && selectedItem?.id) {
+      if (!isDuplicate && modalMode === "edit" && selectedItem?.id) { // [DUPLIKAT] - dimodifikasi
         await API.put(`/product-list/${selectedItem.id}`, payload);
         closeModal(true);
         await fetchProductLists();
@@ -474,7 +522,7 @@ const ProductList = () => {
         await API.post("/product-list", payload);
         closeModal(true);
         await fetchProductLists();
-        await showSuccessAlert("Berhasil", "Product List berhasil ditambahkan.");
+        await showSuccessAlert("Berhasil", isDuplicate ? "Product List berhasil diduplikasi." : "Product List berhasil ditambahkan."); // [DUPLIKAT] - dimodifikasi
       }
     } catch (err) {
       await showErrorAlert("Gagal Menyimpan", getApiErrorMessage(err, "Data Product List gagal disimpan."));
@@ -784,15 +832,19 @@ const ProductList = () => {
       );
     }
 
+    const modalTitle = isDuplicate ? "DUPLIKAT PRODUCT LIST" : modalMode === "edit" ? "EDIT PRODUCT LIST" : "TAMBAH PRODUCT LIST"; // [DUPLIKAT] - ditambahkan
+    const modalHeading = isDuplicate ? "DUPLIKAT PRODUCT LIST" : modalMode === "edit" ? form.product || "Edit data" : "Data produk baru"; // [DUPLIKAT] - ditambahkan
+    const isDuplicateSkuLocked = isDuplicate && normalizeSkuNameValue(form.sku_name) === normalizeSkuNameValue(duplicateSourceSkuName); // [DUPLIKAT] - ditambahkan
+
     return (
       <div className="product-list-modal-backdrop" onClick={closeModal}>
         <form className="product-list-modal" onSubmit={handleSubmit} onClick={(event) => event.stopPropagation()}>
           <div className="product-list-modal-header">
             <div>
               <p className="product-list-modal-kicker">
-                {modalMode === "edit" ? "Edit Product List" : "Tambah Product List"}
+                {modalTitle}{/* [DUPLIKAT] - dimodifikasi */}
               </p>
-              <h2>{modalMode === "edit" ? form.product || "Edit data" : "Data produk baru"}</h2>
+              <h2>{modalHeading}{/* [DUPLIKAT] - dimodifikasi */}</h2>
             </div>
             <button className="product-list-icon-button" onClick={closeModal} type="button">
               <FaTimes />
@@ -803,7 +855,7 @@ const ProductList = () => {
             <h3>Informasi Produk</h3>
             <div className="product-list-form-grid">
               <Field label="Product" name="product" value={form.product} onChange={handleInputChange} required />
-              <Field label="SKU Name" name="sku_name" value={form.sku_name} onChange={handleInputChange} />
+              <Field label="SKU Name" name="sku_name" value={form.sku_name} onChange={handleInputChange} inputRef={skuNameInputRef} autoFocus={isDuplicate} required={modalMode !== "edit"} />{/* [DUPLIKAT] - dimodifikasi */}
               <Field label="Product Group" name="product_group" value={form.product_group} onChange={handleInputChange} />
               <Field label="Product Size" name="product_size" value={form.product_size} onChange={handleInputChange} />
               <Field label="Product Source" name="product_source" value={form.product_source} onChange={handleInputChange} />
@@ -910,7 +962,7 @@ const ProductList = () => {
             <button className="product-list-ghost-button" type="button" onClick={closeModal}>
               Batal
             </button>
-            <button className="product-list-primary-button" type="submit" disabled={saving}>
+            <button className="product-list-primary-button" type="submit" disabled={saving || isDuplicateSkuLocked}> {/* [DUPLIKAT] - dimodifikasi */}
               <FaSave /> {saving ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
@@ -1219,6 +1271,9 @@ const ProductList = () => {
                           <button className="product-list-icon-button info" type="button" onClick={() => openDetailModal(item)} title="Detail">
                             <FaInfoCircle />
                           </button>
+                          <button className="product-list-icon-button" type="button" onClick={() => handleDuplicate(item)} title="Duplikat">
+                            <FiCopy />
+                          </button>{/* [DUPLIKAT] - ditambahkan */}
                           <button className="product-list-icon-button" type="button" onClick={() => openEditModal(item)} title="Edit">
                             <FaEdit />
                           </button>
@@ -1254,15 +1309,17 @@ const ProductList = () => {
   );
 };
 
-const Field = ({ label, name, value, onChange, type = "text", required = false }) => (
+const Field = ({ label, name, value, onChange, type = "text", required = false, inputRef = null, autoFocus = false }) => ( // [DUPLIKAT] - dimodifikasi
   <label className="product-list-field">
     <span>{label}</span>
     <input
+      ref={inputRef}
       name={name}
       type={type}
       value={value}
       onChange={onChange}
       required={required}
+      autoFocus={autoFocus}
       step={type === "number" ? "0.01" : undefined}
       placeholder={label}
     />

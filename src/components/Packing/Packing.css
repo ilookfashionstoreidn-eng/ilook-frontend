@@ -986,12 +986,24 @@ td img.product-image {
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  justify-content: space-between;
+}
+
+.pk-password-title > div {
+  min-width: 0;
 }
 
 .pk-password-title .pk-brand-icon {
   flex-shrink: 0;
   background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   box-shadow: 0 18px 30px -18px rgba(15, 118, 110, 0.9);
+}
+
+.pk-copy-all-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto;
+  margin-top: 4px;
 }
 
 .pk-password-list {
@@ -1113,6 +1125,13 @@ td img.product-image {
 
   .pk-password-title {
     flex-direction: column;
+  }
+
+  .pk-copy-all-button {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 0;
   }
 
   .pk-password-code {
