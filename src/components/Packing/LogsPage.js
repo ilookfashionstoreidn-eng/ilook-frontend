@@ -45,6 +45,7 @@ const KASIR_SUMMARY_BATCH = 5;
 const MODE_OPTIONS = [
   { value: "normal", label: "Normal" },
   { value: "random", label: "Random" },
+  { value: "pendingan", label: "Pendingan" },
   { value: "belum-barcode", label: "Belum Barcode" },
   { value: "no-data-ginee", label: "No Data Ginee" },
   { value: "inject-data", label: "Inject Data" },

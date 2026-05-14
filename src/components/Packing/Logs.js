@@ -243,10 +243,11 @@ const fetchLogs = async (
     tableScrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
   };
 
-  const isRandomLog = (log) => log?.action === "scan_validasi_random";
+  const isPackingResultLog = (log) =>
+    ["scan_validasi_random", "scan_validasi_pendingan"].includes(log?.action);
 
   const getPackingRows = (log) => {
-    if (isRandomLog(log)) {
+    if (isPackingResultLog(log)) {
       return (
         log.order?.packing_results?.flatMap((item) =>
           (item.serials || []).map((serial) => ({
@@ -276,7 +277,7 @@ const fetchLogs = async (
   };
 
   const getPackedTotalItems = (log) => {
-    if (isRandomLog(log)) {
+    if (isPackingResultLog(log)) {
       const totalPackedQty = Number(log.order?.total_packed_qty || 0);
       if (Number.isFinite(totalPackedQty) && totalPackedQty > 0) {
         return totalPackedQty;
@@ -291,7 +292,13 @@ const fetchLogs = async (
     return Number(log.order?.total_qty || 0);
   };
 
-  const getModeLabel = (log) => log?.mode_label || (isRandomLog(log) ? "Random" : "Normal");
+  const getModeLabel = (log) =>
+    log?.mode_label ||
+    (log?.action === "scan_validasi_pendingan"
+      ? "Pendingan"
+      : log?.action === "scan_validasi_random"
+      ? "Random"
+      : "Normal");
 
   const getSerialPreview = (log) => log?.serial_preview || getPackingRows(log).map((row) => row.serial_number).join(", ");
 
