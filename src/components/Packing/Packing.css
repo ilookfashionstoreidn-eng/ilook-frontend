@@ -369,6 +369,11 @@
   box-shadow: 0 8px 16px rgba(20, 184, 166, 0.24);
 }
 
+.pk-page-pendingan .pk-brand-icon {
+  background: linear-gradient(135deg, #c2410c 0%, #fb923c 100%);
+  box-shadow: 0 8px 16px rgba(251, 146, 60, 0.26);
+}
+
 .pk-page-inject .pk-brand-icon {
   background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
   box-shadow: 0 8px 16px rgba(124, 58, 237, 0.24);
@@ -423,6 +428,12 @@
   color: #c2410c;
   border-color: #fdba74;
   background: #fff7ed;
+}
+
+.pk-status-pendingan {
+  color: #b45309;
+  border-color: #fcd34d;
+  background: #fffbeb;
 }
 
 .pk-status-bonus {

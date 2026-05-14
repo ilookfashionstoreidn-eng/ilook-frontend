@@ -29,6 +29,7 @@ import {
   FaBoxOpen,
   FaBuilding,
   FaBarcode,
+  FaClock,
   FaLayerGroup,
   FaChartLine,
   FaUndo,
@@ -647,7 +648,7 @@ const Layout = () => {
             <li>
               <div
                 onClick={togglePackingMenu}
-                className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-no-data-ginee", "packing-inject", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
+                className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
               >
                 <FaBoxOpen className="icon" /> Packing
                 <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -662,6 +663,11 @@ const Layout = () => {
                   <li>
                     <Link to="packing-random" className={`dropdown-link ${activeMenu === "packing-random" ? "active" : ""}`} onClick={() => handleMenuClick("packing-random")}>
                       <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Packing Random
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="packing-pendingan" className={`dropdown-link ${activeMenu === "packing-pendingan" ? "active" : ""}`} onClick={() => handleMenuClick("packing-pendingan")}>
+                      <FaClock className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendingan
                     </Link>
                   </li>
                   <li>

@@ -76,7 +76,7 @@ const HppProduk = () => {
   });
   const [komponenList, setKomponenList] = useState([
     {
-      jenis_komponen: "",
+      jenis_komponen: "atasan",
       sumber_komponen: "bahan", // akan otomatis jadi "aksesoris" jika jenis_komponen = aksesoris
       bahan_id: "",
       aksesoris_id: "",
@@ -101,14 +101,55 @@ const HppProduk = () => {
     return raw.replace(/\D/g, "");
   };
 
+  // API decimals such as "10000.00" must display as 10.000, not 1.000.000.
+  const normalizeCurrencyDigits = (value) => {
+    if (value === null || value === undefined) return "";
+
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) return "";
+      return String(Math.trunc(value));
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return "";
+
+    const numericOnly = raw.replace(/[^0-9.,-]/g, "");
+    if (!numericOnly) return "";
+
+    const isNegative = numericOnly.startsWith("-");
+    const unsigned = isNegative ? numericOnly.slice(1) : numericOnly;
+
+    if (/^\d+$/.test(unsigned)) {
+      return `${isNegative ? "-" : ""}${unsigned}`;
+    }
+
+    const lastDot = unsigned.lastIndexOf(".");
+    const lastComma = unsigned.lastIndexOf(",");
+    const lastSeparator = Math.max(lastDot, lastComma);
+
+    if (lastSeparator === -1) {
+      return `${isNegative ? "-" : ""}${unsigned.replace(/\D/g, "")}`;
+    }
+
+    const integerPart = unsigned.slice(0, lastSeparator);
+    const decimalPart = unsigned.slice(lastSeparator + 1);
+
+    if (decimalPart.length > 0 && decimalPart.length <= 2) {
+      const integerDigits = integerPart.replace(/\D/g, "");
+      return `${isNegative ? "-" : ""}${integerDigits || "0"}`;
+    }
+
+    return `${isNegative ? "-" : ""}${unsigned.replace(/\D/g, "")}`;
+  };
+
   const formatRupiahDisplay = (value) => {
-    const digits = extractCurrencyDigits(value);
+    const digits = normalizeCurrencyDigits(value);
     if (!digits) return "";
     return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
   const formatRupiahValue = (value) => {
-    const digits = extractCurrencyDigits(value);
+    const digits = normalizeCurrencyDigits(value);
     if (!digits) return "0";
     return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
@@ -186,7 +227,7 @@ const HppProduk = () => {
     setKomponenList([
       ...komponenList,
       {
-        jenis_komponen: "",
+        jenis_komponen: "bawahan",
         sumber_komponen: "bahan", // diset otomatis sesuai jenis_komponen
         bahan_id: "",
         aksesoris_id: "",
@@ -227,12 +268,41 @@ const HppProduk = () => {
     return `${nama} - Rp ${harga}${satuan ? ` (${satuan})` : ""}`;
   };
 
-  const getKomponenBadgeLabel = (komp, index) => {
+  const getJenisKomponenLabel = (value) => {
+    const normalized = String(value || "").trim().toLowerCase();
+
+    const labels = {
+      atasan: "Bahan Utama",
+      bawahan: "Bahan Kombinasi",
+      aksesoris: "Aksesoris",
+      fullbody: "Fullbody",
+      bahan_utama: "Bahan Utama",
+      bahan_kombinasi: "Bahan Kombinasi",
+    };
+
+    if (labels[normalized]) {
+      return labels[normalized];
+    }
+
+    if (!normalized) {
+      return "";
+    }
+
+    return normalized
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const getKomponenBadgeLabel = (komp, index, komponenItems = []) => {
     if (komp?.sumber_komponen === "aksesoris") {
       return "Aksesoris";
     }
 
-    return index === 0 ? "Bahan Utama" : `Bahan Kombinasi ${index}`;
+    const bahanIndex = komponenItems
+      .slice(0, index)
+      .filter((item) => item?.sumber_komponen !== "aksesoris").length;
+
+    return bahanIndex === 0 ? "Bahan Utama" : `Bahan Kombinasi ${bahanIndex}`;
   };
 
   const filterBahanOptions = (searchValue) => {
@@ -657,6 +727,17 @@ const HppProduk = () => {
 
   const openAddModal = () => {
     setAddModalTab("info");
+    setKomponenList([
+      {
+        jenis_komponen: "atasan",
+        sumber_komponen: "bahan",
+        bahan_id: "",
+        aksesoris_id: "",
+        harga_bahan: "",
+        jumlah_bahan: "",
+        satuan_bahan: "",
+      },
+    ]);
     setNewProduk({
       nama_produk: "",
       kategori_produk: "",
@@ -1182,7 +1263,7 @@ const HppProduk = () => {
     setEditKomponenList((prev) => [
       ...prev,
       {
-        jenis_komponen: "",
+        jenis_komponen: "bawahan",
         sumber_komponen: "bahan",
         bahan_id: "",
         aksesoris_id: "",
@@ -1694,17 +1775,21 @@ const HppProduk = () => {
                     <div key={index} className="hpp-komponen-row">
                       <div className="hpp-komponen-row-header">
                         <span className={`hpp-komponen-role-badge${komp.sumber_komponen === "aksesoris" ? " aksesoris" : ""}`}>
-                          {getKomponenBadgeLabel(komp, index)}
+                          {getKomponenBadgeLabel(komp, index, komponenList)}
                         </span>
                       </div>
 
                       {/* Jenis Komponen */}
                       <select value={komp.jenis_komponen} onChange={(e) => handleKomponenChange(index, "jenis_komponen", e.target.value)} required>
                         <option value="">Pilih Jenis Komponen</option>
-                        <option value="atasan">Atasan</option>
-                        <option value="bawahan">Bawahan</option>
-                        <option value="fullbody">Fullbody</option>
-                        <option value="aksesoris">Aksesoris</option>
+                        <optgroup label="Bahan">
+                          <option value="atasan">Bahan Utama</option>
+                          <option value="bawahan">Bahan Kombinasi</option>
+                        </optgroup>
+                        <optgroup label="Lainnya">
+                          <option value="fullbody">Fullbody</option>
+                          <option value="aksesoris">Aksesoris</option>
+                        </optgroup>
                       </select>
 
                       {/* PILIH BAHAN */}
@@ -1992,17 +2077,21 @@ const HppProduk = () => {
                     <div key={index} className="hpp-komponen-row">
                       <div className="hpp-komponen-row-header">
                         <span className={`hpp-komponen-role-badge${komp.sumber_komponen === "aksesoris" ? " aksesoris" : ""}`}>
-                          {getKomponenBadgeLabel(komp, index)}
+                          {getKomponenBadgeLabel(komp, index, editKomponenList)}
                         </span>
                       </div>
 
                       {/* Jenis Komponen */}
                       <select value={komp.jenis_komponen} onChange={(e) => handleEditKomponenChange(index, "jenis_komponen", e.target.value)}>
                         <option value="">Pilih Jenis Komponen</option>
-                        <option value="atasan">Atasan</option>
-                        <option value="bawahan">Bawahan</option>
-                        <option value="fullbody">Fullbody</option>
-                        <option value="aksesoris">Aksesoris</option>
+                        <optgroup label="Bahan">
+                          <option value="atasan">Bahan Utama</option>
+                          <option value="bawahan">Bahan Kombinasi</option>
+                        </optgroup>
+                        <optgroup label="Lainnya">
+                          <option value="fullbody">Fullbody</option>
+                          <option value="aksesoris">Aksesoris</option>
+                        </optgroup>
                       </select>
 
                       {/* PILIH BAHAN */}
@@ -2212,6 +2301,7 @@ const HppProduk = () => {
                     <table className="hpp-komponen-table">
                       <thead>
                         <tr>
+                          <th>Posisi</th>
                           <th>Jenis Komponen</th>
                           <th>Nama Bahan/Aksesoris</th>
                           <th className="text-right">Harga Bahan</th>
@@ -2228,7 +2318,12 @@ const HppProduk = () => {
                           return (
                             <tr key={idx}>
                               <td>
-                                <span className="hpp-komponen-type-chip">{k.jenis_komponen}</span>
+                                <span className={`hpp-komponen-role-badge${k.sumber_komponen === "aksesoris" ? " aksesoris" : ""}`}>
+                                  {getKomponenBadgeLabel(k, idx, selectedProduk.komponen)}
+                                </span>
+                              </td>
+                              <td>
+                                <span className="hpp-komponen-type-chip">{getJenisKomponenLabel(k.jenis_komponen)}</span>
                               </td>
                               <td>{nama}</td>
                               <td className="text-right">Rp. {formatRupiahValue(k.harga_bahan)}</td>

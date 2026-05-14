@@ -10,6 +10,12 @@ export const PACKING_PASSWORD_MENUS = [
     salt: "RANDOM",
   },
   {
+    key: "packing-pendingan",
+    label: "Packing Pendingan",
+    path: "/packing-pendingan",
+    salt: "PENDINGAN",
+  },
+  {
     key: "packing-belum-barcode",
     label: "Produk Belum Barcode",
     path: "/packing-belum-barcode",
