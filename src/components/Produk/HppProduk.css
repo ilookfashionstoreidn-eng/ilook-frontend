@@ -1438,6 +1438,12 @@
   text-transform: capitalize;
 }
 
+.hpp-komponen-material-name {
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .hpp-komponen-total {
   font-weight: 700 !important;
   color: #1e40af !important;

@@ -293,6 +293,14 @@ const HppProduk = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  const getKomponenMaterialGroup = (komp) => {
+    if (komp?.sumber_komponen === "aksesoris") {
+      return "";
+    }
+
+    return String(komp?.group_bahan || komp?.bahan?.group_bahan || "").trim();
+  };
+
   const getImageFileName = (value) => {
     if (!value) return "";
 
@@ -2357,7 +2365,7 @@ const HppProduk = () => {
                               <td>
                                 <span className="hpp-komponen-type-chip">{getJenisKomponenLabel(k.jenis_komponen)}</span>
                               </td>
-                              <td>{nama}</td>
+                              <td className="hpp-komponen-material-name">{nama}</td>
                               <td className="text-right">Rp. {formatRupiahValue(k.harga_bahan)}</td>
                               <td className="text-right">{jumlahFormatted}</td>
                               <td>{satuan}</td>

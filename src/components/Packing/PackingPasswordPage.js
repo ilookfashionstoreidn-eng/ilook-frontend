@@ -8,6 +8,13 @@ const PackingPasswordPage = () => {
   const [now, setNow] = useState(() => new Date());
   const [copyStatus, setCopyStatus] = useState("");
   const passwordList = useMemo(() => getAllPackingPasswords(now), [now]);
+  const allPasswordText = useMemo(
+    () =>
+      passwordList
+        .map((passwordInfo) => `${passwordInfo.label} : ${passwordInfo.password}`)
+        .join("\n"),
+    [passwordList]
+  );
   const activeInfo = passwordList[0];
 
   useEffect(() => {
@@ -22,6 +29,17 @@ const PackingPasswordPage = () => {
     try {
       await navigator.clipboard.writeText(password);
       setCopyStatus(`Password ${label} disalin`);
+    } catch (error) {
+      setCopyStatus("Gagal menyalin otomatis");
+    }
+
+    setTimeout(() => setCopyStatus(""), 1800);
+  };
+
+  const handleCopyAllPasswords = async () => {
+    try {
+      await navigator.clipboard.writeText(allPasswordText);
+      setCopyStatus("Semua password disalin");
     } catch (error) {
       setCopyStatus("Gagal menyalin otomatis");
     }
@@ -45,6 +63,13 @@ const PackingPasswordPage = () => {
                 sistem akan minta password menu itu lagi. */}
               </p>
             </div>
+            <button
+              type="button"
+              className="btn-search-modern pk-copy-all-button"
+              onClick={handleCopyAllPasswords}
+            >
+              <FaRegCopy /> Copy Semua Password
+            </button>
           </div>
 
           <div className="pk-password-list">
