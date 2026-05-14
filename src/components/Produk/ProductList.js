@@ -49,7 +49,6 @@ const numericFields = [
   "estimasi_cutting",
   "estimasi_combi",
   "pj_dress",
-  "pj_celana",
   "pj_baju",
   "price_cmt",
   "price_cutting",
@@ -881,7 +880,7 @@ const ProductList = () => {
               <Field label="ID L" name="id_l" value={form.id_l} onChange={handleInputChange} />
               <Field label="ID XL" name="id_xl" value={form.id_xl} onChange={handleInputChange} />
               <Field label="PJ Dress" name="pj_dress" type="number" value={form.pj_dress} onChange={handleInputChange} />
-              <Field label="PJ Celana" name="pj_celana" type="number" value={form.pj_celana} onChange={handleInputChange} />
+              <Field label="PJ Celana" name="pj_celana" value={form.pj_celana} onChange={handleInputChange} />
               <Field label="PJ Baju" name="pj_baju" type="number" value={form.pj_baju} onChange={handleInputChange} />
               <Field label="Price CMT" name="price_cmt" type="number" value={form.price_cmt} onChange={handleInputChange} />
               <Field

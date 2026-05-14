@@ -266,6 +266,12 @@
   position: relative;
 }
 
+.bahan-name-filter-wrap {
+  flex: 1 1 340px;
+  max-width: 520px;
+  min-width: 340px;
+}
+
 .bahan-filter-select,
 .bahan-form-input,
 .bahan-form-select {
@@ -288,6 +294,81 @@
 
 .bahan-filter-select {
   min-width: 180px;
+}
+
+.bahan-name-filter-select {
+  width: 100%;
+  font-size: 13px;
+}
+
+.bahan-name-select__control {
+  min-height: 38px !important;
+  border: 1px solid #cfd8e3 !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+.bahan-name-select__control:hover,
+.bahan-name-select__control--is-focused {
+  border-color: #2458ce !important;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12) !important;
+}
+
+.bahan-name-select__value-container {
+  padding: 0 8px 0 11px !important;
+}
+
+.bahan-name-select__placeholder,
+.bahan-name-select__single-value {
+  color: #0f172a !important;
+  font-weight: 500;
+}
+
+.bahan-name-select__input-container {
+  color: #0f172a !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.bahan-name-select__indicator {
+  color: #64748b !important;
+  padding: 7px !important;
+}
+
+.bahan-name-select__indicator-separator {
+  display: none;
+}
+
+.bahan-name-select__menu {
+  border: 1px solid #bfd0e8 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.bahan-name-select__menu-list {
+  max-height: 280px !important;
+  padding: 5px !important;
+}
+
+.bahan-name-select__option {
+  border-radius: 7px !important;
+  color: #0f172a !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  padding: 8px 10px !important;
+}
+
+.bahan-name-select__option--is-focused {
+  background: #eef4ff !important;
+}
+
+.bahan-name-select__option--is-selected {
+  background: #2458ce !important;
+  color: #ffffff !important;
 }
 
 .bahan-filter-select:focus,
@@ -1605,11 +1686,19 @@
   }
 
   .bahan-filter-wrap,
+  .bahan-name-filter-wrap,
   .bahan-filter-select,
+  .bahan-name-filter-select,
   .bahan-filter-summary,
   .bahan-table-actions .bahan-btn-secondary,
   .bahan-btn-primary {
     width: 100%;
+  }
+
+  .bahan-name-filter-wrap {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
   }
 
   .bahan-table-scroll {

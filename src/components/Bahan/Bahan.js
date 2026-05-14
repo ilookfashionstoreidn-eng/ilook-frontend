@@ -4,6 +4,7 @@ import API from "../../api";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import * as XLSX from "xlsx";
+import Select from "react-select";
 import {
   FaBoxOpen,
   FaArrowLeft,
@@ -34,6 +35,10 @@ const REQUIRED_TEMPLATE_HEADERS = ["nama_bahan", "group_bahan", "pabrik_bahan", 
 const swalButtonColors = {
   confirmButtonColor: "#2458ce",
   cancelButtonColor: "#64748b",
+};
+
+const bahanNameSelectStyles = {
+  menuPortal: (base) => ({ ...base, zIndex: 2200 }),
 };
 
 const formatHargaInput = (value) => {
@@ -121,10 +126,11 @@ const Bahan = () => {
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedBahanName, setSelectedBahanName] = useState("");
   const [selectedPabrik, setSelectedPabrik] = useState("");
   const [selectedSatuan, setSelectedSatuan] = useState("");
-  const [groupOptions, setGroupOptions] = useState([]);
+  const [bahanNameOptions, setBahanNameOptions] = useState([]);
+  const [bahanNameLoading, setBahanNameLoading] = useState(false);
   const [pabrikOptions, setPabrikOptions] = useState([]);
   const [stats, setStats] = useState({
     total_bahan: 0,
@@ -200,7 +206,9 @@ const Bahan = () => {
     return () => clearTimeout(timer);
   }, [imageBahanSearch]);
 
-  const isFiltering = Boolean(debouncedSearchTerm || selectedGroup || selectedPabrik || selectedSatuan);
+  const activeSearchTerm = selectedBahanName || debouncedSearchTerm;
+  const selectedBahanNameOption = bahanNameOptions.find((option) => option.value === selectedBahanName) || null;
+  const isFiltering = Boolean(activeSearchTerm || selectedPabrik || selectedSatuan);
   const totalPages = lastPage;
   const totalBahan = stats.total_bahan;
   const totalGroup = stats.total_group;
@@ -237,6 +245,27 @@ const Bahan = () => {
     };
   }, [items]);
 
+  const fetchBahanNameOptions = async () => {
+    try {
+      setBahanNameLoading(true);
+      const res = await API.get("/bahan", {
+        params: { all: 1 },
+      });
+      const payload = res.data || {};
+      const rows = Array.isArray(payload.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      const names = rows
+        .map((row) => String(row?.nama_bahan || "").trim())
+        .filter(Boolean);
+      const uniqueNames = [...new Set(names)].sort((a, b) => a.localeCompare(b, "id", { numeric: true, sensitivity: "base" }));
+
+      setBahanNameOptions(uniqueNames.map((name) => ({ value: name, label: name })));
+    } catch (optionError) {
+      setBahanNameOptions([]);
+    } finally {
+      setBahanNameLoading(false);
+    }
+  };
+
   const fetchData = async (page = currentPage) => {
     try {
       setLoading(true);
@@ -245,8 +274,7 @@ const Bahan = () => {
         params: {
           page,
           per_page: DEFAULT_PER_PAGE,
-          search: debouncedSearchTerm || undefined,
-          group_bahan: selectedGroup || undefined,
+          search: activeSearchTerm || undefined,
           pabrik_bahan: selectedPabrik || undefined,
           satuan: selectedSatuan || undefined,
         },
@@ -264,7 +292,6 @@ const Bahan = () => {
         total_warna: Number(payload.stats?.total_warna) || 0,
         total_stok: Number(payload.stats?.total_stok) || 0,
       });
-      setGroupOptions(Array.isArray(payload.filters?.groups) ? payload.filters.groups : []);
       setPabrikOptions(Array.isArray(payload.filters?.pabriks) ? payload.filters.pabriks : []);
     } catch (fetchError) {
       setError(getApiErrorMessage(fetchError, "Gagal memuat data bahan."));
@@ -274,9 +301,14 @@ const Bahan = () => {
   };
 
   useEffect(() => {
+    fetchBahanNameOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     fetchData(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, debouncedSearchTerm, selectedGroup, selectedPabrik, selectedSatuan]);
+  }, [currentPage, debouncedSearchTerm, selectedBahanName, selectedPabrik, selectedSatuan]);
 
   useEffect(() => {
     if (!showImageModal || imageModalStep !== 2) {
@@ -543,6 +575,7 @@ const Bahan = () => {
       resetForm();
       setCurrentPage(1);
       await fetchData(1);
+      await fetchBahanNameOptions();
       Swal.close();
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Bahan berhasil ditambahkan.", ...swalButtonColors });
     } catch (submitError) {
@@ -605,6 +638,7 @@ const Bahan = () => {
       await API.put(`/bahan/${editItem.id}`, payload);
       resetForm();
       await fetchData(currentPage);
+      await fetchBahanNameOptions();
       Swal.close();
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Data bahan berhasil diperbarui.", ...swalButtonColors });
     } catch (updateError) {
@@ -638,6 +672,7 @@ const Bahan = () => {
       const targetPage = currentItems.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
       setCurrentPage(targetPage);
       await fetchData(targetPage);
+      await fetchBahanNameOptions();
       Swal.close();
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Bahan berhasil dihapus.", ...swalButtonColors });
     } catch (deleteError) {
@@ -694,7 +729,7 @@ const Bahan = () => {
   const clearFilters = () => {
     setCurrentPage(1);
     setSearchTerm("");
-    setSelectedGroup("");
+    setSelectedBahanName("");
     setSelectedPabrik("");
     setSelectedSatuan("");
   };
@@ -794,6 +829,7 @@ const Bahan = () => {
       const summary = response.data?.summary || {};
       setCurrentPage(1);
       await fetchData(1);
+      await fetchBahanNameOptions();
       Swal.close();
       await Swal.fire({
         icon: "success",
@@ -844,7 +880,10 @@ const Bahan = () => {
               className="bahan-search-input"
               placeholder="Cari nama bahan..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSelectedBahanName("");
+                setSearchTerm(e.target.value);
+              }}
             />
             {searchTerm && (
               <button className="bahan-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
@@ -905,34 +944,30 @@ const Bahan = () => {
           </div>
 
           <div className="bahan-filter-section">
-            <div className="bahan-filter-wrap">
-              <select
-                value={selectedGroup}
-                onChange={(e) => {
+            <div className="bahan-filter-wrap bahan-name-filter-wrap">
+              <Select
+                className="bahan-name-filter-select"
+                classNamePrefix="bahan-name-select"
+                value={selectedBahanNameOption}
+                options={bahanNameOptions}
+                onChange={(option) => {
                   setCurrentPage(1);
-                  setSelectedGroup(e.target.value);
+                  setSearchTerm("");
+                  setSelectedBahanName(option?.value || "");
                 }}
-                className="bahan-filter-select"
-              >
-                <option value="">Semua Group Bahan</option>
-                {groupOptions.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
-              </select>
-              {selectedGroup && (
-                <span
-                  className="bahan-filter-badge"
-                  onClick={() => {
-                    setCurrentPage(1);
-                    setSelectedGroup("");
-                  }}
-                  title="Hapus filter"
-                >
-                  {selectedGroup} x
-                </span>
-              )}
+                placeholder="Semua Nama Bahan"
+                isSearchable
+                isClearable
+                isLoading={bahanNameLoading}
+                loadingMessage={() => "Memuat nama bahan..."}
+                noOptionsMessage={({ inputValue }) =>
+                  inputValue ? `Nama bahan "${inputValue}" tidak ditemukan` : "Belum ada nama bahan"
+                }
+                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                menuPosition="fixed"
+                styles={bahanNameSelectStyles}
+                aria-label="Filter nama bahan"
+              />
             </div>
             <div className="bahan-filter-wrap">
               <select
