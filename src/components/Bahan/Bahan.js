@@ -172,7 +172,7 @@ const imageUrlToPdfDataUrl = async (imageUrl) => {
       const image = new Image();
       image.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxWidth = 360;
+        const maxWidth = 720;
         const scale = image.naturalWidth > maxWidth ? maxWidth / image.naturalWidth : 1;
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -1049,13 +1049,18 @@ const Bahan = () => {
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
           0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 32, minCellHeight: 24 },
-          2: { cellWidth: 48 },
-          3: { cellWidth: 42 },
-          4: { cellWidth: 28 },
-          5: { cellWidth: 25 },
-          6: { cellWidth: 16, halign: "right" },
-          7: { cellWidth: 66 },
+          1: { cellWidth: 58, minCellHeight: 58 },
+          2: { cellWidth: 42 },
+          3: { cellWidth: 36 },
+          4: { cellWidth: 24 },
+          5: { cellWidth: 22 },
+          6: { cellWidth: 14, halign: "right" },
+          7: { cellWidth: 63 },
+        },
+        didParseCell: (data) => {
+          if (data.section === "body" && data.column.index === 1) {
+            data.cell.styles.minCellHeight = 58;
+          }
         },
         didDrawCell: (data) => {
           if (data.section !== "body" || data.column.index !== 1) return;
@@ -1063,12 +1068,14 @@ const Bahan = () => {
           const imageData = group ? imageMap.get(group.id) : null;
           if (!imageData?.dataUrl) return;
 
-          const maxWidth = data.cell.width - 4;
-          const maxHeight = data.cell.height - 4;
+          const maxWidth = data.cell.width - 3;
+          const maxHeight = data.cell.height - 3;
           const ratio = Math.min(maxWidth / imageData.width, maxHeight / imageData.height);
           const imageWidth = imageData.width * ratio;
           const imageHeight = imageData.height * ratio;
-          doc.addImage(imageData.dataUrl, "JPEG", data.cell.x + 2, data.cell.y + 2, imageWidth, imageHeight);
+          const imageX = data.cell.x + (data.cell.width - imageWidth) / 2;
+          const imageY = data.cell.y + (data.cell.height - imageHeight) / 2;
+          doc.addImage(imageData.dataUrl, "JPEG", imageX, imageY, imageWidth, imageHeight);
         },
       });
 
