@@ -19,8 +19,9 @@
 
 .layout-container {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow: visible;
+  align-items: flex-start;
   font-family: var(--erp-font);
   background-color: #f8fafc;
 }
@@ -35,8 +36,10 @@
   border-right: 1px solid var(--erp-sidebar-border);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  position: relative;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
   z-index: 100;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -229,10 +232,12 @@
 .main-content {
   flex: 1;
   background-color: #f8fafc;
-  overflow-y: auto;
+  overflow: visible;
   position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
 }
 
 /* Specific styling for the Logout button element */

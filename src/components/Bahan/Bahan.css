@@ -454,12 +454,64 @@
   background: #f8fafc;
 }
 
+.bahan-table-sections {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.bahan-table-panel {
+  border: 1px solid #e4e9f0;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.bahan-table-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf2f7;
+  background: #fbfcff;
+}
+
+.bahan-table-panel-header h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bahan-table-panel-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bahan-table-panel-summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid #c8d8f6;
+  border-radius: 999px;
+  background: #edf4ff;
+  color: #2458ce;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .bahan-table-scroll {
   width: 100%;
-  overflow-y: auto;
   overflow-x: auto;
-  max-height: clamp(320px, 58vh, 640px);
-  overscroll-behavior: contain;
+  overflow-y: visible;
+  max-height: none;
 }
 
 .bahan-table {
@@ -500,6 +552,14 @@
 
 .bahan-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.bahan-table-empty-row td {
+  height: 92px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 700;
+  background: #ffffff;
 }
 
 .bahan-table th:nth-child(1),
@@ -609,12 +669,11 @@
 }
 
 .bahan-image-table-scroll {
-  max-height: clamp(320px, 58vh, 680px);
-  border-bottom: 1px solid #e4e9f0;
+  max-height: none;
 }
 
 .bahan-table-scroll-plain {
-  max-height: clamp(280px, 48vh, 560px);
+  max-height: none;
 }
 
 .bahan-image-table {
@@ -1683,6 +1742,16 @@
   .bahan-filter-section {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .bahan-table-sections {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .bahan-table-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .bahan-filter-wrap,

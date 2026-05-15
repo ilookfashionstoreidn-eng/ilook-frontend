@@ -4,6 +4,8 @@ import API from "../../api";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import Select from "react-select";
 import {
   FaBoxOpen,
@@ -13,6 +15,7 @@ import {
   FaEdit,
   FaEye,
   FaFileImport,
+  FaFilePdf,
   FaImage,
   FaPlus,
   FaSearch,
@@ -122,6 +125,81 @@ const getBahanImageUrl = (image) => {
   return `${apiBaseUrl}/bahan-images/${encodeURIComponent(filename)}`;
 };
 
+const splitBahanByImage = (rows) => {
+  const withoutImage = [];
+  const grouped = new Map();
+
+  rows.forEach((item) => {
+    const image = item.bahan_image || item.bahanImage || null;
+    const imageId = item.bahan_image_id || image?.id;
+
+    if (!imageId || !image) {
+      withoutImage.push(item);
+      return;
+    }
+
+    if (!grouped.has(imageId)) {
+      grouped.set(imageId, {
+        id: imageId,
+        image,
+        items: [],
+      });
+    }
+
+    grouped.get(imageId).items.push(item);
+  });
+
+  return {
+    bahanWithoutImage: withoutImage,
+    groupedBahanImages: Array.from(grouped.values()),
+  };
+};
+
+const imageUrlToPdfDataUrl = async (imageUrl) => {
+  if (!imageUrl) return "";
+
+  const resolvedUrl = new URL(imageUrl, window.location.origin).href;
+  const response = await fetch(resolvedUrl);
+  if (!response.ok) {
+    throw new Error("Gagal memuat gambar bahan.");
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  try {
+    return await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxWidth = 360;
+        const scale = image.naturalWidth > maxWidth ? maxWidth / image.naturalWidth : 1;
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Gambar bahan tidak bisa diproses."));
+          return;
+        }
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve({
+          dataUrl: canvas.toDataURL("image/jpeg", 0.82),
+          width: canvas.width,
+          height: canvas.height,
+        });
+      };
+      image.onerror = () => reject(new Error("Gambar bahan tidak bisa diproses."));
+      image.src = objectUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
 const Bahan = () => {
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -181,6 +259,7 @@ const Bahan = () => {
   const [imageBahanError, setImageBahanError] = useState("");
   const [imageBahanTotal, setImageBahanTotal] = useState(0);
   const [imageSubmitting, setImageSubmitting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -215,35 +294,7 @@ const Bahan = () => {
   const totalWarna = stats.total_warna;
   const totalStok = stats.total_stok;
   const pabrikSelectOptions = pabrikOptions.includes("-") ? pabrikOptions : ["-", ...pabrikOptions];
-  const { bahanWithoutImage, groupedBahanImages } = useMemo(() => {
-    const withoutImage = [];
-    const grouped = new Map();
-
-    items.forEach((item) => {
-      const image = item.bahan_image || item.bahanImage || null;
-      const imageId = item.bahan_image_id || image?.id;
-
-      if (!imageId || !image) {
-        withoutImage.push(item);
-        return;
-      }
-
-      if (!grouped.has(imageId)) {
-        grouped.set(imageId, {
-          id: imageId,
-          image,
-          items: [],
-        });
-      }
-
-      grouped.get(imageId).items.push(item);
-    });
-
-    return {
-      bahanWithoutImage: withoutImage,
-      groupedBahanImages: Array.from(grouped.values()),
-    };
-  }, [items]);
+  const { bahanWithoutImage, groupedBahanImages } = useMemo(() => splitBahanByImage(items), [items]);
 
   const fetchBahanNameOptions = async () => {
     try {
@@ -387,6 +438,13 @@ const Bahan = () => {
   };
   const getGroupedStockTotal = (rows) =>
     rows.reduce((total, item) => total + (Number(item.stok_bahan) || 0), 0);
+  const bahanWithImageItemCount = groupedBahanImages.reduce((total, group) => total + group.items.length, 0);
+  const bahanWithoutImageCount = bahanWithoutImage.length;
+  const renderEmptyTableRow = (colSpan, message) => (
+    <tr className="bahan-table-empty-row">
+      <td colSpan={colSpan}>{message}</td>
+    </tr>
+  );
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -860,6 +918,236 @@ const Bahan = () => {
     await Swal.fire({ icon: "success", title: "Template dibuat", text: "Template register bahan berhasil dibuat.", ...swalButtonColors });
   };
 
+  const handleExportPdf = async () => {
+    try {
+      setExportingPdf(true);
+      Swal.fire({
+        title: "Menyiapkan PDF...",
+        text: "Mengambil semua data bahan dan menyusun tabel.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await API.get("/bahan", {
+        params: { all: 1 },
+      });
+      const payload = response.data || {};
+      const allRows = Array.isArray(payload.data) ? payload.data : Array.isArray(payload) ? payload : [];
+
+      if (allRows.length === 0) {
+        Swal.close();
+        await Swal.fire({ icon: "warning", title: "Data kosong", text: "Belum ada data bahan untuk diexport.", ...swalButtonColors });
+        return;
+      }
+
+      const {
+        bahanWithoutImage: exportWithoutImage,
+        groupedBahanImages: exportImageGroups,
+      } = splitBahanByImage(allRows);
+      const imageMap = new Map();
+
+      for (const group of exportImageGroups) {
+        const imageUrl = getBahanImageUrl(group.image);
+        if (!imageUrl) continue;
+
+        try {
+          imageMap.set(group.id, await imageUrlToPdfDataUrl(imageUrl));
+        } catch (imageError) {
+          console.warn("Gagal memuat gambar bahan untuk PDF:", imageError);
+        }
+      }
+
+      const doc = new jsPDF("landscape", "mm", "a4");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 8;
+      const marginBottom = 12;
+      const generatedAt = new Date();
+      const pdfDate = generatedAt.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const withImageCount = exportImageGroups.reduce((total, group) => total + group.items.length, 0);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Master Bahan", marginX, 13);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Export semua data - ${pdfDate}`, marginX, 18);
+      doc.text(`Total: ${formatNumber(allRows.length)} data | Bergambar: ${formatNumber(withImageCount)} data | Tanpa gambar: ${formatNumber(exportWithoutImage.length)} data`, marginX, 23);
+
+      let cursorY = 31;
+      const drawSectionTitle = (title, subtitle) => {
+        if (cursorY > pageHeight - 28) {
+          doc.addPage();
+          cursorY = 14;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(title, marginX, cursorY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(subtitle, marginX, cursorY + 4);
+        cursorY += 8;
+      };
+
+      const formatUniquePdfValues = (rows, field, formatter = (value) => value, emptyLabel = "-") => {
+        const values = uniqueGroupValues(rows, field);
+        if (values.length === 0) return emptyLabel;
+        return values.map((value) => formatter(value)).join("\n");
+      };
+
+      drawSectionTitle(
+        "Bahan Sudah Punya Gambar",
+        `${formatNumber(withImageCount)} data dalam ${formatNumber(exportImageGroups.length)} grup gambar`
+      );
+
+      const imageTableRows = exportImageGroups.map((group, index) => [
+        index + 1,
+        "",
+        formatUniquePdfValues(group.items, "nama_bahan"),
+        formatUniquePdfValues(group.items, "deskripsi"),
+        formatUniquePdfValues(group.items, "harga", formatRupiah),
+        formatUniquePdfValues(group.items, "satuan", getSatuanLabel),
+        formatNumber(getGroupedStockTotal(group.items)),
+        group.items.map((item) => `${formatNumber(item.stok_bahan)} ${item.warna_bahan || "-"}`).join("\n") || "-",
+      ]);
+
+      doc.autoTable({
+        startY: cursorY,
+        head: [["No", "Gambar", "Nama Bahan", "Deskripsi", "Harga", "Satuan", "Stok", "Warna Bahan"]],
+        body: imageTableRows.length > 0 ? imageTableRows : [["-", "-", "Belum ada bahan bergambar", "-", "-", "-", "-", "-"]],
+        theme: "grid",
+        margin: { left: marginX, right: marginX, top: 12, bottom: marginBottom },
+        styles: {
+          fontSize: 6,
+          cellPadding: 1.8,
+          overflow: "linebreak",
+          valign: "top",
+          textColor: [15, 23, 42],
+          lineColor: [226, 232, 240],
+          lineWidth: 0.15,
+        },
+        headStyles: {
+          fillColor: [244, 247, 250],
+          textColor: [51, 65, 85],
+          fontStyle: "bold",
+          halign: "left",
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 32, minCellHeight: 24 },
+          2: { cellWidth: 48 },
+          3: { cellWidth: 42 },
+          4: { cellWidth: 28 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 16, halign: "right" },
+          7: { cellWidth: 66 },
+        },
+        didDrawCell: (data) => {
+          if (data.section !== "body" || data.column.index !== 1) return;
+          const group = exportImageGroups[data.row.index];
+          const imageData = group ? imageMap.get(group.id) : null;
+          if (!imageData?.dataUrl) return;
+
+          const maxWidth = data.cell.width - 4;
+          const maxHeight = data.cell.height - 4;
+          const ratio = Math.min(maxWidth / imageData.width, maxHeight / imageData.height);
+          const imageWidth = imageData.width * ratio;
+          const imageHeight = imageData.height * ratio;
+          doc.addImage(imageData.dataUrl, "JPEG", data.cell.x + 2, data.cell.y + 2, imageWidth, imageHeight);
+        },
+      });
+
+      cursorY = (doc.lastAutoTable?.finalY || cursorY) + 9;
+      drawSectionTitle("Bahan Belum Ada Gambar", `${formatNumber(exportWithoutImage.length)} data tanpa gambar`);
+
+      const withoutImageRows = exportWithoutImage.map((item, index) => [
+        index + 1,
+        item.group_bahan || "-",
+        item.pabrik_bahan || "-",
+        item.nama_bahan || "-",
+        item.deskripsi || "-",
+        formatRupiah(item.harga),
+        getSatuanLabel(item.satuan),
+        formatNumber(item.stok_bahan),
+        item.warna_bahan || "-",
+      ]);
+
+      doc.autoTable({
+        startY: cursorY,
+        head: [["No", "Group Bahan", "Pabrik", "Nama Bahan", "Deskripsi", "Harga", "Satuan", "Stok", "Warna Bahan"]],
+        body: withoutImageRows.length > 0 ? withoutImageRows : [["-", "-", "-", "Tidak ada bahan tanpa gambar", "-", "-", "-", "-", "-"]],
+        theme: "grid",
+        margin: { left: marginX, right: marginX, top: 12, bottom: marginBottom },
+        styles: {
+          fontSize: 6,
+          cellPadding: 1.8,
+          overflow: "linebreak",
+          valign: "top",
+          textColor: [15, 23, 42],
+          lineColor: [226, 232, 240],
+          lineWidth: 0.15,
+        },
+        headStyles: {
+          fillColor: [244, 247, 250],
+          textColor: [51, 65, 85],
+          fontStyle: "bold",
+          halign: "left",
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 34 },
+          2: { cellWidth: 28 },
+          3: { cellWidth: 46 },
+          4: { cellWidth: 43 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: 25 },
+          7: { cellWidth: 16, halign: "right" },
+          8: { cellWidth: 52 },
+        },
+      });
+
+      const totalPdfPages = doc.getNumberOfPages();
+      for (let pageIndex = 1; pageIndex <= totalPdfPages; pageIndex += 1) {
+        doc.setPage(pageIndex);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Halaman ${pageIndex} dari ${totalPdfPages}`, pageWidth - marginX, pageHeight - 5, { align: "right" });
+      }
+
+      const fileDate = generatedAt.toISOString().slice(0, 10);
+      Swal.close();
+      doc.save(`master-bahan-semua-data-${fileDate}.pdf`);
+      await Swal.fire({ icon: "success", title: "PDF dibuat", text: "Semua data bahan berhasil diexport ke PDF.", ...swalButtonColors });
+    } catch (exportError) {
+      Swal.close();
+      Swal.fire({
+        icon: "error",
+        title: "Export PDF gagal",
+        text: getApiErrorMessage(exportError, "Gagal membuat PDF data bahan."),
+        ...swalButtonColors,
+      });
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <div className="bahan-container">
       <header className="bahan-header">
@@ -923,6 +1211,9 @@ const Bahan = () => {
             <div className="bahan-table-actions">
               <button className="bahan-btn-secondary" onClick={handleDownloadTemplate}>
                 <FaDownload /> Template
+              </button>
+              <button className="bahan-btn-secondary" onClick={handleExportPdf} disabled={exportingPdf}>
+                <FaFilePdf /> {exportingPdf ? "Exporting..." : "Export PDF"}
               </button>
               <label className="bahan-btn-secondary bahan-btn-file">
                 <FaFileImport /> Import Excel
@@ -1073,175 +1364,206 @@ const Bahan = () => {
             </div>
           ) : (
             <>
-              {groupedBahanImages.length > 0 && (
-                <div className="bahan-table-scroll bahan-image-table-scroll">
-                  <table className="bahan-table bahan-image-table">
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>Gambar</th>
-                        <th>Nama Bahan</th>
-                        <th>Deskripsi</th>
-                        <th>Harga</th>
-                        <th>Satuan</th>
-                        <th>Stok</th>
-                        <th>Warna Bahan</th>
-                        <th className="align-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupedBahanImages.map((group) => {
-                        const firstItem = group.items[0] || {};
-                        const imageUrl = getBahanImageUrl(group.image);
-                        const groupTitle = uniqueGroupValues(group.items, "group_bahan").join(" / ") || `Gambar bahan ${group.id}`;
-
-                        return (
-                          <tr className="bahan-image-table-row" key={group.id}>
-                            <td>
-                              <strong>{getItemPageNumber(firstItem)}</strong>
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="bahan-table-image-frame bahan-table-image-button"
-                                onClick={() => openPreviewImage(imageUrl, groupTitle)}
-                                title="Klik untuk melihat gambar"
-                              >
-                                {imageUrl ? (
-                                  <img src={imageUrl} alt={groupTitle} />
-                                ) : (
-                                  <div className="bahan-image-placeholder">
-                                    <FaImage />
-                                  </div>
-                                )}
-                              </button>
-                            </td>
-                            <td>{renderGroupedValues(group.items, "nama_bahan")}</td>
-                            <td>{renderGroupedValues(group.items, "deskripsi")}</td>
-                            <td>
-                              <div className="bahan-grouped-value-list">
-                                {uniqueGroupValues(group.items, "harga").map((harga) => (
-                                  <strong className="bahan-harga-value" key={harga}>
-                                    {formatRupiah(harga)}
-                                  </strong>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="bahan-grouped-satuan-list">
-                                {uniqueGroupValues(group.items, "satuan").map((satuan) => (
-                                  <span className="bahan-status-badge bahan-status-satuan" key={satuan}>
-                                    <FaTag /> {getSatuanLabel(satuan)}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <strong className="bahan-stok-value">{formatNumber(getGroupedStockTotal(group.items))}</strong>
-                            </td>
-                            <td>
-                              <div className="bahan-image-item-list">
-                                {group.items.map((item) => (
-                                  <div className="bahan-image-item-row" key={item.id}>
-                                    <strong>{formatNumber(item.stok_bahan)}</strong>
-                                    <span title={item.warna_bahan || "-"}>{item.warna_bahan || "-"}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="bahan-image-item-list bahan-image-item-list-actions">
-                                {group.items.map((item) => (
-                                  <div className="bahan-image-action-row" key={item.id}>
-                                    <span title={item.warna_bahan || item.nama_bahan || "-"}>{item.warna_bahan || item.nama_bahan || "-"}</span>
-                                    <div className="bahan-actions">
-                                      <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
-                                        <FaEdit />
-                                      </button>
-                                      <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
-                                        <FaEye />
-                                      </button>
-                                      <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
-                                        <FaTrash />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {bahanWithoutImage.length > 0 && <div className="bahan-table-split-label">Bahan tanpa gambar</div>}
-                </div>
-              )}
-
-              {bahanWithoutImage.length > 0 && (
-                <div className={`bahan-table-scroll ${groupedBahanImages.length > 0 ? "bahan-table-scroll-plain" : ""}`}>
-                  <table className="bahan-table">
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>Group Bahan</th>
-                        <th>Pabrik</th>
-                        <th>Nama Bahan</th>
-                        <th>Deskripsi</th>
-                        <th>Harga</th>
-                        <th>Satuan</th>
-                        <th>Stok</th>
-                        <th>Warna Bahan</th>
-                        <th className="align-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bahanWithoutImage.map((item) => (
-                        <tr key={item.id}>
-                          <td>
-                            <strong>{getItemPageNumber(item)}</strong>
-                          </td>
-                          <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
-                            {item.group_bahan || "-"}
-                          </td>
-                          <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
-                          <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
-                            <strong>{item.nama_bahan}</strong>
-                          </td>
-                          <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
-                          <td>
-                            <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
-                          </td>
-                          <td>
-                            <span className="bahan-status-badge bahan-status-satuan">
-                              <FaTag /> {getSatuanLabel(item.satuan)}
-                            </span>
-                          </td>
-                          <td>
-                            <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
-                          </td>
-                          <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
-                            {item.warna_bahan || "-"}
-                          </td>
-                          <td>
-                            <div className="bahan-actions">
-                              <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
-                                <FaEdit />
-                              </button>
-                              <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
-                                <FaEye />
-                              </button>
-                              <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
-                                <FaTrash />
-                              </button>
-                            </div>
-                          </td>
+              <div className="bahan-table-sections">
+                <section className="bahan-table-panel">
+                  <div className="bahan-table-panel-header">
+                    <div>
+                      <h4>Bahan Sudah Punya Gambar</h4>
+                      <p>
+                        {groupedBahanImages.length > 0
+                          ? `${bahanWithImageItemCount} data dalam ${groupedBahanImages.length} grup gambar pada halaman ini`
+                          : "Belum ada bahan bergambar pada halaman ini"}
+                      </p>
+                    </div>
+                    <div className="bahan-table-panel-summary">
+                      {groupedBahanImages.length} grup
+                    </div>
+                  </div>
+                  <div className="bahan-table-scroll bahan-image-table-scroll">
+                    <table className="bahan-table bahan-image-table">
+                      <thead>
+                        <tr>
+                          <th>No</th>
+                          <th>Gambar</th>
+                          <th>Nama Bahan</th>
+                          <th>Deskripsi</th>
+                          <th>Harga</th>
+                          <th>Satuan</th>
+                          <th>Stok</th>
+                          <th>Warna Bahan</th>
+                          <th className="align-center">Aksi</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {groupedBahanImages.length > 0
+                          ? groupedBahanImages.map((group) => {
+                              const firstItem = group.items[0] || {};
+                              const imageUrl = getBahanImageUrl(group.image);
+                              const groupTitle = uniqueGroupValues(group.items, "group_bahan").join(" / ") || `Gambar bahan ${group.id}`;
+
+                              return (
+                                <tr className="bahan-image-table-row" key={group.id}>
+                                  <td>
+                                    <strong>{getItemPageNumber(firstItem)}</strong>
+                                  </td>
+                                  <td>
+                                    <button
+                                      type="button"
+                                      className="bahan-table-image-frame bahan-table-image-button"
+                                      onClick={() => openPreviewImage(imageUrl, groupTitle)}
+                                      title="Klik untuk melihat gambar"
+                                    >
+                                      {imageUrl ? (
+                                        <img src={imageUrl} alt={groupTitle} />
+                                      ) : (
+                                        <div className="bahan-image-placeholder">
+                                          <FaImage />
+                                        </div>
+                                      )}
+                                    </button>
+                                  </td>
+                                  <td>{renderGroupedValues(group.items, "nama_bahan")}</td>
+                                  <td>{renderGroupedValues(group.items, "deskripsi")}</td>
+                                  <td>
+                                    <div className="bahan-grouped-value-list">
+                                      {uniqueGroupValues(group.items, "harga").map((harga) => (
+                                        <strong className="bahan-harga-value" key={harga}>
+                                          {formatRupiah(harga)}
+                                        </strong>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="bahan-grouped-satuan-list">
+                                      {uniqueGroupValues(group.items, "satuan").map((satuan) => (
+                                        <span className="bahan-status-badge bahan-status-satuan" key={satuan}>
+                                          <FaTag /> {getSatuanLabel(satuan)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <strong className="bahan-stok-value">{formatNumber(getGroupedStockTotal(group.items))}</strong>
+                                  </td>
+                                  <td>
+                                    <div className="bahan-image-item-list">
+                                      {group.items.map((item) => (
+                                        <div className="bahan-image-item-row" key={item.id}>
+                                          <strong>{formatNumber(item.stok_bahan)}</strong>
+                                          <span title={item.warna_bahan || "-"}>{item.warna_bahan || "-"}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="bahan-image-item-list bahan-image-item-list-actions">
+                                      {group.items.map((item) => (
+                                        <div className="bahan-image-action-row" key={item.id}>
+                                          <span title={item.warna_bahan || item.nama_bahan || "-"}>{item.warna_bahan || item.nama_bahan || "-"}</span>
+                                          <div className="bahan-actions">
+                                            <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
+                                              <FaEdit />
+                                            </button>
+                                            <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
+                                              <FaEye />
+                                            </button>
+                                            <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
+                                              <FaTrash />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          : renderEmptyTableRow(9, "Belum ada bahan bergambar pada halaman ini.")}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section className="bahan-table-panel">
+                  <div className="bahan-table-panel-header">
+                    <div>
+                      <h4>Bahan Belum Ada Gambar</h4>
+                      <p>
+                        {bahanWithoutImageCount > 0
+                          ? `${bahanWithoutImageCount} data pada halaman ini`
+                          : "Semua data pada halaman ini sudah memiliki gambar"}
+                      </p>
+                    </div>
+                    <div className="bahan-table-panel-summary">
+                      {bahanWithoutImageCount} data
+                    </div>
+                  </div>
+                  <div className="bahan-table-scroll bahan-table-scroll-plain">
+                    <table className="bahan-table">
+                      <thead>
+                        <tr>
+                          <th>No</th>
+                          <th>Group Bahan</th>
+                          <th>Pabrik</th>
+                          <th>Nama Bahan</th>
+                          <th>Deskripsi</th>
+                          <th>Harga</th>
+                          <th>Satuan</th>
+                          <th>Stok</th>
+                          <th>Warna Bahan</th>
+                          <th className="align-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bahanWithoutImageCount > 0
+                          ? bahanWithoutImage.map((item) => (
+                              <tr key={item.id}>
+                                <td>
+                                  <strong>{getItemPageNumber(item)}</strong>
+                                </td>
+                                <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
+                                  {item.group_bahan || "-"}
+                                </td>
+                                <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
+                                <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
+                                  <strong>{item.nama_bahan}</strong>
+                                </td>
+                                <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
+                                <td>
+                                  <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
+                                </td>
+                                <td>
+                                  <span className="bahan-status-badge bahan-status-satuan">
+                                    <FaTag /> {getSatuanLabel(item.satuan)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
+                                </td>
+                                <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
+                                  {item.warna_bahan || "-"}
+                                </td>
+                                <td>
+                                  <div className="bahan-actions">
+                                    <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
+                                      <FaEdit />
+                                    </button>
+                                    <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
+                                      <FaEye />
+                                    </button>
+                                    <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
+                                      <FaTrash />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          : renderEmptyTableRow(10, "Tidak ada bahan tanpa gambar pada halaman ini.")}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
 
               {totalPages > 1 && (
                 <div className="bahan-pagination">
