@@ -5,9 +5,11 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {
   FaChevronDown,
+  FaCheck,
   FaDownload,
   FaEdit,
   FaFileExcel,
+  FaImage,
   FaInfoCircle,
   FaLayerGroup,
   FaPlus,
@@ -15,6 +17,7 @@ import {
   FaSearch,
   FaTimes,
   FaTrash,
+  FaUpload,
 } from "react-icons/fa";
 import { FiCopy } from "react-icons/fi"; // [DUPLIKAT] - ditambahkan
 
@@ -152,6 +155,7 @@ const defaultExportColumns = [
 ];
 
 const normalizeSkuNameValue = (value) => String(value ?? "").trim().replace(/\s+/g, " "); // [DUPLIKAT] - ditambahkan
+const MAX_PRODUCT_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024;
 
 const ProductList = () => {
   const [items, setItems] = useState([]);
@@ -159,6 +163,21 @@ const ProductList = () => {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageModalStep, setImageModalStep] = useState(1);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageAssigning, setImageAssigning] = useState(false);
+  const [productImages, setProductImages] = useState([]);
+  const [selectedProductImageId, setSelectedProductImageId] = useState("");
+  const [imageProductSearch, setImageProductSearch] = useState("");
+  const [debouncedImageProductSearch, setDebouncedImageProductSearch] = useState("");
+  const [imageProductOptions, setImageProductOptions] = useState([]);
+  const [imageProductLoading, setImageProductLoading] = useState(false);
+  const [imageProductError, setImageProductError] = useState("");
+  const [imageProductTotal, setImageProductTotal] = useState(0);
+  const [selectedImageProductIds, setSelectedImageProductIds] = useState([]);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -224,6 +243,41 @@ const ProductList = () => {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+
+  const getProductImageObject = (item = {}) =>
+    item?.product_list_image || item?.productListImage || item?.product_image || item?.image || null;
+
+  const getProductImageUrl = (source = {}) => {
+    const image = getProductImageObject(source) || source;
+    const rawUrl = image?.image_url || "";
+
+    if (rawUrl) {
+      if (rawUrl.startsWith("/") || rawUrl.startsWith("blob:")) {
+        return rawUrl;
+      }
+
+      try {
+        const parsedUrl = new URL(rawUrl);
+        if (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1") {
+          return parsedUrl.pathname;
+        }
+
+        return rawUrl;
+      } catch {
+        return rawUrl;
+      }
+    }
+
+    const imagePath = image?.image_path || "";
+    const filename = String(imagePath).split("/").filter(Boolean).pop();
+
+    if (!filename) {
+      return "";
+    }
+
+    const apiBaseUrl = (process.env.REACT_APP_API_URL || "/api").replace(/\/$/, "");
+    return `${apiBaseUrl}/product-list-images/${encodeURIComponent(filename)}`;
+  };
 
   const normalizeMaterials = (materials) => {
     const source = Array.isArray(materials) ? materials : [];
@@ -397,6 +451,66 @@ const ProductList = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedImageProductSearch(imageProductSearch.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [imageProductSearch]);
+
+  useEffect(() => {
+    if (!imageModalOpen || imageModalStep !== 2) {
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchImageProductOptions = async () => {
+      try {
+        setImageProductLoading(true);
+        setImageProductError("");
+
+        const response = await API.get("/product-list", {
+          params: {
+            search: debouncedImageProductSearch || "",
+            page: 1,
+            per_page: 100,
+          },
+        });
+
+        if (ignore) return;
+
+        const rows = response.data.data || [];
+        setImageProductOptions(rows);
+        setImageProductTotal(Number(response.data.total) || rows.length);
+      } catch (err) {
+        if (ignore) return;
+        setImageProductOptions([]);
+        setImageProductTotal(0);
+        setImageProductError(getApiErrorMessage(err, "Gagal mencari data Product List."));
+      } finally {
+        if (!ignore) {
+          setImageProductLoading(false);
+        }
+      }
+    };
+
+    fetchImageProductOptions();
+
+    return () => {
+      ignore = true;
+    };
+  }, [imageModalOpen, imageModalStep, debouncedImageProductSearch]);
+
   const handleGroupSelect = (value) => {
     setCurrentPage(1);
     setSelectedGroup(value);
@@ -566,6 +680,134 @@ const ProductList = () => {
   const closeExportModal = () => {
     if (exporting) return;
     setExportModalOpen(false);
+  };
+
+  const resetImageModalState = () => {
+    setImageModalOpen(false);
+    setImageModalStep(1);
+    setImageFile(null);
+    setImagePreview("");
+    setProductImages([]);
+    setSelectedProductImageId("");
+    setImageProductSearch("");
+    setDebouncedImageProductSearch("");
+    setImageProductOptions([]);
+    setImageProductError("");
+    setImageProductTotal(0);
+    setSelectedImageProductIds([]);
+  };
+
+  const openImageModal = () => {
+    setModalMode(null);
+    setExportModalOpen(false);
+    setImageModalOpen(true);
+    setImageModalStep(1);
+    setImageProductError("");
+  };
+
+  const closeImageModal = () => {
+    if (imageUploading || imageAssigning) return;
+    resetImageModalState();
+  };
+
+  const handleImageFileChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showErrorAlert("File Tidak Valid", "File harus berupa gambar JPG, PNG, atau WEBP.");
+      return;
+    }
+
+    if (file.size > MAX_PRODUCT_IMAGE_UPLOAD_SIZE) {
+      showErrorAlert("Gambar Terlalu Besar", "Ukuran gambar maksimal 5 MB.");
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) {
+      await showErrorAlert("Pilih Foto", "Upload foto produk terlebih dahulu.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    try {
+      setImageUploading(true);
+      const response = await API.post("/product-list/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const uploadedImage = response.data.data;
+
+      if (uploadedImage?.id) {
+        setProductImages((prev) => [
+          uploadedImage,
+          ...prev.filter((image) => image.id !== uploadedImage.id),
+        ]);
+        setSelectedProductImageId(uploadedImage.id);
+      }
+
+      setImageModalStep(2);
+    } catch (err) {
+      await showErrorAlert("Upload Gagal", getApiErrorMessage(err, "Foto produk gagal diupload."));
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const toggleImageProductSelection = (productId) => {
+    setSelectedImageProductIds((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    );
+  };
+
+  const handleImageAssign = async (event) => {
+    event.preventDefault();
+
+    if (!selectedProductImageId) {
+      await showErrorAlert("Pilih Foto", "Pilih foto yang akan di-assign ke Product List.");
+      return;
+    }
+
+    if (selectedImageProductIds.length === 0) {
+      await showErrorAlert("Pilih Product", "Pilih minimal satu product untuk foto ini.");
+      return;
+    }
+
+    try {
+      setImageAssigning(true);
+      await API.post("/product-list/assign-image", {
+        image_id: selectedProductImageId,
+        product_list_ids: selectedImageProductIds,
+      });
+      resetImageModalState();
+      await fetchProductLists();
+      await showSuccessAlert("Berhasil", "Foto berhasil di-assign ke Product List.");
+    } catch (err) {
+      await showErrorAlert("Assign Gagal", getApiErrorMessage(err, "Foto gagal di-assign ke Product List."));
+    } finally {
+      setImageAssigning(false);
+    }
+  };
+
+  const openProductImagePreview = (imageUrl, title) => {
+    if (!imageUrl) return;
+
+    Swal.fire({
+      title: title || "Preview Foto Produk",
+      imageUrl,
+      imageAlt: title || "Preview Foto Produk",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#2563eb",
+      width: 720,
+    });
   };
 
   const toggleExportColumn = (columnKey) => {
@@ -767,6 +1009,7 @@ const ProductList = () => {
       const materials = normalizeMaterials(selectedItem?.materials).filter(
         (item) => item.material || item.colour || item.material_group
       );
+      const imageUrl = getProductImageUrl(selectedItem);
 
       return (
         <div className="product-list-modal-backdrop" onClick={closeModal}>
@@ -779,6 +1022,28 @@ const ProductList = () => {
               <button className="product-list-icon-button" onClick={closeModal} type="button">
                 <FaTimes />
               </button>
+            </div>
+
+            <div className="product-list-detail-photo">
+              <button
+                className={`product-list-detail-photo-frame${imageUrl ? " has-image" : ""}`}
+                type="button"
+                onClick={() => openProductImagePreview(imageUrl, selectedItem?.sku_name || selectedItem?.product)}
+                disabled={!imageUrl}
+              >
+                {imageUrl ? (
+                  <img src={imageUrl} alt={selectedItem?.sku_name || selectedItem?.product || "Foto produk"} />
+                ) : (
+                  <span>
+                    <FaImage />
+                    Belum ada foto
+                  </span>
+                )}
+              </button>
+              <div>
+                <h3>Foto Produk</h3>
+                <p>{imageUrl ? "Klik foto untuk preview ukuran besar." : "Foto belum di-assign ke product ini."}</p>
+              </div>
             </div>
 
             <div className="product-list-detail-grid">
@@ -1037,6 +1302,216 @@ const ProductList = () => {
     );
   };
 
+  const renderProductImageModal = () => {
+    if (!imageModalOpen) return null;
+
+    const busy = imageUploading || imageAssigning;
+
+    return (
+      <div className="product-list-modal-backdrop" onClick={closeImageModal}>
+        <form className="product-list-modal image" onSubmit={handleImageAssign} onClick={(event) => event.stopPropagation()}>
+          <div className="product-list-modal-header">
+            <div>
+              <p className="product-list-modal-kicker">Foto Product List</p>
+              <h2>Tambah dan Assign Foto</h2>
+            </div>
+            <button className="product-list-icon-button" onClick={closeImageModal} type="button" disabled={busy}>
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="product-list-image-steps">
+            <button
+              type="button"
+              className={`product-list-image-step ${imageModalStep === 1 ? "active" : ""} ${imageFile ? "done" : ""}`}
+              onClick={() => setImageModalStep(1)}
+              disabled={busy}
+            >
+              <span>{imageFile ? <FaCheck /> : "1"}</span>
+              Upload Foto
+            </button>
+            <button
+              type="button"
+              className={`product-list-image-step ${imageModalStep === 2 ? "active" : ""} ${selectedImageProductIds.length ? "done" : ""}`}
+              onClick={() => setImageModalStep(2)}
+              disabled={(!selectedProductImageId && productImages.length === 0) || busy}
+            >
+              <span>{selectedImageProductIds.length ? <FaCheck /> : "2"}</span>
+              Pilih Product
+            </button>
+          </div>
+
+          {imageModalStep === 1 ? (
+            <div className="product-list-form-section">
+              <div className="product-list-image-upload-grid">
+                <label className={`product-list-image-dropzone${imagePreview ? " has-preview" : ""}`}>
+                  <input type="file" accept="image/*" onChange={handleImageFileChange} disabled={busy} />
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview foto produk" />
+                  ) : (
+                    <span>
+                      <FaUpload />
+                      <strong>Upload Foto</strong>
+                      <small>JPG, PNG, atau WEBP maksimal 5 MB</small>
+                    </span>
+                  )}
+                </label>
+
+                <div className="product-list-image-upload-copy">
+                  <h3>Foto Baru</h3>
+                  <p>Upload foto produk terlebih dahulu. Setelah tersimpan, pilih foto dan product yang akan memakai foto tersebut.</p>
+                  {imageFile && (
+                    <div className="product-list-image-file-info">
+                      <span>{imageFile.name}</span>
+                      <strong>{(imageFile.size / 1024 / 1024).toFixed(2)} MB</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="product-list-form-section">
+              <div className="product-list-image-assign-grid">
+                <section className="product-list-image-picker">
+                  <div className="product-list-image-panel-heading">
+                    <h3>Pilih Foto</h3>
+                    <button
+                      className="product-list-ghost-button"
+                      type="button"
+                      onClick={() => {
+                        setProductImages([]);
+                        setSelectedProductImageId("");
+                        setImageFile(null);
+                        setImagePreview("");
+                        setSelectedImageProductIds([]);
+                      }}
+                      disabled={busy || productImages.length === 0}
+                    >
+                      Reset Sesi
+                    </button>
+                  </div>
+
+                  <div className="product-list-image-gallery">
+                    {productImages.length === 0 ? (
+                      <div className="product-list-image-state">Belum ada foto di sesi ini.</div>
+                    ) : (
+                      productImages.map((image) => {
+                        const imageUrl = getProductImageUrl(image);
+                        const selected = String(selectedProductImageId) === String(image.id);
+
+                        return (
+                          <label className={`product-list-image-choice${selected ? " selected" : ""}`} key={image.id}>
+                            <input
+                              type="radio"
+                              name="product_list_image_id"
+                              checked={selected}
+                              onChange={() => setSelectedProductImageId(image.id)}
+                              disabled={busy}
+                            />
+                            <span className="product-list-image-choice-frame">
+                              {imageUrl ? <img src={imageUrl} alt={`Foto #${image.id}`} /> : <FaImage />}
+                            </span>
+                            <span className="product-list-image-choice-copy">
+                              <strong>Foto sesi</strong>
+                              <small>Dipakai hanya pada modal yang sedang dibuka</small>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </section>
+
+                <section className="product-list-image-product-picker">
+                  <div className="product-list-image-panel-heading">
+                    <div>
+                      <h3>Pilih Product</h3>
+                      <p>
+                        {selectedImageProductIds.length} dipilih
+                        {imageProductTotal > 0 ? ` dari ${imageProductTotal} data` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="product-list-image-search">
+                    <FaSearch />
+                    <input
+                      type="text"
+                      value={imageProductSearch}
+                      onChange={(event) => setImageProductSearch(event.target.value)}
+                      placeholder="Cari product, SKU, group, warna..."
+                      disabled={busy}
+                    />
+                    {imageProductSearch && (
+                      <button type="button" onClick={() => setImageProductSearch("")} disabled={busy}>
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="product-list-image-product-list">
+                    {imageProductLoading ? (
+                      <div className="product-list-image-state">Mencari Product List...</div>
+                    ) : imageProductError ? (
+                      <div className="product-list-image-state error">{imageProductError}</div>
+                    ) : imageProductOptions.length === 0 ? (
+                      <div className="product-list-image-state">
+                        {debouncedImageProductSearch ? "Product tidak ditemukan." : "Belum ada data Product List."}
+                      </div>
+                    ) : (
+                      imageProductOptions.map((item) => {
+                        const selected = selectedImageProductIds.includes(item.id);
+                        const existingImageUrl = getProductImageUrl(item);
+
+                        return (
+                          <label className={`product-list-image-product-option${selected ? " selected" : ""}`} key={item.id}>
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleImageProductSelection(item.id)}
+                              disabled={busy}
+                            />
+                            <span className="product-list-image-product-copy">
+                              <strong>{item.product || "-"}</strong>
+                              <small>{item.sku_name || "-"} | {item.product_group || "-"} | {item.product_colour || "-"} {item.product_size || ""}</small>
+                            </span>
+                            {existingImageUrl && <em>Sudah ada foto</em>}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          )}
+
+          <div className="product-list-modal-actions">
+            {imageModalStep === 1 ? (
+              <>
+                <button className="product-list-ghost-button" type="button" onClick={closeImageModal} disabled={busy}>
+                  Batal
+                </button>
+                <button className="product-list-primary-button" type="button" onClick={handleImageUpload} disabled={busy || !imageFile}>
+                  <FaUpload /> {imageUploading ? "Mengupload..." : "Upload & Lanjut"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="product-list-ghost-button" type="button" onClick={() => setImageModalStep(1)} disabled={busy}>
+                  Kembali
+                </button>
+                <button className="product-list-primary-button" type="submit" disabled={busy || !selectedProductImageId || selectedImageProductIds.length === 0}>
+                  <FaSave /> {imageAssigning ? "Menyimpan..." : "Simpan Assign"}
+                </button>
+              </>
+            )}
+          </div>
+        </form>
+      </div>
+    );
+  };
+
   return (
     <div className="product-list-page">
       <header className="product-list-header">
@@ -1101,6 +1576,14 @@ const ProductList = () => {
                 onChange={handleImportChange}
                 className="product-list-file-input"
               />
+              <button
+                className="product-list-secondary-button photo"
+                type="button"
+                onClick={openImageModal}
+                disabled={imageUploading || imageAssigning}
+              >
+                <FaImage /> Tambah Foto
+              </button>
               <button
                 className="product-list-secondary-button import"
                 type="button"
@@ -1200,6 +1683,7 @@ const ProductList = () => {
             <table className="product-list-table">
               <thead>
                 <tr>
+                  <th>Foto</th>
                   <th>Product</th>
                   <th>SKU Name</th>
                   <th>Group / Source</th>
@@ -1219,19 +1703,39 @@ const ProductList = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="14" className="product-list-state-cell">
+                    <td colSpan="15" className="product-list-state-cell">
                       Memuat data Product List...
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan="14" className="product-list-state-cell">
+                    <td colSpan="15" className="product-list-state-cell">
                       Belum ada data Product List.
                     </td>
                   </tr>
                 ) : (
                   items.map((item) => (
                     <tr key={item.id}>
+                      <td className="product-list-image-cell">
+                        {(() => {
+                          const imageUrl = getProductImageUrl(item);
+                          return (
+                            <button
+                              className={`product-list-thumb-button${imageUrl ? " has-image" : ""}`}
+                              type="button"
+                              onClick={() => openProductImagePreview(imageUrl, item.sku_name || item.product)}
+                              disabled={!imageUrl}
+                              title={imageUrl ? "Preview foto" : "Belum ada foto"}
+                            >
+                              {imageUrl ? (
+                                <img src={imageUrl} alt={item.sku_name || item.product || "Foto produk"} />
+                              ) : (
+                                <FaImage />
+                              )}
+                            </button>
+                          );
+                        })()}
+                      </td>
                       <td>
                         <strong>{item.product || "-"}</strong>
                         <span className="product-list-muted">#{item.id}</span>
@@ -1305,6 +1809,7 @@ const ProductList = () => {
 
       {renderModal()}
       {renderExportModal()}
+      {renderProductImageModal()}
     </div>
   );
 };
