@@ -1001,6 +1001,51 @@ select option:disabled {
   font-family: inherit;
 }
 
+.spk-cutting-bahan-select {
+  min-width: 0;
+  font-size: 13px;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__control {
+  min-height: 38px;
+  border: 1px solid #d7deea;
+  border-radius: 8px;
+  box-shadow: none;
+  font-family: inherit;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__control:hover {
+  border-color: #aebbd0;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__control--is-focused {
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__value-container {
+  padding: 0 8px;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__input-container,
+.spk-cutting-bahan-select .spk-cutting-react-select__single-value,
+.spk-cutting-bahan-select .spk-cutting-react-select__placeholder {
+  color: #0f172a;
+  margin: 0;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__placeholder {
+  color: #64748b;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__menu {
+  z-index: 9999;
+}
+
+.spk-cutting-bahan-select .spk-cutting-react-select__option {
+  font-size: 13px;
+}
+
 .spk-cutting-bahan-group button {
   border: none;
   border-radius: 8px;
