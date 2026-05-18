@@ -25,6 +25,7 @@ const emptyMaterial = {
   material: "",
   colour: "",
   material_group: "",
+  kind: "kombinasi",
 };
 
 const initialForm = {
@@ -34,7 +35,7 @@ const initialForm = {
   product_size: "",
   product_source: "",
   product_colour: "",
-  materials: [{ ...emptyMaterial }],
+  materials: [{ ...emptyMaterial, kind: "utama" }],
   estimasi_cutting: "",
   estimasi_combi: "",
   id_s: "",
@@ -281,14 +282,21 @@ const ProductList = () => {
 
   const normalizeMaterials = (materials) => {
     const source = Array.isArray(materials) ? materials : [];
-    const normalized = source.map((item) => ({
+    const normalized = source.map((item, index) => ({
       material: String(item?.material || "").trim(),
       colour: String(item?.colour || "").trim(),
       material_group: String(item?.material_group || "").trim(),
+      kind: (() => {
+        const raw = String(item?.kind || "").trim().toLowerCase();
+        if (raw === "utama" || raw === "kombinasi" || raw === "aksesoris") {
+          return raw;
+        }
+        return index === 0 ? "utama" : "kombinasi";
+      })(),
     }));
 
     const filled = normalized.filter((item) => item.material || item.colour || item.material_group);
-    return filled.length ? filled : [{ ...emptyMaterial }];
+    return filled.length ? filled : [{ ...emptyMaterial, kind: "utama" }];
   };
 
   const toForm = (item = {}) => ({
@@ -595,14 +603,14 @@ const ProductList = () => {
   const addMaterialRow = () => {
     setForm((prev) => ({
       ...prev,
-      materials: [...prev.materials, { ...emptyMaterial }],
+      materials: [...prev.materials, { ...emptyMaterial, kind: "kombinasi" }],
     }));
   };
 
   const removeMaterialRow = (index) => {
     setForm((prev) => {
       if (prev.materials.length === 1) {
-        return { ...prev, materials: [{ ...emptyMaterial }] };
+        return { ...prev, materials: [{ ...emptyMaterial, kind: "utama" }] };
       }
 
       return {
@@ -970,7 +978,10 @@ const ProductList = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const getMaterialRoleLabel = (index) => (index === 0 ? "Utama" : "Kombinasi");
+  const getMaterialRoleLabel = (index, kind) => {
+    if (index === 0) return "Utama";
+    return kind === "aksesoris" ? "Aksesoris" : "Kombinasi";
+  };
   const getMaterialRoleClass = (index) => (index === 0 ? "main" : "combo");
 
   const renderMaterialChips = (materials) => {
@@ -989,7 +1000,7 @@ const ProductList = () => {
             className={`product-list-material-chip ${getMaterialRoleClass(index)}`}
             key={`${material.material}-${index}`}
           >
-            <em>{getMaterialRoleLabel(index)}</em>
+            <em>{getMaterialRoleLabel(index, material.kind)}</em>
             {material.material_group ? `${material.material_group}: ` : ""}
             {material.material || "-"}
             {material.colour ? ` / ${material.colour}` : ""}
@@ -1076,7 +1087,11 @@ const ProductList = () => {
                     >
                       <span>#{index + 1}</span>
                       <div className="product-list-detail-material-copy">
-                        <em>{index === 0 ? "Material Utama" : `Kombinasi ${index}`}</em>
+                        <em>
+                          {index === 0
+                            ? "Material Utama"
+                            : `${getMaterialRoleLabel(index, material.kind)} ${index}`}
+                        </em>
                         <strong>{material.material || "-"}</strong>
                         <small>{material.colour || "-"} / {material.material_group || "-"}</small>
                       </div>
@@ -1144,7 +1159,18 @@ const ProductList = () => {
                   <div className="product-list-material-role">
                     <span className="product-list-row-index">{index + 1}</span>
                     <span className="product-list-material-role-badge">
-                      {index === 0 ? "Material Utama" : `Kombinasi ${index}`}
+                      {index === 0 ? (
+                        "Material Utama"
+                      ) : (
+                        <select
+                          className="product-list-material-kind-select"
+                          value={material.kind || "kombinasi"}
+                          onChange={(event) => handleMaterialChange(index, "kind", event.target.value)}
+                        >
+                          <option value="kombinasi">{`Kombinasi ${index}`}</option>
+                          <option value="aksesoris">{`Aksesoris ${index}`}</option>
+                        </select>
+                      )}
                     </span>
                   </div>
                   <Field

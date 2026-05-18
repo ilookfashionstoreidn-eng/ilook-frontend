@@ -1154,6 +1154,13 @@
   font-weight: 700;
 }
 
+.bahan-modal-subtitle {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .bahan-modal-close {
   width: 34px;
   height: 34px;
@@ -1190,6 +1197,10 @@
 
 .bahan-image-modal {
   width: min(95vw, 720px);
+}
+
+.bahan-export-modal {
+  width: min(96vw, 860px);
 }
 
 .bahan-image-steps {
@@ -1415,6 +1426,54 @@
   max-height: 430px;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.bahan-export-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bahan-export-search-wrap {
+  margin-bottom: 0;
+}
+
+.bahan-export-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bahan-export-summary {
+  margin-bottom: 10px;
+  border: 1px solid #dbe5f3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bahan-export-summary strong {
+  color: #2458ce;
+  white-space: nowrap;
+}
+
+.bahan-export-select-list {
+  display: grid;
+  gap: 8px;
+  max-height: 54vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bahan-export-option {
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .bahan-image-list-state {
@@ -1791,6 +1850,14 @@
 
   .bahan-image-linked-meta,
   .bahan-image-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bahan-export-toolbar,
+  .bahan-export-toolbar-actions,
+  .bahan-export-summary {
+    grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;
   }

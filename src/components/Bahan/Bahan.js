@@ -260,6 +260,11 @@ const Bahan = () => {
   const [imageBahanTotal, setImageBahanTotal] = useState(0);
   const [imageSubmitting, setImageSubmitting] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportBahanRows, setExportBahanRows] = useState([]);
+  const [exportBahanLoading, setExportBahanLoading] = useState(false);
+  const [exportBahanSearch, setExportBahanSearch] = useState("");
+  const [selectedExportBahanIds, setSelectedExportBahanIds] = useState([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -295,6 +300,28 @@ const Bahan = () => {
   const totalStok = stats.total_stok;
   const pabrikSelectOptions = pabrikOptions.includes("-") ? pabrikOptions : ["-", ...pabrikOptions];
   const { bahanWithoutImage, groupedBahanImages } = useMemo(() => splitBahanByImage(items), [items]);
+  const filteredExportBahanRows = useMemo(() => {
+    const search = exportBahanSearch.trim().toLowerCase();
+    if (!search) return exportBahanRows;
+
+    return exportBahanRows.filter((item) =>
+      [
+        item.id,
+        item.group_bahan,
+        item.pabrik_bahan,
+        item.nama_bahan,
+        item.deskripsi,
+        item.satuan,
+        item.warna_bahan,
+      ]
+        .map((value) => String(value ?? "").toLowerCase())
+        .some((value) => value.includes(search))
+    );
+  }, [exportBahanRows, exportBahanSearch]);
+  const selectedExportBahanRows = useMemo(() => {
+    const selectedIds = new Set(selectedExportBahanIds.map((id) => String(id)));
+    return exportBahanRows.filter((item) => selectedIds.has(String(item.id)));
+  }, [exportBahanRows, selectedExportBahanIds]);
 
   const fetchBahanNameOptions = async () => {
     try {
@@ -918,34 +945,11 @@ const Bahan = () => {
     await Swal.fire({ icon: "success", title: "Template dibuat", text: "Template register bahan berhasil dibuat.", ...swalButtonColors });
   };
 
-  const handleExportPdf = async () => {
-    try {
-      setExportingPdf(true);
-      Swal.fire({
-        title: "Menyiapkan PDF...",
-        text: "Mengambil semua data bahan dan menyusun tabel.",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        didOpen: () => Swal.showLoading(),
-      });
-
-      const response = await API.get("/bahan", {
-        params: { all: 1 },
-      });
-      const payload = response.data || {};
-      const allRows = Array.isArray(payload.data) ? payload.data : Array.isArray(payload) ? payload : [];
-
-      if (allRows.length === 0) {
-        Swal.close();
-        await Swal.fire({ icon: "warning", title: "Data kosong", text: "Belum ada data bahan untuk diexport.", ...swalButtonColors });
-        return;
-      }
-
+  const buildBahanPdf = async (rows, { scopeLabel = "data bahan" } = {}) => {
       const {
         bahanWithoutImage: exportWithoutImage,
         groupedBahanImages: exportImageGroups,
-      } = splitBahanByImage(allRows);
+      } = splitBahanByImage(rows);
       const imageMap = new Map();
 
       for (const group of exportImageGroups) {
@@ -982,8 +986,8 @@ const Bahan = () => {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text(`Export semua data - ${pdfDate}`, marginX, 18);
-      doc.text(`Total: ${formatNumber(allRows.length)} data | Bergambar: ${formatNumber(withImageCount)} data | Tanpa gambar: ${formatNumber(exportWithoutImage.length)} data`, marginX, 23);
+      doc.text(`Export ${scopeLabel} - ${pdfDate}`, marginX, 18);
+      doc.text(`Total: ${formatNumber(rows.length)} data | Bergambar: ${formatNumber(withImageCount)} data | Tanpa gambar: ${formatNumber(exportWithoutImage.length)} data`, marginX, 23);
 
       let cursorY = 31;
       const drawSectionTitle = (title, subtitle) => {
@@ -1139,9 +1143,82 @@ const Bahan = () => {
       }
 
       const fileDate = generatedAt.toISOString().slice(0, 10);
+      doc.save(`master-bahan-${fileDate}.pdf`);
+  };
+
+  const fetchAllBahanRows = async () => {
+    const response = await API.get("/bahan", {
+      params: { all: 1 },
+    });
+    const payload = response.data || {};
+    return Array.isArray(payload.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  };
+
+  const openExportModal = async () => {
+    setShowExportModal(true);
+    setExportBahanSearch("");
+
+    try {
+      setExportBahanLoading(true);
+      const rows = await fetchAllBahanRows();
+      const validIds = new Set(rows.map((item) => String(item.id)));
+      setExportBahanRows(rows);
+      setSelectedExportBahanIds((prev) => prev.filter((id) => validIds.has(String(id))));
+    } catch (exportLoadError) {
+      setExportBahanRows([]);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal memuat bahan",
+        text: getApiErrorMessage(exportLoadError, "Gagal mengambil daftar bahan untuk export PDF."),
+        ...swalButtonColors,
+      });
+    } finally {
+      setExportBahanLoading(false);
+    }
+  };
+
+  const closeExportModal = () => {
+    if (exportingPdf) return;
+    setShowExportModal(false);
+  };
+
+  const toggleExportBahanSelection = (bahanId) => {
+    setSelectedExportBahanIds((prev) =>
+      prev.includes(bahanId) ? prev.filter((id) => id !== bahanId) : [...prev, bahanId]
+    );
+  };
+
+  const selectAllVisibleExportBahan = () => {
+    const visibleIds = filteredExportBahanRows.map((item) => item.id);
+    setSelectedExportBahanIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+  };
+
+  const clearVisibleExportBahan = () => {
+    const visibleIds = new Set(filteredExportBahanRows.map((item) => String(item.id)));
+    setSelectedExportBahanIds((prev) => prev.filter((id) => !visibleIds.has(String(id))));
+  };
+
+  const handleExportSelectedPdf = async () => {
+    if (selectedExportBahanRows.length === 0) {
+      Swal.fire({ icon: "warning", title: "Pilih bahan", text: "Pilih minimal satu bahan untuk export PDF.", ...swalButtonColors });
+      return;
+    }
+
+    try {
+      setExportingPdf(true);
+      Swal.fire({
+        title: "Menyiapkan PDF...",
+        text: `Menyusun ${selectedExportBahanRows.length} data terpilih.`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      await buildBahanPdf(selectedExportBahanRows, { scopeLabel: "data bahan terpilih" });
       Swal.close();
-      doc.save(`master-bahan-semua-data-${fileDate}.pdf`);
-      await Swal.fire({ icon: "success", title: "PDF dibuat", text: "Semua data bahan berhasil diexport ke PDF.", ...swalButtonColors });
+      setShowExportModal(false);
+      await Swal.fire({ icon: "success", title: "PDF dibuat", text: "Data bahan berhasil diexport ke PDF.", ...swalButtonColors });
     } catch (exportError) {
       Swal.close();
       Swal.fire({
@@ -1219,8 +1296,8 @@ const Bahan = () => {
               <button className="bahan-btn-secondary" onClick={handleDownloadTemplate}>
                 <FaDownload /> Template
               </button>
-              <button className="bahan-btn-secondary" onClick={handleExportPdf} disabled={exportingPdf}>
-                <FaFilePdf /> {exportingPdf ? "Exporting..." : "Export PDF"}
+              <button className="bahan-btn-secondary" onClick={openExportModal} disabled={exportingPdf}>
+                <FaFilePdf /> Export PDF
               </button>
               <label className="bahan-btn-secondary bahan-btn-file">
                 <FaFileImport /> Import Excel
@@ -1724,6 +1801,98 @@ const Bahan = () => {
                 </button>
               </div>
             </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showExportModal && (
+        <div className="bahan-modal-overlay" onClick={closeExportModal}>
+          <div className="bahan-modal-content bahan-export-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="bahan-modal-header">
+              <div>
+                <h2>Export PDF Bahan</h2>
+                <p className="bahan-modal-subtitle">Pilih bahan yang ingin dimasukkan ke file PDF.</p>
+              </div>
+              <button className="bahan-modal-close" onClick={closeExportModal} type="button" disabled={exportingPdf}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="bahan-modal-body">
+              <div className="bahan-export-toolbar">
+                <div className="bahan-image-search-wrap bahan-export-search-wrap">
+                  <FaSearch />
+                  <input
+                    type="text"
+                    value={exportBahanSearch}
+                    onChange={(e) => setExportBahanSearch(e.target.value)}
+                    placeholder="Cari nama bahan, group, pabrik, warna, atau ID..."
+                    disabled={exportingPdf}
+                  />
+                  {exportBahanSearch && (
+                    <button type="button" onClick={() => setExportBahanSearch("")} disabled={exportingPdf} title="Hapus pencarian">
+                      <FaTimes />
+                    </button>
+                  )}
+                </div>
+                <div className="bahan-export-toolbar-actions">
+                  <button type="button" className="bahan-btn-secondary" onClick={selectAllVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
+                    Pilih Semua
+                  </button>
+                  <button type="button" className="bahan-btn-secondary" onClick={clearVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
+                    Hapus Pilihan
+                  </button>
+                </div>
+              </div>
+
+              <div className="bahan-export-summary">
+                <span>{selectedExportBahanRows.length} bahan dipilih</span>
+                <strong>{filteredExportBahanRows.length} data tampil</strong>
+              </div>
+
+              <div className="bahan-export-select-list">
+                {exportBahanLoading ? (
+                  <div className="bahan-image-list-state">
+                    <div className="bahan-spinner"></div>
+                    <span>Memuat data bahan...</span>
+                  </div>
+                ) : exportBahanRows.length === 0 ? (
+                  <div className="bahan-image-list-state">Belum ada data bahan.</div>
+                ) : filteredExportBahanRows.length === 0 ? (
+                  <div className="bahan-image-list-state">Bahan tidak ditemukan.</div>
+                ) : (
+                  filteredExportBahanRows.map((item) => {
+                    const selected = selectedExportBahanIds.includes(item.id);
+                    const hasImage = Boolean(item.bahan_image_id || item.bahan_image || item.bahanImage);
+
+                    return (
+                      <label className={`bahan-image-option bahan-export-option ${selected ? "selected" : ""}`} key={item.id}>
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleExportBahanSelection(item.id)}
+                          disabled={exportingPdf}
+                        />
+                        <span className="bahan-image-option-copy">
+                          <strong>{item.nama_bahan || "-"}</strong>
+                          <small>
+                            #{item.id} | {item.group_bahan || "-"} | {item.pabrik_bahan || "-"} | {item.warna_bahan || "-"} | Stok {formatNumber(item.stok_bahan)}
+                          </small>
+                        </span>
+                        {hasImage && <em>Ada gambar</em>}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+            <div className="bahan-image-modal-footer">
+              <button type="button" className="bahan-btn-cancel" onClick={closeExportModal} disabled={exportingPdf}>
+                Batal
+              </button>
+              <button type="button" className="bahan-btn-submit" onClick={handleExportSelectedPdf} disabled={exportingPdf || selectedExportBahanRows.length === 0}>
+                <FaFilePdf /> {exportingPdf ? "Menyiapkan..." : `Export ${selectedExportBahanRows.length} Bahan`}
+              </button>
             </div>
           </div>
         </div>

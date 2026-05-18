@@ -55,6 +55,8 @@ const hasAvailableWarnaStock = (warnaData) =>
 
 const calculateAssumptionFromBagian = (bagianList) => {
   const totalRoll = (bagianList || []).reduce((bagianTotal, bagian) => {
+    if (isAksesorisBagian(bagian?.nama_bagian)) return bagianTotal;
+
     const bahanTotal = (bagian.bahan || []).reduce((total, bahan) => total + (parseFloat(bahan.qty) || 0), 0);
     return bagianTotal + bahanTotal;
   }, 0);
@@ -66,6 +68,36 @@ const getProdukOptionLabel = (produk) => {
   const productGroup = String(produk.product_group || "").trim();
   if (productGroup) return productGroup;
   return produk.nama_produk || "-";
+};
+
+const normalizeMaterialText = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+
+const normalizeMaterialKey = (value) => normalizeMaterialText(value).toLowerCase();
+
+const getAutoBagianName = (_material, index) => {
+  return index === 0 ? "Bahan Utama" : "Combinasi";
+};
+
+const NAMA_BAGIAN_OPTIONS = ["Bahan Utama", "Combinasi", "Aksesoris"];
+
+const isAksesorisBagian = (namaBagian) => {
+  const value = String(namaBagian || "").trim().toLowerCase();
+  return value.includes("aksesor") || value.includes("accessor");
+};
+
+const makeKomponenPayload = (bagian, item) => {
+  const isAksesoris = isAksesorisBagian(bagian?.nama_bagian);
+
+  return {
+    sumber_komponen: isAksesoris ? "aksesoris" : "bahan",
+    bahan_id: isAksesoris ? null : parseInt(item.bahan_id, 10),
+    aksesoris_id: isAksesoris ? parseInt(item.aksesoris_id, 10) : null,
+    warna: isAksesoris ? null : item.warna === "Lainnya" ? item.warna_custom || null : item.warna || null,
+    qty: parseFloat(item.qty),
+  };
 };
 
 const SpkCutting = () => {
@@ -125,6 +157,7 @@ const SpkCutting = () => {
   const [tukangPolaList, setTukangPolaList] = useState([]);
 
   const [bahanList, setBahanList] = useState([]);
+  const [aksesorisList, setAksesorisList] = useState([]);
 
   const [selectedDetailSpk, setSelectedDetailSpk] = useState(null);
   const [downloadingSpkId, setDownloadingSpkId] = useState(null);
@@ -144,10 +177,6 @@ const SpkCutting = () => {
   const [skuList, setSkuList] = useState([]);
   const [selectedSkuIds, setSelectedSkuIds] = useState([]);
   const [editSelectedSkuIds, setEditSelectedSkuIds] = useState([]);
-
-  // List nama bagian untuk dropdown
-
-  const namaBagianList = ["fullbody", "atasan", "bawahan", "combinasi"];
 
   const bahanOptions = useMemo(
     () => {
@@ -171,6 +200,15 @@ const SpkCutting = () => {
       }, []);
     },
     [bahanList]
+  );
+
+  const aksesorisOptions = useMemo(
+    () =>
+      aksesorisList.map((aksesoris) => ({
+        value: String(aksesoris.id),
+        label: aksesoris.satuan ? `${aksesoris.nama_aksesoris} (${aksesoris.satuan})` : aksesoris.nama_aksesoris,
+      })),
+    [aksesorisList]
   );
 
   const bahanSelectPortalTarget = typeof document !== "undefined" ? document.body : null;
@@ -530,6 +568,26 @@ const SpkCutting = () => {
     fetchBahan();
   }, []);
 
+  useEffect(() => {
+    const fetchAksesoris = async () => {
+      try {
+        setLoading(true);
+
+        const response = await API.get("/aksesoris", {
+          params: { all: 1 },
+        });
+
+        setAksesorisList(normalizeApiList(response.data));
+      } catch (error) {
+        setError("Gagal mengambil data aksesoris.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAksesoris();
+  }, []);
+
   // Fungsi untuk fetch SKU berdasarkan produk_id
   const fetchSkuByProduk = async (produkId) => {
     if (!produkId) {
@@ -735,6 +793,25 @@ const SpkCutting = () => {
 
   const getSelectedProduk = (produkId) => produkList.find((produk) => String(produk.id) === String(produkId));
 
+  const getBahanByMaterialGroup = (materialGroup) => {
+    const groupKey = normalizeMaterialKey(materialGroup);
+    if (!groupKey) return [];
+
+    return bahanList.filter((bahan) => normalizeMaterialKey(bahan.group_bahan) === groupKey);
+  };
+
+  const resolveAutoBahanId = (material) => {
+    const materialNameKey = normalizeMaterialKey(material?.material);
+    const candidates = getBahanByMaterialGroup(material?.material_group);
+
+    if (candidates.length === 1) {
+      return String(candidates[0].id);
+    }
+
+    const matchingBahan = candidates.find((bahan) => normalizeMaterialKey(bahan.nama_bahan) === materialNameKey);
+    return matchingBahan ? String(matchingBahan.id) : "";
+  };
+
   const fetchProductGroupCatalog = async (produk) => {
     const productGroup = String(produk?.product_group || "").trim();
 
@@ -762,10 +839,39 @@ const SpkCutting = () => {
     const hargaJasa = productHargaJasa > 0 ? productHargaJasa : catalogHargaJasa;
     const hargaJasaString = hargaJasa !== null && hargaJasa !== undefined && hargaJasa !== "" ? String(Math.round(Number(hargaJasa) || 0)) : "";
 
+    const catalogMaterials = Array.isArray(catalog?.materials) ? catalog.materials : [];
+    const bagian = await Promise.all(
+      catalogMaterials
+        .filter((material) => normalizeMaterialText(material?.material) || normalizeMaterialText(material?.material_group))
+        .map(async (material, index) => {
+          const bahanId = resolveAutoBahanId(material);
+          const warnaList = bahanId ? await fetchWarnaByBahan(bahanId) : [];
+
+          return {
+            nama_bagian: getAutoBagianName(material, index),
+            material_group: normalizeMaterialText(material?.material_group),
+            is_auto_bagian: true,
+            bahan: [
+              {
+                bahan_id: bahanId,
+                material_group: normalizeMaterialText(material?.material_group),
+                warna: "",
+                warna_custom: "",
+                qty: "",
+                warnaList,
+              },
+            ],
+          };
+        })
+    );
+
+    const autoBagianFields = bagian.length ? { bagian, ...getAssumptionFields(bagian) } : {};
+
     return {
       harga_jasa: hargaJasaString,
       harga_jasaDisplay: hargaJasaString ? formatRupiahInput(hargaJasaString) : "",
       keterangan: catalog?.notes_spk || "",
+      ...autoBagianFields,
     };
   };
 
@@ -853,14 +959,21 @@ const SpkCutting = () => {
 
       for (let j = 0; j < bagian.bahan.length; j++) {
         const bahan = bagian.bahan[j];
+        const isAksesoris = isAksesorisBagian(bagian.nama_bagian);
 
-        if (!bahan.bahan_id || bahan.bahan_id === "") {
+        if (isAksesoris && (!bahan.aksesoris_id || bahan.aksesoris_id === "")) {
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Aksesoris ${j + 1}: Pilih aksesoris terlebih dahulu!`);
+
+          return;
+        }
+
+        if (!isAksesoris && (!bahan.bahan_id || bahan.bahan_id === "")) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
 
           return;
         }
 
-        if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
+        if (!isAksesoris && bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Masukkan warna custom terlebih dahulu!`);
 
           return;
@@ -890,15 +1003,7 @@ const SpkCutting = () => {
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
-        bahan: bagian.bahan.map((bahan) => ({
-          bahan_id: parseInt(bahan.bahan_id),
-
-          // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
-
-          warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
-
-          qty: parseFloat(bahan.qty),
-        })),
+        bahan: bagian.bahan.map((bahan) => makeKomponenPayload(bagian, bahan)),
       })),
     };
 
@@ -1008,6 +1113,19 @@ const SpkCutting = () => {
 
     updated[index][key] = value;
 
+    if (key === "nama_bagian") {
+      const sumberKomponen = isAksesorisBagian(value) ? "aksesoris" : "bahan";
+      updated[index].bahan = (updated[index].bahan || []).map((bahan) => ({
+        ...bahan,
+        sumber_komponen: sumberKomponen,
+        bahan_id: sumberKomponen === "bahan" ? bahan.bahan_id || "" : "",
+        aksesoris_id: sumberKomponen === "aksesoris" ? bahan.aksesoris_id || "" : "",
+        warna: sumberKomponen === "bahan" ? bahan.warna || "" : "",
+        warna_custom: "",
+        warnaList: sumberKomponen === "bahan" ? bahan.warnaList || [] : [],
+      }));
+    }
+
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
   };
 
@@ -1053,10 +1171,57 @@ const SpkCutting = () => {
     });
   };
 
+  const removeBagian = async (bagianIndex) => {
+    if (newSpkCutting.bagian[bagianIndex]?.is_auto_bagian) {
+      await showStatusAlert("warning", "Bagian Default", "Bagian default dari Product List tidak bisa dihapus.");
+      return;
+    }
+
+    const confirmed = await showConfirmAlert({
+      icon: "warning",
+      title: "Hapus Bagian?",
+      text: "Bagian tambahan dan seluruh bahan di dalamnya akan dihapus dari form SPK.",
+      confirmText: "Ya, Hapus",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const updated = [...newSpkCutting.bagian];
+    updated.splice(bagianIndex, 1);
+
+    setNewSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
+  };
+
+  const handleAksesorisChange = (bagianIndex, bahanIndex, value) => {
+    const updated = [...newSpkCutting.bagian];
+
+    updated[bagianIndex].bahan[bahanIndex] = {
+      ...updated[bagianIndex].bahan[bahanIndex],
+      sumber_komponen: "aksesoris",
+      aksesoris_id: value,
+      bahan_id: "",
+      warna: "",
+      warna_custom: "",
+      warnaList: [],
+    };
+
+    setNewSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
+  };
+
   const addBahan = (bagianIndex) => {
     const updated = [...newSpkCutting.bagian];
 
-    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
+    updated[bagianIndex].bahan.push({
+      sumber_komponen: isAksesorisBagian(updated[bagianIndex].nama_bagian) ? "aksesoris" : "bahan",
+      bahan_id: "",
+      aksesoris_id: "",
+      material_group: updated[bagianIndex].material_group || "",
+      warna: "",
+      warna_custom: "",
+      qty: "",
+    });
 
     setNewSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
   };
@@ -1210,11 +1375,17 @@ const SpkCutting = () => {
     return "is-default";
   };
 
-  const renderBahanSelect = ({ value, onChange }) => {
+  const renderBahanSelect = ({ value, onChange, materialGroup }) => {
     const selectedValue = String(value || "");
     const selectedBahan = bahanList.find((bahan) => String(bahan.id) === selectedValue);
+    const filteredBahanOptions = normalizeMaterialText(materialGroup)
+      ? bahanOptions.filter((option) => {
+          const bahan = bahanList.find((item) => String(item.id) === option.value);
+          return normalizeMaterialKey(bahan?.group_bahan) === normalizeMaterialKey(materialGroup);
+        })
+      : bahanOptions;
     const selectedOption =
-      bahanOptions.find((option) => option.value === selectedValue) ||
+      filteredBahanOptions.find((option) => option.value === selectedValue) ||
       (selectedBahan
         ? {
             value: selectedValue,
@@ -1226,13 +1397,36 @@ const SpkCutting = () => {
       <Select
         className="spk-cutting-bahan-select"
         classNamePrefix="spk-cutting-react-select"
-        options={bahanOptions}
+        options={filteredBahanOptions}
         value={selectedOption}
         onChange={(option) => onChange(option?.value || "")}
-        placeholder="Pilih Bahan"
+        placeholder={materialGroup ? `Bahan group ${materialGroup}` : "Pilih Bahan"}
         isClearable
         isSearchable
-        noOptionsMessage={() => "Bahan tidak ditemukan"}
+        noOptionsMessage={() => (materialGroup ? `Tidak ada bahan di group ${materialGroup}` : "Bahan tidak ditemukan")}
+        menuPortalTarget={bahanSelectPortalTarget}
+        styles={{
+          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+        }}
+      />
+    );
+  };
+
+  const renderAksesorisSelect = ({ value, onChange }) => {
+    const selectedValue = String(value || "");
+    const selectedOption = aksesorisOptions.find((option) => option.value === selectedValue) || null;
+
+    return (
+      <Select
+        className="spk-cutting-bahan-select"
+        classNamePrefix="spk-cutting-react-select"
+        options={aksesorisOptions}
+        value={selectedOption}
+        onChange={(option) => onChange(option?.value || "")}
+        placeholder="Pilih Aksesoris"
+        isClearable
+        isSearchable
+        noOptionsMessage={() => "Aksesoris tidak ditemukan"}
         menuPortalTarget={bahanSelectPortalTarget}
         styles={{
           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -1309,14 +1503,17 @@ const SpkCutting = () => {
         (data.bagian || []).map(async (bagian) => {
           const bahanData = await Promise.all(
             (bagian.bahan || []).map(async (bahan) => {
+              const sumberKomponen = bahan.sumber_komponen || (bahan.aksesoris_id ? "aksesoris" : "bahan");
               const bahanId = bahan.bahan_id?.toString() || "";
 
               // Fetch warna untuk bahan ini
 
-              const warnaData = bahanId ? await fetchWarnaByBahan(bahanId) : [];
+              const warnaData = sumberKomponen === "bahan" && bahanId ? await fetchWarnaByBahan(bahanId) : [];
 
               return {
+                sumber_komponen: sumberKomponen,
                 bahan_id: bahanId,
+                aksesoris_id: bahan.aksesoris_id?.toString() || "",
 
                 warna: bahan.warna || "",
 
@@ -1422,6 +1619,19 @@ const SpkCutting = () => {
 
     updated[index][key] = value;
 
+    if (key === "nama_bagian") {
+      const sumberKomponen = isAksesorisBagian(value) ? "aksesoris" : "bahan";
+      updated[index].bahan = (updated[index].bahan || []).map((bahan) => ({
+        ...bahan,
+        sumber_komponen: sumberKomponen,
+        bahan_id: sumberKomponen === "bahan" ? bahan.bahan_id || "" : "",
+        aksesoris_id: sumberKomponen === "aksesoris" ? bahan.aksesoris_id || "" : "",
+        warna: sumberKomponen === "bahan" ? bahan.warna || "" : "",
+        warna_custom: "",
+        warnaList: sumberKomponen === "bahan" ? bahan.warnaList || [] : [],
+      }));
+    }
+
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
   };
 
@@ -1448,6 +1658,22 @@ const SpkCutting = () => {
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
   };
 
+  const handleEditAksesorisChange = (bagianIndex, bahanIndex, value) => {
+    const updated = [...editSpkCutting.bagian];
+
+    updated[bagianIndex].bahan[bahanIndex] = {
+      ...updated[bagianIndex].bahan[bahanIndex],
+      sumber_komponen: "aksesoris",
+      aksesoris_id: value,
+      bahan_id: "",
+      warna: "",
+      warna_custom: "",
+      warnaList: [],
+    };
+
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
+  };
+
   const handleEditWarnaCustomChange = (bagianIndex, bahanIndex, value) => {
     const updated = [...editSpkCutting.bagian];
 
@@ -1463,10 +1689,41 @@ const SpkCutting = () => {
     });
   };
 
+  const removeEditBagian = async (bagianIndex) => {
+    if (editSpkCutting.bagian[bagianIndex]?.is_auto_bagian) {
+      await showStatusAlert("warning", "Bagian Default", "Bagian default dari Product List tidak bisa dihapus.");
+      return;
+    }
+
+    const confirmed = await showConfirmAlert({
+      icon: "warning",
+      title: "Hapus Bagian?",
+      text: "Bagian tambahan dan seluruh bahan di dalamnya akan dihapus dari form edit SPK.",
+      confirmText: "Ya, Hapus",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const updated = [...editSpkCutting.bagian];
+    updated.splice(bagianIndex, 1);
+
+    setEditSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
+  };
+
   const addEditBahan = (bagianIndex) => {
     const updated = [...editSpkCutting.bagian];
 
-    updated[bagianIndex].bahan.push({ bahan_id: "", warna: "", warna_custom: "", qty: "" });
+    updated[bagianIndex].bahan.push({
+      sumber_komponen: isAksesorisBagian(updated[bagianIndex].nama_bagian) ? "aksesoris" : "bahan",
+      bahan_id: "",
+      aksesoris_id: "",
+      material_group: updated[bagianIndex].material_group || "",
+      warna: "",
+      warna_custom: "",
+      qty: "",
+    });
 
     setEditSpkCutting((prev) => ({ ...prev, bagian: updated, ...getAssumptionFields(updated) }));
   };
@@ -1526,14 +1783,21 @@ const SpkCutting = () => {
 
       for (let j = 0; j < bagian.bahan.length; j++) {
         const bahan = bagian.bahan[j];
+        const isAksesoris = isAksesorisBagian(bagian.nama_bagian);
 
-        if (!bahan.bahan_id) {
+        if (isAksesoris && (!bahan.aksesoris_id || bahan.aksesoris_id === "")) {
+          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Aksesoris ${j + 1}: Aksesoris harus dipilih!`);
+
+          return;
+        }
+
+        if (!isAksesoris && !bahan.bahan_id) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
 
           return;
         }
 
-        if (bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
+        if (!isAksesoris && bahan.warna === "Lainnya" && (!bahan.warna_custom || bahan.warna_custom.trim() === "")) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Warna custom harus diisi jika memilih "Lainnya"!`);
 
           return;
@@ -1564,15 +1828,7 @@ const SpkCutting = () => {
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 
-        bahan: bagian.bahan.map((bahan) => ({
-          bahan_id: parseInt(bahan.bahan_id),
-
-          // Jika warna adalah "Lainnya", gunakan warna_custom, jika tidak gunakan warna
-
-          warna: bahan.warna === "Lainnya" ? bahan.warna_custom || null : bahan.warna || null,
-
-          qty: parseFloat(bahan.qty),
-        })),
+        bahan: bagian.bahan.map((bahan) => makeKomponenPayload(bagian, bahan)),
       })),
     };
 
@@ -2147,49 +2403,80 @@ const SpkCutting = () => {
               <h3>Bagian & Bahan</h3>
               {newSpkCutting.bagian.map((bagian, bagianIndex) => (
                 <div key={bagianIndex} className="spk-cutting-bagian-section">
-                  <h4>Bagian {bagianIndex + 1}</h4>
+                  <div className="spk-cutting-bagian-header">
+                    <h4>Bagian {bagianIndex + 1}</h4>
+                    {!bagian.is_auto_bagian && (
+                      <button type="button" className="spk-cutting-btn-remove-bagian" onClick={() => removeBagian(bagianIndex)}>
+                        Hapus Bagian
+                      </button>
+                    )}
+                  </div>
                   <div className="spk-cutting-form-group">
                     <label>Nama Bagian:</label>
-                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
-                      <option value="">Pilih Nama Bagian</option>
-                      {namaBagianList.map((nama, idx) => (
-                        <option key={idx} value={nama}>
-                          {nama.charAt(0).toUpperCase() + nama.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+                    {bagian.is_auto_bagian ? (
+                      <>
+                        <input type="text" value={bagian.nama_bagian || ""} readOnly />
+                        {bagian.material_group && <small className="spk-cutting-form-hint">Group bahan: {bagian.material_group}</small>}
+                      </>
+                    ) : (
+                      <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
+                        <option value="">Pilih Nama Bagian</option>
+                        {NAMA_BAGIAN_OPTIONS.map((nama) => (
+                          <option key={nama} value={nama}>
+                            {nama}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {bagian.bahan.map((bahan, bahanIndex) => (
                     <div key={bahanIndex} className="spk-cutting-bahan-group">
-                      {renderBahanSelect({
-                        value: bahan.bahan_id,
-                        onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
-                      })}
-                      <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
-                        <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
-                        {(bahan.warnaList || []).map((item, idx) => {
-                          const warna = typeof item === "string" ? item : item.warna;
-                          const stok = typeof item === "object" ? item.stok : 999;
-                          const isDisabled = stok === 0 && warna !== "Lainnya";
-                          return (
-                            <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
-                              {warna} {stok !== 999 && `(${stok} stok)`}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {bahan.warna === "Lainnya" && <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />}
-                      <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
-                      <button type="button" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
-                        Hapus Bahan
-                      </button>
+                      {isAksesorisBagian(bagian.nama_bagian) ? (
+                        <>
+                          {renderAksesorisSelect({
+                            value: bahan.aksesoris_id,
+                            onChange: (value) => handleAksesorisChange(bagianIndex, bahanIndex, value),
+                          })}
+                          <input type="text" value="Aksesoris" readOnly />
+                        </>
+                      ) : (
+                        <>
+                          {renderBahanSelect({
+                            value: bahan.bahan_id,
+                            materialGroup: bahan.material_group || bagian.material_group,
+                            onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
+                          })}
+                          <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
+                            <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
+                            {(bahan.warnaList || []).map((item, idx) => {
+                              const warna = typeof item === "string" ? item : item.warna;
+                              const stok = typeof item === "object" ? item.stok : 999;
+                              const isDisabled = stok === 0 && warna !== "Lainnya";
+                              return (
+                                <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                  {warna} {stok !== 999 && `(${stok} stok)`}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {bahan.warna === "Lainnya" && <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />}
+                        </>
+                      )}
+                      <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty Aksesoris" : "Qty (Jumlah Rol)"} value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
+                      {!bagian.is_auto_bagian && (
+                        <button type="button" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
+                          Hapus Bahan
+                        </button>
+                      )}
                     </div>
                   ))}
 
-                  <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
-                    <FaPlus /> Tambah Bahan
-                  </button>
+                  {!bagian.is_auto_bagian && (
+                    <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
+                      <FaPlus /> Tambah Bahan
+                    </button>
+                  )}
                 </div>
               ))}
 
@@ -2326,10 +2613,11 @@ const SpkCutting = () => {
                       <tr key={rowIndex}>
                         {selectedDetailSpk.bagian.map((bagian, bagianIndex) => {
                           const bahan = bagian.bahan[rowIndex];
+                          const itemName = bahan?.sumber_komponen === "aksesoris" ? bahan?.aksesoris?.nama_aksesoris : bahan?.bahan?.nama_bahan;
                           return (
                             <React.Fragment key={`${bagianIndex}-${rowIndex}`}>
-                              <td>{bahan ? bahan.bahan?.nama_bahan || "-" : ""}</td>
-                              <td>{bahan ? bahan.warna || "-" : ""}</td>
+                              <td>{bahan ? itemName || "-" : ""}</td>
+                              <td>{bahan ? bahan.sumber_komponen === "aksesoris" ? "Aksesoris" : bahan.warna || "-" : ""}</td>
                               <td>{bahan ? bahan.qty || "" : ""}</td>
                             </React.Fragment>
                           );
@@ -2476,51 +2764,82 @@ const SpkCutting = () => {
               <h3>Bagian & Bahan</h3>
               {editSpkCutting.bagian.map((bagian, bagianIndex) => (
                 <div key={bagianIndex} className="spk-cutting-bagian-section">
-                  <h4>Bagian {bagianIndex + 1}</h4>
+                  <div className="spk-cutting-bagian-header">
+                    <h4>Bagian {bagianIndex + 1}</h4>
+                    {!bagian.is_auto_bagian && (
+                      <button type="button" className="spk-cutting-btn-remove-bagian" onClick={() => removeEditBagian(bagianIndex)}>
+                        Hapus Bagian
+                      </button>
+                    )}
+                  </div>
                   <div className="spk-cutting-form-group">
                     <label>Nama Bagian:</label>
-                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
-                      <option value="">Pilih Nama Bagian</option>
-                      {namaBagianList.map((nama, idx) => (
-                        <option key={idx} value={nama}>
-                          {nama.charAt(0).toUpperCase() + nama.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+                    {bagian.is_auto_bagian ? (
+                      <>
+                        <input type="text" value={bagian.nama_bagian || ""} readOnly />
+                        {bagian.material_group && <small className="spk-cutting-form-hint">Group bahan: {bagian.material_group}</small>}
+                      </>
+                    ) : (
+                      <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
+                        <option value="">Pilih Nama Bagian</option>
+                        {NAMA_BAGIAN_OPTIONS.map((nama) => (
+                          <option key={nama} value={nama}>
+                            {nama}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {bagian.bahan.map((bahan, bahanIndex) => (
                     <div key={bahanIndex} className="spk-cutting-bahan-group">
-                      {renderBahanSelect({
-                        value: bahan.bahan_id,
-                        onChange: (value) => handleEditBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
-                      })}
-                      <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
-                        <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
-                        {(bahan.warnaList || []).map((item, idx) => {
-                          const warna = typeof item === "string" ? item : item.warna;
-                          const stok = typeof item === "object" ? item.stok : 999;
-                          const isDisabled = stok === 0 && warna !== "Lainnya";
-                          return (
-                            <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
-                              {warna} {stok !== 999 && `(${stok} stok)`}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {bahan.warna === "Lainnya" && (
-                        <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleEditWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />
+                      {isAksesorisBagian(bagian.nama_bagian) ? (
+                        <>
+                          {renderAksesorisSelect({
+                            value: bahan.aksesoris_id,
+                            onChange: (value) => handleEditAksesorisChange(bagianIndex, bahanIndex, value),
+                          })}
+                          <input type="text" value="Aksesoris" readOnly />
+                        </>
+                      ) : (
+                        <>
+                          {renderBahanSelect({
+                            value: bahan.bahan_id,
+                            materialGroup: bahan.material_group || bagian.material_group,
+                            onChange: (value) => handleEditBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
+                          })}
+                          <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
+                            <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
+                            {(bahan.warnaList || []).map((item, idx) => {
+                              const warna = typeof item === "string" ? item : item.warna;
+                              const stok = typeof item === "object" ? item.stok : 999;
+                              const isDisabled = stok === 0 && warna !== "Lainnya";
+                              return (
+                                <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                  {warna} {stok !== 999 && `(${stok} stok)`}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {bahan.warna === "Lainnya" && (
+                            <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleEditWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />
+                          )}
+                        </>
                       )}
-                      <input type="number" placeholder="Qty (Jumlah Rol)" value={bahan.qty} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
-                      <button type="button" onClick={() => removeEditBahan(bagianIndex, bahanIndex)}>
-                        Hapus Bahan
-                      </button>
+                      <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty Aksesoris" : "Qty (Jumlah Rol)"} value={bahan.qty} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
+                      {!bagian.is_auto_bagian && (
+                        <button type="button" onClick={() => removeEditBahan(bagianIndex, bahanIndex)}>
+                          Hapus Bahan
+                        </button>
+                      )}
                     </div>
                   ))}
 
-                  <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addEditBahan(bagianIndex)}>
-                    <FaPlus /> Tambah Bahan
-                  </button>
+                  {!bagian.is_auto_bagian && (
+                    <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addEditBahan(bagianIndex)}>
+                      <FaPlus /> Tambah Bahan
+                    </button>
+                  )}
                 </div>
               ))}
 

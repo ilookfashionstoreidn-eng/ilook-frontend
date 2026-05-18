@@ -82,6 +82,10 @@ const HppProduk = () => {
       aksesoris_id: "",
       harga_bahan: "",
       jumlah_bahan: "",
+      satuan_bahan: "",
+      material_group: "",
+      material_name: "",
+      is_auto_komponen: false,
     },
   ]);
   const [warnaList, setWarnaList] = useState([""]);
@@ -262,10 +266,103 @@ const HppProduk = () => {
 
   const getBahanDisplayLabel = (bahan) => {
     const nama = String(bahan?.nama_bahan || "").trim() || "Tanpa Nama";
+    const group = String(bahan?.group_bahan || "").trim();
     const harga = formatRupiahValue(bahan?.harga);
     const satuan = String(bahan?.satuan || "").trim();
 
-    return `${nama} - Rp ${harga}${satuan ? ` (${satuan})` : ""}`;
+    return `${nama}${group ? ` - ${group}` : ""} - Rp ${harga}${satuan ? ` (${satuan})` : ""}`;
+  };
+
+  const normalizeMaterialText = (value) =>
+    String(value || "")
+      .trim()
+      .replace(/\s+/g, " ");
+
+  const normalizeMaterialKey = (value) => normalizeMaterialText(value).toLowerCase();
+
+  const normalizeMaterialGroupKey = (value) =>
+    normalizeMaterialKey(value).replace(/^\d+\.\s*/, "");
+
+  const getBahanByMaterialGroup = (materialGroup) => {
+    const groupKey = normalizeMaterialGroupKey(materialGroup);
+    if (!groupKey) return bahanList;
+
+    return bahanList.filter((bahan) => normalizeMaterialGroupKey(bahan.group_bahan) === groupKey);
+  };
+
+  const normalizeMaterialComparable = (value) =>
+    normalizeMaterialKey(value).replace(/[^a-z0-9]+/g, "");
+
+  const resolveCatalogBahan = (material) => {
+    const materialNameKey = normalizeMaterialKey(material?.material);
+    const candidates = getBahanByMaterialGroup(material?.material_group);
+
+    if (candidates.length === 1) {
+      return candidates[0];
+    }
+
+    const exact = candidates.find((bahan) => normalizeMaterialKey(bahan.nama_bahan) === materialNameKey);
+    if (exact) return exact;
+
+    const targetComparable = normalizeMaterialComparable(material?.material);
+    if (!targetComparable) return null;
+
+    const fuzzy = candidates.find((bahan) => {
+      const candidateComparable = normalizeMaterialComparable(bahan?.nama_bahan);
+      if (!candidateComparable) return false;
+      return candidateComparable.includes(targetComparable) || targetComparable.includes(candidateComparable);
+    });
+
+    return fuzzy || null;
+  };
+
+  const resolveCatalogAksesoris = (material) => {
+    const materialNameKey = normalizeMaterialKey(material?.material);
+    if (!materialNameKey) return null;
+
+    const source = Array.isArray(aksesorisList) ? aksesorisList : [];
+    if (!source.length) return null;
+
+    if (source.length === 1) {
+      return source[0];
+    }
+
+    return source.find((aks) => normalizeMaterialKey(aks?.nama_aksesoris) === materialNameKey) || null;
+  };
+
+  const mapCatalogMaterialsToKomponen = (materials) => {
+    const normalizedMaterials = (Array.isArray(materials) ? materials : []).filter(
+      (material) => normalizeMaterialText(material?.material) || normalizeMaterialText(material?.material_group)
+    );
+
+    if (!normalizedMaterials.length) {
+      return null;
+    }
+
+    return normalizedMaterials.map((material, index) => {
+      const kind = String(material?.kind || "").trim().toLowerCase();
+
+      const selectedBahanCandidate = resolveCatalogBahan(material);
+      const selectedAksesorisCandidate = resolveCatalogAksesoris(material);
+
+      const isAksesoris = kind === "aksesoris";
+
+      const selectedBahan = !isAksesoris ? selectedBahanCandidate : null;
+      const selectedAksesoris = isAksesoris ? selectedAksesorisCandidate : null;
+
+      return {
+        jenis_komponen: isAksesoris ? "aksesoris" : index === 0 ? "atasan" : "bawahan",
+        sumber_komponen: isAksesoris ? "aksesoris" : "bahan",
+        bahan_id: selectedBahan ? String(selectedBahan.id) : "",
+        aksesoris_id: selectedAksesoris ? String(selectedAksesoris.id) : "",
+        harga_bahan: isAksesoris ? (selectedAksesoris?.harga_per_biji ?? "") : (selectedBahan?.harga ?? ""),
+        jumlah_bahan: "",
+        satuan_bahan: isAksesoris ? "pcs" : (selectedBahan?.satuan ?? ""),
+        material_group: normalizeMaterialText(material?.material_group),
+        material_name: normalizeMaterialText(material?.material),
+        is_auto_komponen: Boolean(isAksesoris ? selectedAksesoris : selectedBahan),
+      };
+    });
   };
 
   const getJenisKomponenLabel = (value) => {
@@ -339,15 +436,16 @@ const HppProduk = () => {
     return bahanIndex === 0 ? "Bahan Utama" : `Bahan Kombinasi ${bahanIndex}`;
   };
 
-  const filterBahanOptions = (searchValue) => {
+  const filterBahanOptions = (searchValue, materialGroup = "") => {
     const term = String(searchValue || "").trim().toLowerCase();
+    const source = getBahanByMaterialGroup(materialGroup);
 
     if (!term) {
-      return bahanList;
+      return source;
     }
 
-    return bahanList.filter((bahan) =>
-      [bahan?.nama_bahan, bahan?.harga, bahan?.satuan].some((field) => String(field ?? "").toLowerCase().includes(term))
+    return source.filter((bahan) =>
+      [bahan?.nama_bahan, bahan?.group_bahan, bahan?.harga, bahan?.satuan].some((field) => String(field ?? "").toLowerCase().includes(term))
     );
   };
 
@@ -408,7 +506,8 @@ const HppProduk = () => {
     const isOpen = openBahanDropdown?.mode === mode && openBahanDropdown?.index === index;
     const selectedBahan = bahanList.find((item) => String(item.id) === String(komp.bahan_id));
     const searchValue = bahanSearchTerms[key] ?? (selectedBahan ? getBahanSearchText(selectedBahan) : "");
-    const filteredBahan = filterBahanOptions(searchValue);
+    const materialGroup = normalizeMaterialText(komp?.material_group);
+    const filteredBahan = filterBahanOptions(searchValue, materialGroup);
 
     return (
       <div className="hpp-searchable-select" data-bahan-searchable-select="true">
@@ -419,7 +518,7 @@ const HppProduk = () => {
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >
-          <span className={selectedBahan ? "" : "placeholder"}>{selectedBahan ? getBahanDisplayLabel(selectedBahan) : "Pilih Bahan"}</span>
+          <span className={selectedBahan ? "" : "placeholder"}>{selectedBahan ? getBahanDisplayLabel(selectedBahan) : materialGroup ? `Pilih bahan group ${materialGroup}` : "Pilih Bahan"}</span>
           <FaChevronDown />
         </button>
 
@@ -440,7 +539,7 @@ const HppProduk = () => {
                     closeBahanSearchDropdown();
                   }
                 }}
-                placeholder="Cari bahan..."
+                placeholder={materialGroup ? `Cari bahan group ${materialGroup}...` : "Cari bahan..."}
                 autoFocus
               />
               {searchValue && (
@@ -465,7 +564,7 @@ const HppProduk = () => {
                   </button>
                 ))
               ) : (
-                <div className="hpp-searchable-empty">Bahan tidak ditemukan.</div>
+                <div className="hpp-searchable-empty">{materialGroup ? `Bahan group ${materialGroup} tidak ditemukan.` : "Bahan tidak ditemukan."}</div>
               )}
             </div>
           </div>
@@ -609,6 +708,7 @@ const HppProduk = () => {
   const applyProductGroupSelection = async (mode, productGroup) => {
     const setProduk = mode === "edit" ? setEditProduk : setNewProduk;
     const setSkuList = mode === "edit" ? setEditSkuList : setNewSkuList;
+    const setKomponenItems = mode === "edit" ? setEditKomponenList : setKomponenList;
 
     setProduk((prev) => ({
       ...prev,
@@ -626,6 +726,20 @@ const HppProduk = () => {
 
     if (!productGroup) {
       setSkuList([]);
+      setKomponenItems([
+        {
+          jenis_komponen: "atasan",
+          sumber_komponen: "bahan",
+          bahan_id: "",
+          aksesoris_id: "",
+          harga_bahan: "",
+          jumlah_bahan: "",
+          satuan_bahan: "",
+          material_group: "",
+          material_name: "",
+          is_auto_komponen: false,
+        },
+      ]);
       return;
     }
 
@@ -652,6 +766,19 @@ const HppProduk = () => {
         harga_jasa_cmt: catalog.price_cmt ?? prev.harga_jasa_cmt,
       }));
       setSkuList(skuItems);
+
+      const catalogKomponen = mapCatalogMaterialsToKomponen(catalog.materials);
+      if (catalogKomponen) {
+        setKomponenItems(catalogKomponen);
+        setBahanSearchTerms((prev) => {
+          const next = { ...prev };
+          catalogKomponen.forEach((komp, index) => {
+            const bahan = bahanList.find((item) => String(item.id) === String(komp.bahan_id));
+            next[getBahanDropdownKey(mode, index)] = bahan ? getBahanSearchText(bahan) : "";
+          });
+          return next;
+        });
+      }
     } catch (err) {
       setSkuList([]);
       showFeedback("error", "Product Group Tidak Bisa Dimuat", getApiErrorMessage(err, "Gagal mengambil detail Product Group."));
@@ -662,6 +789,78 @@ const HppProduk = () => {
     fetchAksesoris();
     fetchProductGroups();
   }, []);
+
+  const hydrateAutoKomponenIds = (mode, komponenItems, setKomponenItems) => {
+    if (!Array.isArray(komponenItems) || komponenItems.length === 0) return;
+    if (!bahanList.length && !aksesorisList.length) return;
+
+    let changed = false;
+    const nextItems = komponenItems.map((item, index) => {
+      if (!item?.is_auto_komponen) return item;
+
+      const material_group = normalizeMaterialText(item?.material_group);
+      const material_name = normalizeMaterialText(item?.material_name);
+
+      if (!material_group && !material_name) return item;
+
+      if (item?.sumber_komponen === "aksesoris") {
+        if (item?.aksesoris_id) return item;
+
+        const resolvedAks = resolveCatalogAksesoris({ material: material_name });
+        if (!resolvedAks) return item;
+
+        changed = true;
+        return {
+          ...item,
+          aksesoris_id: String(resolvedAks.id),
+          harga_bahan: resolvedAks?.harga_per_biji ?? item.harga_bahan,
+          satuan_bahan: "pcs",
+        };
+      }
+
+      if (item?.sumber_komponen === "bahan") {
+        if (item?.bahan_id) return item;
+
+        const resolvedBahan = resolveCatalogBahan({ material: material_name, material_group });
+        if (!resolvedBahan) return item;
+
+        changed = true;
+        return {
+          ...item,
+          bahan_id: String(resolvedBahan.id),
+          harga_bahan: resolvedBahan?.harga ?? item.harga_bahan,
+          satuan_bahan: resolvedBahan?.satuan ?? item.satuan_bahan,
+        };
+      }
+
+      return item;
+    });
+
+    if (!changed) return;
+
+    setKomponenItems(nextItems);
+    setBahanSearchTerms((prev) => {
+      const next = { ...prev };
+      nextItems.forEach((komp, index) => {
+        if (komp?.sumber_komponen === "aksesoris") return;
+        const bahan = bahanList.find((item) => String(item.id) === String(komp?.bahan_id));
+        if (bahan) {
+          next[getBahanDropdownKey(mode, index)] = getBahanSearchText(bahan);
+        }
+      });
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    hydrateAutoKomponenIds("new", komponenList, setKomponenList);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bahanList, aksesorisList]);
+
+  useEffect(() => {
+    hydrateAutoKomponenIds("edit", editKomponenList, setEditKomponenList);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bahanList, aksesorisList]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -774,6 +973,9 @@ const HppProduk = () => {
         harga_bahan: "",
         jumlah_bahan: "",
         satuan_bahan: "",
+        material_group: "",
+        material_name: "",
+        is_auto_komponen: false,
       },
     ]);
     setNewProduk({
@@ -822,6 +1024,19 @@ const HppProduk = () => {
         `Kombinasi warna ${duplicatePair.warna} dan ukuran ${duplicatePair.ukuran} terdeteksi lebih dari sekali.`
       );
       setAddModalTab("sku");
+      return;
+    }
+
+    const invalidKomponenIndex = komponenList.findIndex((komp) => {
+      if (komp?.sumber_komponen === "aksesoris") {
+        return !String(komp?.aksesoris_id || "").trim();
+      }
+      return !String(komp?.bahan_id || "").trim();
+    });
+
+    if (invalidKomponenIndex !== -1) {
+      showFeedback("warning", "Komponen Belum Lengkap", `Komponen #${invalidKomponenIndex + 1} belum memilih Bahan/Aksesoris. Silakan pilih dulu sebelum menyimpan.`);
+      setAddModalTab("komponen");
       return;
     }
 
@@ -938,6 +1153,9 @@ const HppProduk = () => {
           harga_bahan: "",
           jumlah_bahan: "",
           satuan_bahan: "",
+          material_group: "",
+          material_name: "",
+          is_auto_komponen: false,
         },
       ]);
       setWarnaList([""]);
@@ -961,6 +1179,19 @@ const HppProduk = () => {
         `Kombinasi warna ${duplicatePair.warna} dan ukuran ${duplicatePair.ukuran} terdeteksi lebih dari sekali.`
       );
       setEditModalTab("sku");
+      return;
+    }
+
+    const invalidKomponenIndex = editKomponenList.findIndex((komp) => {
+      if (komp?.sumber_komponen === "aksesoris") {
+        return !String(komp?.aksesoris_id || "").trim();
+      }
+      return !String(komp?.bahan_id || "").trim();
+    });
+
+    if (invalidKomponenIndex !== -1) {
+      showFeedback("warning", "Komponen Belum Lengkap", `Komponen #${invalidKomponenIndex + 1} belum memilih Bahan/Aksesoris. Silakan pilih dulu sebelum menyimpan.`);
+      setEditModalTab("komponen");
       return;
     }
 
@@ -1077,6 +1308,9 @@ const HppProduk = () => {
         harga_bahan: "",
         jumlah_bahan: "",
         satuan_bahan: isAks ? "pcs" : "",
+        material_group: "",
+        material_name: "",
+        is_auto_komponen: false,
       };
     } else {
       updatedKomponen[index][field] = value;
@@ -1157,6 +1391,9 @@ const HppProduk = () => {
         harga_bahan: k.harga_bahan,
         jumlah_bahan: k.jumlah_bahan,
         satuan_bahan: k.satuan_bahan,
+        material_group: k.group_bahan || k.bahan?.group_bahan || "",
+        material_name: "",
+        is_auto_komponen: false,
       }))
     );
 
@@ -1288,6 +1525,9 @@ const HppProduk = () => {
           harga_bahan: "",
           jumlah_bahan: "",
           satuan_bahan: isAks ? "pcs" : "",
+          material_group: "",
+          material_name: "",
+          is_auto_komponen: false,
         };
       } else {
         updated[index][field] = value;
@@ -1305,7 +1545,12 @@ const HppProduk = () => {
         sumber_komponen: "bahan",
         bahan_id: "",
         aksesoris_id: "",
+        harga_bahan: "",
         jumlah_bahan: "",
+        satuan_bahan: "",
+        material_group: "",
+        material_name: "",
+        is_auto_komponen: false,
       },
     ]);
   };
@@ -1819,17 +2064,24 @@ const HppProduk = () => {
                       </div>
 
                       {/* Jenis Komponen */}
-                      <select value={komp.jenis_komponen} onChange={(e) => handleKomponenChange(index, "jenis_komponen", e.target.value)} required>
-                        <option value="">Pilih Jenis Komponen</option>
-                        <optgroup label="Bahan">
-                          <option value="atasan">Bahan Utama</option>
-                          <option value="bawahan">Bahan Kombinasi</option>
-                        </optgroup>
-                        <optgroup label="Lainnya">
-                          <option value="fullbody">Fullbody</option>
-                          <option value="aksesoris">Aksesoris</option>
-                        </optgroup>
-                      </select>
+                      {komp.is_auto_komponen ? (
+                        <div className="hpp-auto-komponen-meta">
+                          <input type="text" value={getJenisKomponenLabel(komp.jenis_komponen)} readOnly />
+                          {komp.material_group && <small>Group bahan: {komp.material_group}</small>}
+                        </div>
+                      ) : (
+                        <select value={komp.jenis_komponen} onChange={(e) => handleKomponenChange(index, "jenis_komponen", e.target.value)} required>
+                          <option value="">Pilih Jenis Komponen</option>
+                          <optgroup label="Bahan">
+                            <option value="atasan">Bahan Utama</option>
+                            <option value="bawahan">Bahan Kombinasi</option>
+                          </optgroup>
+                          <optgroup label="Lainnya">
+                            <option value="fullbody">Fullbody</option>
+                            <option value="aksesoris">Aksesoris</option>
+                          </optgroup>
+                        </select>
+                      )}
 
                       {/* PILIH BAHAN */}
                       {komp.sumber_komponen !== "aksesoris" && (
@@ -1877,15 +2129,19 @@ const HppProduk = () => {
                       </select>
 
                       {/* Hapus */}
-                      <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeKomponen(index)}>
-                        Hapus
-                      </button>
+                      {!komp.is_auto_komponen && (
+                        <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeKomponen(index)}>
+                          Hapus
+                        </button>
+                      )}
                     </div>
                   ))}
 
-                  <button type="button" className="hpp-komponen-add-btn" onClick={addKomponen}>
-                    <FaPlus /> Tambah Bahan Kombinasi
-                  </button>
+                  {!komponenList.some((komp) => komp.is_auto_komponen) && (
+                    <button type="button" className="hpp-komponen-add-btn" onClick={addKomponen}>
+                      <FaPlus /> Tambah Bahan Kombinasi
+                    </button>
+                  )}
                 </div>
                 )}
 
@@ -2122,17 +2378,24 @@ const HppProduk = () => {
                       </div>
 
                       {/* Jenis Komponen */}
-                      <select value={komp.jenis_komponen} onChange={(e) => handleEditKomponenChange(index, "jenis_komponen", e.target.value)}>
-                        <option value="">Pilih Jenis Komponen</option>
-                        <optgroup label="Bahan">
-                          <option value="atasan">Bahan Utama</option>
-                          <option value="bawahan">Bahan Kombinasi</option>
-                        </optgroup>
-                        <optgroup label="Lainnya">
-                          <option value="fullbody">Fullbody</option>
-                          <option value="aksesoris">Aksesoris</option>
-                        </optgroup>
-                      </select>
+                      {komp.is_auto_komponen ? (
+                        <div className="hpp-auto-komponen-meta">
+                          <input type="text" value={getJenisKomponenLabel(komp.jenis_komponen)} readOnly />
+                          {komp.material_group && <small>Group bahan: {komp.material_group}</small>}
+                        </div>
+                      ) : (
+                        <select value={komp.jenis_komponen} onChange={(e) => handleEditKomponenChange(index, "jenis_komponen", e.target.value)}>
+                          <option value="">Pilih Jenis Komponen</option>
+                          <optgroup label="Bahan">
+                            <option value="atasan">Bahan Utama</option>
+                            <option value="bawahan">Bahan Kombinasi</option>
+                          </optgroup>
+                          <optgroup label="Lainnya">
+                            <option value="fullbody">Fullbody</option>
+                            <option value="aksesoris">Aksesoris</option>
+                          </optgroup>
+                        </select>
+                      )}
 
                       {/* PILIH BAHAN */}
                       {komp.sumber_komponen !== "aksesoris" && (
@@ -2171,15 +2434,19 @@ const HppProduk = () => {
                       {/* Satuan */}
                       <input type="text" value={komp.satuan_bahan} readOnly />
 
-                      <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeEditKomponen(index)}>
-                        Hapus
-                      </button>
+                      {!komp.is_auto_komponen && (
+                        <button type="button" className="hpp-komponen-remove-btn" onClick={() => removeEditKomponen(index)}>
+                          Hapus
+                        </button>
+                      )}
                     </div>
                   ))}
 
-                  <button type="button" className="hpp-komponen-add-btn" onClick={addEditKomponen}>
-                    <FaPlus /> Tambah Bahan Kombinasi
-                  </button>
+                  {!editKomponenList.some((komp) => komp.is_auto_komponen) && (
+                    <button type="button" className="hpp-komponen-add-btn" onClick={addEditKomponen}>
+                      <FaPlus /> Tambah Bahan Kombinasi
+                    </button>
+                  )}
                 </div>
                 )}
 
