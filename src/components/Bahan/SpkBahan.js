@@ -55,6 +55,39 @@ const buildPrintSpkSearchText = (row) => {
   ].filter(Boolean).join(" "));
 };
 
+const getSpkRowId = (row) => row?.spk_bahan_id || row?.id;
+
+const getSpkWarnaRowId = (row) => row?.spk_bahan_warna_id || row?._warnaDetail?.id || row?.warna?.[0]?.id || null;
+
+const getRowKey = (row) => {
+  const spkId = getSpkRowId(row);
+  const warnaId = getSpkWarnaRowId(row);
+  return warnaId ? `${spkId}-warna-${warnaId}` : `${spkId}-warna-header`;
+};
+
+const expandSpkRowsByWarna = (rows = []) =>
+  rows.flatMap((row) => {
+    if (!Array.isArray(row?.warna) || row.warna.length === 0) {
+      return [row];
+    }
+
+    return row.warna.map((warna) => ({
+      ...row,
+      id: row.id,
+      spk_bahan_id: row.id,
+      spk_bahan_warna_id: warna?.id || null,
+      warna: [warna],
+      jumlah: warna?.jumlah_rol ?? row.jumlah,
+      stok_dipesan: warna?.stok_dipesan ?? warna?.jumlah_rol ?? 0,
+      pesanan_dikirim: warna?.pesanan_dikirim ?? 0,
+      sisa_dipesan: warna?.sisa_dipesan ?? warna?.jumlah_rol ?? 0,
+      estimasi_pengiriman: warna?.estimasi_pengiriman ?? null,
+      lama_pemesanan: warna?.lama_pemesanan ?? row.lama_pemesanan,
+      _warnaDetail: warna,
+      _originalWarna: row.warna,
+    }));
+  });
+
 const getPabrikName = (pabrik) => String(pabrik?.nama_pabrik || pabrik?.nama || "").trim();
 
 const getPabrikOptionValue = (pabrik) => `${pabrik?.id || ""}::${getPabrikName(pabrik)}`;
@@ -376,7 +409,7 @@ const SpkBahan = () => {
         });
 
         const payload = res.data || {};
-        setItems(Array.isArray(payload.data) ? payload.data : []);
+        setItems(expandSpkRowsByWarna(Array.isArray(payload.data) ? payload.data : []));
         setMeta(payload.meta || EMPTY_META);
         setKpi(
           payload.kpi || {
@@ -766,11 +799,18 @@ const SpkBahan = () => {
       setEstimateModal((prev) => ({ ...prev, submitting: true }));
       const res = await API.patch(`/spk-bahan/${estimateModal.row.id}/estimasi-pengiriman`, {
         estimasi_pengiriman: estimateModal.date || null,
+        spk_bahan_warna_id: getSpkWarnaRowId(estimateModal.row),
       });
 
       const updatedRow = res.data?.data;
       if (updatedRow) {
-        setItems((prev) => prev.map((item) => (String(item.id) === String(updatedRow.id) ? updatedRow : item)));
+        const expandedRows = expandSpkRowsByWarna([updatedRow]);
+        setItems((prev) =>
+          prev.map((item) => {
+            if (String(getSpkRowId(item)) !== String(updatedRow.id)) return item;
+            return expandedRows.find((row) => getRowKey(row) === getRowKey(item)) || item;
+          })
+        );
       } else {
         await fetchSpkBahan(currentPage);
       }
@@ -791,11 +831,18 @@ const SpkBahan = () => {
       setEstimateModal((prev) => ({ ...prev, submitting: true, date: "" }));
       const res = await API.patch(`/spk-bahan/${estimateModal.row.id}/estimasi-pengiriman`, {
         estimasi_pengiriman: null,
+        spk_bahan_warna_id: getSpkWarnaRowId(estimateModal.row),
       });
 
       const updatedRow = res.data?.data;
       if (updatedRow) {
-        setItems((prev) => prev.map((item) => (String(item.id) === String(updatedRow.id) ? updatedRow : item)));
+        const expandedRows = expandSpkRowsByWarna([updatedRow]);
+        setItems((prev) =>
+          prev.map((item) => {
+            if (String(getSpkRowId(item)) !== String(updatedRow.id)) return item;
+            return expandedRows.find((row) => getRowKey(row) === getRowKey(item)) || item;
+          })
+        );
       } else {
         await fetchSpkBahan(currentPage);
       }
@@ -1191,9 +1238,9 @@ const SpkBahan = () => {
                       const number = ((meta.current_page || 1) - 1) * (meta.per_page || perPage) + index + 1;
 
                       return (
-                        <tr key={row.id}>
+                        <tr key={getRowKey(row)}>
                           <td className="spkb-col-no">{number}</td>
-                          <td className="spkb-id spkb-col-id">#{row.id}</td>
+                          <td className="spkb-id spkb-col-id">#{getSpkRowId(row)}</td>
                           <td className="spkb-col-tanggal">{formatDate(row.tanggal_pemesanan || row.created_at)}</td>
                           <td className="spkb-cell-pabrik">
                             <span className="spkb-chip" title={row.pabrik?.nama_pabrik || "-"}>
@@ -1583,7 +1630,11 @@ const SpkBahan = () => {
               <div className="spkb-estimate-summary">
                 <div>
                   <span>ID SPK</span>
-                  <strong>#{estimateModal.row?.id || "-"}</strong>
+                  <strong>#{getSpkRowId(estimateModal.row) || "-"}</strong>
+                </div>
+                <div>
+                  <span>Warna</span>
+                  <strong>{estimateModal.row?._warnaDetail?.warna || estimateModal.row?.warna?.[0]?.warna || "-"}</strong>
                 </div>
                 <div>
                   <span>Tgl Pemesanan</span>
