@@ -81,6 +81,13 @@ const showConfirmAlert = async ({ title, text, confirmText, icon = "question" })
   }
 };
 
+const getSkuOptionLabel = (sku) => {
+  const skuName = String(sku?.sku_name || sku?.sku || "").trim();
+  return skuName || `SKU #${sku?.id || "-"}`;
+};
+
+const getSpkProductName = (spk) => spk?.productList?.product || spk?.product_list?.product || spk?.produk?.nama_produk || "N/A";
+
 const HasilCutting = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1015,7 +1022,7 @@ const HasilCutting = () => {
   const filteredSpkCutting = spkCuttingList.filter((spk) => {
     const searchLower = searchSpkQuery.toLowerCase();
     const idSpkCutting = (spk.id_spk_cutting || "").toLowerCase();
-    const namaProduk = (spk.produk?.nama_produk || "").toLowerCase();
+    const namaProduk = getSpkProductName(spk).toLowerCase();
     return idSpkCutting.includes(searchLower) || namaProduk.includes(searchLower);
   });
 
@@ -1354,7 +1361,7 @@ const HasilCutting = () => {
                                   key={spk.id}
                                   onMouseDown={(e) => {
                                     e.preventDefault(); // Prevent blur event
-                                    handleSelectSpk(spk.id, spk.id_spk_cutting, spk.produk?.nama_produk || "N/A");
+                                    handleSelectSpk(spk.id, spk.id_spk_cutting, getSpkProductName(spk));
                                   }}
                                   className="hasil-cutting-form-dropdown-item"
                                 >
@@ -1362,7 +1369,7 @@ const HasilCutting = () => {
                                     <i className="fas fa-tag hasil-cutting-form-dropdown-icon"></i>
                                     <div>
                                       <div className="hasil-cutting-form-dropdown-title">{spk.id_spk_cutting}</div>
-                                      <div className="hasil-cutting-form-dropdown-subtitle">{spk.produk?.nama_produk || "N/A"}</div>
+                                      <div className="hasil-cutting-form-dropdown-subtitle">{getSpkProductName(spk)}</div>
                                     </div>
                                   </div>
                                 </div>
@@ -1786,17 +1793,11 @@ const HasilCutting = () => {
                                             >
                                               <option value="">-- Pilih SKU --</option>
                                               {spkDetail?.skus && spkDetail.skus.length > 0 ? (
-                                                spkDetail.skus.map((sku) => {
-                                                  const namaProduk = (sku.nama_produk || "").toUpperCase();
-                                                  const warna = (sku.warna || "").toUpperCase();
-                                                  const ukuran = (sku.ukuran || "").toUpperCase();
-                                                  const displayText = `${namaProduk} - ${warna} ${ukuran}`.trim();
-                                                  return (
-                                                    <option key={sku.id} value={sku.id}>
-                                                      {displayText}
-                                                    </option>
-                                                  );
-                                                })
+                                                spkDetail.skus.map((sku) => (
+                                                  <option key={sku.product_list_id || sku.id} value={sku.product_list_id || sku.id}>
+                                                    {getSkuOptionLabel(sku)}
+                                                  </option>
+                                                ))
                                               ) : (
                                                 <option value="" disabled>Tidak ada SKU</option>
                                               )}

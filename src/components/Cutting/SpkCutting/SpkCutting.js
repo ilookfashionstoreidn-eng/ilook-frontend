@@ -65,9 +65,33 @@ const calculateAssumptionFromBagian = (bagianList) => {
 };
 
 const getProdukOptionLabel = (produk) => {
+  const product = String(produk.product || "").trim();
+  if (product) return product;
+
   const productGroup = String(produk.product_group || "").trim();
   if (productGroup) return productGroup;
   return produk.nama_produk || "-";
+};
+
+const getProdukOptionValue = (produk) => {
+  if (produk?.id) return String(produk.id);
+  const product = String(produk?.product || produk?.nama_produk || "").trim();
+  return product ? `product-list:${product}` : "";
+};
+
+const getSpkProductListId = (spk) => spk?.product_list_id || spk?.productList?.id || spk?.product_list?.id || "";
+
+const getSpkProductLabel = (spk) => {
+  const productList = spk?.productList || spk?.product_list;
+  return productList?.product || productList?.product_group || spk?.produk?.nama_produk || spk?.produk?.product_group || "-";
+};
+
+const getSkuLabel = (sku) => {
+  const skuName = String(sku?.sku_name || sku?.sku || "").trim();
+  const warna = String(sku?.product_colour || sku?.warna || "").trim();
+  const ukuran = String(sku?.product_size || sku?.ukuran || "").trim();
+  const details = [warna, ukuran].filter(Boolean).join(" - ");
+  return details ? `${skuName || "SKU"} (${details})` : skuName || `SKU #${sku?.id || "-"}`;
 };
 
 const normalizeMaterialText = (value) =>
@@ -209,6 +233,17 @@ const SpkCutting = () => {
         label: aksesoris.satuan ? `${aksesoris.nama_aksesoris} (${aksesoris.satuan})` : aksesoris.nama_aksesoris,
       })),
     [aksesorisList]
+  );
+
+  const produkOptions = useMemo(
+    () =>
+      produkList
+        .map((produk) => ({
+          value: getProdukOptionValue(produk),
+          label: getProdukOptionLabel(produk),
+        }))
+        .filter((option) => option.value),
+    [produkList]
   );
 
   const bahanSelectPortalTarget = typeof document !== "undefined" ? document.body : null;
@@ -500,11 +535,9 @@ const SpkCutting = () => {
       try {
         setLoading(true);
 
-        const response = await API.get("/produk", {
-          params: { per_page: 1000 },
-        });
+        const response = await API.get("/product-list/spk-catalog");
 
-        setProdukList(response.data.data);
+        setProdukList(normalizeApiList(response.data.products || response.data.data));
       } catch (error) {
         setError("Gagal mengambil data produk.");
       } finally {
@@ -588,21 +621,16 @@ const SpkCutting = () => {
     fetchAksesoris();
   }, []);
 
-  // Fungsi untuk fetch SKU berdasarkan produk_id
+  // Fungsi untuk fetch SKU berdasarkan Product List yang dipilih
   const fetchSkuByProduk = async (produkId) => {
     if (!produkId) {
       setSkuList([]);
       return;
     }
 
-    try {
-      const response = await API.get(`/produk/${produkId}`);
-      const skus = response.data.skus || [];
-      setSkuList(skus);
-    } catch (error) {
-      console.error("Gagal mengambil data SKU:", error);
-      setSkuList([]);
-    }
+    const selectedProduk = getSelectedProduk(produkId);
+    const catalog = await fetchProductGroupCatalog(selectedProduk);
+    setSkuList(Array.isArray(catalog?.sku_items) ? catalog.sku_items : []);
   };
 
   // Fungsi untuk fetch warna berdasarkan bahan_id
@@ -791,42 +819,66 @@ const SpkCutting = () => {
     };
   };
 
-  const getSelectedProduk = (produkId) => produkList.find((produk) => String(produk.id) === String(produkId));
+  const getSelectedProduk = (produkId) => produkList.find((produk) => getProdukOptionValue(produk) === String(produkId));
 
-  const getBahanByMaterialGroup = (materialGroup) => {
-    const groupKey = normalizeMaterialKey(materialGroup);
-    if (!groupKey) return [];
+  const getSelectedProdukOption = (produkId) => produkOptions.find((option) => option.value === String(produkId)) || null;
 
-    return bahanList.filter((bahan) => normalizeMaterialKey(bahan.group_bahan) === groupKey);
+  const makeInputEvent = (name, value) => ({
+    target: {
+      name,
+      value: value || "",
+    },
+  });
+
+  const isBahanMatchMaterial = (bahan, material) => {
+    const materialKey = normalizeMaterialKey(material);
+    if (!materialKey) return false;
+
+    const candidates = [bahan?.group_bahan, bahan?.nama_bahan, bahan?.deskripsi].map(normalizeMaterialKey).filter(Boolean);
+    return candidates.some((candidate) => candidate === materialKey || candidate.includes(materialKey) || materialKey.includes(candidate));
+  };
+
+  const getBahanByMaterialGroup = (materialGroup, materialName = "") => {
+    const groupMatches = bahanList.filter((bahan) => isBahanMatchMaterial(bahan, materialGroup));
+    if (groupMatches.length > 0) return groupMatches;
+
+    return bahanList.filter((bahan) => isBahanMatchMaterial(bahan, materialName));
   };
 
   const resolveAutoBahanId = (material) => {
+    const materialGroupKey = normalizeMaterialKey(material?.material_group);
     const materialNameKey = normalizeMaterialKey(material?.material);
-    const candidates = getBahanByMaterialGroup(material?.material_group);
+    const candidates = getBahanByMaterialGroup(material?.material_group, material?.material);
 
     if (candidates.length === 1) {
       return String(candidates[0].id);
     }
 
-    const matchingBahan = candidates.find((bahan) => normalizeMaterialKey(bahan.nama_bahan) === materialNameKey);
+    const matchingBahan = candidates.find((bahan) => {
+      const groupKey = normalizeMaterialKey(bahan.group_bahan);
+      const nameKey = normalizeMaterialKey(bahan.nama_bahan);
+      return (materialGroupKey && groupKey === materialGroupKey) || (materialNameKey && nameKey === materialNameKey);
+    });
+
     return matchingBahan ? String(matchingBahan.id) : "";
   };
 
   const fetchProductGroupCatalog = async (produk) => {
+    const product = String(produk?.product || "").trim();
     const productGroup = String(produk?.product_group || "").trim();
 
-    if (!productGroup) {
+    if (!product && !productGroup) {
       return null;
     }
 
     try {
-      const response = await API.get("/product-list/hpp-catalog", {
-        params: { product_group: productGroup },
+      const response = await API.get("/product-list/spk-catalog", {
+        params: product ? { product } : { product_group: productGroup },
       });
 
       return response.data || null;
     } catch (error) {
-      console.warn("Gagal mengambil catalog Product Group:", error.response?.data || error.message);
+      console.warn("Gagal mengambil katalog Product List:", error.response?.data || error.message);
       return null;
     }
   };
@@ -834,9 +886,8 @@ const SpkCutting = () => {
   const buildProductAutoFields = async (produkId) => {
     const selectedProduk = getSelectedProduk(produkId);
     const catalog = await fetchProductGroupCatalog(selectedProduk);
-    const productHargaJasa = Number(selectedProduk?.harga_jasa_cutting || 0);
     const catalogHargaJasa = Number(catalog?.price_cutting || 0);
-    const hargaJasa = productHargaJasa > 0 ? productHargaJasa : catalogHargaJasa;
+    const hargaJasa = catalogHargaJasa;
     const hargaJasaString = hargaJasa !== null && hargaJasa !== undefined && hargaJasa !== "" ? String(Math.round(Number(hargaJasa) || 0)) : "";
 
     const catalogMaterials = Array.isArray(catalog?.materials) ? catalog.materials : [];
@@ -868,6 +919,7 @@ const SpkCutting = () => {
     const autoBagianFields = bagian.length ? { bagian, ...getAssumptionFields(bagian) } : {};
 
     return {
+      produk_id: produkId,
       harga_jasa: hargaJasaString,
       harga_jasaDisplay: hargaJasaString ? formatRupiahInput(hargaJasaString) : "",
       keterangan: catalog?.notes_spk || "",
@@ -923,6 +975,11 @@ const SpkCutting = () => {
     if (!newSpkCutting.tukang_cutting_id) {
       await showStatusAlert("warning", "Validasi Data", "Pilih tukang cutting terlebih dahulu!");
 
+      return;
+    }
+
+    if (!newSpkCutting.produk_id) {
+      await showStatusAlert("warning", "Validasi Data", "Pilih Product terlebih dahulu!");
       return;
     }
 
@@ -995,11 +1052,13 @@ const SpkCutting = () => {
 
     const dataToSend = {
       ...dataWithoutSpkNumber,
+      product_list_id: parseInt(newSpkCutting.produk_id, 10),
+      produk_id: null,
       harga_jasa: newSpkCutting.harga_jasa ? parseFloat(newSpkCutting.harga_jasa) : null,
       jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
       jenis_spk: newSpkCutting.jenis_spk || null,
       tukang_pola_id: newSpkCutting.tukang_pola_id ? parseInt(newSpkCutting.tukang_pola_id) : null,
-      produk_sku_ids: selectedSkuIds.map((id) => parseInt(id)), // Tambahkan produk_sku_ids
+      product_list_sku_ids: selectedSkuIds.map((id) => parseInt(id, 10)),
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
@@ -1378,14 +1437,15 @@ const SpkCutting = () => {
   const renderBahanSelect = ({ value, onChange, materialGroup }) => {
     const selectedValue = String(value || "");
     const selectedBahan = bahanList.find((bahan) => String(bahan.id) === selectedValue);
-    const filteredBahanOptions = normalizeMaterialText(materialGroup)
-      ? bahanOptions.filter((option) => {
-          const bahan = bahanList.find((item) => String(item.id) === option.value);
-          return normalizeMaterialKey(bahan?.group_bahan) === normalizeMaterialKey(materialGroup);
-        })
-      : bahanOptions;
+    const recommendedBahanIds = new Set(getBahanByMaterialGroup(materialGroup).map((bahan) => String(bahan.id)));
+    const orderedBahanOptions = [...bahanOptions].sort((a, b) => {
+      const aRecommended = recommendedBahanIds.has(a.value) ? 0 : 1;
+      const bRecommended = recommendedBahanIds.has(b.value) ? 0 : 1;
+      if (aRecommended !== bRecommended) return aRecommended - bRecommended;
+      return a.label.localeCompare(b.label, "id", { numeric: true, sensitivity: "base" });
+    });
     const selectedOption =
-      filteredBahanOptions.find((option) => option.value === selectedValue) ||
+      orderedBahanOptions.find((option) => option.value === selectedValue) ||
       (selectedBahan
         ? {
             value: selectedValue,
@@ -1397,13 +1457,13 @@ const SpkCutting = () => {
       <Select
         className="spk-cutting-bahan-select"
         classNamePrefix="spk-cutting-react-select"
-        options={filteredBahanOptions}
+        options={orderedBahanOptions}
         value={selectedOption}
         onChange={(option) => onChange(option?.value || "")}
-        placeholder={materialGroup ? `Bahan group ${materialGroup}` : "Pilih Bahan"}
+        placeholder="Pilih bahan dari Master Bahan"
         isClearable
         isSearchable
-        noOptionsMessage={() => (materialGroup ? `Tidak ada bahan di group ${materialGroup}` : "Bahan tidak ditemukan")}
+        noOptionsMessage={() => "Bahan master tidak ditemukan"}
         menuPortalTarget={bahanSelectPortalTarget}
         styles={{
           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -1486,15 +1546,18 @@ const SpkCutting = () => {
       const data = response.data.data || response.data;
 
       // Set selected SKU IDs dari data yang sudah ada
-      if (data.skus && Array.isArray(data.skus)) {
-        setEditSelectedSkuIds(data.skus.map((sku) => sku.id.toString()));
+      const productListSkus = data.productListSkus || data.product_list_skus;
+      const existingSkus = Array.isArray(productListSkus) && productListSkus.length > 0 ? productListSkus : data.skus;
+      if (existingSkus && Array.isArray(existingSkus)) {
+        setEditSelectedSkuIds(existingSkus.map((sku) => sku.id.toString()));
       } else {
         setEditSelectedSkuIds([]);
       }
 
       // Fetch SKU list untuk produk yang dipilih
-      if (data.produk_id) {
-        await fetchSkuByProduk(data.produk_id);
+      const productListId = getSpkProductListId(data);
+      if (productListId) {
+        await fetchSkuByProduk(productListId);
       }
 
       // Transform data untuk form edit
@@ -1546,7 +1609,7 @@ const SpkCutting = () => {
         id_spk_cutting: data.id_spk_cutting || "",
         pic: data.pic || "",
 
-        produk_id: data.produk_id?.toString() || "",
+        produk_id: productListId ? productListId.toString() : "",
 
         tanggal_batas_kirim: data.tanggal_batas_kirim || "",
 
@@ -1758,6 +1821,11 @@ const SpkCutting = () => {
       return;
     }
 
+    if (!editSpkCutting.produk_id) {
+      await showStatusAlert("warning", "Validasi Data", "Pilih Product terlebih dahulu!");
+      return;
+    }
+
     // Validasi
 
     if (editSpkCutting.bagian.length === 0) {
@@ -1815,7 +1883,8 @@ const SpkCutting = () => {
 
     const dataToSend = {
       pic: editSpkCutting.pic || "",
-      produk_id: parseInt(editSpkCutting.produk_id),
+      product_list_id: parseInt(editSpkCutting.produk_id, 10),
+      produk_id: null,
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
       harga_jasa: parseFloat(editSpkCutting.harga_jasa),
       satuan_harga: editSpkCutting.satuan_harga,
@@ -1824,7 +1893,7 @@ const SpkCutting = () => {
       keterangan: editSpkCutting.keterangan || "",
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
       tukang_pola_id: editSpkCutting.tukang_pola_id ? parseInt(editSpkCutting.tukang_pola_id) : null,
-      produk_sku_ids: editSelectedSkuIds.map((id) => parseInt(id)), // Tambahkan produk_sku_ids
+      product_list_sku_ids: editSelectedSkuIds.map((id) => parseInt(id, 10)),
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 
@@ -1946,7 +2015,7 @@ const SpkCutting = () => {
                     disabled={!produkId || skuList.length === 0}
                   />
                   <span className="spk-cutting-sku-text">
-                    {sku.sku} ({sku.warna} - {sku.ukuran})
+                    {getSkuLabel(sku)}
                   </span>
                 </label>
               );
@@ -2174,7 +2243,7 @@ const SpkCutting = () => {
                   <th>SPK Cutting ID</th>
                   <th>PIC</th>
                   <th>Tukang Cutting</th>
-                  <th>Product Group</th>
+                  <th>Product</th>
                   <th>Deadline</th>
                   <th>Sisa Hari</th>
                   <th>Harga Jasa</th>
@@ -2194,7 +2263,7 @@ const SpkCutting = () => {
                     <td>{spk.id_spk_cutting}</td>
                     <td>{spk.pic || "-"}</td>
                     <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
-                    <td>{spk.produk?.product_group || spk.produk?.nama_produk || "-"}</td>
+                    <td>{getSpkProductLabel(spk)}</td>
                     <td>{spk.tanggal_batas_kirim || "-"}</td>
                     <td>
                       <span className={`spk-cutting-sisa-badge ${getSisaHariToneClass(spk.sisa_hari)}`}>
@@ -2324,15 +2393,22 @@ const SpkCutting = () => {
 
               <div className="spk-cutting-form-row">
                 <div className="spk-cutting-form-group">
-                  <label>Product Group:</label>
-                  <select name="produk_id" value={newSpkCutting.produk_id} onChange={handleInputChange} required>
-                    <option value="">Pilih Product Group</option>
-                    {produkList.map((produk) => (
-                      <option key={produk.id} value={produk.id}>
-                        {getProdukOptionLabel(produk)}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Product:</label>
+                  <Select
+                    className="spk-cutting-bahan-select"
+                    classNamePrefix="spk-cutting-react-select"
+                    options={produkOptions}
+                    value={getSelectedProdukOption(newSpkCutting.produk_id)}
+                    onChange={(option) => handleInputChange(makeInputEvent("produk_id", option?.value))}
+                    placeholder="Cari / pilih Product"
+                    isClearable
+                    isSearchable
+                    noOptionsMessage={() => "Product tidak ditemukan"}
+                    menuPortalTarget={bahanSelectPortalTarget}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    }}
+                  />
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -2363,7 +2439,7 @@ const SpkCutting = () => {
                       required
                     />
                   </div>
-                  <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting HPP produk.</small>
+                  <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting Product List.</small>
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -2524,8 +2600,8 @@ const SpkCutting = () => {
                 <span>{selectedDetailSpk.tukang_pola?.nama || "-"}</span>
               </div>
               <div className="spk-cutting-detail-item">
-                <strong>Product Group</strong>
-                <span>{selectedDetailSpk.produk?.product_group || selectedDetailSpk.produk?.nama_produk || "-"}</span>
+                <strong>Product</strong>
+                <span>{getSpkProductLabel(selectedDetailSpk)}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Deadline</strong>
@@ -2553,13 +2629,13 @@ const SpkCutting = () => {
                 <strong>Jenis SPK</strong>
                 <span>{selectedDetailSpk.jenis_spk || "-"}</span>
               </div>
-              {selectedDetailSpk.skus && selectedDetailSpk.skus.length > 0 && (
+              {((selectedDetailSpk.productListSkus || selectedDetailSpk.product_list_skus)?.length > 0 || selectedDetailSpk.skus?.length > 0) && (
                 <div className="spk-cutting-detail-item spk-cutting-detail-item-full">
                   <strong>SKU Produk:</strong>
                   <div className="spk-cutting-sku-chip-list">
-                    {selectedDetailSpk.skus.map((sku) => (
+                    {((selectedDetailSpk.productListSkus || selectedDetailSpk.product_list_skus)?.length > 0 ? selectedDetailSpk.productListSkus || selectedDetailSpk.product_list_skus : selectedDetailSpk.skus).map((sku) => (
                       <span key={sku.id} className="spk-cutting-sku-chip">
-                        {sku.sku} ({sku.warna} - {sku.ukuran})
+                        {getSkuLabel(sku)}
                       </span>
                     ))}
                   </div>
@@ -2685,15 +2761,22 @@ const SpkCutting = () => {
                 </div>
 
                 <div className="spk-cutting-form-group">
-                  <label>Product Group:</label>
-                  <select name="produk_id" value={editSpkCutting.produk_id} onChange={handleEditInputChange} required>
-                    <option value="">Pilih Product Group</option>
-                    {produkList.map((produk) => (
-                      <option key={produk.id} value={produk.id}>
-                        {getProdukOptionLabel(produk)}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Product:</label>
+                  <Select
+                    className="spk-cutting-bahan-select"
+                    classNamePrefix="spk-cutting-react-select"
+                    options={produkOptions}
+                    value={getSelectedProdukOption(editSpkCutting.produk_id)}
+                    onChange={(option) => handleEditInputChange(makeInputEvent("produk_id", option?.value))}
+                    placeholder="Cari / pilih Product"
+                    isClearable
+                    isSearchable
+                    noOptionsMessage={() => "Product tidak ditemukan"}
+                    menuPortalTarget={bahanSelectPortalTarget}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    }}
+                  />
                 </div>
 
                 <div className="spk-cutting-form-group">
@@ -2724,7 +2807,7 @@ const SpkCutting = () => {
                       required
                     />
                   </div>
-                  <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting HPP produk.</small>
+                  <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting Product List.</small>
                 </div>
 
                 <div className="spk-cutting-form-group">
