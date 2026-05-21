@@ -156,6 +156,61 @@ const defaultExportColumns = [
 ];
 
 const normalizeSkuNameValue = (value) => String(value ?? "").trim().replace(/\s+/g, " "); // [DUPLIKAT] - ditambahkan
+const PRODUCT_SIZE_SUFFIXES = [
+  "ALL SIZE",
+  "ONE SIZE",
+  "ONESIZE",
+  "XXXL",
+  "XXL",
+  "XL",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "2XL",
+  "3XL",
+  "4XL",
+  "5XL",
+  "6XL",
+];
+
+const parseProductFieldsFromSku = (value) => {
+  const normalizedSku = normalizeSkuNameValue(value).replace(/[\u2013\u2014]/g, "-").toUpperCase();
+  const [rawGroup, ...rawDescriptionParts] = normalizedSku.split("-");
+  const productGroup = normalizeSkuNameValue(rawGroup);
+  const description = normalizeSkuNameValue(rawDescriptionParts.join("-"));
+
+  if (!productGroup || !description) {
+    return null;
+  }
+
+  const productSize = PRODUCT_SIZE_SUFFIXES.find((size) => {
+    if (description === size) {
+      return true;
+    }
+
+    return description.endsWith(` ${size}`);
+  });
+
+  if (!productSize) {
+    return null;
+  }
+
+  const productColour = normalizeSkuNameValue(description.slice(0, -productSize.length));
+  const product = normalizeSkuNameValue(productGroup.replace(/^SET\s+/i, ""));
+
+  if (!product || !productColour) {
+    return null;
+  }
+
+  return {
+    product,
+    product_group: productGroup,
+    product_size: productSize,
+    product_source: `${productGroup} ${productSize}`,
+    product_colour: productColour,
+  };
+};
 const MAX_PRODUCT_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024;
 
 const ProductList = () => {
@@ -586,7 +641,19 @@ const ProductList = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      if (name !== "sku_name") {
+        return { ...prev, [name]: value };
+      }
+
+      const parsedProductFields = parseProductFieldsFromSku(value);
+
+      return {
+        ...prev,
+        sku_name: value,
+        ...(parsedProductFields || {}),
+      };
+    });
   };
 
   const handleMaterialChange = (index, field, value) => {
