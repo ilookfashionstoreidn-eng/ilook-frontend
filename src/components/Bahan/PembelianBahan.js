@@ -37,6 +37,14 @@ const showConfirm = (title, text, confirmButtonText = "Ya, lanjutkan") =>
     ...swalButtonColors,
   });
 
+const focusRollInput = (spkBahanWarnaId, rolIndex) => {
+  setTimeout(() => {
+    const input = document.querySelector(`[data-roll-input="${spkBahanWarnaId}-${rolIndex}"]`);
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus();
+  }, 120);
+};
+
 const PembelianBahan = () => {
   const [items, setItems] = useState([]);
   const [pabrikList, setPabrikList] = useState([]);
@@ -249,6 +257,30 @@ const PembelianBahan = () => {
       const jumlahRol = w.jumlah_rol || w.rol?.length || 0;
       return total + jumlahRol;
     }, 0);
+  };
+
+  const getRollBerat = (roll) => {
+    if (roll === null || roll === undefined) return "-";
+    const berat = typeof roll === "object" ? roll.berat : roll;
+    return berat !== null && berat !== undefined && berat !== "" ? `${berat} kg` : "-";
+  };
+
+  const getRollBarcode = (roll) => {
+    if (!roll || typeof roll !== "object") return "-";
+    return roll.barcode || "-";
+  };
+
+  const getRollScanInfo = (roll) => {
+    if (!roll || typeof roll !== "object") {
+      return { scanned: false, scannedAt: null, status: null };
+    }
+
+    const stokBahan = roll.stok_bahan || roll.stokBahan || null;
+    return {
+      scanned: Boolean(roll.sudah_scan_bahan_masuk || stokBahan),
+      scannedAt: roll.scan_bahan_masuk_at || stokBahan?.scanned_at || null,
+      status: roll.status_stok_bahan || stokBahan?.status || null,
+    };
   };
 
   // Fungsi untuk mendapatkan harga bahan dari bahanList berdasarkan bahan_id
@@ -587,6 +619,20 @@ const PembelianBahan = () => {
       return;
     }
 
+    for (const [spkBahanWarnaId, beratArray] of Object.entries(newItem.berat_rol || {})) {
+      for (let index = 0; index < (beratArray || []).length; index++) {
+        const berat = beratArray[index];
+        const beratNumber = berat === "" || berat === null || berat === undefined ? 0 : parseFloat(berat);
+        if (isNaN(beratNumber) || beratNumber < 0) {
+          const warna = selectedSpkBahan?.warna?.find((item) => Number(item.id) === Number(spkBahanWarnaId));
+          const namaWarna = warna?.warna || warna?.nama || `ID ${spkBahanWarnaId}`;
+          showAlert("warning", "Berat Rol Belum Valid", `Warna ${namaWarna}, Rol ${index + 1} tidak boleh minus.`)
+            .then(() => focusRollInput(spkBahanWarnaId, index));
+          return;
+        }
+      }
+    }
+
     // Validasi nomor surat jalan sebelum submit
     if (newItem.no_surat_jalan && newItem.no_surat_jalan.trim() !== "") {
       const isValid = await checkNoSuratJalan(newItem.no_surat_jalan);
@@ -619,7 +665,8 @@ const PembelianBahan = () => {
         const beratArray = newItem.berat_rol[spkBahanWarnaId] || [];
         beratArray.forEach((berat) => {
           // Gunakan format [] untuk array di Laravel
-          formData.append(`berat_rol[${spkBahanWarnaId}][]`, berat);
+          const beratValue = berat === "" || berat === null || berat === undefined ? 0 : parseFloat(berat);
+          formData.append(`berat_rol[${spkBahanWarnaId}][]`, (isNaN(beratValue) ? 0 : beratValue).toString());
         });
       });
 
@@ -1017,11 +1064,11 @@ const PembelianBahan = () => {
     try {
       setScanLoading(true);
       setScanError("");
-      await API.put(`/pembelian-bahan/scan-barcode/${scannedRoll.barcode}/update-berat`, {
+      const response = await API.put(`/pembelian-bahan/scan-barcode/${scannedRoll.barcode}/update-berat`, {
         berat: parseFloat(beratInput),
       });
 
-      showAlert("success", "Berhasil", "Berat roll berhasil diperbarui.");
+      showAlert("success", "Berhasil", response.data?.message || "Berat roll berhasil diperbarui.");
 
       // Reset form
       setScannedBarcode("");
@@ -1369,6 +1416,7 @@ const PembelianBahan = () => {
                           <div key={ri} className="pembelian-bahan-rol-item">
                             <label>Berat Rol {ri + 1} (kg)</label>
                             <input
+                              data-roll-input={`${warna.id}-${ri}`}
                               type="number"
                               placeholder="Masukkan berat"
                               value={berat}
@@ -1558,15 +1606,44 @@ const PembelianBahan = () => {
                         <strong style={{ color: "#17457c" }}>Jumlah Rol:</strong> {w.jumlah_rol || (w.rol ? w.rol.length : 0)}
                       </div>
                       <div>
-                        <strong style={{ color: "#17457c" }}>Berat Rol:</strong>
+                        <strong style={{ color: "#17457c" }}>Detail Rol:</strong>
                         {w.rol && w.rol.length > 0 ? (
-                          <ul style={{ marginTop: "8px", paddingLeft: "20px" }}>
-                            {w.rol.map((r, ri) => (
-                              <li key={ri} style={{ marginBottom: "4px" }}>
-                                Rol {ri + 1}: {r.berat !== null && r.berat !== undefined ? `${r.berat} kg` : typeof r === "number" ? `${r} kg` : "-"}
-                              </li>
-                            ))}
-                          </ul>
+                          <div className="pembelian-bahan-roll-table-wrap">
+                            <table className="pembelian-bahan-roll-table">
+                              <thead>
+                                <tr>
+                                  <th>Rol</th>
+                                  <th>Barcode</th>
+                                  <th>Berat</th>
+                                  <th>Status Bahan Masuk</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {w.rol.map((r, ri) => {
+                                  const scanInfo = getRollScanInfo(r);
+                                  return (
+                                    <tr key={r?.id || ri}>
+                                      <td>Rol {ri + 1}</td>
+                                      <td>
+                                        <code className="pembelian-bahan-barcode-code">{getRollBarcode(r)}</code>
+                                      </td>
+                                      <td>{getRollBerat(r)}</td>
+                                      <td>
+                                        <span className={`pembelian-bahan-scan-pill ${scanInfo.scanned ? "scanned" : "unscanned"}`}>
+                                          {scanInfo.scanned ? "Sudah scan" : "Belum scan"}
+                                        </span>
+                                        {scanInfo.scannedAt && (
+                                          <div className="pembelian-bahan-roll-scan-meta">
+                                            {new Date(scanInfo.scannedAt).toLocaleString("id-ID")}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         ) : (
                           <div style={{ marginTop: "8px", color: "#666" }}>Tidak ada data rol</div>
                         )}

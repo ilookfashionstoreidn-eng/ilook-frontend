@@ -7,7 +7,7 @@ import "./SpkCutting.css";
 import API from "../../../api";
 
 import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel } from "react-icons/fa";
-import { FiArrowLeft, FiArrowRight, FiCalendar, FiCheckCircle, FiClock, FiFilter, FiScissors, FiSearch, FiTarget, FiX } from "react-icons/fi";
+import { FiCalendar, FiCheckCircle, FiClock, FiFilter, FiScissors, FiSearch, FiTarget, FiX } from "react-icons/fi";
 
 const SWEETALERT_CDN = "https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js";
 
@@ -17,11 +17,6 @@ const STATUS_LABELS = {
   sudah_diambil: "Sudah Diambil",
   selesai: "Selesai",
 };
-
-const CREATE_WIZARD_STEPS = [
-  { id: 1, number: "01", title: "Informasi SPK", label: "Identitas" },
-  { id: 2, number: "02", title: "Rincian Produksi & Bahan", label: "Produksi" },
-];
 
 const ASUMSI_PRODUK_PER_ROLL = 60;
 
@@ -199,7 +194,6 @@ const SpkCutting = () => {
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
-  const [createWizardStep, setCreateWizardStep] = useState(1);
 
   const [showEditForm, setShowEditForm] = useState(false);
 
@@ -1033,50 +1027,8 @@ const SpkCutting = () => {
     setDailyDate(newValue);
   };
 
-  const validateCreateIdentityStep = async () => {
-    if (!newSpkCutting.tukang_cutting_id) {
-      await showStatusAlert("warning", "Validasi Data", "Pilih tukang cutting terlebih dahulu!");
-      return false;
-    }
-
-    if (!newSpkCutting.produk_id) {
-      await showStatusAlert("warning", "Validasi Data", "Pilih Product terlebih dahulu!");
-      return false;
-    }
-
-    if (!newSpkCutting.tanggal_batas_kirim) {
-      await showStatusAlert("warning", "Validasi Data", "Pilih tanggal batas kirim terlebih dahulu!");
-      return false;
-    }
-
-    if (!selectedSkuIds || selectedSkuIds.length === 0) {
-      await showStatusAlert("warning", "Validasi Data", "Pilih minimal 1 SKU produk!");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleCreateWizardNext = async () => {
-    const isValid = await validateCreateIdentityStep();
-    if (isValid) {
-      setCreateWizardStep(2);
-    }
-  };
-
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-
-    if (createWizardStep !== 2) {
-      await handleCreateWizardNext();
-      return;
-    }
-
-    const isIdentityStepValid = await validateCreateIdentityStep();
-    if (!isIdentityStepValid) {
-      setCreateWizardStep(1);
-      return;
-    }
 
     // Validasi nomor seri SPK harus ada (akan di-generate otomatis oleh backend jika kosong)
 
@@ -1213,7 +1165,6 @@ const SpkCutting = () => {
 
       setSelectedSkuIds([]);
       setSkuList([]);
-      setCreateWizardStep(1);
       setShowForm(false);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -2339,7 +2290,6 @@ const SpkCutting = () => {
 
                 setSelectedSkuIds([]);
                 setSkuList([]);
-                setCreateWizardStep(1);
                 setShowForm(true);
               }}
             >
@@ -2508,42 +2458,14 @@ const SpkCutting = () => {
               </button>
             </div>
 
-            <div className="spk-cutting-wizard-steps" aria-label="Tahapan tambah SPK cutting">
-              {CREATE_WIZARD_STEPS.map((step) => {
-                const isActive = createWizardStep === step.id;
-                const isDone = createWizardStep > step.id;
-
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    className={`spk-cutting-wizard-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
-                    onClick={() => {
-                      if (step.id === 1) {
-                        setCreateWizardStep(1);
-                      } else if (createWizardStep !== 2) {
-                        void handleCreateWizardNext();
-                      }
-                    }}
-                  >
-                    <span className="spk-cutting-wizard-step-number">{isDone ? <FiCheckCircle /> : step.number}</span>
-                    <span className="spk-cutting-wizard-step-text">
-                      <strong>{step.title}</strong>
-                      <small>{step.label}</small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
             <form onSubmit={handleFormSubmit} className="spk-cutting-form spk-cutting-create-form">
               <div className="spk-cutting-create-body">
-                {createWizardStep === 1 && (
-                <section className="spk-cutting-create-section">
+                <div className="spk-cutting-create-columns">
+                <section className="spk-cutting-create-section spk-cutting-create-section-info">
                   <div className="spk-cutting-create-section-header">
                     <div>
                       <span className="spk-cutting-create-section-number">01</span>
-                      <h3>Informasi SPK</h3>
+                      <h3>Informasi Cutting</h3>
                     </div>
                     <span className="spk-cutting-create-section-pill">Identitas</span>
                   </div>
@@ -2617,10 +2539,8 @@ const SpkCutting = () => {
                     })}
                   </div>
                 </section>
-                )}
 
-                {createWizardStep === 2 && (
-                <section className="spk-cutting-create-section">
+                <section className="spk-cutting-create-section spk-cutting-create-section-production">
                   <div className="spk-cutting-create-section-header">
                     <div>
                       <span className="spk-cutting-create-section-number">02</span>
@@ -2769,7 +2689,7 @@ const SpkCutting = () => {
                     ))}
                   </div>
                 </section>
-                )}
+                </div>
               </div>
 
               <div className="spk-cutting-form-actions spk-cutting-create-actions">
@@ -2777,20 +2697,9 @@ const SpkCutting = () => {
                   Batal
                 </button>
                 <div className="spk-cutting-create-actions-right">
-                  {createWizardStep > 1 && (
-                    <button type="button" className="spk-cutting-btn spk-cutting-btn-secondary" onClick={() => setCreateWizardStep(1)}>
-                      <FiArrowLeft /> Kembali
-                    </button>
-                  )}
-                  {createWizardStep < 2 ? (
-                    <button type="button" className="spk-cutting-btn spk-cutting-btn-primary" onClick={handleCreateWizardNext}>
-                      Lanjut <FiArrowRight />
-                    </button>
-                  ) : (
-                    <button type="submit" className="spk-cutting-btn spk-cutting-btn-primary">
-                      <FiCheckCircle /> Simpan
-                    </button>
-                  )}
+                  <button type="submit" className="spk-cutting-btn spk-cutting-btn-primary">
+                    <FiCheckCircle /> Simpan
+                  </button>
                 </div>
               </div>
             </form>
