@@ -81,6 +81,7 @@ const expandSpkRowsByWarna = (rows = []) =>
       stok_dipesan: warna?.stok_dipesan ?? warna?.jumlah_rol ?? 0,
       pesanan_dikirim: warna?.pesanan_dikirim ?? 0,
       sisa_dipesan: warna?.sisa_dipesan ?? warna?.jumlah_rol ?? 0,
+      lebih_kirim: warna?.lebih_kirim ?? 0,
       estimasi_pengiriman: warna?.estimasi_pengiriman ?? null,
       lama_pemesanan: warna?.lama_pemesanan ?? row.lama_pemesanan,
       _warnaDetail: warna,
@@ -1038,6 +1039,20 @@ const SpkBahan = () => {
     return rowRol;
   };
 
+  const getLebihKirim = (row) => {
+    const candidates = [row?.pdf_lebih_kirim, row?.lebih_kirim, row?.pdf_subtotal?.lebih_kirim];
+
+    for (const value of candidates) {
+      if (value === null || value === undefined || value === "") continue;
+      const parsed = parseInt(value, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    const dikirim = parseInt(row?.pesanan_dikirim ?? row?.pdf_pesanan_dikirim ?? 0, 10) || 0;
+    const dipesan = parseInt(row?.stok_dipesan ?? row?.jumlah_rol ?? row?.jumlah ?? 0, 10) || 0;
+    return Math.max(0, dikirim - dipesan);
+  };
+
   const formatLamaPemesanan = (hari) => {
     if (hari === null || hari === undefined) return "-";
     return `${hari} hari`;
@@ -1222,6 +1237,7 @@ const SpkBahan = () => {
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
                       <th className="spkb-col-sisa">Sisa Di Pesan</th>
+                      <th className="spkb-col-lebih">Lebih Kirim</th>
                       <th className="spkb-col-estimasi">Estimasi Pengiriman</th>
                       <th className="spkb-col-lama">Lama Pesan</th>
                       <th className="spkb-col-status">Status</th>
@@ -1234,6 +1250,7 @@ const SpkBahan = () => {
                           ? row.warna.reduce((sum, w) => sum + (parseInt(w.jumlah_rol, 10) || 0), 0)
                           : parseInt(row.jumlah, 10) || 0;
                       const rowSisaDipesan = getSisaDipesan(row, rowRol);
+                      const rowLebihKirim = getLebihKirim(row);
 
                       const number = ((meta.current_page || 1) - 1) * (meta.per_page || perPage) + index + 1;
 
@@ -1267,6 +1284,9 @@ const SpkBahan = () => {
                         </td>
                         <td className="spkb-cell-bold spkb-col-rol">{rowRol || "-"}</td>
                         <td className="spkb-cell-bold spkb-col-sisa">{rowSisaDipesan || rowSisaDipesan === 0 ? rowSisaDipesan : "-"}</td>
+                        <td className={`spkb-cell-bold spkb-col-lebih ${rowLebihKirim > 0 ? "spkb-cell-over" : ""}`}>
+                          {rowLebihKirim || rowLebihKirim === 0 ? rowLebihKirim : "-"}
+                        </td>
                         <td className="spkb-col-estimasi">
                           <button
                             type="button"

@@ -878,6 +878,41 @@
   color: #065f46;
 }
 
+.hasil-cutting-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hasil-cutting-mode-button {
+  min-height: 38px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.hasil-cutting-mode-button:hover {
+  background: #f8fafc;
+  border-color: #b8c7dc;
+}
+
+.hasil-cutting-mode-button.is-active {
+  border-color: #2458ce;
+  background: #edf4ff;
+  color: #1e3a8a;
+}
+
 .hasil-cutting-operational-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2279,6 +2314,10 @@
   .hasil-cutting-modal-tabs,
   .hasil-cutting-workflow-bar,
   .hasil-cutting-operational-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hasil-cutting-mode-toggle {
     grid-template-columns: 1fr;
   }
 

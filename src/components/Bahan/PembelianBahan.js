@@ -1348,6 +1348,7 @@ const PembelianBahan = () => {
                   const sisaRol = selectedSpkBahan.sisaRol?.[warna.id] ?? warna.sisa_dipesan ?? warna.jumlah_rol ?? 0;
                   const beratRolArray = newItem.berat_rol[warna.id] || [];
                   const totalBerat = beratRolArray.reduce((sum, berat) => sum + (parseFloat(berat) || 0), 0);
+                  const lebihKirimInput = Math.max(0, beratRolArray.length - sisaRol);
 
                   return (
                     <div key={warna.id} className="pembelian-bahan-warna-section">
@@ -1356,6 +1357,11 @@ const PembelianBahan = () => {
                         <div className="pembelian-bahan-roll-meta">
                           Jumlah Rol SPK: <strong>{warna.jumlah_rol || 0}</strong> | 
                           Sisa Rol: <strong className={sisaRol > 0 ? "success" : "danger"}>{sisaRol}</strong>
+                          {lebihKirimInput > 0 && (
+                            <>
+                              {" "} | Lebih Kirim: <strong className="danger">{lebihKirimInput}</strong>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="pembelian-bahan-roll-list">
@@ -1383,13 +1389,12 @@ const PembelianBahan = () => {
                           type="button"
                           className="pembelian-bahan-btn pembelian-bahan-btn-primary"
                           onClick={() => addRolToWarna(warna.id)}
-                          disabled={beratRolArray.length >= sisaRol}
                         >
                           <FaPlus /> Tambah Rol
                         </button>
-                        {beratRolArray.length >= sisaRol && sisaRol > 0 && (
+                        {lebihKirimInput > 0 && (
                           <div className="pembelian-bahan-roll-limit">
-                            Maksimal {sisaRol} rol untuk warna ini
+                            Lebih kirim {lebihKirimInput} rol dari sisa pesanan warna ini
                           </div>
                         )}
                         {totalBerat > 0 && (

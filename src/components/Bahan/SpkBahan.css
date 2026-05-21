@@ -358,6 +358,15 @@
   white-space: nowrap;
 }
 
+.spkb-col-lebih {
+  min-width: 115px;
+  white-space: nowrap;
+}
+
+.spkb-cell-over {
+  color: #b45309;
+}
+
 .spkb-col-tanggal {
   min-width: 150px;
   white-space: nowrap;

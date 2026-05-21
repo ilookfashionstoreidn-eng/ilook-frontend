@@ -81,12 +81,29 @@ const showConfirmAlert = async ({ title, text, confirmText, icon = "question" })
   }
 };
 
+const HASIL_MODE_OPTIONS = [
+  { key: "utama", label: "Hasil Bahan Utama", icon: "fas fa-layer-group" },
+  { key: "kombinasi", label: "Hasil Kombinasi", icon: "fas fa-object-group" },
+];
+
 const getSkuOptionLabel = (sku) => {
   const skuName = String(sku?.sku_name || sku?.sku || "").trim();
-  return skuName || `SKU #${sku?.id || "-"}`;
+  const warna = String(sku?.product_colour || sku?.warna || "").trim();
+  const ukuran = String(sku?.product_size || sku?.ukuran || "").trim();
+  const details = [warna, ukuran].filter(Boolean).join(" - ");
+  return details ? `${skuName || "SKU"} (${details})` : skuName || `SKU #${sku?.id || "-"}`;
 };
 
 const getSpkProductName = (spk) => spk?.productList?.product || spk?.product_list?.product || spk?.produk?.nama_produk || "N/A";
+const getDistribusiSpk = (distribusi) => distribusi?.spkCutting || distribusi?.spk_cutting || {};
+const getDistribusiProductName = (distribusi) => {
+  const spk = getDistribusiSpk(distribusi);
+  return spk?.productList?.product || spk?.product_list?.product || spk?.produk?.nama_produk || "N/A";
+};
+const getDistribusiSku = (distribusi) => {
+  const detail = Array.isArray(distribusi?.detail) ? distribusi.detail[0] : null;
+  return detail?.productListSku || detail?.product_list_sku || detail?.produkSku || detail?.produk_sku || null;
+};
 
 const HasilCutting = () => {
   const location = useLocation();
@@ -94,6 +111,9 @@ const HasilCutting = () => {
   
   const [spkCuttingList, setSpkCuttingList] = useState([]);
   const [selectedSpkId, setSelectedSpkId] = useState("");
+  const [selectedDistribusiId, setSelectedDistribusiId] = useState("");
+  const [selectedDistribusi, setSelectedDistribusi] = useState(null);
+  const [hasilMode, setHasilMode] = useState("utama");
   const [spkDetail, setSpkDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -136,20 +156,20 @@ const HasilCutting = () => {
   // State untuk distribusi seri (dengan detail warna)
   const [distribusiSeri, setDistribusiSeri] = useState([{ jumlah_produk: "", detail: [] }]);
 
-  // Fetch list SPK Cutting
+  // Fetch list distribusi SPK Cutting
   useEffect(() => {
-    const fetchSpkCutting = async () => {
+    const fetchDistribusiCutting = async () => {
       try {
-        const response = await API.get("/spk_cutting");
+        const response = await API.get("/spk-cutting-distribusi");
         const data = response.data?.data || response.data || [];
         // Pastikan selalu array
         setSpkCuttingList(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Gagal mengambil SPK Cutting:", error);
+        console.error("Gagal mengambil distribusi SPK Cutting:", error);
         setSpkCuttingList([]);
       }
     };
-    fetchSpkCutting();
+    fetchDistribusiCutting();
   }, []);
 
   // Track previous searchParams untuk detect perubahan filter
@@ -286,7 +306,7 @@ const HasilCutting = () => {
   // Fetch detail SPK Cutting dengan berat dari stok_bahan_keluar
   useEffect(() => {
     const fetchSpkDetail = async () => {
-      if (!selectedSpkId) {
+      if (!selectedSpkId || !selectedDistribusiId) {
         setSpkDetail(null);
         setInputData({});
         return;
@@ -295,7 +315,11 @@ const HasilCutting = () => {
       setLoading(true);
       try {
         const response = await API.get(`/hasil_cutting/detail-spk`, {
-          params: { spk_cutting_id: selectedSpkId },
+          params: {
+            spk_cutting_id: selectedSpkId,
+            spk_cutting_distribusi_id: selectedDistribusiId,
+            jenis_hasil: hasilMode,
+          },
         });
         console.log("Response dari API:", response.data);
 
@@ -339,7 +363,7 @@ const HasilCutting = () => {
     };
 
     fetchSpkDetail();
-  }, [selectedSpkId, editingId]);
+  }, [selectedSpkId, selectedDistribusiId, hasilMode, editingId]);
 
   // Handler untuk update input data per item
   const handleInputChange = (bahanId, field, value) => {
@@ -481,8 +505,8 @@ const HasilCutting = () => {
 
   // Handler untuk menyimpan data ke database
   const handleSimpan = async () => {
-    if (!selectedSpkId || !spkDetail?.detail) {
-      await showStatusAlert("warning", "SPK Belum Dipilih", "Pilih SPK Cutting terlebih dahulu.");
+    if (!selectedSpkId || !selectedDistribusiId || !spkDetail?.detail) {
+      await showStatusAlert("warning", "Distribusi Belum Dipilih", "Pilih kode distribusi cutting terlebih dahulu.");
       return;
     }
 
@@ -609,7 +633,7 @@ const HasilCutting = () => {
           berat_per_produk: beratPerProduk,
           status_perbandingan: statusPerbandingan?.status || statusPerbandingan,
           selisih_perbandingan: statusPerbandingan?.selisih || 0,
-          produk_sku_id: data.produkSkuId ? parseInt(data.produkSkuId) : null,
+          produk_sku_id: data.produkSkuId ? parseInt(data.produkSkuId) : spkDetail?.distribusi?.sku?.product_list_id || spkDetail?.distribusi?.sku?.id || null,
         };
       });
 
@@ -675,6 +699,8 @@ const HasilCutting = () => {
       let response;
       const payload = {
         spk_cutting_id: selectedSpkId,
+        spk_cutting_distribusi_id: selectedDistribusiId,
+        jenis_hasil: hasilMode,
         data_hasil: dataHasil,
         data_acuan: formattedDataAcuan,
         status_perbandingan_agregat: statusPerbandinganAgregatArray,
@@ -694,6 +720,8 @@ const HasilCutting = () => {
 
       // Reset form setelah berhasil simpan
       setSelectedSpkId("");
+      setSelectedDistribusiId("");
+      setSelectedDistribusi(null);
       setSpkDetail(null);
       setInputData({});
       setDataAcuan([]);
@@ -754,6 +782,17 @@ const HasilCutting = () => {
 
       setEditingId(id);
       setSelectedSpkId(data.spk_cutting_id);
+      setSelectedDistribusiId(data.spk_cutting_distribusi_id || "");
+      setHasilMode(data.jenis_hasil || "utama");
+      setSelectedDistribusi(
+        data.spk_cutting_distribusi_id
+          ? {
+              id: data.spk_cutting_distribusi_id,
+              kode_seri: data.kode_distribusi,
+              spk_cutting_id: data.spk_cutting_id,
+            }
+          : null
+      );
 
       // Debug: Log data yang diterima dari backend
       console.log("Data untuk edit:", data);
@@ -817,7 +856,11 @@ const HasilCutting = () => {
 
       // Fetch detail SPK untuk form
       const spkResponse = await API.get(`/hasil_cutting/detail-spk`, {
-        params: { spk_cutting_id: data.spk_cutting_id },
+        params: {
+          spk_cutting_id: data.spk_cutting_id,
+          spk_cutting_distribusi_id: data.spk_cutting_distribusi_id,
+          jenis_hasil: data.jenis_hasil || "utama",
+        },
       });
       setSpkDetail(spkResponse.data);
       setShowForm(true);
@@ -886,6 +929,9 @@ const HasilCutting = () => {
     setShowForm(true);
     setEditingId(null);
     setSelectedSpkId("");
+    setSelectedDistribusiId("");
+    setSelectedDistribusi(null);
+    setHasilMode("utama");
     setSpkDetail(null);
     setInputData({});
     setDataAcuan([]);
@@ -901,6 +947,8 @@ const HasilCutting = () => {
     setShowForm(false);
     setEditingId(null);
     setSelectedSpkId("");
+    setSelectedDistribusiId("");
+    setSelectedDistribusi(null);
     setSpkDetail(null);
     setInputData({});
     setDataAcuan([]);
@@ -1018,18 +1066,35 @@ const HasilCutting = () => {
     }, 0);
   };
 
-  // Filter SPK Cutting berdasarkan search query
-  const filteredSpkCutting = spkCuttingList.filter((spk) => {
+  const selectedModeLabel = HASIL_MODE_OPTIONS.find((option) => option.key === hasilMode)?.label || "Hasil Bahan Utama";
+
+  // Filter distribusi SPK Cutting berdasarkan search query
+  const filteredSpkCutting = spkCuttingList.filter((distribusi) => {
     const searchLower = searchSpkQuery.toLowerCase();
+    const spk = getDistribusiSpk(distribusi);
+    const kodeDistribusi = (distribusi.kode_seri || "").toLowerCase();
     const idSpkCutting = (spk.id_spk_cutting || "").toLowerCase();
-    const namaProduk = getSpkProductName(spk).toLowerCase();
-    return idSpkCutting.includes(searchLower) || namaProduk.includes(searchLower);
+    const namaProduk = getDistribusiProductName(distribusi).toLowerCase();
+    const skuLabel = getSkuOptionLabel(getDistribusiSku(distribusi)).toLowerCase();
+    return kodeDistribusi.includes(searchLower) || idSpkCutting.includes(searchLower) || namaProduk.includes(searchLower) || skuLabel.includes(searchLower);
   });
 
-  // Handler untuk memilih SPK Cutting dari hasil search
-  const handleSelectSpk = (spkId, idSpkCutting, namaProduk) => {
-    setSelectedSpkId(spkId);
-    setSearchSpkQuery(`${idSpkCutting} - ${namaProduk}`);
+  const handleModeChange = (mode) => {
+    setHasilMode(mode);
+    setInputData({});
+    setDataAcuan([]);
+    setSpkDetail(null);
+  };
+
+  // Handler untuk memilih distribusi Cutting dari hasil search
+  const handleSelectSpk = (distribusi) => {
+    const spk = getDistribusiSpk(distribusi);
+    setSelectedSpkId(spk.id || distribusi.spk_cutting_id || "");
+    setSelectedDistribusiId(distribusi.id || "");
+    setSelectedDistribusi(distribusi);
+    const skuLabel = getSkuOptionLabel(getDistribusiSku(distribusi));
+    const suffix = skuLabel ? ` - ${skuLabel}` : "";
+    setSearchSpkQuery(`${distribusi.kode_seri} - ${getDistribusiProductName(distribusi)}${suffix}`);
     setShowSpkDropdown(false);
   };
 
@@ -1155,7 +1220,8 @@ const HasilCutting = () => {
                 <thead>
                   <tr>
                     <th>NO</th>
-                    <th>SPK CUTTING</th>
+                    <th>DISTRIBUSI</th>
+                    <th>JENIS</th>
                     <th>PRODUK</th>
                     <th>TOTAL PRODUK</th>
                     <th>TOTAL BAYAR</th>
@@ -1168,7 +1234,10 @@ const HasilCutting = () => {
                     <tr key={item.id} className="hasil-cutting-table-row">
                       <td className="hasil-cutting-table-no">{(currentPage - 1) * 7 + index + 1}</td>
                       <td>
-                        <span className="hasil-cutting-badge">{item.id_spk_cutting || "-"}</span>
+                        <span className="hasil-cutting-badge">{item.kode_distribusi || item.id_spk_cutting || "-"}</span>
+                      </td>
+                      <td>
+                        <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.jenis_hasil === "kombinasi" ? "Kombinasi" : "Bahan Utama"}</span>
                       </td>
                       <td className="hasil-cutting-table-product">{item.nama_produk || "-"}</td>
                       <td>
@@ -1306,7 +1375,7 @@ const HasilCutting = () => {
                     <div className="hasil-cutting-modal-tabs">
                       <div className={`hasil-cutting-modal-tab ${selectedSpkId ? "is-done" : "is-active"}`}>
                         <span className="hasil-cutting-workflow-step-no">1</span>
-                        Pilih SPK
+                        Pilih Distribusi
                       </div>
                       <div className={`hasil-cutting-modal-tab ${dataAcuan.length > 0 ? "is-done" : ""}`}>
                         <span className="hasil-cutting-workflow-step-no">2</span>
@@ -1316,16 +1385,30 @@ const HasilCutting = () => {
                         <span className="hasil-cutting-workflow-step-no">3</span>
                         Input Detail
                       </div>
-                      <div className={`hasil-cutting-modal-tab ${getTotalDistribusiSeri() > 0 ? "is-done" : ""}`}>
+                      <div className={`hasil-cutting-modal-tab ${getTotalKeseluruhan() > 0 ? "is-done" : ""}`}>
                         <span className="hasil-cutting-workflow-step-no">4</span>
-                        Distribusi Seri
+                        Simpan Hasil
                       </div>
+                    </div>
+
+                    <div className="hasil-cutting-mode-toggle" role="group" aria-label="Jenis hasil cutting">
+                      {HASIL_MODE_OPTIONS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          className={`hasil-cutting-mode-button${hasilMode === option.key ? " is-active" : ""}`}
+                          onClick={() => handleModeChange(option.key)}
+                        >
+                          <i className={option.icon}></i>
+                          {option.label}
+                        </button>
+                      ))}
                     </div>
 
                     <div className="hasil-cutting-intake-shell">
                       <div className="hasil-cutting-form-group hasil-cutting-form-spk-group">
                         <label className="hasil-cutting-form-label">
-                          Cari SPK Cutting:
+                          Cari Kode Distribusi Cutting:
                         </label>
                         <div className="hasil-cutting-form-input-wrapper">
                           <input
@@ -1336,6 +1419,8 @@ const HasilCutting = () => {
                               setShowSpkDropdown(true);
                               if (!e.target.value) {
                                 setSelectedSpkId("");
+                                setSelectedDistribusiId("");
+                                setSelectedDistribusi(null);
                                 setSpkDetail(null);
                               }
                             }}
@@ -1348,7 +1433,7 @@ const HasilCutting = () => {
                               // Delay untuk memungkinkan klik pada dropdown
                               setTimeout(() => setShowSpkDropdown(false), 200);
                             }}
-                            placeholder="Ketik untuk mencari SPK Cutting (contoh: SK24, Gamis Karinaa)"
+                            placeholder="Ketik kode distribusi (contoh: AK-01A, AK-01B)"
                             className="modern-input hasil-cutting-form-input hasil-cutting-form-input-search"
                           />
                           <i className="fas fa-search hasil-cutting-form-search-icon"></i>
@@ -1356,24 +1441,29 @@ const HasilCutting = () => {
                           {/* Dropdown hasil pencarian */}
                           {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length > 0 && (
                             <div className="hasil-cutting-form-dropdown">
-                              {filteredSpkCutting.map((spk) => (
+                              {filteredSpkCutting.map((distribusi) => {
+                                const spk = getDistribusiSpk(distribusi);
+                                const skuLabel = getSkuOptionLabel(getDistribusiSku(distribusi));
+                                return (
                                 <div
-                                  key={spk.id}
+                                  key={distribusi.id}
                                   onMouseDown={(e) => {
                                     e.preventDefault(); // Prevent blur event
-                                    handleSelectSpk(spk.id, spk.id_spk_cutting, getSpkProductName(spk));
+                                    handleSelectSpk(distribusi);
                                   }}
                                   className="hasil-cutting-form-dropdown-item"
                                 >
                                   <div className="hasil-cutting-form-dropdown-content">
                                     <i className="fas fa-tag hasil-cutting-form-dropdown-icon"></i>
                                     <div>
-                                      <div className="hasil-cutting-form-dropdown-title">{spk.id_spk_cutting}</div>
-                                      <div className="hasil-cutting-form-dropdown-subtitle">{getSpkProductName(spk)}</div>
+                                      <div className="hasil-cutting-form-dropdown-title">{distribusi.kode_seri}</div>
+                                      <div className="hasil-cutting-form-dropdown-subtitle">
+                                        {spk.id_spk_cutting} - {getDistribusiProductName(distribusi)}{skuLabel ? ` - ${skuLabel}` : ""}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              ))}
+                              )})}
                             </div>
                           )}
 
@@ -1381,7 +1471,7 @@ const HasilCutting = () => {
                           {showSpkDropdown && searchSpkQuery && filteredSpkCutting.length === 0 && (
                             <div className="hasil-cutting-form-dropdown-empty">
                               <i className="fas fa-search hasil-cutting-form-dropdown-empty-icon"></i>
-                              <p className="hasil-cutting-form-dropdown-empty-text">Tidak ada SPK Cutting yang ditemukan</p>
+                              <p className="hasil-cutting-form-dropdown-empty-text">Tidak ada distribusi cutting yang ditemukan</p>
                             </div>
                           )}
                         </div>
@@ -1393,12 +1483,16 @@ const HasilCutting = () => {
                     <div className="hasil-cutting-modal-top-title">Ringkasan Operasional</div>
                     <div className="hasil-cutting-operational-grid">
                       <div className="hasil-cutting-operational-item">
-                        <p className="hasil-cutting-operational-label">SPK Aktif</p>
-                        <p className="hasil-cutting-operational-value">{spkDetail?.spk_cutting?.id_spk_cutting || "-"}</p>
+                        <p className="hasil-cutting-operational-label">Distribusi Aktif</p>
+                        <p className="hasil-cutting-operational-value">{spkDetail?.distribusi?.kode_seri || selectedDistribusi?.kode_seri || "-"}</p>
                       </div>
                       <div className="hasil-cutting-operational-item">
                         <p className="hasil-cutting-operational-label">Produk</p>
                         <p className="hasil-cutting-operational-value">{spkDetail?.spk_cutting?.nama_produk || "-"}</p>
+                      </div>
+                      <div className="hasil-cutting-operational-item">
+                        <p className="hasil-cutting-operational-label">Jenis Hasil</p>
+                        <p className="hasil-cutting-operational-value">{selectedModeLabel}</p>
                       </div>
                       <div className="hasil-cutting-operational-item">
                         <p className="hasil-cutting-operational-label">Total Acuan</p>
@@ -1523,7 +1617,7 @@ const HasilCutting = () => {
                 <div className="hasil-cutting-form-section hasil-cutting-form-section-detail">
                   <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft">
                     <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">
-                      Detail SPK Cutting: {spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting} - ${spkDetail.spk_cutting.nama_produk}` : "Belum dipilih"}
+                      Detail {selectedModeLabel}: {spkDetail?.distribusi?.kode_seri ? `${spkDetail.distribusi.kode_seri} - ${spkDetail.spk_cutting?.nama_produk || ""}` : "Belum dipilih"}
                     </h3>
                   </div>
                   <div className="hasil-cutting-table-wrap">
@@ -1619,8 +1713,8 @@ const HasilCutting = () => {
                             {!selectedSpkId ? (
                               <div>
                                 <div style={{ fontSize: "40px", marginBottom: "16px", color: "#475569" }}><i className="fas fa-search"></i></div>
-                                <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#667eea" }}>Pilih SPK Cutting terlebih dahulu</p>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Gunakan search di atas untuk mencari dan memilih SPK Cutting</p>
+                                <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#667eea" }}>Pilih distribusi cutting terlebih dahulu</p>
+                                <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Gunakan search di atas untuk mencari kode distribusi cutting</p>
                               </div>
                             ) : loading ? (
                               <div>
@@ -1631,7 +1725,7 @@ const HasilCutting = () => {
                               <div>
                                 <div style={{ fontSize: "40px", marginBottom: "16px", color: "#475569" }}><i className="fas fa-clipboard-list"></i></div>
                                 <p style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#667eea" }}>Tidak ada data detail</p>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>SPK Cutting yang dipilih tidak memiliki data bagian dan bahan</p>
+                                <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Distribusi ini tidak memiliki data {selectedModeLabel.toLowerCase()}</p>
                               </div>
                             )}
                           </td>
@@ -1654,229 +1748,32 @@ const HasilCutting = () => {
                   </div>
                 </div>
 
-                {/* Section Distribusi Seri */}
+                {/* Ringkasan distribusi otomatis */}
                 {!loading && spkDetail && spkDetail.detail && spkDetail.detail.length > 0 && (
                   <div className="hasil-cutting-form-section hasil-cutting-form-section-distribusi hasil-cutting-distribusi-section">
                     <div className="hasil-cutting-section-bar">
                       <h3 className="hasil-cutting-section-title">
-                        Distribusi Seri
+                        Distribusi Terpilih
                       </h3>
-                      <button onClick={handleTambahDistribusiSeri} className="hasil-cutting-section-action">
-                        <i className="fas fa-plus"></i>
-                        Tambah Seri
-                      </button>
                     </div>
 
                     <div className="hasil-cutting-distribusi-panel">
-                      {distribusiSeri.map((seri, index) => {
-                        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                        const kodeSeri = spkDetail?.spk_cutting?.id_spk_cutting ? `${spkDetail.spk_cutting.id_spk_cutting}${alphabet[index]}` : `-${alphabet[index]}`;
-                        const totalDetail = getTotalDetailDistribusi(index);
-                        const jumlahProdukDistribusi = parseInt(seri.jumlah_produk) || 0;
-                        const hasDetailData = seri.detail && seri.detail.length > 0 && seri.detail.some((d) => d.warna && d.jumlah_produk && parseInt(d.jumlah_produk) > 0);
-
-                        return (
-                          <div key={index} className="hasil-cutting-distribusi-card">
-                            {/* Header Distribusi */}
-                            <div className="hasil-cutting-distribusi-header">
-                              <div className="hasil-cutting-distribusi-meta">
-                                <span className="hasil-cutting-distribusi-index">#{index + 1}</span>
-                                <span
-                                  className="hasil-cutting-distribusi-code"
-                                >
-                                  {kodeSeri}
-                                </span>
-                                <div className="hasil-cutting-distribusi-jumlah-wrap">
-                                  <div className={`hasil-cutting-cell-input-shell hasil-cutting-cell-input-shell-compact has-addon-right${hasDetailData ? " is-locked" : ""}`}>
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      value={seri.jumlah_produk}
-                                      onChange={(e) => handleUpdateDistribusiSeri(index, "jumlah_produk", e.target.value)}
-                                      placeholder="Jumlah Produk"
-                                      disabled={hasDetailData}
-                                      className={`hasil-cutting-form-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-jumlah-seri hasil-cutting-input-in-shell${hasDetailData ? " is-locked" : ""}`}
-                                      title={hasDetailData ? "Jumlah produk otomatis terisi dari total detail warna" : ""}
-                                    />
-                                    <span className="hasil-cutting-cell-input-addon right">PCS</span>
-                                  </div>
-                                  {hasDetailData && (
-                                    <i className="fas fa-info-circle hasil-cutting-distribusi-info-icon" title="Jumlah produk otomatis terisi dari total detail warna" />
-                                  )}
-                                </div>
-                                {jumlahProdukDistribusi > 0 && (
-                                  <span className={`hasil-cutting-distribusi-total ${totalDetail === jumlahProdukDistribusi ? "is-match" : "is-mismatch"}`}>
-                                    {hasDetailData ? (
-                                      <span>
-                                        <i className="fas fa-sync-alt hasil-cutting-sync-icon"></i>
-                                        Total Detail: {totalDetail.toLocaleString("id-ID")}
-                                      </span>
-                                    ) : (
-                                      <span>
-                                        Total Detail: {totalDetail.toLocaleString("id-ID")} / {jumlahProdukDistribusi.toLocaleString("id-ID")}
-                                      </span>
-                                    )}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="hasil-cutting-distribusi-actions">
-                                <button
-                                  onClick={() => handleTambahDetailDistribusi(index)}
-                                  className="hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-add"
-                                >
-                                  <i className="fas fa-plus"></i>
-                                  Tambah Warna
-                                </button>
-                                <button
-                                  onClick={() => handleHapusDistribusiSeri(index)}
-                                  disabled={distribusiSeri.length === 1}
-                                  className={`hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-remove${distribusiSeri.length === 1 ? " is-disabled" : ""}`}
-                                >
-                                  <i className="fas fa-trash"></i>
-                                  Hapus Seri
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Tabel Detail Warna */}
-                            {seri.detail && seri.detail.length > 0 ? (
-                              <div className="hasil-cutting-table-wrap">
-                                <table className="penjahit-table hasil-cutting-distribusi-detail-table">
-                                  <thead>
-                                    <tr>
-                                      <th>NO</th>
-                                      <th>WARNA</th>
-                                      <th>JUMLAH PRODUK</th>
-                                      <th>AKSI</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {seri.detail.map((detail, detailIndex) => (
-                                      <tr key={detailIndex}>
-                                        <td className="hasil-cutting-distribusi-row-no">{detailIndex + 1}</td>
-                                      <td>
-                                        <div className="hasil-cutting-cell-input-shell">
-                                          <select
-                                            value={detail.warna || ""}
-                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "warna", e.target.value)}
-                                            className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-in-shell"
-                                          >
-                                            <option value="">-- Pilih Warna --</option>
-                                            {getWarnaList().map((warna) => (
-                                              <option key={warna} value={warna}>
-                                                {warna}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <div className="hasil-cutting-cell-input-shell has-addon-right">
-                                          <input
-                                            type="number"
-                                            min="1"
-                                            value={detail.jumlah_produk || ""}
-                                            onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "jumlah_produk", e.target.value)}
-                                            placeholder="0"
-                                            className="hasil-cutting-form-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-jumlah-seri hasil-cutting-input-in-shell"
-                                          />
-                                          <span className="hasil-cutting-cell-input-addon right">PCS</span>
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <div className="hasil-cutting-distribusi-row-actions">
-                                          <div className="hasil-cutting-cell-input-shell">
-                                            <select
-                                              value={detail.produk_sku_id || ""}
-                                              onChange={(e) => handleUpdateDetailDistribusi(index, detailIndex, "produk_sku_id", e.target.value)}
-                                              className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-sku hasil-cutting-input-in-shell"
-                                            >
-                                              <option value="">-- Pilih SKU --</option>
-                                              {spkDetail?.skus && spkDetail.skus.length > 0 ? (
-                                                spkDetail.skus.map((sku) => (
-                                                  <option key={sku.product_list_id || sku.id} value={sku.product_list_id || sku.id}>
-                                                    {getSkuOptionLabel(sku)}
-                                                  </option>
-                                                ))
-                                              ) : (
-                                                <option value="" disabled>Tidak ada SKU</option>
-                                              )}
-                                            </select>
-                                          </div>
-                                          <button
-                                            onClick={() => handleHapusDetailDistribusi(index, detailIndex)}
-                                            className="hasil-cutting-distribusi-btn hasil-cutting-distribusi-btn-remove"
-                                          >
-                                            <i className="fas fa-trash"></i>
-                                            Hapus
-                                          </button>
-                                        </div>
-                                      </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              <div className="hasil-cutting-distribusi-empty">
-                                <p className="hasil-cutting-distribusi-empty-text">Belum ada detail warna. Klik "Tambah Warna" untuk menambahkan.</p>
-                              </div>
-                            )}
-
-                            {/* Warning jika total detail tidak sama dengan jumlah produk */}
-                            {hasDetailData && jumlahProdukDistribusi > 0 && totalDetail !== jumlahProdukDistribusi && (
-                              <div className="hasil-cutting-inline-alert warning">
-                                <i className="fas fa-exclamation-triangle"></i>
-                                <span>
-                                  Total detail ({totalDetail.toLocaleString("id-ID")}) harus sama dengan jumlah produk ({jumlahProdukDistribusi.toLocaleString("id-ID")})
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {/* Summary Total */}
-                      <div className="hasil-cutting-distribusi-summary">
-                        <div className="hasil-cutting-distribusi-summary-label">Total Distribusi:</div>
-                        <div className={`hasil-cutting-distribusi-summary-value ${getTotalDistribusiSeri() === getTotalKeseluruhan() ? "is-match" : "is-mismatch"}`}>
-                          {getTotalDistribusiSeri().toLocaleString("id-ID")}
-                        </div>
-                      </div>
                       <div className="hasil-cutting-distribusi-summary primary">
-                        <div className="hasil-cutting-distribusi-summary-label">Total Produk:</div>
+                        <div className="hasil-cutting-distribusi-summary-label">{spkDetail?.distribusi?.kode_seri || "-"}</div>
                         <div className="hasil-cutting-distribusi-summary-value">
-                          {getTotalKeseluruhan().toLocaleString("id-ID")}
+                          {getSkuOptionLabel(spkDetail?.distribusi?.sku)}
                         </div>
                       </div>
-
-                      {(() => {
-                        const totalDistribusi = getTotalDistribusiSeri();
-                        const totalProduk = getTotalKeseluruhan();
-                        const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
-
-                        // Hanya tampilkan warning jika user mengisi distribusi seri dan total tidak sama
-                        if (hasDistribusiData && totalDistribusi !== totalProduk) {
-                          return (
-                            <div className="hasil-cutting-inline-alert warning">
-                              <i className="fas fa-exclamation-triangle"></i>
-                              <span>
-                                Total distribusi ({totalDistribusi.toLocaleString("id-ID")}) harus sama dengan total produk ({totalProduk.toLocaleString("id-ID")})
-                              </span>
-                            </div>
-                          );
-                        }
-                        // Jika tidak ada distribusi seri yang diisi, tampilkan info bahwa distribusi seri opsional
-                        if (!hasDistribusiData) {
-                          return (
-                            <div className="hasil-cutting-inline-alert info">
-                              <i className="fas fa-info-circle"></i>
-                              <span>Distribusi seri bersifat opsional. Jika tidak diisi, sistem akan otomatis membuat 1 seri dengan total produk ({getTotalKeseluruhan().toLocaleString("id-ID")}).</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+                      <div className="hasil-cutting-distribusi-summary">
+                        <div className="hasil-cutting-distribusi-summary-label">Total hasil yang akan disimpan</div>
+                        <div className="hasil-cutting-distribusi-summary-value is-match">
+                          {getTotalKeseluruhan().toLocaleString("id-ID")} pcs
+                        </div>
+                      </div>
+                      <div className="hasil-cutting-inline-alert info">
+                        <i className="fas fa-info-circle"></i>
+                        <span>Sistem akan menyimpan hasil ini ke distribusi {spkDetail?.distribusi?.kode_seri || "-"} untuk {selectedModeLabel.toLowerCase()}.</span>
+                      </div>
                     </div>
                   </div>
                 )}
