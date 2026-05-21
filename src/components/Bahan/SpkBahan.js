@@ -1028,7 +1028,7 @@ const SpkBahan = () => {
 
   // ADDED: Ambil sisa dipesan dari payload backend, dengan fallback aman ke total rol jika field belum tersedia.
   const getSisaDipesan = (row, rowRol) => {
-    const candidates = [row?.pdf_sisa_dipesan, row?.sisa_dipesan, row?.pdf_subtotal?.sisa_dipesan];
+    const candidates = [row?.sisa_dipesan, row?.pdf_sisa_dipesan, row?.pdf_subtotal?.sisa_dipesan];
 
     for (const value of candidates) {
       if (value === null || value === undefined || value === "") continue;
@@ -1039,8 +1039,20 @@ const SpkBahan = () => {
     return rowRol;
   };
 
+  const getDikirim = (row) => {
+    const candidates = [row?.pesanan_dikirim, row?.pdf_pesanan_dikirim, row?.pdf_subtotal?.pesanan_dikirim];
+
+    for (const value of candidates) {
+      if (value === null || value === undefined || value === "") continue;
+      const parsed = parseInt(value, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    return 0;
+  };
+
   const getLebihKirim = (row) => {
-    const candidates = [row?.pdf_lebih_kirim, row?.lebih_kirim, row?.pdf_subtotal?.lebih_kirim];
+    const candidates = [row?.lebih_kirim, row?.pdf_lebih_kirim, row?.pdf_subtotal?.lebih_kirim];
 
     for (const value of candidates) {
       if (value === null || value === undefined || value === "") continue;
@@ -1236,6 +1248,7 @@ const SpkBahan = () => {
                       <th className="spkb-col-bahan">Bahan</th>
                       <th className="spkb-col-warna">Detail Warna</th>
                       <th className="spkb-col-rol">Total Rol</th>
+                      <th className="spkb-col-dikirim">Dikirim</th>
                       <th className="spkb-col-sisa">Sisa Di Pesan</th>
                       <th className="spkb-col-lebih">Lebih Kirim</th>
                       <th className="spkb-col-estimasi">Estimasi Pengiriman</th>
@@ -1249,6 +1262,7 @@ const SpkBahan = () => {
                         Array.isArray(row.warna) && row.warna.length > 0
                           ? row.warna.reduce((sum, w) => sum + (parseInt(w.jumlah_rol, 10) || 0), 0)
                           : parseInt(row.jumlah, 10) || 0;
+                      const rowDikirim = getDikirim(row);
                       const rowSisaDipesan = getSisaDipesan(row, rowRol);
                       const rowLebihKirim = getLebihKirim(row);
 
@@ -1283,6 +1297,7 @@ const SpkBahan = () => {
                           )}
                         </td>
                         <td className="spkb-cell-bold spkb-col-rol">{rowRol || "-"}</td>
+                        <td className="spkb-cell-bold spkb-col-dikirim">{rowDikirim || rowDikirim === 0 ? rowDikirim : "-"}</td>
                         <td className="spkb-cell-bold spkb-col-sisa">{rowSisaDipesan || rowSisaDipesan === 0 ? rowSisaDipesan : "-"}</td>
                         <td className={`spkb-cell-bold spkb-col-lebih ${rowLebihKirim > 0 ? "spkb-cell-over" : ""}`}>
                           {rowLebihKirim || rowLebihKirim === 0 ? rowLebihKirim : "-"}

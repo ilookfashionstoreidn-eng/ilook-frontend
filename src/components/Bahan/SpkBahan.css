@@ -353,6 +353,11 @@
   min-width: 90px;
 }
 
+.spkb-col-dikirim {
+  min-width: 95px;
+  white-space: nowrap;
+}
+
 .spkb-col-sisa {
   min-width: 110px;
   white-space: nowrap;
