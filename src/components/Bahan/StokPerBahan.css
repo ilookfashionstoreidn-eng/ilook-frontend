@@ -383,10 +383,27 @@
 .stok-bahan-report-heading,
 .stok-bahan-summary-strip,
 .stok-bahan-variant-section,
-.stok-bahan-table-section,
 .stok-bahan-pagination {
   margin-left: 24px;
   margin-right: 24px;
+}
+
+.stok-bahan-group-container {
+  margin: 0 24px 18px;
+  border: 1px solid var(--sb-border);
+  border-left: 4px solid var(--sb-primary);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--sb-shadow);
+  overflow: hidden;
+}
+
+.stok-bahan-report-page:nth-child(even) .stok-bahan-group-container {
+  border-left-color: #0f766e;
+}
+
+.stok-bahan-report-page:nth-child(3n) .stok-bahan-group-container {
+  border-left-color: #b45309;
 }
 
 .stok-bahan-report-page {
@@ -403,10 +420,12 @@
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  background: var(--sb-surface);
-  border: 1px solid var(--sb-border);
-  border-radius: 16px 16px 0 0;
-  box-shadow: var(--sb-shadow);
+  margin: 0;
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid var(--sb-border);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .stok-bahan-report-kicker {
@@ -506,10 +525,11 @@
 }
 
 .stok-bahan-variant-section {
-  border: 1px solid var(--sb-border);
-  border-radius: 16px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
   background: #ffffff;
-  box-shadow: var(--sb-shadow);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -628,12 +648,13 @@
 }
 
 .stok-bahan-table-section {
-  margin-top: 16px;
+  margin-top: 0;
   margin-bottom: 0;
-  border: 1px solid var(--sb-border);
-  border-radius: 16px;
+  border: 0;
+  border-top: 1px solid var(--sb-border);
+  border-radius: 0;
   background: #ffffff;
-  box-shadow: var(--sb-shadow);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -666,6 +687,11 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.stok-bahan-table th:nth-child(4),
+.stok-bahan-table th:nth-child(5) {
+  text-align: center;
 }
 
 .stok-bahan-table td {
@@ -833,8 +859,12 @@
   .stok-bahan-report-heading,
   .stok-bahan-summary-strip,
   .stok-bahan-variant-section,
-  .stok-bahan-table-section,
   .stok-bahan-pagination {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .stok-bahan-group-container {
     margin-left: 16px;
     margin-right: 16px;
   }
@@ -914,6 +944,12 @@
   .stok-bahan-table-section {
     margin-left: 0;
     margin-right: 0;
+    box-shadow: none;
+  }
+
+  .stok-bahan-group-container {
+    margin: 0 0 10mm;
+    border-radius: 0;
     box-shadow: none;
   }
 

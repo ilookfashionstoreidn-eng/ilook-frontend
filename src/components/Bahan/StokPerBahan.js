@@ -621,7 +621,8 @@ const StokPerBahan = () => {
         className={`stok-bahan-report-page ${isCurrentGroup ? "active" : ""}`}
         key={group.id}
       >
-        <section className="stok-bahan-report-heading">
+        <section className="stok-bahan-group-container">
+          <div className="stok-bahan-report-heading">
           <div>
             <p className="stok-bahan-report-kicker">Laporan bahan</p>
             <h1>Stok Per Bahan</h1>
@@ -631,79 +632,80 @@ const StokPerBahan = () => {
             <span>Total varian: {formatNumber(reportRows.length)} item</span>
             <span>Page: {pageNumber}</span>
           </div>
-        </section>
-
-        <section className="stok-bahan-variant-section">
-          <div className="stok-bahan-group-line">
-            <strong>Grup: {group.nama_bahan}</strong>
-            <span>{formatNumber(group.rows.length)} varian</span>
           </div>
 
-          <div className="stok-bahan-variant-grid">
-            {group.rows.map((row) => (
-              <article className="stok-bahan-variant-card" key={row.id}>
-                <div className="stok-bahan-variant-image">
-                  {row.imageUrl ? (
-                    <img src={row.imageUrl} alt={`${row.nama_bahan} ${row.warna}`} />
-                  ) : (
-                    <div className="stok-bahan-no-image">
-                      <FaImage />
-                      <span>No Image</span>
-                    </div>
-                  )}
-                </div>
-                <div className="stok-bahan-variant-name">{row.warna}</div>
-                <span
-                  className={`stok-bahan-stock-badge ${row.stok <= 0 ? "is-zero" : ""}`}
-                  style={row.stok > 0 ? resolveWarnaColor(row.warna) : undefined}
-                >
-                  Stok: {formatNumber(row.stok)}
-                </span>
-              </article>
-            ))}
-          </div>
-        </section>
+          <div className="stok-bahan-variant-section">
+            <div className="stok-bahan-group-line">
+              <strong>Grup: {group.nama_bahan}</strong>
+              <span>{formatNumber(group.rows.length)} varian</span>
+            </div>
 
-        <section className="stok-bahan-table-section">
-          <div className="stok-bahan-table-wrapper">
-            <table className="stok-bahan-table">
-              <thead>
-                <tr>
-                  <th className="cell-no">No</th>
-                  <th>Nama Bahan</th>
-                  <th>Warna Bahan</th>
-                  <th>Stok</th>
-                  <th>Berat</th>
-                  <th>Pabrik</th>
-                </tr>
-              </thead>
-              <tbody>
-                {group.rows.map((row, index) => (
-                  <tr key={`${row.id}-${index}`}>
-                    <td className="cell-no">{index + 1}</td>
-                    <td className="cell-name">{row.nama_bahan}</td>
-                    <td>
-                      <span className="stok-bahan-warna-chip" style={resolveWarnaColor(row.warna)}>
-                        {row.warna}
-                      </span>
-                    </td>
-                    <td className={row.stok <= 0 ? "cell-alert" : "cell-number"}>
-                      {formatNumber(row.stok)}
-                    </td>
-                    <td className="cell-number">{formatWeight(row.berat)}</td>
-                    <td>{row.pabrik}</td>
+            <div className="stok-bahan-variant-grid">
+              {group.rows.map((row) => (
+                <article className="stok-bahan-variant-card" key={row.id}>
+                  <div className="stok-bahan-variant-image">
+                    {row.imageUrl ? (
+                      <img src={row.imageUrl} alt={`${row.nama_bahan} ${row.warna}`} />
+                    ) : (
+                      <div className="stok-bahan-no-image">
+                        <FaImage />
+                        <span>No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="stok-bahan-variant-name">{row.warna}</div>
+                  <span
+                    className={`stok-bahan-stock-badge ${row.stok <= 0 ? "is-zero" : ""}`}
+                    style={row.stok > 0 ? resolveWarnaColor(row.warna) : undefined}
+                  >
+                    Stok: {formatNumber(row.stok)}
+                  </span>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="stok-bahan-table-section">
+            <div className="stok-bahan-table-wrapper">
+              <table className="stok-bahan-table">
+                <thead>
+                  <tr>
+                    <th className="cell-no">No</th>
+                    <th>Nama Bahan</th>
+                    <th>Warna Bahan</th>
+                    <th>Stok</th>
+                    <th>Berat</th>
+                    <th>Pabrik</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan="3">Total {group.nama_bahan}</td>
-                  <td>{formatNumber(group.totalStok)}</td>
-                  <td>{formatWeight(group.totalBerat)}</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+                </thead>
+                <tbody>
+                  {group.rows.map((row, index) => (
+                    <tr key={`${row.id}-${index}`}>
+                      <td className="cell-no">{index + 1}</td>
+                      <td className="cell-name">{row.nama_bahan}</td>
+                      <td>
+                        <span className="stok-bahan-warna-chip" style={resolveWarnaColor(row.warna)}>
+                          {row.warna}
+                        </span>
+                      </td>
+                      <td className={row.stok <= 0 ? "cell-alert" : "cell-number"}>
+                        {formatNumber(row.stok)}
+                      </td>
+                      <td className="cell-number">{formatWeight(row.berat)}</td>
+                      <td>{row.pabrik}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="3">Total {group.nama_bahan}</td>
+                    <td>{formatNumber(group.totalStok)}</td>
+                    <td>{formatWeight(group.totalBerat)}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </section>
       </div>

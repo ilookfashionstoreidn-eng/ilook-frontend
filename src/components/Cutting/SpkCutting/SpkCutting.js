@@ -2487,7 +2487,6 @@ const SpkCutting = () => {
                       <div className="spk-cutting-form-group">
                         <label>Nomor Seri SPK:</label>
                         <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || "Pilih tukang cutting terlebih dahulu"} readOnly disabled />
-                        <small className="spk-cutting-form-hint">Nomor seri akan di-generate otomatis berdasarkan nama tukang cutting yang dipilih.</small>
                       </div>
 
                       <div className="spk-cutting-form-group">
@@ -2537,6 +2536,60 @@ const SpkCutting = () => {
                       selectedIds: selectedSkuIds,
                       setSelectedIds: setSelectedSkuIds,
                     })}
+
+                    <div className="spk-cutting-production-summary">
+                      <div className="spk-cutting-form-row">
+                        <div className="spk-cutting-form-group">
+                          <label>Harga Jasa:</label>
+                          <div className="spk-cutting-currency-input">
+                            <span className="spk-cutting-currency-prefix">Rp</span>
+                            <input
+                              type="text"
+                              name="harga_jasa"
+                              className="spk-cutting-input-with-prefix"
+                              value={newSpkCutting.harga_jasaDisplay}
+                              onChange={handleInputChange}
+                              placeholder="0"
+                              readOnly
+                              required
+                            />
+                          </div>
+                          <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting Product List.</small>
+                        </div>
+
+                        <div className="spk-cutting-form-group">
+                          <label>Satuan Harga:</label>
+                          <select name="satuan_harga" value={newSpkCutting.satuan_harga} onChange={handleInputChange} required>
+                            <option value="Pcs">Pcs</option>
+                            <option value="Lusin">Lusin</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="spk-cutting-form-row">
+                        <div className="spk-cutting-form-group">
+                          <label>Jumlah Asumsi Produk:</label>
+                          <input type="text" name="jumlah_asumsi_produk" value={newSpkCutting.jumlah_asumsi_produkDisplay} onChange={handleInputChange} placeholder="Otomatis dari total rol bahan" readOnly />
+                          <small className="spk-cutting-form-hint">1 rol bahan = {ASUMSI_PRODUK_PER_ROLL} asumsi produk.</small>
+                        </div>
+
+                        <div className="spk-cutting-form-group">
+                          <label>Jenis SPK:</label>
+                          <select name="jenis_spk" value={newSpkCutting.jenis_spk} onChange={handleInputChange}>
+                            <option value="">Pilih Jenis SPK</option>
+                            <option value="Terjual">Terjual</option>
+                            <option value="Fittingan">Fittingan</option>
+                            <option value="Habisin Bahan">Habisin Bahan</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="spk-cutting-form-group">
+                        <label>Keterangan:</label>
+                        <textarea name="keterangan" value={newSpkCutting.keterangan} onChange={handleInputChange} readOnly />
+                        <small className="spk-cutting-form-hint">Terisi otomatis dari notes SPK product list.</small>
+                      </div>
+                    </div>
                   </div>
                 </section>
 
@@ -2544,66 +2597,14 @@ const SpkCutting = () => {
                   <div className="spk-cutting-create-section-header">
                     <div>
                       <span className="spk-cutting-create-section-number">02</span>
-                      <h3>Rincian Produksi & Bahan</h3>
+                      <h3>Bagian & Bahan</h3>
                     </div>
-                    <span className="spk-cutting-create-section-pill">Produksi</span>
+                    <span className="spk-cutting-create-section-pill">Bahan</span>
                   </div>
 
                   <div className="spk-cutting-create-section-body">
-                    <div className="spk-cutting-form-row">
-                      <div className="spk-cutting-form-group">
-                        <label>Harga Jasa:</label>
-                        <div className="spk-cutting-currency-input">
-                          <span className="spk-cutting-currency-prefix">Rp</span>
-                          <input
-                            type="text"
-                            name="harga_jasa"
-                            className="spk-cutting-input-with-prefix"
-                            value={newSpkCutting.harga_jasaDisplay}
-                            onChange={handleInputChange}
-                            placeholder="0"
-                            readOnly
-                            required
-                          />
-                        </div>
-                        <small className="spk-cutting-form-hint">Terisi otomatis dari harga jasa cutting Product List.</small>
-                      </div>
-
-                      <div className="spk-cutting-form-group">
-                        <label>Satuan Harga:</label>
-                        <select name="satuan_harga" value={newSpkCutting.satuan_harga} onChange={handleInputChange} required>
-                          <option value="Pcs">Pcs</option>
-                          <option value="Lusin">Lusin</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="spk-cutting-form-row">
-                      <div className="spk-cutting-form-group">
-                        <label>Jumlah Asumsi Produk:</label>
-                        <input type="text" name="jumlah_asumsi_produk" value={newSpkCutting.jumlah_asumsi_produkDisplay} onChange={handleInputChange} placeholder="Otomatis dari total rol bahan" readOnly />
-                        <small className="spk-cutting-form-hint">1 rol bahan = {ASUMSI_PRODUK_PER_ROLL} asumsi produk.</small>
-                      </div>
-
-                      <div className="spk-cutting-form-group">
-                        <label>Jenis SPK:</label>
-                        <select name="jenis_spk" value={newSpkCutting.jenis_spk} onChange={handleInputChange}>
-                          <option value="">Pilih Jenis SPK</option>
-                          <option value="Terjual">Terjual</option>
-                          <option value="Fittingan">Fittingan</option>
-                          <option value="Habisin Bahan">Habisin Bahan</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="spk-cutting-form-group">
-                      <label>Keterangan:</label>
-                      <textarea name="keterangan" value={newSpkCutting.keterangan} onChange={handleInputChange} readOnly />
-                      <small className="spk-cutting-form-hint">Terisi otomatis dari notes SPK product list.</small>
-                    </div>
-
                     <div className="spk-cutting-bagian-toolbar">
-                      <h3>Bagian & Bahan</h3>
+                      <h3>Daftar Bahan</h3>
                       <button type="button" className="spk-cutting-btn spk-cutting-btn-success spk-cutting-btn-add-bagian" onClick={addBagian}>
                         <FaPlus /> Tambah Bagian
                       </button>
@@ -2619,72 +2620,99 @@ const SpkCutting = () => {
                             </button>
                           )}
                         </div>
-                        <div className="spk-cutting-form-group">
-                          <label>Nama Bagian:</label>
-                          {bagian.is_auto_bagian ? (
-                            <>
-                              <input type="text" value={bagian.nama_bagian || ""} readOnly />
-                              {bagian.material_group && <small className="spk-cutting-form-hint">Group bahan: {bagian.material_group}</small>}
-                            </>
-                          ) : (
-                            <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
-                              <option value="">Pilih Nama Bagian</option>
-                              {NAMA_BAGIAN_OPTIONS.map((nama) => (
-                                <option key={nama} value={nama}>
-                                  {nama}
-                                </option>
-                              ))}
-                            </select>
+
+                        <div className="spk-cutting-bagian-lines">
+                          {(bagian.bahan.length ? bagian.bahan : [null]).map((bahan, bahanIndex) => (
+                            <div key={bahan ? bahanIndex : "empty"} className={`spk-cutting-bagian-line ${bahanIndex === 0 ? "is-first-line" : ""}`}>
+                              {bahanIndex === 0 ? (
+                                <div className="spk-cutting-form-group spk-cutting-bagian-name-field">
+                                  <label>Nama Bagian:</label>
+                                  {bagian.is_auto_bagian ? (
+                                    <>
+                                      <input type="text" value={bagian.nama_bagian || ""} readOnly />
+                                      {bagian.material_group && <small className="spk-cutting-form-hint">Group bahan: {bagian.material_group}</small>}
+                                    </>
+                                  ) : (
+                                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required>
+                                      <option value="">Pilih Nama Bagian</option>
+                                      {NAMA_BAGIAN_OPTIONS.map((nama) => (
+                                        <option key={nama} value={nama}>
+                                          {nama}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="spk-cutting-bagian-line-spacer" />
+                              )}
+
+                              {bahan ? (
+                                <>
+                                  <div className="spk-cutting-bahan-cell">
+                                    {isAksesorisBagian(bagian.nama_bagian)
+                                      ? renderAksesorisSelect({
+                                          value: bahan.aksesoris_id,
+                                          onChange: (value) => handleAksesorisChange(bagianIndex, bahanIndex, value),
+                                        })
+                                      : renderBahanSelect({
+                                          value: bahan.bahan_id,
+                                          materialGroup: bahan.material_group || bagian.material_group,
+                                          onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
+                                        })}
+                                  </div>
+
+                                  <div className="spk-cutting-bahan-cell">
+                                    {isAksesorisBagian(bagian.nama_bagian) ? (
+                                      <input type="text" value="Aksesoris" readOnly />
+                                    ) : (
+                                      <>
+                                        <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
+                                          <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
+                                          {(bahan.warnaList || []).map((item, idx) => {
+                                            const warna = typeof item === "string" ? item : item.warna;
+                                            const stok = typeof item === "object" ? item.stok : 999;
+                                            const isDisabled = stok === 0 && warna !== "Lainnya";
+                                            return (
+                                              <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                                {warna} {stok !== 999 && `(${stok} stok)`}
+                                              </option>
+                                            );
+                                          })}
+                                        </select>
+                                        {bahan.warna === "Lainnya" && <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />}
+                                      </>
+                                    )}
+                                  </div>
+
+                                  <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty Aksesoris" : "Qty (Jumlah Rol)"} value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
+                                  {!bagian.is_auto_bagian && (
+                                    <button type="button" className="spk-cutting-btn-remove-bahan" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
+                                      Hapus
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="spk-cutting-bahan-empty-action">
+                                  {!bagian.is_auto_bagian && (
+                                    <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
+                                      <FaPlus /> Tambah Bahan
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          {bagian.bahan.length > 0 && !bagian.is_auto_bagian && (
+                            <div className="spk-cutting-bagian-line spk-cutting-bagian-line-actions">
+                              <div className="spk-cutting-bagian-line-spacer" />
+                              <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
+                                <FaPlus /> Tambah Bahan
+                              </button>
+                            </div>
                           )}
                         </div>
-
-                        {bagian.bahan.map((bahan, bahanIndex) => (
-                          <div key={bahanIndex} className="spk-cutting-bahan-group">
-                            {isAksesorisBagian(bagian.nama_bagian) ? (
-                              <>
-                                {renderAksesorisSelect({
-                                  value: bahan.aksesoris_id,
-                                  onChange: (value) => handleAksesorisChange(bagianIndex, bahanIndex, value),
-                                })}
-                                <input type="text" value="Aksesoris" readOnly />
-                              </>
-                            ) : (
-                              <>
-                                {renderBahanSelect({
-                                  value: bahan.bahan_id,
-                                  materialGroup: bahan.material_group || bagian.material_group,
-                                  onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
-                                })}
-                                <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id}>
-                                  <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan terlebih dahulu"}</option>
-                                  {(bahan.warnaList || []).map((item, idx) => {
-                                    const warna = typeof item === "string" ? item : item.warna;
-                                    const stok = typeof item === "object" ? item.stok : 999;
-                                    const isDisabled = stok === 0 && warna !== "Lainnya";
-                                    return (
-                                      <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
-                                        {warna} {stok !== 999 && `(${stok} stok)`}
-                                      </option>
-                                    );
-                                  })}
-                                </select>
-                                {bahan.warna === "Lainnya" && <input type="text" placeholder="Masukkan warna custom..." value={bahan.warna_custom || ""} onChange={(e) => handleWarnaCustomChange(bagianIndex, bahanIndex, e.target.value)} required />}
-                              </>
-                            )}
-                            <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty Aksesoris" : "Qty (Jumlah Rol)"} value={bahan.qty} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required />
-                            {!bagian.is_auto_bagian && (
-                              <button type="button" onClick={() => removeBahan(bagianIndex, bahanIndex)}>
-                                Hapus Bahan
-                              </button>
-                            )}
-                          </div>
-                        ))}
-
-                        {!bagian.is_auto_bagian && (
-                          <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
-                            <FaPlus /> Tambah Bahan
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
