@@ -1894,6 +1894,39 @@ select option:disabled {
   border: 1px solid #d1dbe8 !important;
 }
 
+@media (max-width: 1500px) {
+  .spk-cutting-modal {
+    padding: 12px;
+  }
+
+  .spk-cutting-modal-content-create {
+    width: min(1280px, calc(100vw - 24px));
+    height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .spk-cutting-create-body {
+    overflow-y: auto;
+  }
+
+  .spk-cutting-create-columns {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .spk-cutting-create-section {
+    overflow: visible;
+  }
+
+  .spk-cutting-create-section-body {
+    overflow: visible;
+  }
+
+  .spk-cutting-bagian-line {
+    grid-template-columns: minmax(160px, 0.75fr) minmax(300px, 1.65fr) minmax(170px, 0.9fr) minmax(120px, 0.55fr) 62px;
+  }
+}
+
 @media (max-width: 1200px) {
   .spk-cutting-bahan-group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
