@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import API from "../../api";
 import {
@@ -37,9 +37,8 @@ import {
   showGudangWarning,
 } from "./GudangProdukAlerts";
 import {
-  SERIAL_SKU_AUTO_MATCH_SCORE,
   buildSerialSkuSuggestions,
-  findBestSerialSkuMatch,
+  normalizeLooseText,
 } from "./GudangProdukSerialSkuUtils";
 import InputSeriGudang from "./InputSeriGudang";
 
@@ -72,6 +71,16 @@ const normalizeImportLookupValue = (value) =>
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");
+
+const SERIAL_SEARCH_RESULT_LIMIT = 50;
+
+const buildSerialSkuLookupKeys = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  const loose = normalizeLooseText(value);
+  const compact = loose.replace(/\s+/g, "");
+
+  return [raw, loose, compact].filter(Boolean);
+};
 
 const findImportColumnIndex = (headers, aliases) => {
   const normalizedHeaders = headers.map(normalizeImportHeader);
@@ -142,11 +151,12 @@ const InputSkuGudang = () => {
   const [serialQuery, setSerialQuery] = useState("");
   const [selectedSerialId, setSelectedSerialId] = useState("");
   const [serialItems, setSerialItems] = useState([]);
-  const [serialLoading, setSerialLoading] = useState(true);
+  const [serialLoading, setSerialLoading] = useState(false);
   const [serialError, setSerialError] = useState("");
   const [isSerialDropdownOpen, setIsSerialDropdownOpen] = useState(false);
   const [isActivatingSerialSku, setIsActivatingSerialSku] = useState(false);
   const serialComboboxRef = useRef(null);
+  const serialRequestStartedRef = useRef(false);
   const importInputRef = useRef(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
@@ -161,6 +171,11 @@ const InputSkuGudang = () => {
   }, [layoutId, state.layouts]);
 
   useEffect(() => {
+    if (!isSkuInputModalOpen || serialRequestStartedRef.current) {
+      return undefined;
+    }
+
+    serialRequestStartedRef.current = true;
     let isMounted = true;
 
     const fetchSerials = async () => {
@@ -192,7 +207,7 @@ const InputSkuGudang = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isSkuInputModalOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -227,46 +242,91 @@ const InputSkuGudang = () => {
     [layoutId, state.layouts]
   );
 
-  const serialCatalog = useMemo(
-    () =>
-      serialItems.map((item) => {
-        const bestSkuMatch = findBestSerialSkuMatch(state.skus, item.sku);
-        const matchedSku =
-          bestSkuMatch?.score >= SERIAL_SKU_AUTO_MATCH_SCORE ? bestSkuMatch.sku : null;
-        const matchedProduct = matchedSku?.productId
-          ? state.products.find((product) => String(product.id) === String(matchedSku.productId)) ||
-            null
-          : null;
+  const productById = useMemo(() => {
+    const lookup = new Map();
 
-        return {
-          ...item,
-          quantityHint: Math.max(1, Number(item.jumlah) || 1),
-          matchedSku,
-          matchedSkuId: matchedSku?.id || "",
-          matchedProduct,
-          matchedProductId: matchedProduct?.id || "",
-        };
-      }),
-    [serialItems, state.products, state.skus]
+    state.products.forEach((product) => {
+      lookup.set(String(product.id), product);
+    });
+
+    return lookup;
+  }, [state.products]);
+
+  const serialSkuLookup = useMemo(() => {
+    const lookup = new Map();
+
+    state.skus.forEach((sku) => {
+      [sku.code, sku.label].forEach((value) => {
+        buildSerialSkuLookupKeys(value).forEach((key) => {
+          if (!lookup.has(key)) {
+            lookup.set(key, sku);
+          }
+        });
+      });
+    });
+
+    return lookup;
+  }, [state.skus]);
+
+  const buildSerialViewItem = useCallback(
+    (item) => {
+      const lookupMatchedSku =
+        buildSerialSkuLookupKeys(item?.sku)
+          .map((key) => serialSkuLookup.get(key))
+          .find(Boolean) || null;
+      const matchedProduct = lookupMatchedSku?.productId
+        ? productById.get(String(lookupMatchedSku.productId)) || null
+        : null;
+
+      return {
+        ...item,
+        quantityHint: Math.max(1, Number(item?.jumlah) || 1),
+        matchedSku: lookupMatchedSku,
+        matchedSkuId: lookupMatchedSku?.id || "",
+        matchedProduct,
+        matchedProductId: matchedProduct?.id || "",
+      };
+    },
+    [productById, serialSkuLookup]
   );
 
   const serialResults = useMemo(() => {
     const keyword = serialQuery.trim().toLowerCase();
+    if (!isSerialDropdownOpen && !keyword) {
+      return [];
+    }
 
-    return serialCatalog.filter((item) => {
-      if (!keyword) return true;
+    const results = [];
 
-      return [
+    for (const item of serialItems) {
+      const serialViewItem = buildSerialViewItem(item);
+      const isMatch =
+        !keyword ||
+        [
         item.nomor_seri,
         item.sku,
-        item.matchedSku?.label,
-        item.matchedProduct?.name,
-      ].some((value) => String(value || "").toLowerCase().includes(keyword));
-    });
-  }, [serialCatalog, serialQuery]);
+          serialViewItem.matchedSku?.label,
+          serialViewItem.matchedProduct?.name,
+        ].some((value) => String(value || "").toLowerCase().includes(keyword));
 
-  const selectedSerial =
-    serialCatalog.find((item) => String(item.id) === String(selectedSerialId)) || null;
+      if (!isMatch) {
+        continue;
+      }
+
+      results.push(serialViewItem);
+      if (results.length >= SERIAL_SEARCH_RESULT_LIMIT) {
+        break;
+      }
+    }
+
+    return results;
+  }, [buildSerialViewItem, isSerialDropdownOpen, serialItems, serialQuery]);
+
+  const selectedSerial = useMemo(() => {
+    const rawSerial = serialItems.find((item) => String(item.id) === String(selectedSerialId));
+
+    return rawSerial ? buildSerialViewItem(rawSerial) : null;
+  }, [buildSerialViewItem, selectedSerialId, serialItems]);
 
   const suggestedSerialSkuOptions = useMemo(() => {
     if (!selectedSerial || selectedSerial.matchedSkuId) {
