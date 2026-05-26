@@ -882,574 +882,247 @@ const StokLokasiGudang = () => {
         <GudangStatCard label="Total Qty" value={summary.totalQty} helper="qty semua slot hasil filter" />
       </div>
 
-      <div className="gudang-master-workspace-grid">
-        <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>1. Filter Lokasi</h2>
-                <p>Pilih gudang dan SKU, lalu klik slot di peta bila ingin fokus ke satu lokasi.</p>
-              </div>
+      <div className="gudang-stoklokasi-simple-stack">
+        <section className="gudang-ui-panel">
+          <div className="gudang-ui-panel-head">
+            <div>
+              <h2>Filter</h2>
+              <p>Pilih gudang, filter SKU bila perlu, lalu lihat daftar lokasi di bawah.</p>
+            </div>
+          </div>
+
+          <div className="gudang-ui-form-grid">
+            <div className="gudang-ui-field">
+              <label>Gudang Produk</label>
+              <select value={layoutId} onChange={(event) => setLayoutId(event.target.value)}>
+                {state.layouts.map((layout) => (
+                  <option key={layout.id} value={layout.id}>
+                    {layout.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="gudang-ui-form-grid">
-              <div className="gudang-ui-field">
-                <label>Gudang Produk</label>
-                <select value={layoutId} onChange={(event) => setLayoutId(event.target.value)}>
-                  {state.layouts.map((layout) => (
-                    <option key={layout.id} value={layout.id}>
-                      {layout.name}
-                    </option>
-                  ))}
-                </select>
+            <div className="gudang-ui-field" style={{ position: "relative" }} ref={skuComboboxRef}>
+              <label>Filter SKU</label>
+              <div style={{ position: "relative" }}>
+                <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+                <input
+                  type="text"
+                  className="gudang-ui-search-input"
+                  style={{ paddingLeft: 40, width: "100%", background: "#fff" }}
+                  value={skuQuery}
+                  onChange={(e) => {
+                    setSkuQuery(e.target.value);
+                    setIsSkuDropdownOpen(true);
+                    if (skuFilter) setSkuFilter("");
+                  }}
+                  onFocus={() => setIsSkuDropdownOpen(true)}
+                  placeholder={selectedSkuLabel ? truncateText(selectedSkuLabel, 35) : "Cari dan pilih SKU..."}
+                />
+                {skuFilter && !skuQuery ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSkuFilter("");
+                      setSkuQuery("");
+                    }}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
+                  >
+                    <FaTimes />
+                  </button>
+                ) : null}
               </div>
 
-              <div className="gudang-ui-field" style={{ position: "relative" }} ref={skuComboboxRef}>
-                <label>Filter SKU</label>
-                <div style={{ position: "relative" }}>
-                  <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
-                  <input
-                    type="text"
-                    className="gudang-ui-search-input"
-                    style={{ paddingLeft: 40, width: "100%", background: "#fff", cursor: "pointer" }}
-                    value={skuQuery}
-                    onChange={(e) => {
-                      setSkuQuery(e.target.value);
-                      setIsSkuDropdownOpen(true);
-                      if (skuFilter) setSkuFilter("");
-                    }}
-                    onFocus={() => setIsSkuDropdownOpen(true)}
-                    placeholder={selectedSkuLabel ? truncateText(selectedSkuLabel, 35) : "Cari dan pilih SKU..."}
-                  />
-                  {skuFilter && !skuQuery && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSkuFilter("");
-                        setSkuQuery("");
-                      }}
-                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
-                    ><FaTimes /></button>
+              {isSkuDropdownOpen ? (
+                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #d1dbe8", borderRadius: 10, padding: 8, maxHeight: 280, overflowY: "auto", boxShadow: "0 10px 25px rgba(15,23,42,0.1)" }}>
+                  <button
+                    type="button"
+                    onClick={() => { setSkuFilter(""); setSkuQuery(""); setIsSkuDropdownOpen(false); }}
+                    style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: skuFilter === "" ? "#f0fdf4" : "transparent", color: skuFilter === "" ? "#166534" : "#0f172a", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2, fontWeight: skuFilter === "" ? 700 : 500, fontSize: 13 }}
+                  >
+                    Semua SKU
+                  </button>
+                  {filteredSkus.length ? (
+                    filteredSkus.map((sku) => (
+                      <button
+                        key={sku.id}
+                        type="button"
+                        onClick={() => {
+                          setSkuFilter(String(sku.id));
+                          setSkuQuery("");
+                          setIsSkuDropdownOpen(false);
+                        }}
+                        style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: String(skuFilter) === String(sku.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2 }}
+                      >
+                        <div style={{ fontWeight: String(skuFilter) === String(sku.id) ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
+                          {sku.label}
+                        </div>
+                        {sku.code ? <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{sku.code}</div> : null}
+                      </button>
+                    ))
+                  ) : (
+                    <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>SKU tidak ditemukan.</div>
                   )}
                 </div>
-
-                {isSkuDropdownOpen && (
-                  <div style={{
-                    position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-                    background: "#fff", border: "1px solid #d1dbe8", borderRadius: 10,
-                    padding: 8, maxHeight: 280, overflowY: "auto",
-                    boxShadow: "0 10px 25px rgba(15,23,42,0.1)",
-                  }}>
-                    {filteredSkus.length ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => { setSkuFilter(""); setSkuQuery(""); setIsSkuDropdownOpen(false); }}
-                          style={{
-                            width: "100%", display: "block", textAlign: "left", border: "none",
-                            background: skuFilter === "" ? "#f0fdf4" : "transparent",
-                            color: skuFilter === "" ? "#166534" : "#0f172a",
-                            borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2,
-                            fontWeight: skuFilter === "" ? 700 : 500, fontSize: 13
-                          }}
-                        >
-                          Semua SKU
-                        </button>
-                        {filteredSkus.map((sku) => (
-                          <button
-                            key={sku.id}
-                            type="button"
-                            onClick={() => {
-                              setSkuFilter(String(sku.id));
-                              setSkuQuery("");
-                              setIsSkuDropdownOpen(false);
-                            }}
-                            style={{
-                              width: "100%", display: "block", textAlign: "left", border: "none",
-                              background: String(skuFilter) === String(sku.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent",
-                              borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2,
-                            }}
-                          >
-                            <div style={{ fontWeight: String(skuFilter) === String(sku.id) ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
-                              {sku.label}
-                            </div>
-                            {sku.code && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{sku.code}</div>}
-                          </button>
-                        ))}
-                      </>
-                    ) : (
-                      <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>
-                        SKU tidak ditemukan.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="gudang-ui-form-actions">
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={() => setShowEmpty((prev) => !prev)}
-              >
-                <FaBoxes /> {showEmpty ? "Sembunyikan Slot Kosong" : "Tampilkan Slot Kosong"}
-              </button>
-              {selectedSlot ? (
-                <button
-                  type="button"
-                  className="gudang-ui-button-secondary"
-                  onClick={() => setSelectedSlot(null)}
-                >
-                  Reset Fokus Slot
-                </button>
               ) : null}
             </div>
+          </div>
 
-            {skuFilter ? (
-              <div className="gudang-ui-callout gudang-ui-callout-highlight" style={{ marginTop: 16 }}>
-                <strong>Highlight SKU aktif</strong>
-                <div style={{ marginTop: 6 }}>
-                  {selectedSkuLabel || "SKU terpilih"} ditemukan di {highlightedSlotIds.length} lokasi pada peta.
-                </div>
-              </div>
-            ) : null}
-
-            {pdfFeedback ? (
-              <div
-                className="gudang-ui-callout"
-                style={{
-                  marginTop: 16,
-                  background:
-                    pdfFeedback.type === "error"
-                      ? "linear-gradient(135deg, rgba(254, 226, 226, 0.9), rgba(255, 255, 255, 0.98))"
-                      : "linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98))",
-                  borderColor:
-                    pdfFeedback.type === "error" ? "rgba(220, 38, 38, 0.12)" : "rgba(15, 118, 110, 0.12)",
-                  color: pdfFeedback.type === "error" ? "#991b1b" : "#0f5f59",
-                }}
-              >
-                <strong>{pdfFeedback.type === "error" ? "PDF gagal dibuat" : "PDF berhasil dibuat"}</strong>
-                <div style={{ marginTop: 6 }}>{pdfFeedback.message}</div>
-              </div>
-            ) : null}
-          </section>
-
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>2. Peta Visual Lokasi</h2>
-              <p>Klik pada slot di peta untuk menyorot isinya di panel sebelah kanan.</p>
-              </div>
-            </div>
-            <GudangLayoutMap
-              layout={selectedLayout}
-              selectedSlotId={focusedSlot?.id}
-              onSelectSlot={setSelectedSlot}
-              stockSummaryBySlot={stockSummaryBySlot}
-              highlightedSlotIds={highlightedSlotIds}
-            />
-          </section>
-
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>3. Daftar Lengkap Slot</h2>
-                <p>Ringkasan stok per lokasi berdasarkan data workspace yang aktif.</p>
-              </div>
-            </div>
-
-            {filteredRows.length ? (
-              <div className="gudang-ui-table-shell">
-                <table className="gudang-ui-table">
-                  <thead>
-                    <tr>
-                      <th>Lokasi</th>
-                      <th>Detail Rak</th>
-                      <th>Stok</th>
-                      <th>Isi Varian SKU</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {slotHierarchy.map((floorGroup) => (
-                      <React.Fragment key={floorGroup.key}>
-                        <tr className="gudang-stoklokasi-table-floor-row">
-                          <td colSpan={4}>
-                            <div className="gudang-stoklokasi-table-group-line">
-                              <strong>{floorGroup.floorLabel}</strong>
-                              <span>
-                                {floorGroup.blockCount} blok &middot; {floorGroup.filledSlotCount}/
-                                {floorGroup.slotCount} slot terisi &middot; {floorGroup.totalQty} pcs
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                        {floorGroup.blocks.map((blockGroup) => (
-                          <React.Fragment key={blockGroup.key}>
-                            <tr className="gudang-stoklokasi-table-block-row">
-                              <td colSpan={4}>
-                                <div className="gudang-stoklokasi-table-group-line">
-                                  <strong>{blockGroup.blockLabel}</strong>
-                                  <span>
-                                    {blockGroup.filledSlotCount}/{blockGroup.slotCount} slot terisi
-                                    &middot; {blockGroup.totalQty} pcs
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                            {blockGroup.slots.map((slot) => (
-                              <tr
-                                key={slot.id}
-                                style={
-                                  selectedSlot?.id === slot.id ? { backgroundColor: "#f0fdf4" } : {}
-                                }
-                              >
-                                <td>
-                                  <strong>{slot.slotCode}</strong>
-                                  <div style={{ marginTop: 6, color: "#6b7f95" }}>
-                                    Lantai {slot.floorNumber} | Blok {slot.blockCode} | Baris{" "}
-                                    {slot.rowNumber}
-                                  </div>
-                                </td>
-                                <td>
-                                  Rak {String(slot.rackNumber).padStart(2, "0")}
-                                  <div style={{ marginTop: 6, color: "#6b7f95" }}>
-                                    {slot.rackLabel || "Tanpa Label"}
-                                  </div>
-                                </td>
-                                <td>
-                                  <span
-                                    style={{
-                                      fontWeight: 600,
-                                      color: slot.totalQty ? "#0f172a" : "#94a3b8",
-                                    }}
-                                  >
-                                    {slot.totalQty} pcs
-                                  </span>
-                                </td>
-                                <td>
-                                  {slot.lines.length ? (
-                                    <div className="gudang-ui-pill-list gudang-stoklokasi-slot-pill-shell">
-                                      {slot.lines.map((line) => (
-                                        <span
-                                          key={line.id}
-                                          className="gudang-ui-pill"
-                                          style={
-                                            skuFilter === String(line.skuId)
-                                              ? { background: "#ecfdf5", color: "#0f766e" }
-                                              : {}
-                                          }
-                                        >
-                                          {line.sku?.label} | {line.qty}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span style={{ color: "#6b7f95" }}>Kosong</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </React.Fragment>
-                        ))}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="gudang-ui-empty-panel">
-                <FaSearchLocation style={{ marginBottom: 10, fontSize: 24, color: "#94a3b8" }} />
-                <div>Tidak ada slot yang cocok dengan filter saat ini.</div>
-              </div>
-            )}
-          </section>
-        </div>
-
-        <div className="gudang-master-visual-stack">
-          {focusedSlot || skuFilter ? (
-            <div className="gudang-ui-panel" style={{ position: "sticky", top: 20 }}>
-              <div className="gudang-ui-panel-head" style={{ marginBottom: 12 }}>
-                <div>
-                  <h2 style={{ color: "#0f766e" }}>
-                    {focusedSlot ? `Slot Fokus: ${focusedSlot.slotCode}` : "Slot Fokus"}
-                  </h2>
-                  <p>
-                    {focusedSlot
-                      ? buildSlotHeadline(focusedSlot)
-                      : `${selectedSkuLabel || "SKU terpilih"} belum ditemukan pada layout ini.`}
-                  </p>
-                </div>
-              </div>
-
-              {focusedSlot ? (
-                focusedSlotLines.length > 0 ? (
-                  <div className="gudang-stoklokasi-focus-list">
-                    {focusedSlotLines.map((line) => {
-                      const isHighlightedSku = Boolean(
-                        skuFilter && String(line.skuId) === String(skuFilter)
-                      );
-
-                      return (
-                        <div
-                          key={line.id}
-                          ref={isHighlightedSku ? focusedSkuLineRef : null}
-                          className={`gudang-stoklokasi-focus-row ${
-                            isHighlightedSku ? "sku-highlight" : ""
-                          }`}
-                        >
-                          <span className="gudang-stoklokasi-focus-sku">
-                            {line.sku?.label}
-                            {isHighlightedSku ? <small>SKU difilter</small> : null}
-                          </span>
-                          <span className="gudang-stoklokasi-focus-qty">{line.qty} pcs</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="gudang-ui-empty-panel" style={{ padding: "30px 10px" }}>
-                    <p style={{ margin: 0, fontSize: 13 }}>Slot ini masih kosong.</p>
-                  </div>
-                )
-              ) : (
-                <div className="gudang-ui-empty-panel" style={{ padding: "30px 10px" }}>
-                  <p style={{ margin: 0, fontSize: 13 }}>
-                    SKU ini belum punya stok pada layout/filter aktif.
-                  </p>
-                </div>
-              )}
-              
+          <div className="gudang-ui-form-actions">
+            <button type="button" className="gudang-ui-button-secondary" onClick={() => setShowEmpty((prev) => !prev)}>
+              <FaBoxes /> {showEmpty ? "Sembunyikan Slot Kosong" : "Tampilkan Slot Kosong"}
+            </button>
+            {(selectedSlot || skuFilter) ? (
               <button
                 type="button"
                 className="gudang-ui-button-secondary"
-                style={{ width: "100%", marginTop: 20 }}
                 onClick={() => {
                   setSelectedSlot(null);
-                  if (skuFilter) {
-                    setSkuFilter("");
-                    setSkuQuery("");
-                  }
+                  setSkuFilter("");
+                  setSkuQuery("");
                 }}
               >
-                {skuFilter ? "Bersihkan Filter SKU" : "Tutup Fokus Slot"}
+                Reset Filter
               </button>
+            ) : null}
+          </div>
+
+          {skuFilter ? (
+            <div className="gudang-ui-callout gudang-ui-callout-highlight" style={{ marginTop: 16 }}>
+              <strong>{selectedSkuLabel || "SKU terpilih"}</strong>
+              <div style={{ marginTop: 6 }}>Ditemukan di {highlightedSlotIds.length} lokasi.</div>
+            </div>
+          ) : null}
+
+          {pdfFeedback ? (
+            <div className="gudang-ui-callout" style={{ marginTop: 16, color: pdfFeedback.type === "error" ? "#991b1b" : "#0f5f59" }}>
+              <strong>{pdfFeedback.type === "error" ? "PDF gagal dibuat" : "PDF berhasil dibuat"}</strong>
+              <div style={{ marginTop: 6 }}>{pdfFeedback.message}</div>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="gudang-ui-panel">
+          <details>
+            <summary style={{ cursor: "pointer", fontWeight: 800, color: "#2458ce", userSelect: "none" }}>
+              Tampilkan peta visual gudang
+            </summary>
+            <div style={{ marginTop: 16 }}>
+              <GudangLayoutMap
+                layout={selectedLayout}
+                selectedSlotId={focusedSlot?.id}
+                onSelectSlot={setSelectedSlot}
+                stockSummaryBySlot={stockSummaryBySlot}
+                highlightedSlotIds={highlightedSlotIds}
+              />
+            </div>
+          </details>
+        </section>
+
+        {focusedSlot || skuFilter ? (
+          <section className="gudang-ui-panel">
+            <div className="gudang-ui-panel-head">
+              <div>
+                <h2>{focusedSlot ? `Fokus: ${focusedSlot.slotCode}` : "Fokus SKU"}</h2>
+                <p>
+                  {focusedSlot
+                    ? buildSlotHeadline(focusedSlot)
+                    : `${selectedSkuLabel || "SKU terpilih"} belum ditemukan pada layout ini.`}
+                </p>
+              </div>
+            </div>
+
+            {focusedSlot ? (
+              focusedSlotLines.length ? (
+                <div className="gudang-stoklokasi-simple-card-grid">
+                  {focusedSlotLines.map((line) => {
+                    const isHighlightedSku = Boolean(skuFilter && String(line.skuId) === String(skuFilter));
+                    return (
+                      <div
+                        key={line.id}
+                        ref={isHighlightedSku ? focusedSkuLineRef : null}
+                        className={`gudang-stoklokasi-focus-row ${isHighlightedSku ? "sku-highlight" : ""}`}
+                      >
+                        <span className="gudang-stoklokasi-focus-sku">
+                          {line.sku?.label}
+                          {isHighlightedSku ? <small>SKU difilter</small> : null}
+                        </span>
+                        <span className="gudang-stoklokasi-focus-qty">{line.qty} pcs</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="gudang-ui-empty-panel">Slot ini masih kosong.</div>
+              )
+            ) : (
+              <div className="gudang-ui-empty-panel">SKU ini belum punya stok pada layout/filter aktif.</div>
+            )}
+          </section>
+        ) : null}
+
+        <section className="gudang-ui-panel">
+          <div className="gudang-ui-panel-head">
+            <div>
+              <h2>Daftar Slot</h2>
+              <p>{filteredRows.length} lokasi ditampilkan dari {selectedLayout?.name || "gudang aktif"}.</p>
+            </div>
+          </div>
+
+          {filteredRows.length ? (
+            <div className="gudang-stoklokasi-simple-card-grid">
+              {filteredRows.map((slot) => (
+                <article
+                  key={slot.id}
+                  className={`gudang-stoklokasi-simple-slot-card ${selectedSlot?.id === slot.id ? "active" : ""}`}
+                  onClick={() => setSelectedSlot(slot)}
+                >
+                  <div className="gudang-stoklokasi-simple-slot-head">
+                    <div>
+                      <strong>{slot.slotCode}</strong>
+                      <span>
+                        Lt. {slot.floorNumber} | Blok {slot.blockCode} | Rak {formatRackNumber(slot.rackNumber)}
+                      </span>
+                    </div>
+                    <span className={`gudang-stoklokasi-simple-qty ${slot.totalQty ? "filled" : ""}`}>
+                      {slot.totalQty} pcs
+                    </span>
+                  </div>
+
+                  <div className="gudang-stoklokasi-simple-slot-meta">
+                    {slot.rackLabel || "Tanpa label"} | Baris {slot.rowNumber}
+                  </div>
+
+                  {slot.lines.length ? (
+                    <div className="gudang-ui-pill-list">
+                      {slot.lines.slice(0, 4).map((line) => (
+                        <span
+                          key={line.id}
+                          className="gudang-ui-pill"
+                          style={skuFilter === String(line.skuId) ? { background: "#ecfdf5", color: "#0f766e" } : {}}
+                        >
+                          {line.sku?.label} | {line.qty}
+                        </span>
+                      ))}
+                      {slot.lines.length > 4 ? (
+                        <span className="gudang-ui-pill">+{slot.lines.length - 4} SKU lain</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="gudang-stoklokasi-simple-empty">Kosong</span>
+                  )}
+                </article>
+              ))}
             </div>
           ) : (
-
-          <div className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head" style={{ marginBottom: 12 }}>
-              <div>
-                <h2>Ringkasan per Rak</h2>
-                <p>Lihat per lantai, per blok, lalu per rak supaya alur bacanya lebih cepat.</p>
-              </div>
+            <div className="gudang-ui-empty-panel">
+              <FaSearchLocation style={{ marginBottom: 10, fontSize: 24, color: "#94a3b8" }} />
+              <div>Tidak ada slot yang cocok dengan filter saat ini.</div>
             </div>
-
-            {rackHierarchy.length ? (
-              <div className="gudang-ui-rack-collection gudang-stoklokasi-rack-collection">
-                <div className="gudang-stoklokasi-group-stack">
-                  {rackHierarchy.map((floorGroup) => (
-                    <section key={floorGroup.key} className="gudang-stoklokasi-floor-group">
-                      <div className="gudang-stoklokasi-floor-head">
-                        <div>
-                          <h3>{floorGroup.floorLabel}</h3>
-                          <p>
-                            {floorGroup.blockCount} blok &middot; {floorGroup.rackCount} rak &middot;{" "}
-                            {floorGroup.totalQty} pcs
-                          </p>
-                        </div>
-                        <span className="gudang-ui-rack-mini-chip soft">
-                          {floorGroup.filledSlotCount}/{floorGroup.slotCount} slot terisi
-                        </span>
-                      </div>
-
-                      <div className="gudang-stoklokasi-block-stack">
-                        {floorGroup.blocks.map((blockGroup) => (
-                          <article key={blockGroup.key} className="gudang-stoklokasi-block-group">
-                            <div className="gudang-stoklokasi-block-head">
-                              <div className="gudang-stoklokasi-block-main">
-                                <strong>{blockGroup.blockLabel}</strong>
-                                <span>
-                                  {blockGroup.rackCount} rak &middot; {blockGroup.filledSlotCount}/
-                                  {blockGroup.slotCount} slot terisi
-                                </span>
-                              </div>
-                              <div className="gudang-ui-rack-compact-meta">
-                                <span
-                                  className="gudang-ui-rack-mini-chip"
-                                  style={{
-                                    background: blockGroup.totalQty ? "#eff6ff" : "#f1f5f9",
-                                    color: blockGroup.totalQty ? "#1e40af" : "#64748b",
-                                  }}
-                                >
-                                  {blockGroup.totalQty} pcs
-                                </span>
-                                {blockGroup.totalQty ? (
-                                  <span className="gudang-ui-rack-mini-chip soft">Aktif</span>
-                                ) : (
-                                  <span className="gudang-ui-rack-mini-chip soft">Kosong</span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="gudang-ui-rack-grid-compact">
-                              {blockGroup.racks.map((rack) => {
-                                const isSelectedRack = selectedRackKey === rack.key;
-                                const isExpandedRack = expandedRackKey === rack.key;
-                                const previewItems = rack.skuItems.slice(0, 3);
-                                const hiddenSkuCount = Math.max(rack.skuItems.length - previewItems.length, 0);
-                                const firstSlotId = rack.slotEntries[0]?.slotId || "";
-                                const focusRack = () => {
-                                  if (!firstSlotId) {
-                                    return;
-                                  }
-
-                                  const targetSlot = slotRows.find(
-                                    (slot) => String(slot.id) === String(firstSlotId)
-                                  );
-                                  if (targetSlot) {
-                                    setSelectedSlot(targetSlot);
-                                  }
-                                };
-
-                                return (
-                                  <article
-                                    key={rack.key}
-                                    className={`gudang-ui-rack-compact-card ${
-                                      isSelectedRack ? "active" : ""
-                                    }`}
-                                    style={{
-                                      background: rack.hasSelectedSku
-                                        ? "linear-gradient(135deg, rgba(236, 253, 245, 0.96), #fff)"
-                                        : undefined,
-                                      borderColor: rack.hasSelectedSku ? "#b7e4d8" : undefined,
-                                      boxShadow: isSelectedRack
-                                        ? "0 0 0 3px rgba(36, 88, 206, 0.12)"
-                                        : undefined,
-                                    }}
-                                  >
-                                    <div className="gudang-ui-rack-compact-top">
-                                      <div className="gudang-ui-rack-compact-main">
-                                        <strong>Rak {formatRackNumber(rack.rackNumber)}</strong>
-                                        <span>
-                                          Lt.{rack.floorNumber} - Blk.{rack.blockCode} &middot;{" "}
-                                          {rack.filledSlotCount}/{rack.slotCount} terisi
-                                        </span>
-                                        <span>{rack.skuItems.length} SKU aktif di rak ini</span>
-                                      </div>
-                                      <div className="gudang-ui-rack-compact-meta">
-                                        <span
-                                          className="gudang-ui-rack-mini-chip"
-                                          style={{
-                                            background: rack.totalQty ? "#eff6ff" : "#f1f5f9",
-                                            color: rack.totalQty ? "#1e40af" : "#64748b",
-                                          }}
-                                        >
-                                          {rack.totalQty} pcs
-                                        </span>
-                                        {rack.hasSelectedSku ? (
-                                          <span className="gudang-ui-rack-mini-chip soft">
-                                            Fokus SKU
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                    </div>
-
-                                    <div className="gudang-stoklokasi-rack-preview">
-                                      <div className="gudang-ui-chip-row" style={{ gap: 6 }}>
-                                        {previewItems.map((item) => (
-                                          <span
-                                            key={`${rack.key}_${item.skuId || item.label}`}
-                                            className="gudang-ui-pill"
-                                            style={{
-                                              fontSize: 11,
-                                              padding: "4px 8px",
-                                              background:
-                                                skuFilter && String(item.skuId) === String(skuFilter)
-                                                  ? "#ecfdf5"
-                                                  : undefined,
-                                              color:
-                                                skuFilter && String(item.skuId) === String(skuFilter)
-                                                  ? "#0f766e"
-                                                  : undefined,
-                                            }}
-                                          >
-                                            {item.label} <strong>({item.qty})</strong>
-                                          </span>
-                                        ))}
-                                        {hiddenSkuCount > 0 ? (
-                                          <span className="gudang-ui-rack-mini-chip soft">
-                                            +{hiddenSkuCount} lainnya
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                    </div>
-
-                                    <div
-                                      className="gudang-stoklokasi-rack-actions"
-                                      onClick={(event) => event.stopPropagation()}
-                                    >
-                                      <button
-                                        type="button"
-                                        className="gudang-stoklokasi-rack-button secondary"
-                                        onClick={focusRack}
-                                      >
-                                        <FaSearchLocation /> Fokus
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="gudang-stoklokasi-rack-button"
-                                        onClick={() =>
-                                          setExpandedRackKey((current) =>
-                                            current === rack.key ? "" : rack.key
-                                          )
-                                        }
-                                      >
-                                        {isExpandedRack ? "Sembunyikan detail" : "Lihat detail"}
-                                      </button>
-                                    </div>
-
-                                    {isExpandedRack ? (
-                                      <div className="gudang-stoklokasi-rack-detail">
-                                        {rack.skuItems.map((item) => (
-                                          <div
-                                            key={`${rack.key}_${item.skuId || item.label}_detail`}
-                                            className="gudang-stoklokasi-rack-row"
-                                          >
-                                            <div className="gudang-stoklokasi-rack-row-main">
-                                              <strong>{item.label}</strong>
-                                              <span>
-                                                {item.slotCodes.slice(0, 2).join(", ")}
-                                                {item.slotCodes.length > 2
-                                                  ? ` +${item.slotCodes.length - 2}`
-                                                  : ""}
-                                              </span>
-                                            </div>
-                                            <span className="gudang-stoklokasi-rack-row-qty">
-                                              {item.qty} pcs
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : null}
-                                  </article>
-                                );
-                              })}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="gudang-ui-empty-panel">Belum ada rak tercatat pada sistem layout ini.</div>
-            )}
-          </div>
           )}
-        </div>
+        </section>
       </div>
     </GudangProdukBaseShell>
   );

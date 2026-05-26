@@ -65,7 +65,7 @@ const calculateAssumptionFromBagian = (bagianList) => {
 };
 
 const getProdukOptionLabel = (produk) => {
-  const product = String(produk.product || "").trim();
+  const product = String(produk.product || produk.nama_produk || "").trim();
   if (product) return product;
 
   const productGroup = String(produk.product_group || "").trim();
@@ -79,7 +79,7 @@ const getProdukOptionValue = (produk) => {
   return product ? `product-list:${product}` : "";
 };
 
-const getSpkProductListId = (spk) => spk?.product_list_id || spk?.productList?.id || spk?.product_list?.id || "";
+const getSpkProductListId = (spk) => spk?.product_list_id || spk?.productList?.id || spk?.product_list?.id || spk?.produk_id || spk?.produk?.id || "";
 
 const getSpkProductLabel = (spk) => {
   const productList = spk?.productList || spk?.product_list;
@@ -595,9 +595,11 @@ const SpkCutting = () => {
       try {
         setLoading(true);
 
-        const response = await API.get("/product-list/spk-catalog");
+        const response = await API.get("/produk", {
+          params: { all: 1 },
+        });
 
-        setProdukList(normalizeApiList(response.data.products || response.data.data));
+        setProdukList(normalizeApiList(response.data));
       } catch (error) {
         setError("Gagal mengambil data produk.");
       } finally {
@@ -617,7 +619,7 @@ const SpkCutting = () => {
 
         setTukangList(response.data);
       } catch (error) {
-        setError("Gagal mengambil data produk.");
+        setError("Gagal mengambil data tukang cutting.");
       } finally {
         setLoading(false);
       }
@@ -681,7 +683,7 @@ const SpkCutting = () => {
     fetchAksesoris();
   }, []);
 
-  // Fungsi untuk fetch SKU berdasarkan Product List yang dipilih
+  // Fungsi untuk fetch SKU berdasarkan produk yang dipilih
   const fetchSkuByProduk = async (produkId) => {
     if (!produkId) {
       setSkuList([]);
@@ -689,8 +691,7 @@ const SpkCutting = () => {
     }
 
     const selectedProduk = getSelectedProduk(produkId);
-    const catalog = await fetchProductGroupCatalog(selectedProduk);
-    setSkuList(Array.isArray(catalog?.sku_items) ? catalog.sku_items : []);
+    setSkuList(Array.isArray(selectedProduk?.skus) ? selectedProduk.skus : []);
   };
 
   // Fungsi untuk fetch warna berdasarkan bahan_id
@@ -924,23 +925,26 @@ const SpkCutting = () => {
   };
 
   const fetchProductGroupCatalog = async (produk) => {
-    const product = String(produk?.product || "").trim();
-    const productGroup = String(produk?.product_group || "").trim();
-
-    if (!product && !productGroup) {
+    if (!produk) {
       return null;
     }
 
-    try {
-      const response = await API.get("/product-list/spk-catalog", {
-        params: product ? { product } : { product_group: productGroup },
-      });
+    const komponen = Array.isArray(produk?.komponen) ? produk.komponen : [];
+    const materials = komponen
+      .filter((item) => item?.sumber_komponen === "bahan")
+      .map((item) => ({
+        material: item?.bahan?.nama_bahan || "",
+        material_group: item?.bahan?.group_bahan || item?.jenis_komponen || "",
+      }));
 
-      return response.data || null;
-    } catch (error) {
-      console.warn("Gagal mengambil katalog Product List:", error.response?.data || error.message);
-      return null;
-    }
+    return {
+      product: produk?.nama_produk || "",
+      product_group: produk?.kategori_produk || "",
+      price_cutting: produk?.harga_jasa_cutting || 0,
+      notes_spk: "",
+      materials,
+      sku_items: Array.isArray(produk?.skus) ? produk.skus : [],
+    };
   };
 
   const buildProductAutoFields = async (produkId) => {
@@ -1117,13 +1121,12 @@ const SpkCutting = () => {
 
     const dataToSend = {
       ...dataWithoutSpkNumber,
-      product_list_id: parseInt(newSpkCutting.produk_id, 10),
-      produk_id: null,
+      produk_id: parseInt(newSpkCutting.produk_id, 10),
       harga_jasa: newSpkCutting.harga_jasa ? parseFloat(newSpkCutting.harga_jasa) : null,
       jumlah_asumsi_produk: newSpkCutting.jumlah_asumsi_produk ? parseInt(newSpkCutting.jumlah_asumsi_produk, 10) : null,
       jenis_spk: newSpkCutting.jenis_spk || null,
       tukang_pola_id: newSpkCutting.tukang_pola_id ? parseInt(newSpkCutting.tukang_pola_id) : null,
-      product_list_sku_ids: selectedSkuIds.map((id) => parseInt(id, 10)),
+      produk_sku_ids: selectedSkuIds.map((id) => parseInt(id, 10)),
       bagian: newSpkCutting.bagian.map((bagian) => ({
         ...bagian,
 
@@ -1948,8 +1951,7 @@ const SpkCutting = () => {
 
     const dataToSend = {
       pic: editSpkCutting.pic || "",
-      product_list_id: parseInt(editSpkCutting.produk_id, 10),
-      produk_id: null,
+      produk_id: parseInt(editSpkCutting.produk_id, 10),
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
       harga_jasa: parseFloat(editSpkCutting.harga_jasa),
       satuan_harga: editSpkCutting.satuan_harga,
@@ -1958,7 +1960,7 @@ const SpkCutting = () => {
       keterangan: editSpkCutting.keterangan || "",
       tukang_cutting_id: parseInt(editSpkCutting.tukang_cutting_id),
       tukang_pola_id: editSpkCutting.tukang_pola_id ? parseInt(editSpkCutting.tukang_pola_id) : null,
-      product_list_sku_ids: editSelectedSkuIds.map((id) => parseInt(id, 10)),
+      produk_sku_ids: editSelectedSkuIds.map((id) => parseInt(id, 10)),
       bagian: editSpkCutting.bagian.map((bagian) => ({
         nama_bagian: bagian.nama_bagian,
 

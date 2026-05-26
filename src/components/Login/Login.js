@@ -88,7 +88,7 @@ const Login = () => {
               <label className="login-label">Password</label>
               <div className="login-input-wrap">
                 <FiLock className="login-input-icon" />
-                <input
+                <input  
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
