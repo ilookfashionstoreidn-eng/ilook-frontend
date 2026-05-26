@@ -1312,7 +1312,7 @@ const InputSkuGudang = () => {
                 disabled={isCatalogLoading}
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
               >
-                <FaBoxOpen /> {isCatalogLoading ? "Memuat Katalog..." : "Buka Modal Input"}
+                <FaBoxOpen /> {isCatalogLoading ? "Memuat Katalog..." : "."}
               </button>
             </div>
 
