@@ -209,9 +209,30 @@ export const buildGudangWorkspaceErrorMessage = (error, fallbackMessage) => {
   return error?.response?.data?.message || error?.message || fallbackMessage;
 };
 
-export const fetchGudangProdukWorkspace = async () => {
-  const response = await API.get("/gudang-produk-workspace");
+export const fetchGudangProdukWorkspace = async (options = {}) => {
+  const params = {};
+
+  if (options.includeCatalog === false) {
+    params.without_catalog = 1;
+  }
+
+  if (options.activityLimit !== undefined) {
+    params.activity_limit = options.activityLimit;
+  }
+
+  const response = await API.get("/gudang-produk-workspace", { params });
   return normalizeWorkspaceState(response?.data?.data);
+};
+
+export const fetchGudangProdukWorkspaceCatalog = async () => {
+  const response = await API.get("/gudang-produk-workspace", {
+    params: { only: "catalog" },
+  });
+
+  return {
+    products: Array.isArray(response?.data?.data?.products) ? response.data.data.products : [],
+    skus: Array.isArray(response?.data?.data?.skus) ? response.data.data.skus : [],
+  };
 };
 
 export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {

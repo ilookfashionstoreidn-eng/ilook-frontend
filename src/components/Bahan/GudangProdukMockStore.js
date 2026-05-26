@@ -436,13 +436,16 @@ export const getAllSlots = (state) =>
 
 export const getStockEntriesWithMeta = (state) => {
   const slots = getAllSlots(state);
+  const slotById = new Map(slots.map((slot) => [String(slot.id), slot]));
+  const skuById = new Map(state.skus.map((sku) => [String(sku.id), sku]));
+  const productById = new Map(state.products.map((product) => [String(product.id), product]));
 
   return state.stockEntries
     .filter((entry) => entry.qty > 0)
     .map((entry) => {
-      const slot = slots.find((item) => item.id === entry.slotId);
-      const sku = getSkuById(state, entry.skuId);
-      const product = sku ? getProductById(state, sku.productId) : null;
+      const slot = slotById.get(String(entry.slotId));
+      const sku = skuById.get(String(entry.skuId)) || null;
+      const product = sku ? productById.get(String(sku.productId)) || null : null;
 
       return {
         ...entry,
