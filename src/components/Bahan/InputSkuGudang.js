@@ -28,6 +28,7 @@ import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
 import {
   buildGudangWorkspaceErrorMessage,
   ensureGudangProdukSkuActive,
+  fetchGudangProdukWorkspaceCatalog,
   placeGudangProdukSku,
 } from "./GudangProdukWorkspaceApi";
 import {
@@ -139,7 +140,10 @@ const buildSuggestionDescription = (item) => {
 };
 
 const InputSkuGudang = () => {
-  const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace();
+  const { state, setState, isLoading, error } = useGudangProdukWorkspace({
+    includeCatalog: false,
+    activityLimit: 20,
+  });
   const [inputMode, setInputMode] = useState("sku");
   const [layoutId, setLayoutId] = useState("");
   const [productId, setProductId] = useState("");
@@ -163,6 +167,8 @@ const InputSkuGudang = () => {
   const [importResult, setImportResult] = useState(null);
   const [replaceExistingStock, setReplaceExistingStock] = useState(false);
   const [isSkuInputModalOpen, setIsSkuInputModalOpen] = useState(false);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -233,6 +239,39 @@ const InputSkuGudang = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [isSkuInputModalOpen]);
+
+  const hasCatalog = state.products.length > 0 || state.skus.length > 0;
+
+  const ensureCatalogLoaded = useCallback(async () => {
+    if (hasCatalog) {
+      return true;
+    }
+
+    try {
+      setIsCatalogLoading(true);
+      setCatalogError("");
+
+      const catalog = await fetchGudangProdukWorkspaceCatalog();
+      setState((currentState) => ({
+        ...currentState,
+        products: catalog.products,
+        skus: catalog.skus,
+      }));
+
+      return true;
+    } catch (fetchError) {
+      const message = buildGudangWorkspaceErrorMessage(
+        fetchError,
+        "Gagal memuat katalog produk dan SKU."
+      );
+
+      setCatalogError(message);
+      await showGudangError("Katalog gagal dimuat", message);
+      return false;
+    } finally {
+      setIsCatalogLoading(false);
+    }
+  }, [hasCatalog, setState]);
 
   const selectedLayout = useMemo(
     () =>
@@ -342,7 +381,11 @@ const InputSkuGudang = () => {
   const productSkuOptions = productId ? getSkusByProductId(state, productId) : [];
   const skuOptions = productId ? productSkuOptions : suggestedSerialSkuOptions;
   const allSlots = useMemo(() => getAllSlots(state), [state]);
-  const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
+  const shouldBuildStockSummary = isSkuInputModalOpen || inputMode === "seri";
+  const stockSummaryBySlot = useMemo(
+    () => (shouldBuildStockSummary ? getSlotStockSummaryMap(state) : {}),
+    [shouldBuildStockSummary, state]
+  );
   const skuImportLookup = useMemo(() => {
     const lookup = new Map();
 
@@ -710,11 +753,17 @@ const InputSkuGudang = () => {
 
   const isRecoverableImportError = (importError) => importError?.response?.status === 422;
 
-  const handleImportButtonClick = () => {
+  const handleImportButtonClick = async () => {
+    const isCatalogReady = await ensureCatalogLoaded();
+    if (!isCatalogReady) return;
+
     importInputRef.current?.click();
   };
 
-  const handleDownloadImportTemplate = () => {
+  const handleDownloadImportTemplate = async () => {
+    const isCatalogReady = await ensureCatalogLoaded();
+    if (!isCatalogReady) return;
+
     const sampleSku = state.skus[0];
     const sampleSlot = selectedLayoutSlots[0];
     const worksheet = XLSX.utils.aoa_to_sheet([
@@ -731,6 +780,11 @@ const InputSkuGudang = () => {
     XLSX.writeFile(workbook, "template-migrasi-stok-gudang.xlsx");
   };
 
+  const handleOpenSkuInputModal = async () => {
+    setIsSkuInputModalOpen(true);
+    await ensureCatalogLoaded();
+  };
+
   const handleImportFileChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -744,6 +798,9 @@ const InputSkuGudang = () => {
       );
       return;
     }
+
+    const isCatalogReady = await ensureCatalogLoaded();
+    if (!isCatalogReady) return;
 
     try {
       setImportResult(null);
@@ -805,7 +862,14 @@ const InputSkuGudang = () => {
         skippedRows,
         errors: [],
       });
-      setState(result.data || state);
+      if (result.data) {
+        setState((currentState) => ({
+          ...currentState,
+          ...result.data,
+          products: currentState.products,
+          skus: currentState.skus,
+        }));
+      }
 
       await showGudangSuccess(
         "Import Excel selesai",
@@ -929,8 +993,30 @@ const InputSkuGudang = () => {
         skuId: parsedSkuId,
         qty: Number(qty),
         notes: noteParts.join(" | "),
-      });
-      setState(response.workspace);
+      }, { minimal: true });
+
+      if (response.placement?.stockEntry) {
+        setState((currentState) => {
+          const nextStockEntries = [...currentState.stockEntries];
+          const existingIndex = nextStockEntries.findIndex(
+            (entry) => String(entry.id) === String(response.placement.stockEntry.id)
+          );
+
+          if (existingIndex >= 0) {
+            nextStockEntries[existingIndex] = response.placement.stockEntry;
+          } else {
+            nextStockEntries.unshift(response.placement.stockEntry);
+          }
+
+          return {
+            ...currentState,
+            stockEntries: nextStockEntries,
+            activityLog: response.placement.activity
+              ? [response.placement.activity, ...currentState.activityLog].slice(0, 20)
+              : currentState.activityLog,
+          };
+        });
+      }
       await showGudangSuccess(
         "Produk berhasil ditempatkan",
         selectedSerial
@@ -1007,8 +1093,13 @@ const InputSkuGudang = () => {
       setIsActivatingSerialSku(true);
 
       const result = await ensureGudangProdukSkuActive(selectedSerial.sku);
-      const nextState = await refresh({ silent: true });
-      const activatedSku = nextState.skus.find(
+      const nextCatalog = await fetchGudangProdukWorkspaceCatalog();
+      setState((currentState) => ({
+        ...currentState,
+        products: nextCatalog.products,
+        skus: nextCatalog.skus,
+      }));
+      const activatedSku = nextCatalog.skus.find(
         (sku) =>
           String(sku.code || "").trim().toUpperCase() ===
           String(selectedSerial.sku || "").trim().toUpperCase()
@@ -1051,6 +1142,8 @@ const InputSkuGudang = () => {
       statusLabel={
         isLoading
           ? "Memuat workspace..."
+          : isCatalogLoading
+            ? "Memuat katalog..."
           : isImporting
             ? "Mengimport Excel..."
           : isSubmitting
@@ -1065,6 +1158,12 @@ const InputSkuGudang = () => {
       {error ? (
         <div className="gudang-ui-empty-panel" style={{ marginBottom: 20 }}>
           {error}
+        </div>
+      ) : null}
+
+      {catalogError ? (
+        <div className="gudang-ui-empty-panel" style={{ marginBottom: 20 }}>
+          {catalogError}
         </div>
       ) : null}
 
@@ -1122,7 +1221,7 @@ const InputSkuGudang = () => {
                   type="button"
                   className="gudang-ui-button"
                   onClick={handleImportButtonClick}
-                  disabled={isImporting || isLoading}
+                  disabled={isImporting || isLoading || isCatalogLoading}
                   style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
                 >
                   <FaFileExcel /> {isImporting ? "Import..." : "Import Excel"}
@@ -1131,7 +1230,7 @@ const InputSkuGudang = () => {
                   type="button"
                   className="gudang-ui-button-secondary"
                   onClick={handleDownloadImportTemplate}
-                  disabled={isImporting}
+                  disabled={isImporting || isCatalogLoading}
                   style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
                 >
                   <FaDownload /> Template
@@ -1209,10 +1308,11 @@ const InputSkuGudang = () => {
               <button
                 type="button"
                 className="gudang-ui-button"
-                onClick={() => setIsSkuInputModalOpen(true)}
+                onClick={handleOpenSkuInputModal}
+                disabled={isCatalogLoading}
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
               >
-                <FaBoxOpen /> Buka Modal Input
+                <FaBoxOpen /> {isCatalogLoading ? "Memuat Katalog..." : "Buka Modal Input"}
               </button>
             </div>
 

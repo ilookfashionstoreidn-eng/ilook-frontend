@@ -5,18 +5,21 @@ import {
   fetchGudangProdukWorkspace,
 } from "./GudangProdukWorkspaceApi";
 
-const useGudangProdukWorkspace = () => {
+const useGudangProdukWorkspace = (initialFetchOptions = {}) => {
   const [state, setState] = useState(emptyGudangWorkspaceState);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const refresh = async ({ silent = false } = {}) => {
+  const refresh = async ({ silent = false, ...fetchOptions } = {}) => {
     if (!silent) {
       setIsLoading(true);
     }
 
     try {
-      const nextState = await fetchGudangProdukWorkspace();
+      const nextState = await fetchGudangProdukWorkspace({
+        ...initialFetchOptions,
+        ...fetchOptions,
+      });
       setState(nextState);
       setError("");
       return nextState;
