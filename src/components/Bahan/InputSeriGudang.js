@@ -68,45 +68,14 @@ const Step = ({ number, label, done, active, disabled, onClick }) => (
     type="button"
     disabled={disabled}
     onClick={onClick}
-    style={{
-      appearance: "none",
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      padding: "12px 16px",
-      borderRadius: "12px",
-      background: active ? "#edf4ff" : done ? "#ecfdf5" : "#f8fafc",
-      border: `1px solid ${active ? "#2458ce" : done ? "#b7e4d8" : "#e2e8f0"}`,
-      flex: 1,
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.55 : 1,
-      textAlign: "left",
-    }}
+    className={`gudang-serial-step-button ${active ? "active" : ""} ${
+      done ? "done" : ""
+    }`}
   >
-    <span
-      style={{
-        width: "28px",
-        height: "28px",
-        borderRadius: "50%",
-        flexShrink: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: active ? "#2458ce" : done ? "#0f766e" : "#e2e8f0",
-        color: active || done ? "#fff" : "#64748b",
-        fontWeight: "800",
-        fontSize: "13px",
-      }}
-    >
+    <span className="gudang-serial-step-number">
       {done ? <FaCheckCircle size={14} /> : number}
     </span>
-    <span
-      style={{
-        fontSize: "13px",
-        fontWeight: "700",
-        color: active ? "#2458ce" : done ? "#0f766e" : "#334155",
-      }}
-    >
+    <span className="gudang-serial-step-label">
       Section {number}: {label}
     </span>
   </button>
@@ -606,6 +575,36 @@ const InputSeriGudang = ({ embedded = false }) => {
     }
   };
 
+  const serialProgressSteps = [
+    {
+      key: "kode-seri",
+      number: "1",
+      title: "Kode seri",
+      description: skuReady
+        ? `${validRows.length} SKU / ${totalQty} pcs siap.`
+        : "Isi kode seri, SKU, dan qty.",
+      isComplete: skuReady,
+    },
+    {
+      key: "lokasi",
+      number: "2",
+      title: "Lokasi slot",
+      description: selectedSlot
+        ? `${selectedSlot.slotCode} dipilih.`
+        : "Pilih slot penyimpanan.",
+      isComplete: Boolean(selectedSlot),
+    },
+    {
+      key: "ringkasan",
+      number: "3",
+      title: "Review",
+      description: isFormReady
+        ? "Siap disimpan ke gudang."
+        : "Cek kelengkapan data.",
+      isComplete: isFormReady,
+    },
+  ];
+
   const content = (
     <>
       {error ? (
@@ -614,7 +613,7 @@ const InputSeriGudang = ({ embedded = false }) => {
         </div>
       ) : null}
 
-      <div style={{ display: "flex", gap: "10px", marginBottom: "24px", flexWrap: "wrap" }}>
+      <div className="gudang-serial-stepbar">
         <Step
           number="1"
           label="Input Kode Seri"
@@ -640,10 +639,10 @@ const InputSeriGudang = ({ embedded = false }) => {
         />
       </div>
 
-      <div className="gudang-master-workspace-grid">
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="gudang-master-workspace-grid gudang-serial-modal-grid">
+        <div className="gudang-serial-main-stack">
           {activeSection === 1 ? (
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-serial-panel">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>1. Input Kode Seri</h2>
@@ -689,7 +688,7 @@ const InputSeriGudang = ({ embedded = false }) => {
           ) : null}
 
           {activeSection === 1 ? (
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-serial-panel">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>SKU dan Qty</h2>
@@ -705,7 +704,7 @@ const InputSeriGudang = ({ embedded = false }) => {
                 </button>
               </div>
 
-              <div style={{ display: "grid", gap: "12px" }}>
+              <div className="gudang-serial-sku-stack">
                 {productListError ? (
                   <div
                     className="gudang-ui-callout"
@@ -718,16 +717,7 @@ const InputSeriGudang = ({ embedded = false }) => {
                 {normalizedRows.map((row, index) => (
                   <div
                     key={row.id}
-                    style={{
-                      border: "1px solid #d5e3f8",
-                      borderRadius: "14px",
-                      background: "#f8fbff",
-                      padding: "14px",
-                      display: "grid",
-                      gridTemplateColumns: "minmax(220px, 1fr) 120px auto auto",
-                      gap: "12px",
-                      alignItems: "end",
-                    }}
+                    className="gudang-serial-sku-row"
                   >
                     <div className="gudang-ui-field">
                       <label>Nama SKU #{index + 1}</label>
@@ -869,8 +859,8 @@ const InputSeriGudang = ({ embedded = false }) => {
                 ))}
               </div>
 
-              <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <strong style={{ color: "#0f172a", fontSize: 13 }}>
+              <div className="gudang-serial-total-row">
+                <strong>
                   Total {validRows.length} SKU / {totalQty} pcs
                 </strong>
                 <button
@@ -887,7 +877,7 @@ const InputSeriGudang = ({ embedded = false }) => {
           ) : null}
 
           {activeSection === 2 ? (
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-serial-panel">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>2. Pilih Lokasi Slot</h2>
@@ -979,7 +969,7 @@ const InputSeriGudang = ({ embedded = false }) => {
           ) : null}
 
           {activeSection === 3 ? (
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-serial-panel">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>3. Ringkasan Input</h2>
@@ -1059,7 +1049,7 @@ const InputSeriGudang = ({ embedded = false }) => {
             </section>
           ) : null}
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div className="gudang-serial-footer-actions">
             <button
               type="button"
               className="gudang-ui-button-secondary"
@@ -1083,23 +1073,24 @@ const InputSeriGudang = ({ embedded = false }) => {
           </div>
         </div>
 
-        <div className="gudang-master-visual-stack">
+        <div className="gudang-master-visual-stack gudang-serial-sidebar">
           {placementRows.length > 0 ? (
-            <section className="gudang-ui-panel">
-              <div style={{ marginBottom: 12 }}>
-                <strong style={{ color: "#17457c", fontSize: 14 }}>Log Placement Terbaru</strong>
+            <section className="gudang-ui-panel gudang-serial-log-panel">
+              <div className="gudang-serial-log-head">
+                <strong>Log Placement Terbaru</strong>
+                <span>{placementRows.length} aktivitas</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="gudang-serial-log-list">
                 {placementRows.map((row) => (
-                  <div key={row.id} style={{ fontSize: 12, padding: "8px 12px", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontWeight: 700, color: "#0f172a" }}>{resolveSkuLabel(row.skuId)}</div>
-                    <div style={{ color: "#64748b", marginTop: 2 }}>
+                  <div key={row.id} className="gudang-serial-log-item">
+                    <div>{resolveSkuLabel(row.skuId)}</div>
+                    <span>
                       {resolveSlotLabel(row.toSlotId)} | {row.qty} pcs
-                    </div>
+                    </span>
                     {row.notes ? (
-                      <div style={{ color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <small>
                         {row.notes}
-                      </div>
+                      </small>
                     ) : null}
                   </div>
                 ))}
@@ -1166,13 +1157,30 @@ const InputSeriGudang = ({ embedded = false }) => {
               onMouseDown={(event) => event.stopPropagation()}
             >
               <div className="gudang-sku-input-modal-head">
-                <div>
+                <div className="gudang-sku-input-modal-title">
+                  <span className="gudang-sku-input-modal-kicker">Workflow Kode Seri</span>
                   <h2 id="gudang-serial-input-modal-title">Input Kode Seri</h2>
                   <p>Ikuti 3 section: input kode seri, pilih lokasi slot, lalu cek ringkasan sebelum simpan.</p>
                 </div>
+                <div className="gudang-sku-input-modal-progress" aria-label="Progress input kode seri">
+                  {serialProgressSteps.map((step) => (
+                    <div
+                      key={step.key}
+                      className={`gudang-sku-input-progress-card ${
+                        step.isComplete ? "complete" : ""
+                      }`}
+                    >
+                      <span>{step.isComplete ? <FaCheckCircle /> : step.number}</span>
+                      <div>
+                        <strong>{step.title}</strong>
+                        <small>{step.description}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  className="gudang-ui-button-secondary"
+                  className="gudang-ui-button-secondary gudang-sku-input-close-button"
                   onClick={() => setIsSerialInputModalOpen(false)}
                   disabled={isSubmitting}
                 >

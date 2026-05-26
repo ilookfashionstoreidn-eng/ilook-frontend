@@ -1312,7 +1312,7 @@ const InputSkuGudang = () => {
                 disabled={isCatalogLoading}
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
               >
-                <FaBoxOpen /> {isCatalogLoading ? "Memuat Katalog..." : "Buka Modal Input"}
+                <FaBoxOpen /> {isCatalogLoading ? "Memuat Katalog..." : "."}
               </button>
             </div>
 
@@ -1349,13 +1349,30 @@ const InputSkuGudang = () => {
                 onMouseDown={(event) => event.stopPropagation()}
               >
                 <div className="gudang-sku-input-modal-head">
-                  <div>
+                  <div className="gudang-sku-input-modal-title">
+                    <span className="gudang-sku-input-modal-kicker">Workflow SKU Placement</span>
                     <h2 id="gudang-sku-input-modal-title">Input SKU ke Gudang</h2>
                     <p>Pilih barang, tentukan lokasi gudang, lalu simpan placement dari satu modal ini.</p>
                   </div>
+                  <div className="gudang-sku-input-modal-progress" aria-label="Progress input SKU">
+                    {progressSteps.map((step) => (
+                      <div
+                        key={step.key}
+                        className={`gudang-sku-input-progress-card ${
+                          step.isComplete ? "complete" : ""
+                        }`}
+                      >
+                        <span>{step.isComplete ? <FaCheckCircle /> : step.number}</span>
+                        <div>
+                          <strong>{step.title}</strong>
+                          <small>{step.description}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <button
                     type="button"
-                    className="gudang-ui-button-secondary"
+                    className="gudang-ui-button-secondary gudang-sku-input-close-button"
                     onClick={() => setIsSkuInputModalOpen(false)}
                     disabled={isSubmitting}
                   >
@@ -1364,10 +1381,10 @@ const InputSkuGudang = () => {
                 </div>
 
                 <div className="gudang-sku-input-modal-body">
-          <div className="gudang-master-workspace-grid">
-          <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div className="gudang-master-workspace-grid gudang-sku-input-workspace">
+          <div className="gudang-master-main gudang-sku-input-main">
             
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-sku-input-section">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>1. Pilih Barang & Produk</h2>
@@ -1575,7 +1592,7 @@ const InputSkuGudang = () => {
               </div>
             </section>
 
-            <section className="gudang-ui-panel">
+            <section className="gudang-ui-panel gudang-sku-input-section">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>2. Pilih Lokasi & Rekomendasi</h2>
@@ -1664,8 +1681,8 @@ const InputSkuGudang = () => {
             </section>
           </div>
 
-          <div className="gudang-master-visual-stack">
-            <section className="gudang-ui-panel gudang-master-overview-panel">
+          <div className="gudang-master-visual-stack gudang-sku-input-sidebar">
+            <section className="gudang-ui-panel gudang-master-overview-panel gudang-sku-input-summary-panel">
               <div className="gudang-ui-panel-head">
                 <div>
                   <h2>Ringkasan Input</h2>
@@ -1673,7 +1690,7 @@ const InputSkuGudang = () => {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+              <div className="gudang-sku-input-summary-list">
                 {[
                   { label: "Gudang", value: selectedLayout?.name || "-" },
                   { label: "Kode Seri", value: selectedSerial?.nomor_seri || "-" },
@@ -1682,22 +1699,20 @@ const InputSkuGudang = () => {
                   { label: "Qty", value: `${qty || 0} pcs` },
                   { label: "Lokasi", value: selectedSlot?.slotCode || "-" }
                 ].map((item, index) => (
-                  <div key={index} style={{ display: "flex", justifyContent: "space-between", paddingBottom: "10px", borderBottom: "1px solid #eef2f6", fontSize: "13px" }}>
-                    <span style={{ color: "#64748b" }}>{item.label}</span>
-                    <strong style={{ color: "#0f172a", textAlign: "right", maxWidth: "60%" }}>{item.value}</strong>
+                  <div key={index} className="gudang-sku-input-summary-row">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
                   </div>
                 ))}
               </div>
 
-              <div className="gudang-ui-callout" style={{ 
-                marginBottom: "20px", 
-                background: isFormReady ? "#ecfdf5" : "#fffbeb", 
-                borderColor: isFormReady ? "#b7e4d8" : "#fde68a",
-                color: isFormReady ? "#0f766e" : "#b45309",
-                display: "flex", gap: "10px", alignItems: "center"
-              }}>
-                <FaCheckCircle style={{ fontSize: "18px", flexShrink: 0 }} />
-                <span style={{ fontSize: "13px", fontWeight: "600", lineHeight: "1.4" }}>
+              <div
+                className={`gudang-sku-input-review-card ${
+                  isFormReady ? "ready" : "pending"
+                }`}
+              >
+                <FaCheckCircle />
+                <span>
                   {isFormReady ? "Data sudah lengkap dan aman disave." : "Lengkapi barang dan lokasi agar form input bisa disimpan."}
                 </span>
               </div>
@@ -1705,9 +1720,8 @@ const InputSkuGudang = () => {
               <form onSubmit={handleSubmit}>
                 <button
                   type="submit"
-                  className="gudang-ui-button"
+                  className="gudang-ui-button gudang-sku-input-submit-button"
                   disabled={!isFormReady || isSubmitting}
-                  style={{ width: "100%", padding: "14px", fontSize: "14px", display: "flex", justifyContent: "center", gap: "8px", alignItems: "center", opacity: isFormReady ? 1 : 0.6 }}
                 >
                   <FaSave /> {isSubmitting ? "Menyimpan..." : "Simpan Placement"}
                 </button>
