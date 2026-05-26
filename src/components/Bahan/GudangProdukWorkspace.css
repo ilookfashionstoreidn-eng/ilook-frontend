@@ -1397,6 +1397,96 @@
   top: 104px;
 }
 
+.gudang-sku-input-launch-panel .gudang-ui-panel-head {
+  align-items: center;
+}
+
+.gudang-sku-input-launch-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.gudang-sku-input-launch-summary .gudang-ui-detail-box {
+  padding: 14px;
+}
+
+.gudang-sku-input-launch-summary span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gudang-sku-input-launch-summary strong {
+  display: block;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.gudang-sku-input-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(8px);
+}
+
+.swal2-container {
+  z-index: 3000 !important;
+}
+
+.gudang-sku-input-modal {
+  width: min(1480px, 100%);
+  max-height: calc(100vh - 36px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 26px;
+  background: #f8fafc;
+  box-shadow: 0 28px 70px -22px rgba(15, 23, 42, 0.52);
+}
+
+.gudang-sku-input-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.gudang-sku-input-modal-head h2 {
+  margin: 0 0 6px;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.gudang-sku-input-modal-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.gudang-sku-input-modal-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+}
+
+.gudang-sku-input-modal-body .gudang-master-visual-stack {
+  top: 18px;
+}
+
 .gudang-master-scroll-region {
   min-height: 0;
 }
@@ -1451,6 +1541,10 @@
 
   .gudang-master-workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gudang-sku-input-modal-body .gudang-master-visual-stack {
+    position: static;
   }
 
   .gudang-master-visual-stack {
@@ -2597,6 +2691,23 @@
     border-radius: 20px;
   }
 
+  .gudang-sku-input-modal-backdrop {
+    padding: 12px;
+  }
+
+  .gudang-sku-input-modal {
+    max-height: calc(100vh - 24px);
+    border-radius: 20px;
+  }
+
+  .gudang-sku-input-modal-head {
+    flex-direction: column;
+  }
+
+  .gudang-sku-input-modal-head .gudang-ui-button-secondary {
+    width: 100%;
+  }
+
   .gudang-layout-rack-popup-backdrop {
     padding: 12px;
   }
@@ -2610,7 +2721,9 @@
   .gudang-layout-rack-popup-grid,
   .gudang-layout-modal-head,
   .gudang-layout-modal-body,
-  .gudang-layout-modal-footer {
+  .gudang-layout-modal-footer,
+  .gudang-sku-input-modal-head,
+  .gudang-sku-input-modal-body {
     padding: 14px;
   }
 
@@ -3371,6 +3484,80 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gudang-stoklokasi-simple-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.gudang-stoklokasi-simple-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.gudang-stoklokasi-simple-slot-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbe5f1;
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.gudang-stoklokasi-simple-slot-card:hover,
+.gudang-stoklokasi-simple-slot-card.active {
+  border-color: #2458ce;
+  background: linear-gradient(135deg, #f8fbff, #ffffff);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.gudang-stoklokasi-simple-slot-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gudang-stoklokasi-simple-slot-head strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.gudang-stoklokasi-simple-slot-head span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.gudang-stoklokasi-simple-qty {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gudang-stoklokasi-simple-qty.filled {
+  background: #eff6ff;
+  color: #2458ce;
+}
+
+.gudang-stoklokasi-simple-slot-meta,
+.gudang-stoklokasi-simple-empty {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.gudang-stoklokasi-simple-empty {
+  font-weight: 700;
 }
 
 .gudang-stoklokasi-table-floor-row td {

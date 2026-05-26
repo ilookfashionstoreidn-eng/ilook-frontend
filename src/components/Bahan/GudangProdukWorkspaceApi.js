@@ -1,5 +1,8 @@
 import API from "../../api";
 import {
+  getAllSlots,
+  getProductById,
+  getSkuById,
   getBlockLayoutColumnsLimit,
   normalizeBlockCanvas,
   resolveRackLayoutPosition,
@@ -74,6 +77,91 @@ const normalizeGudangProdukHistoryPayload = (payload = {}) => ({
   },
 });
 
+const areIdsEqual = (left, right) =>
+  left !== null &&
+  left !== undefined &&
+  right !== null &&
+  right !== undefined &&
+  String(left) === String(right);
+
+const normalizeSearchText = (value) => String(value || "").trim().toLowerCase();
+
+const getActivityQtyForSlot = (activityLog = [], skuId, slotId, direction) =>
+  activityLog.reduce((total, activity) => {
+    const targetSlotId = direction === "in" ? activity?.toSlotId : activity?.fromSlotId;
+
+    if (!areIdsEqual(activity?.skuId, skuId) || String(targetSlotId || "") !== String(slotId || "")) {
+      return total;
+    }
+
+    return total + (Number(activity?.qty) || 0);
+  }, 0);
+
+const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) => {
+  const state = normalizeWorkspaceState(workspacePayload);
+  const slots = getAllSlots(state);
+  const search = normalizeSearchText(params.search);
+  const page = Math.max(Number(params.page) || 1, 1);
+  const perPage = Math.max(Number(params.per_page || params.perPage) || 50, 1);
+
+  const allRows = state.stockEntries
+    .filter((entry) => Number(entry?.qty) > 0)
+    .map((entry) => {
+      const slot = slots.find((item) => String(item.id) === String(entry.slotId));
+      const sku = getSkuById(state, entry.skuId);
+      const product = sku ? getProductById(state, sku.productId) : null;
+      const qtySisa = Number(entry.qty) || 0;
+      const qtyKeluar = getActivityQtyForSlot(state.activityLog, entry.skuId, entry.slotId, "out");
+      const qtyMasukFromLog = getActivityQtyForSlot(state.activityLog, entry.skuId, entry.slotId, "in");
+      const qtyMasuk = Math.max(qtyMasukFromLog, qtySisa + qtyKeluar);
+      const locationParts = [
+        slot?.layoutName,
+        slot?.alias || slot?.slotCode,
+      ].filter(Boolean);
+
+      return {
+        id: entry.id || `${entry.slotId}_${entry.skuId}`,
+        sku: sku?.code || entry.sku || "-",
+        productName: product?.name || "",
+        qtyMasuk,
+        qtyKeluar,
+        qtySisa,
+        namaGudang: locationParts.join(" - ") || entry.slotId || "-",
+        updatedAt: entry.updatedAt || null,
+      };
+    })
+    .filter((row) => {
+      if (!search) return true;
+
+      return [
+        row.sku,
+        row.productName,
+        row.namaGudang,
+      ].some((value) => normalizeSearchText(value).includes(search));
+    })
+    .sort((left, right) => String(left.sku).localeCompare(String(right.sku)));
+
+  const total = allRows.length;
+  const paginatedRows = allRows.slice((page - 1) * perPage, page * perPage);
+
+  return normalizeGudangStockListPayload({
+    data: paginatedRows,
+    summary: {
+      total_rows: total,
+      total_qty_masuk: allRows.reduce((sum, row) => sum + row.qtyMasuk, 0),
+      total_qty_keluar: allRows.reduce((sum, row) => sum + row.qtyKeluar, 0),
+      total_qty_sisa: allRows.reduce((sum, row) => sum + row.qtySisa, 0),
+      total_locations: new Set(allRows.map((row) => row.namaGudang).filter(Boolean)).size,
+    },
+    pagination: {
+      current_page: page,
+      per_page: perPage,
+      total,
+      last_page: Math.max(Math.ceil(total / perPage), 1),
+    },
+  });
+};
+
 const clampNumber = (value, min, max, fallback) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -127,8 +215,17 @@ export const fetchGudangProdukWorkspace = async () => {
 };
 
 export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {
-  const response = await API.get("/gudang-produk-workspace/list-stok-product", { params });
-  return normalizeGudangStockListPayload(response?.data);
+  try {
+    const response = await API.get("/gudang-produk-workspace/list-stok-product", { params });
+    return normalizeGudangStockListPayload(response?.data);
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      throw error;
+    }
+
+    const response = await API.get("/gudang-produk-workspace");
+    return buildGudangStockListFromWorkspace(response?.data?.data, params);
+  }
 };
 
 export const fetchGudangProdukHistory = async (params = {}) => {
@@ -159,11 +256,14 @@ export const saveGudangProdukLayout = async (layout) => {
   };
 };
 
-export const placeGudangProdukSku = async (payload) => {
-  const response = await API.post("/gudang-produk-workspace/placements", payload);
+export const placeGudangProdukSku = async (payload, options = {}) => {
+  const response = await API.post("/gudang-produk-workspace/placements", payload, {
+    params: options.minimal ? { minimal: 1 } : undefined,
+  });
 
   return {
-    workspace: normalizeWorkspaceState(response?.data?.data),
+    workspace: options.minimal ? null : normalizeWorkspaceState(response?.data?.data),
+    placement: options.minimal ? response?.data?.data || null : null,
     message: response?.data?.message || "Placement berhasil disimpan.",
   };
 };

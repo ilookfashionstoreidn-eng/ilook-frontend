@@ -1,6 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api";
-import { FaBarcode, FaCheckCircle, FaMapMarkedAlt, FaSave, FaSearch, FaTimes } from "react-icons/fa";
+import {
+  FaBarcode,
+  FaCheckCircle,
+  FaDownload,
+  FaMapMarkedAlt,
+  FaPlus,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import { getAllSlots, getSlotStockSummaryMap } from "./GudangProdukMockStore";
 import { GudangLayoutMap, buildSlotHeadline } from "./GudangProdukSharedV2";
@@ -11,674 +19,951 @@ import {
   ensureGudangProdukSkuActive,
   placeGudangProdukSku,
 } from "./GudangProdukWorkspaceApi";
-import { showGudangError, showGudangSuccess, showGudangWarning } from "./GudangProdukAlerts";
-import { SERIAL_SKU_AUTO_MATCH_SCORE, findBestSerialSkuMatch } from "./GudangProdukSerialSkuUtils";
+import {
+  confirmGudangAction,
+  showGudangError,
+  showGudangSuccess,
+  showGudangWarning,
+} from "./GudangProdukAlerts";
 
-/* ─── helpers ─────────────────────────────────────────────────────────────── */
-const normalizeSelectValue = (v) => (v === "" ? "" : v);
+const makeSkuRow = () => ({
+  id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  sku: "",
+  qty: 1,
+});
 
-const buildSuggestionDescription = (item) => {
-  if (item.hasSameSku) return `SKU ini sudah ada ${item.sameSkuQty} pcs di slot ini.`;
-  if (item.isEmpty) return "Slot kosong — siap dipakai.";
-  return `${item.summary?.qty || 0} pcs dengan ${item.summary?.skuCount || 0} SKU.`;
+const normalizeText = (value) => String(value || "").trim().toUpperCase();
+
+const normalizeSkuLookupKey = (value) =>
+  normalizeText(value)
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^A-Z0-9]/g, "");
+
+const normalizeSelectValue = (value) => (value === "" ? "" : value);
+
+const getProductListSkuName = (item) => String(item?.sku_name || item?.sku || "").trim();
+
+const getProductListOptionLabel = (item) => {
+  const skuName = getProductListSkuName(item);
+  const productName = String(item?.product || "").trim();
+  const details = [item?.product_colour, item?.product_size].filter(Boolean).join(" ");
+
+  return [skuName, productName, details].filter(Boolean).join(" - ");
 };
 
-/* ─── step badge ───────────────────────────────────────────────────────────── */
-const Step = ({ number, label, done }) => (
-  <div style={{
-    display: "flex", alignItems: "center", gap: "10px",
-    padding: "12px 16px",
-    borderRadius: "12px",
-    background: done ? "linear-gradient(135deg,#ecfdf5,#f0fdf4)" : "#f8fafc",
-    border: `1px solid ${done ? "#b7e4d8" : "#e2e8f0"}`,
-    flex: 1,
-  }}>
-    <div style={{
-      width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: done ? "#0f766e" : "#e2e8f0",
-      color: done ? "#fff" : "#64748b", fontWeight: "800", fontSize: "13px",
-    }}>
+const buildSuggestionDescription = (item) => {
+  if (item.hasSameSku) {
+    return `SKU ini sudah ada ${item.sameSkuQty} pcs di slot ini.`;
+  }
+
+  if (item.isEmpty) {
+    return "Slot kosong dan siap dipakai.";
+  }
+
+  return `${item.summary?.qty || 0} pcs tersimpan dengan ${item.summary?.skuCount || 0} SKU aktif.`;
+};
+
+const Step = ({ number, label, done, active, disabled, onClick }) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onClick}
+    style={{
+      appearance: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      padding: "12px 16px",
+      borderRadius: "12px",
+      background: active ? "#edf4ff" : done ? "#ecfdf5" : "#f8fafc",
+      border: `1px solid ${active ? "#2458ce" : done ? "#b7e4d8" : "#e2e8f0"}`,
+      flex: 1,
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.55 : 1,
+      textAlign: "left",
+    }}
+  >
+    <span
+      style={{
+        width: "28px",
+        height: "28px",
+        borderRadius: "50%",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: active ? "#2458ce" : done ? "#0f766e" : "#e2e8f0",
+        color: active || done ? "#fff" : "#64748b",
+        fontWeight: "800",
+        fontSize: "13px",
+      }}
+    >
       {done ? <FaCheckCircle size={14} /> : number}
-    </div>
-    <span style={{ fontSize: "13px", fontWeight: "600", color: done ? "#0f766e" : "#334155" }}>{label}</span>
-  </div>
+    </span>
+    <span
+      style={{
+        fontSize: "13px",
+        fontWeight: "700",
+        color: active ? "#2458ce" : done ? "#0f766e" : "#334155",
+      }}
+    >
+      Section {number}: {label}
+    </span>
+  </button>
 );
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
+const downloadBlob = (blob, filename) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+const sanitizeDownloadName = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-");
+
+const getBarcodeDownloadErrorMessage = async (error, fallback) => {
+  const data = error?.response?.data;
+
+  if (data instanceof Blob) {
+    const text = await data.text();
+
+    try {
+      const parsed = JSON.parse(text);
+      return parsed?.message || fallback;
+    } catch {
+      return text || fallback;
+    }
+  }
+
+  return buildGudangWorkspaceErrorMessage(error, fallback);
+};
+
 const InputSeriGudang = ({ embedded = false }) => {
-  const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace();
+  const { state, setState, isLoading, error } = useGudangProdukWorkspace();
+  const [isSerialInputModalOpen, setIsSerialInputModalOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(1);
+  const [layoutId, setLayoutId] = useState("");
+  const [serialBase, setSerialBase] = useState("");
+  const [skuRows, setSkuRows] = useState([makeSkuRow()]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [downloadingRowId, setDownloadingRowId] = useState("");
+  const [productListOptions, setProductListOptions] = useState([]);
+  const [productListLoading, setProductListLoading] = useState(false);
+  const [productListError, setProductListError] = useState("");
+  const [activeProductListRowId, setActiveProductListRowId] = useState("");
+  const [debouncedProductListSearch, setDebouncedProductListSearch] = useState("");
 
-  /* ── form state ── */
-  const [layoutId, setLayoutId]               = useState("");
-  const [serialQuery, setSerialQuery]         = useState("");
-  const [selectedSerialId, setSelectedSerialId] = useState("");
-  const [selectedSkuId, setSelectedSkuId]     = useState("");
-  const [selectedSlot, setSelectedSlot]       = useState(null);
-  const [qty, setQty]                         = useState(1);
-  const [notes, setNotes]                     = useState("");
+  const activeProductListSearch = useMemo(() => {
+    const activeRow = skuRows.find((row) => row.id === activeProductListRowId);
+    return String(activeRow?.sku || "").trim();
+  }, [activeProductListRowId, skuRows]);
 
-  /* ── async state ── */
-  const [serialItems, setSerialItems] = useState([]);
-  const [serialLoading, setSerialLoading] = useState(true);
-  const [serialError, setSerialError]     = useState("");
-  const [isSubmitting, setIsSubmitting]   = useState(false);
-  const [isSerialDropdownOpen, setIsSerialDropdownOpen] = useState(false);
-
-  const serialComboboxRef = useRef(null);
-
-  /* ── default layout ── */
   useEffect(() => {
-    if (!layoutId && state.layouts.length) setLayoutId(String(state.layouts[0].id));
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedProductListSearch(activeProductListSearch);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeProductListSearch]);
+
+  useEffect(() => {
+    if (!layoutId && state.layouts.length) {
+      setLayoutId(String(state.layouts[0].id));
+    }
   }, [layoutId, state.layouts]);
 
-  /* ── fetch seri ── */
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setSerialLoading(true);
-        const res = await API.get("/seri", { params: { all: 1 } });
-        if (!mounted) return;
-        setSerialItems(Array.isArray(res?.data?.data) ? res.data.data : []);
-        setSerialError("");
-      } catch (e) {
-        if (!mounted) return;
-        setSerialError(e?.response?.data?.message || e?.message || "Gagal memuat data kode seri.");
-      } finally {
-        if (mounted) setSerialLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+    if (!isSerialInputModalOpen) return undefined;
 
-  /* ── click-outside ── */
-  useEffect(() => {
-    const handler = (e) => {
-      if (!serialComboboxRef.current?.contains(e.target)) setIsSerialDropdownOpen(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [isSerialInputModalOpen]);
 
-  /* ═══════ derived ═══════ */
+  useEffect(() => {
+    if (!isSerialInputModalOpen && embedded) return undefined;
+
+    let ignore = false;
+
+    const fetchProductListOptions = async () => {
+      try {
+        setProductListLoading(true);
+        setProductListError("");
+
+        const response = await API.get("/product-list", {
+          params: {
+            search: debouncedProductListSearch || "",
+            page: 1,
+            per_page: 500,
+            sortBy: "sku_name",
+            sortOrder: "asc",
+          },
+        });
+
+        if (ignore) return;
+
+        setProductListOptions(Array.isArray(response?.data?.data) ? response.data.data : []);
+      } catch (fetchError) {
+        if (ignore) return;
+
+        setProductListOptions([]);
+        setProductListError(
+          fetchError?.response?.data?.message ||
+            fetchError?.message ||
+            "Gagal mengambil data Product List."
+        );
+      } finally {
+        if (!ignore) {
+          setProductListLoading(false);
+        }
+      }
+    };
+
+    fetchProductListOptions();
+
+    return () => {
+      ignore = true;
+    };
+  }, [debouncedProductListSearch, embedded, isSerialInputModalOpen]);
+
   const selectedLayout = useMemo(
-    () => state.layouts.find((l) => String(l.id) === String(layoutId)) || state.layouts[0] || null,
+    () =>
+      state.layouts.find((layout) => String(layout.id) === String(layoutId)) ||
+      state.layouts[0] ||
+      null,
     [layoutId, state.layouts]
   );
 
-  const allSlots           = useMemo(() => getAllSlots(state), [state]);
+  const allSlots = useMemo(() => getAllSlots(state), [state]);
   const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
 
-  /* enrich seri with matched sku/product */
-  const serialCatalog = useMemo(() =>
-    serialItems.map((item) => {
-      const best = findBestSerialSkuMatch(state.skus, item.sku);
-      const matchedSku     = best?.score >= SERIAL_SKU_AUTO_MATCH_SCORE ? best.sku : null;
-      const matchedProduct = matchedSku?.productId
-        ? state.products.find((p) => String(p.id) === String(matchedSku.productId)) || null
-        : null;
-      return {
-        ...item,
-        quantityHint: Math.max(1, Number(item.jumlah) || 1),
-        matchedSku,
-        matchedSkuId: matchedSku?.id || "",
-        matchedProduct,
-        matchedProductId: matchedProduct?.id || "",
-      };
-    }),
-    [serialItems, state.products, state.skus]
-  );
-
-  /* search filter for serial dropdown */
-  const serialResults = useMemo(() => {
-    const kw = serialQuery.trim().toLowerCase();
-    if (!kw) return serialCatalog;
-    return serialCatalog.filter((item) =>
-      [item.nomor_seri, item.sku, item.matchedSku?.label, item.matchedProduct?.name]
-        .some((v) => String(v || "").toLowerCase().includes(kw))
-    );
-  }, [serialCatalog, serialQuery]);
-
-  const selectedSerial = serialCatalog.find((i) => String(i.id) === String(selectedSerialId)) || null;
-
-  /* also show the raw sku from seri if not in state.skus yet */
-  const rawSeriSkuLabel = selectedSerial?.sku || "";
-
-  /* 
-   * SKU options: HANYA tampilkan SKU yang secara persis cocok dari hasil scan Seri 
-   * sehingga operator tidak bisa menginputkan ke SKU lain yang salah.
-   */
-  const allSkuOptions = useMemo(() => {
-    if (!selectedSerial?.matchedSkuId) return [];
-    
-    const matchedSku = state.skus.find(s => String(s.id) === String(selectedSerial.matchedSkuId));
-    return matchedSku ? [matchedSku] : [];
-  }, [state.skus, selectedSerial]);
-
-  const rawSkuAlreadyInList = allSkuOptions.some(
-    (s) => String(s.code || "").toUpperCase() === rawSeriSkuLabel.toUpperCase()
-  );
-
-  const selectedSku = selectedSkuId === "__raw__" 
-    ? { id: "__raw__", label: rawSeriSkuLabel } 
-    : (state.skus.find((s) => String(s.id) === String(selectedSkuId)) || null);
-
-  /* auto-select SKU when serial changes */
-  useEffect(() => {
-    if (!selectedSerial) {
-      setSelectedSkuId("");
-      return;
-    }
-    setQty(selectedSerial.quantityHint);
-    setSelectedSlot(null);
-    if (selectedSerial.matchedSkuId) {
-      setSelectedSkuId(String(selectedSerial.matchedSkuId));
-    } else if (selectedSerial.sku) {
-      setSelectedSkuId("__raw__");
-    } else {
-      setSelectedSkuId("");
-    }
-  }, [selectedSerial]);
-
-  /* clear slot when layout changes */
-  useEffect(() => {
-    if (!selectedLayout || !selectedSlot) return;
-    if (String(selectedSlot.layoutId) !== String(selectedLayout.id)) setSelectedSlot(null);
-  }, [selectedLayout, selectedSlot]);
-
-  /* layout-level slot lists */
   const selectedLayoutSlots = useMemo(
-    () => selectedLayout ? allSlots.filter((s) => String(s.layoutId) === String(selectedLayout.id)) : [],
+    () =>
+      selectedLayout
+        ? allSlots.filter((slot) => String(slot.layoutId) === String(selectedLayout.id))
+        : [],
     [allSlots, selectedLayout]
   );
+
+  useEffect(() => {
+    if (!selectedLayout || !selectedSlot) return;
+    if (String(selectedSlot.layoutId) !== String(selectedLayout.id)) {
+      setSelectedSlot(null);
+    }
+  }, [selectedLayout, selectedSlot]);
+
+  const normalizedRows = useMemo(() => {
+    let cursor = 1;
+
+    return skuRows.map((row) => {
+      const skuText = normalizeText(row.sku);
+      const skuLookupKey = normalizeSkuLookupKey(row.sku);
+      const qty = Math.max(1, Number(row.qty) || 1);
+      const matchedProductList =
+        productListOptions.find(
+          (item) => normalizeSkuLookupKey(getProductListSkuName(item)) === skuLookupKey
+        ) ||
+        null;
+      const matchedSku =
+        state.skus.find((sku) => normalizeSkuLookupKey(sku.code) === skuLookupKey) ||
+        state.skus.find((sku) => normalizeSkuLookupKey(sku.label) === skuLookupKey) ||
+        null;
+      const startNumber = cursor;
+      const endNumber = cursor + qty - 1;
+      cursor += qty;
+
+      return {
+        ...row,
+        skuText,
+        skuLookupKey,
+        qty,
+        matchedProductList,
+        matchedSku,
+        startNumber,
+        endNumber,
+        serialRange:
+          qty === 1
+            ? `${normalizeText(serialBase)}.${startNumber}`
+            : `${normalizeText(serialBase)}.${startNumber} - ${normalizeText(serialBase)}.${endNumber}`,
+      };
+    });
+  }, [productListOptions, serialBase, skuRows, state.skus]);
+
+  const validRows = normalizedRows.filter(
+    (row) => row.skuText && (row.matchedProductList || row.matchedSku) && row.qty > 0
+  );
+  const totalQty = validRows.reduce((total, row) => total + row.qty, 0);
+  const serialReady = Boolean(normalizeText(serialBase));
+  const skuReady = serialReady && validRows.length === skuRows.length && totalQty > 0;
+
   const selectedSlotLines = selectedSlot ? stockSummaryBySlot[selectedSlot.id]?.lines || [] : [];
+  const primarySku = validRows.find((row) => row.matchedSku)?.matchedSku || null;
+  const slotConflictRows = useMemo(() => {
+    if (!selectedSlot) return [];
+
+    return validRows.filter((row) =>
+      state.stockEntries.some(
+        (entry) =>
+          Number(entry.qty || 0) > 0 &&
+          row.matchedSku &&
+          String(entry.skuId) === String(row.matchedSku.id) &&
+          String(entry.slotId) !== String(selectedSlot.id)
+      )
+    );
+  }, [selectedSlot, state.stockEntries, validRows]);
+  const isFormReady = Boolean(selectedLayout && skuReady && selectedSlot && !slotConflictRows.length);
 
   const sameSkuSlots = useMemo(() => {
-    if (!selectedSku) return [];
-    return selectedLayoutSlots.filter((slot) =>
-      (stockSummaryBySlot[slot.id]?.lines || []).some((l) => String(l.skuId) === String(selectedSku.id))
-    );
-  }, [selectedLayoutSlots, selectedSku, stockSummaryBySlot]);
+    if (!primarySku) return [];
 
-  const sameSkuTotalQty = useMemo(
-    () => sameSkuSlots.reduce((acc, slot) => {
-      const q = (stockSummaryBySlot[slot.id]?.lines || [])
-        .filter((l) => String(l.skuId) === String(selectedSku?.id))
-        .reduce((s, l) => s + Number(l.qty || 0), 0);
-      return acc + q;
-    }, 0),
-    [sameSkuSlots, selectedSku, stockSummaryBySlot]
-  );
+    return selectedLayoutSlots.filter((slot) =>
+      (stockSummaryBySlot[slot.id]?.lines || []).some(
+        (line) => String(line.skuId) === String(primarySku.id)
+      )
+    );
+  }, [primarySku, selectedLayoutSlots, stockSummaryBySlot]);
 
   const suggestedSlots = useMemo(() => {
     if (!selectedLayout) return [];
+
     return selectedLayoutSlots
       .map((slot) => {
         const summary = stockSummaryBySlot[slot.id];
-        const sameLines = selectedSku
-          ? (summary?.lines || []).filter((l) => String(l.skuId) === String(selectedSku.id))
+        const sameSkuLines = primarySku
+          ? (summary?.lines || []).filter((line) => String(line.skuId) === String(primarySku.id))
           : [];
+
         return {
-          slot, summary,
-          hasSameSku: sameLines.length > 0,
-          sameSkuQty: sameLines.reduce((s, l) => s + Number(l.qty || 0), 0),
+          slot,
+          summary,
+          hasSameSku: sameSkuLines.length > 0,
+          sameSkuQty: sameSkuLines.reduce((total, line) => total + Number(line.qty || 0), 0),
           isEmpty: !summary?.qty,
         };
       })
-      .sort((a, b) => {
-        if (a.hasSameSku !== b.hasSameSku) return Number(b.hasSameSku) - Number(a.hasSameSku);
-        if (a.isEmpty !== b.isEmpty)       return Number(b.isEmpty) - Number(a.isEmpty);
-        return String(a.slot.slotCode).localeCompare(String(b.slot.slotCode));
+      .sort((left, right) => {
+        if (left.hasSameSku !== right.hasSameSku) {
+          return Number(right.hasSameSku) - Number(left.hasSameSku);
+        }
+
+        if (left.isEmpty !== right.isEmpty) {
+          return Number(right.isEmpty) - Number(left.isEmpty);
+        }
+
+        return String(left.slot.slotCode).localeCompare(String(right.slot.slotCode));
       })
       .slice(0, 6);
-  }, [selectedLayout, selectedLayoutSlots, selectedSku, stockSummaryBySlot]);
+  }, [primarySku, selectedLayout, selectedLayoutSlots, stockSummaryBySlot]);
 
-  const hasValidSku = Boolean(selectedSku) || selectedSkuId === "__raw__";
-  const isFormReady = Boolean(selectedLayout && selectedSerial && hasValidSku && selectedSlot && Number(qty) > 0);
-  const placementRows = state.activityLog.filter((i) => i.type === "placement").slice(0, 5);
-  const resolveSlotLabel = (id) => allSlots.find((s) => s.id === id)?.slotCode || "-";
-  const resolveSkuLabel  = (id) => state.skus.find((s) => String(s.id) === String(id))?.label || id;
+  const placementRows = state.activityLog.filter((item) => item.type === "placement").slice(0, 5);
 
-  /* ─── submit ─── */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedSerial || !selectedSlot) {
-      await showGudangWarning("Data belum lengkap", "Pilih kode seri dan lokasi gudang terlebih dahulu.");
+  const resolveSlotLabel = (slotId) => allSlots.find((slot) => slot.id === slotId)?.slotCode || "-";
+
+  const resolveSkuLabel = (skuId) =>
+    state.skus.find((sku) => String(sku.id) === String(skuId))?.label || skuId;
+
+  const handleRowChange = (rowId, field, value) => {
+    if (field === "sku") {
+      setActiveProductListRowId(rowId);
+    }
+
+    setSkuRows((currentRows) =>
+      currentRows.map((row) =>
+        row.id === rowId
+          ? {
+              ...row,
+              [field]: field === "qty" ? Math.max(1, Number(value) || 1) : value.toUpperCase(),
+            }
+          : row
+      )
+    );
+  };
+
+  const handleSelectProductListSku = (rowId, item) => {
+    const skuName = getProductListSkuName(item).toUpperCase();
+    if (!skuName) return;
+
+    setSkuRows((currentRows) =>
+      currentRows.map((row) => (row.id === rowId ? { ...row, sku: skuName } : row))
+    );
+    setActiveProductListRowId("");
+  };
+
+  const getProductListMatches = (row) => {
+    const keyword = String(row.sku || "").trim().toLowerCase();
+
+    return productListOptions
+      .filter((item) => {
+        if (!keyword) return true;
+
+        return [
+          item?.sku_name,
+          item?.product,
+          item?.product_group,
+          item?.product_source,
+          item?.product_colour,
+          item?.product_size,
+        ].some((value) => String(value || "").toLowerCase().includes(keyword));
+      })
+      .slice(0, 12);
+  };
+
+  const handleAddSkuRow = () => {
+    setSkuRows((currentRows) => [...currentRows, makeSkuRow()]);
+  };
+
+  const handleRemoveSkuRow = (rowId) => {
+    setSkuRows((currentRows) =>
+      currentRows.length === 1 ? currentRows : currentRows.filter((row) => row.id !== rowId)
+    );
+  };
+
+  const buildBarcodePayload = (rows) => ({
+    serial_base: normalizeText(serialBase),
+    items: rows.map((row) => ({
+      sku: row.skuText,
+      qty: row.qty,
+      start_number: row.startNumber,
+    })),
+  });
+
+  const handleDownloadBarcode = async (row = null) => {
+    const rows = row ? [row] : validRows;
+
+    if (!serialReady) {
+      await showGudangWarning("Barcode belum siap", "Isi kode seri terlebih dahulu.");
+      return;
+    }
+
+    if (!rows.length) {
+      await showGudangWarning("Barcode belum siap", "Pilih minimal satu SKU dari Product List terlebih dahulu.");
+      return;
+    }
+
+    const invalidRows = rows.filter((item) => !item.matchedProductList && !item.matchedSku);
+    if (invalidRows.length) {
+      await showGudangWarning(
+        "SKU belum valid",
+        "Pilih SKU dari dropdown Product List atau gunakan SKU yang sudah terdeteksi otomatis."
+      );
+      return;
+    }
+
+    try {
+      setDownloadingRowId(row?.id || "__all__");
+
+      const response = await API.post(
+        "/gudang-produk-workspace/serial-barcodes",
+        buildBarcodePayload(rows),
+        { responseType: "blob" }
+      );
+      const contentType = String(response?.headers?.["content-type"] || "").toLowerCase();
+      if (contentType.includes("application/json")) {
+        const text = await response.data.text();
+        const parsed = JSON.parse(text);
+        throw new Error(parsed?.message || "Backend mengembalikan error saat membuat barcode.");
+      }
+
+      const suffix = row ? row.skuText : "semua-sku";
+      downloadBlob(
+        response.data,
+        `barcode-${sanitizeDownloadName(normalizeText(serialBase))}-${sanitizeDownloadName(suffix)}.pdf`
+      );
+    } catch (downloadError) {
+      await showGudangError(
+        "Gagal unduh barcode",
+        await getBarcodeDownloadErrorMessage(downloadError, "Barcode kode seri tidak bisa diunduh.")
+      );
+    } finally {
+      setDownloadingRowId("");
+    }
+  };
+
+  const handleSectionChange = (section) => {
+    if (section === 2 && !skuReady) return;
+    if (section === 3 && !isFormReady) return;
+    setActiveSection(section);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!isFormReady) {
+      await showGudangWarning(
+        "Data belum lengkap",
+        slotConflictRows.length
+          ? "Ada SKU yang sudah tersimpan di slot lain. Pilih lokasi SKU tersebut atau pisahkan inputnya."
+          : "Isi kode seri, SKU, qty, dan lokasi gudang terlebih dahulu."
+      );
+      return;
+    }
+
+    const isConfirmed = await confirmGudangAction({
+      title: "Input stok ke gudang?",
+      text: `${validRows.length} SKU / ${totalQty} pcs akan dimasukkan ke ${selectedSlot.slotCode}.`,
+      confirmButtonText: "Ya, inputkan",
+      cancelButtonText: "Cek lagi",
+    });
+
+    if (!isConfirmed) {
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // Deteksi "__raw__": SKU dari seri yang belum terdaftar di state.skus
-      const isRawSku = selectedSkuId === "__raw__";
-      let finalSkuId = isRawSku ? null : selectedSku?.id;
+      const placements = [];
+      for (const row of validRows) {
+        const activeSkuResult = row.matchedSku
+          ? { sku: { id: row.matchedSku.id } }
+          : await ensureGudangProdukSkuActive(row.skuText);
+        const parsedSkuId = parseInt(activeSkuResult?.sku?.id, 10);
 
-      // Jika __raw__ atau belum ada SKU valid, aktivasi dulu secara silent
-      if ((isRawSku || !finalSkuId) && rawSeriSkuLabel) {
-        const activated = await ensureGudangProdukSkuActive(rawSeriSkuLabel);
-        const nextState = await refresh({ silent: true });
-        const found = nextState.skus.find(
-          (s) => String(s.code || "").trim().toUpperCase() === rawSeriSkuLabel.trim().toUpperCase()
+        if (!parsedSkuId || isNaN(parsedSkuId)) {
+          throw new Error(`SKU ${row.skuText} tidak valid atau gagal dibuat aktif.`);
+        }
+
+        const response = await placeGudangProdukSku(
+          {
+            layoutId: selectedLayout.id,
+            slotId: selectedSlot.id,
+            skuId: parsedSkuId,
+            qty: row.qty,
+            notes: [
+              `Kode seri: ${normalizeText(serialBase)}`,
+              `Nomor seri: ${row.serialRange}`,
+              notes.trim(),
+            ]
+              .filter(Boolean)
+              .join(" | "),
+          },
+          { minimal: true }
         );
-        finalSkuId = found?.id || activated?.sku?.id;
+
+        placements.push(response.placement);
       }
 
-      const parsedSkuId = parseInt(finalSkuId, 10);
-      if (!parsedSkuId || isNaN(parsedSkuId)) {
-        await showGudangWarning("SKU tidak valid", "SKU tidak ditemukan atau belum terdaftar. Coba pilih ulang kode seri.");
-        return;
-      }
+      setState((currentState) => {
+        const nextStockEntries = [...currentState.stockEntries];
+        const nextActivities = [];
 
-      const serialNotes = [`Kode seri: ${selectedSerial.nomor_seri}`];
-      if (notes.trim()) serialNotes.push(notes.trim());
+        placements.forEach((placement) => {
+          if (!placement?.stockEntry) return;
 
-      const response = await placeGudangProdukSku({
-        layoutId: selectedLayout.id,
-        slotId:   selectedSlot.id,
-        skuId:    parsedSkuId,
-        qty:      Number(qty),
-        notes:    serialNotes.join(" | "),
+          const existingIndex = nextStockEntries.findIndex(
+            (entry) => String(entry.id) === String(placement.stockEntry.id)
+          );
+
+          if (existingIndex >= 0) {
+            nextStockEntries[existingIndex] = placement.stockEntry;
+          } else {
+            nextStockEntries.unshift(placement.stockEntry);
+          }
+
+          if (placement.activity) {
+            nextActivities.push(placement.activity);
+          }
+        });
+
+        return {
+          ...currentState,
+          stockEntries: nextStockEntries,
+          activityLog: [...nextActivities, ...currentState.activityLog].slice(0, 500),
+        };
       });
 
-      setState(response.workspace);
       await showGudangSuccess(
-        "Stok berhasil disimpan!",
-        `${selectedSerial.nomor_seri} → ${selectedSlot.slotCode}, ${qty} pcs.`
+        "Kode seri berhasil disimpan",
+        `${validRows.length} SKU / ${totalQty} pcs berhasil dimasukkan ke ${selectedSlot.slotCode}.`
       );
 
-      // reset
-      setSelectedSerialId("");
-      setSelectedSkuId("");
+      setSerialBase("");
+      setSkuRows([makeSkuRow()]);
       setSelectedSlot(null);
-      setSerialQuery("");
-      setQty(1);
       setNotes("");
-    } catch (err) {
+      setActiveSection(1);
+      setIsSerialInputModalOpen(false);
+    } catch (submitError) {
       await showGudangError(
         "Gagal menyimpan stok",
-        buildGudangWorkspaceErrorMessage(err, "Terjadi kesalahan saat menyimpan stok dari kode seri.")
+        buildGudangWorkspaceErrorMessage(submitError, "Terjadi kesalahan saat menyimpan stok dari kode seri.")
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* ═══════ JSX ═══════ */
   const content = (
     <>
-      {error       ? <div className="gudang-ui-empty-panel" style={{ marginBottom: 16 }}>{error}</div>       : null}
-      {serialError ? <div className="gudang-ui-empty-panel" style={{ marginBottom: 16 }}>{serialError}</div> : null}
+      {error ? (
+        <div className="gudang-ui-empty-panel" style={{ marginBottom: 16 }}>
+          {error}
+        </div>
+      ) : null}
 
-      {/* ── Step indicator ── */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "24px", flexWrap: "wrap" }}>
-        <Step number="1" label="Pilih kode seri"   done={Boolean(selectedSerial)} />
-        <Step number="2" label="Pilih SKU"          done={Boolean(selectedSku)} />
-        <Step number="3" label="Pilih lokasi & simpan" done={Boolean(selectedSlot)} />
+        <Step
+          number="1"
+          label="Input Kode Seri"
+          done={skuReady}
+          active={activeSection === 1}
+          onClick={() => handleSectionChange(1)}
+        />
+        <Step
+          number="2"
+          label="Pilih Lokasi Slot"
+          done={Boolean(selectedSlot)}
+          active={activeSection === 2}
+          disabled={!skuReady}
+          onClick={() => handleSectionChange(2)}
+        />
+        <Step
+          number="3"
+          label="Ringkasan"
+          done={isFormReady}
+          active={activeSection === 3}
+          disabled={!isFormReady}
+          onClick={() => handleSectionChange(3)}
+        />
       </div>
 
-      {/* ══════════════════ WORKSPACE GRID ══════════════════ */}
       <div className="gudang-master-workspace-grid">
-
-        {/* ── LEFT: Form ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-
-          {/* CARD 1: Seri + Gudang + Qty */}
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>1. Informasi Dasar</h2>
-                <p>Pilih kode seri, gudang tujuan, dan jumlah stok yang ingin dimasukkan.</p>
-              </div>
-            </div>
-
-            <div className="gudang-ui-form-grid">
-              {/* Serial combobox */}
-              <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
-                <label>Kode Seri</label>
-                <div style={{ position: "relative" }} ref={serialComboboxRef}>
-                  <div style={{ position: "relative" }}>
-                    <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
-                    <input
-                      className="gudang-ui-search-input"
-                      style={{ paddingLeft: 40 }}
-                      value={serialQuery}
-                      onChange={(e) => { setSerialQuery(e.target.value); setSelectedSerialId(""); setIsSerialDropdownOpen(true); }}
-                      onFocus={() => setIsSerialDropdownOpen(true)}
-                      placeholder="Cari nomor seri, SKU, atau nama produk..."
-                    />
-                    {selectedSerial && (
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedSerialId(""); setSerialQuery(""); setSelectedSkuId(""); }}
-                        style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
-                      ><FaTimes /></button>
-                    )}
-                  </div>
-
-                  {isSerialDropdownOpen && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
-                      background: "#fff", border: "1px solid #d1dbe8", borderRadius: 14,
-                      padding: 8, maxHeight: 280, overflowY: "auto",
-                      boxShadow: "0 12px 28px rgba(15,23,42,0.12)",
-                    }}>
-                      {serialLoading ? (
-                        <div style={{ padding: "12px 16px", color: "#64748b", fontSize: 13 }}>Memuat data kode seri...</div>
-                      ) : serialResults.length ? serialResults.slice(0, 12).map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => { setSelectedSerialId(String(item.id)); setSerialQuery(item.nomor_seri); setIsSerialDropdownOpen(false); }}
-                          style={{
-                            width: "100%", display: "block", textAlign: "left", border: "none",
-                            background: String(selectedSerialId) === String(item.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent",
-                            borderRadius: 10, padding: "10px 14px", cursor: "pointer", marginBottom: 4,
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>{item.nomor_seri}</div>
-                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                            {item.matchedProduct?.name
-                              ? `${item.matchedProduct.name} / ${item.matchedSku?.label || item.sku}`
-                              : item.sku}
-                            {item.jumlah > 1 && <span style={{ marginLeft: 8, fontWeight: 700, color: "#2458ce" }}>{item.jumlah} pcs</span>}
-                          </div>
-                        </button>
-                      )) : (
-                        <div style={{ padding: "12px 16px", color: "#64748b", fontSize: 13 }}>
-                          Tidak ada kode seri yang cocok.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Gudang */}
-              <div className="gudang-ui-field">
-                <label>Gudang Tujuan</label>
-                <select
-                  value={layoutId === "" ? "" : String(layoutId)}
-                  onChange={(e) => setLayoutId(normalizeSelectValue(e.target.value))}
-                >
-                  {state.layouts.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-              </div>
-
-              {/* Qty */}
-              <div className="gudang-ui-field">
-                <label>Jumlah Masuk (pcs)</label>
-                <input
-                  type="number" min="1"
-                  value={qty}
-                  onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
-                />
-              </div>
-
-              {/* Notes */}
-              <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
-                <label>Catatan (opsional)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Contoh: stok dari QC, retur toko, stock opname..."
-                  style={{ minHeight: 72 }}
-                />
-              </div>
-            </div>
-
-            {/* Serial info callout */}
-            {selectedSerial && (
-              <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "linear-gradient(135deg,#edf4ff,#f8fbff)", border: "1px solid #c8d8f6", display: "flex", gap: 12, alignItems: "center" }}>
-                <FaBarcode style={{ color: "#2458ce", flexShrink: 0, fontSize: 18 }} />
+          {activeSection === 1 ? (
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
                 <div>
-                  <div style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{selectedSerial.nomor_seri}</div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    {selectedSerial.matchedProduct?.name
-                      ? `${selectedSerial.matchedProduct.name} / ${selectedSerial.matchedSku?.label || selectedSerial.sku}`
-                      : selectedSerial.sku}
-                    {" · "}{selectedSerial.quantityHint} pcs (hint)
-                    {selectedSerial.matchedSkuId
-                      ? <span style={{ marginLeft: 8, color: "#0f766e", fontWeight: 700 }}>✓ SKU terdeteksi otomatis</span>
-                      : <span style={{ marginLeft: 8, color: "#0f766e", fontWeight: 700 }}>✓ SKU baru otomatis terpilih</span>
-                    }
-                  </div>
+                  <h2>1. Input Kode Seri</h2>
+                  <p>Masukkan kode seri dasar, SKU, dan qty. Nomor urut barcode dibuat otomatis mengikuti urutan SKU.</p>
                 </div>
               </div>
-            )}
-          </section>
 
-          {/* CARD 2: Konfirmasi SKU Terpilih */}
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>{selectedSerial ? "2. Konfirmasi SKU" : "2. Pilih SKU"}</h2>
-                <p>
-                  {selectedSerial
-                    ? selectedSerial.matchedSkuId
-                      ? "Berdasarkan kode seri, SKU di bawah ini dikunci (tidak bisa memilih SKU lain pengecualian kesalahan user)."
-                      : `SKU "${rawSeriSkuLabel}" siap didaftarkan otomatis saat Anda menyimpan form.`
-                    : "Pilih kode seri terlebih dahulu untuk menampilkan SKU."}
-                </p>
-              </div>
-            </div>
+              <div className="gudang-ui-form-grid">
+                <div className="gudang-ui-field">
+                  <label>Kode Seri</label>
+                  <input
+                    value={serialBase}
+                    onChange={(event) => setSerialBase(event.target.value.toUpperCase())}
+                    placeholder="Contoh: 3100.112"
+                  />
+                </div>
 
-            {/* Raw seri SKU shortcut — jika tidak ada di state.skus */}
-            {selectedSerial && !rawSkuAlreadyInList && rawSeriSkuLabel && (
-              <div
-                style={{
-                  width: "100%", textAlign: "left", border: `2px solid #2458ce`,
-                  borderRadius: 12, padding: "12px 16px", background: "#edf4ff",
-                  marginBottom: 12, display: "flex", gap: "10px", alignItems: "center"
-                }}
-              >
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#2458ce" }} />
-                <div style={{ fontWeight: 700, fontSize: 13, color: "#2458ce" }}>
-                  {rawSeriSkuLabel} <span style={{ fontWeight: 400, color: "#64748b" }}>— (SKU Baru Terkunci)</span>
+                <div className="gudang-ui-field">
+                  <label>Gudang Tujuan</label>
+                  <select
+                    value={layoutId === "" ? "" : String(layoutId)}
+                    onChange={(event) => setLayoutId(normalizeSelectValue(event.target.value))}
+                  >
+                    {state.layouts.map((layout) => (
+                      <option key={layout.id} value={layout.id}>
+                        {layout.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="gudang-ui-field" style={{ gridColumn: "1 / -1" }}>
+                  <label>Catatan (opsional)</label>
+                  <textarea
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="Contoh: stok dari QC, retur toko, stock opname..."
+                    style={{ minHeight: 72 }}
+                  />
                 </div>
               </div>
-            )}
+            </section>
+          ) : null}
 
-            {/* SKU grid */}
-            {allSkuOptions.map((sku) => {
-              // Hanya merender 1 SKU karena sudah dikunci dari filter
-              return (
-                <div
-                  key={sku.id}
-                  style={{
-                    border: `2px solid #2458ce`,
-                    borderRadius: 12,
-                    padding: 14,
-                    background: "#edf4ff",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 12,
-                  }}
+          {activeSection === 1 ? (
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>SKU dan Qty</h2>
+                  <p>Satu kode seri bisa berisi banyak SKU. Nomor seri dibuat berurutan mengikuti urutan baris.</p>
+                </div>
+                <button
+                  type="button"
+                  className="gudang-ui-button"
+                  onClick={handleAddSkuRow}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
                 >
-                  <div style={{ flexShrink: 0, marginTop: 2 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#2458ce" }} />
-                  </div>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{sku.label}</div>
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                      {sku.code || `#${sku.id}`} · (SKU Eksisting Terkunci)
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            
-            {!selectedSerial && (
-              <div className="gudang-ui-empty-panel">
-                Pilih seri terlebih dahulu.
+                  <FaPlus /> Tambah SKU
+                </button>
               </div>
-            )}
-            
-            {selectedSerial && allSkuOptions.length === 0 && !rawSeriSkuLabel && (
-              <div className="gudang-ui-empty-panel">
-                Seri ini tidak memiliki data SKU yang dapat didaftarkan.
-              </div>
-            )}
-          </section>
 
-          {/* CARD 3: Pilih Lokasi */}
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>3. Pilih Lokasi Slot</h2>
-                <p>
-                  {selectedSku
-                    ? sameSkuSlots.length
-                      ? `SKU ini sudah tersimpan di ${sameSkuSlots[0].slotCode}. Aturan Gudang: 1 SKU tidak boleh di banyak rak.`
-                      : "SKU ini belum pernah masuk gudang. Slot kosong diprioritaskan."
-                    : "Pilih SKU di atas untuk melihat rekomendasi lokasi."}
-                </p>
-              </div>
-            </div>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {productListError ? (
+                  <div
+                    className="gudang-ui-callout"
+                    style={{ background: "#fff5f5", borderColor: "#fecaca", color: "#b91c1c" }}
+                  >
+                    <strong>{productListError}</strong>
+                  </div>
+                ) : null}
 
-            {selectedSku ? (
-              <>
-                {/* Recommended slots */}
-                {suggestedSlots.length > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 20 }}>
-                    {suggestedSlots.map((item) => {
-                      const isSelected = String(selectedSlot?.id) === String(item.slot.id);
-                      return (
-                        <button
-                          key={item.slot.id}
-                          type="button"
-                          onClick={() => setSelectedSlot(item.slot)}
-                          style={{
-                            border: `2px solid ${isSelected ? "#2458ce" : item.hasSameSku ? "#b7e4d8" : "#e2e8f0"}`,
-                            borderRadius: 12, padding: "12px 14px", textAlign: "left", cursor: "pointer",
-                            background: isSelected ? "linear-gradient(135deg,#edf4ff,#f8fbff)" : item.hasSameSku ? "linear-gradient(135deg,#ecfdf5,#f7fff9)" : "#fff",
-                            boxShadow: isSelected ? "0 0 0 3px rgba(36,88,206,0.1)" : "none",
-                            transition: "all 0.15s ease",
+                {normalizedRows.map((row, index) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      border: "1px solid #d5e3f8",
+                      borderRadius: "14px",
+                      background: "#f8fbff",
+                      padding: "14px",
+                      display: "grid",
+                      gridTemplateColumns: "minmax(220px, 1fr) 120px auto auto",
+                      gap: "12px",
+                      alignItems: "end",
+                    }}
+                  >
+                    <div className="gudang-ui-field">
+                      <label>Nama SKU #{index + 1}</label>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          value={row.sku}
+                          onChange={(event) => handleRowChange(row.id, "sku", event.target.value)}
+                          onFocus={() => setActiveProductListRowId(row.id)}
+                          onBlur={() => {
+                            window.setTimeout(() => {
+                              setActiveProductListRowId((currentRowId) =>
+                                currentRowId === row.id ? "" : currentRowId
+                              );
+                            }, 120);
                           }}
-                        >
-                          <div style={{ fontWeight: 800, fontSize: 15, color: isSelected ? "#2458ce" : "#0f172a", marginBottom: 3 }}>{item.slot.slotCode}</div>
-                          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 5 }}>{buildSlotHeadline(item.slot)}</div>
-                          <span style={{
-                            display: "inline-block", padding: "3px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700,
-                            background: item.hasSameSku ? "#d1fae5" : item.isEmpty ? "#f0fdf4" : "#f1f5f9",
-                            color: item.hasSameSku ? "#065f46" : item.isEmpty ? "#166534" : "#475569",
-                          }}>
-                            {buildSuggestionDescription(item)}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                          placeholder="Cari product / SKU dari Product List"
+                          autoComplete="off"
+                        />
 
-                {/* Slot detail + layout map */}
-                {selectedSlot && (
-                  <div style={{ marginBottom: 20, padding: 16, borderRadius: 13, background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-                    <FaMapMarkedAlt style={{ color: "#2458ce", fontSize: 18, flexShrink: 0, marginTop: 2 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{selectedSlot.slotCode}</div>
-                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{buildSlotHeadline(selectedSlot)}</div>
-                      {selectedSlotLines.length > 0 && (
-                        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                          {selectedSlotLines.map((line) => (
-                            <span key={line.id} className="gudang-ui-pill">{line.sku?.label} | {line.qty} pcs</span>
-                          ))}
-                        </div>
-                      )}
-                      {!selectedSlotLines.length && (
-                        <div style={{ marginTop: 6, fontSize: 12, color: "#0f766e", fontWeight: 600 }}>Slot kosong — siap diisi.</div>
-                      )}
+                        {activeProductListRowId === row.id ? (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "calc(100% + 6px)",
+                              left: 0,
+                              right: 0,
+                              zIndex: 20,
+                              background: "#fff",
+                              border: "1px solid #d1dbe8",
+                              borderRadius: 12,
+                              boxShadow: "0 16px 32px rgba(15, 23, 42, 0.12)",
+                              padding: 8,
+                              maxHeight: 300,
+                              overflowY: "auto",
+                            }}
+                          >
+                            {productListLoading ? (
+                              <div style={{ padding: "10px 12px", color: "#64748b", fontSize: 13 }}>
+                                Memuat Product List...
+                              </div>
+                            ) : getProductListMatches(row).length ? (
+                              getProductListMatches(row).map((item) => {
+                                const skuName = getProductListSkuName(item);
+                                return (
+                                  <button
+                                    key={item.id || skuName}
+                                    type="button"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => handleSelectProductListSku(row.id, item)}
+                                    style={{
+                                      width: "100%",
+                                      display: "block",
+                                      textAlign: "left",
+                                      border: "none",
+                                      background:
+                                        normalizeSkuLookupKey(skuName) === row.skuLookupKey
+                                          ? "#edf4ff"
+                                          : "transparent",
+                                      borderRadius: 8,
+                                      padding: "9px 10px",
+                                      cursor: "pointer",
+                                      marginBottom: 2,
+                                    }}
+                                  >
+                                    <strong style={{ display: "block", color: "#0f172a", fontSize: 13 }}>
+                                      {skuName || "-"}
+                                    </strong>
+                                    <span style={{ display: "block", color: "#64748b", fontSize: 12, marginTop: 2 }}>
+                                      {[item.product, item.product_colour, item.product_size].filter(Boolean).join(" | ") || "Product List"}
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <div style={{ padding: "10px 12px", color: "#b91c1c", fontSize: 13, fontWeight: 700 }}>
+                                Product List tidak ditemukan untuk "{row.sku}".
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
+
+                    <div className="gudang-ui-field">
+                      <label>Qty</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={row.qty}
+                        onChange={(event) => handleRowChange(row.id, "qty", event.target.value)}
+                      />
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => setSelectedSlot(null)}
-                      style={{ border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
-                    ><FaTimes /></button>
+                      className="gudang-ui-button-secondary"
+                      onClick={() => handleDownloadBarcode(row)}
+                      disabled={downloadingRowId === row.id || downloadingRowId === "__all__"}
+                      style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px" }}
+                    >
+                      <FaDownload /> {downloadingRowId === row.id ? "Unduh..." : "Barcode"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="gudang-ui-button-secondary"
+                      onClick={() => handleRemoveSkuRow(row.id)}
+                      disabled={skuRows.length === 1}
+                      style={{ height: "44px", minWidth: "44px", padding: "0 12px" }}
+                      aria-label="Hapus SKU"
+                    >
+                      <FaTimes />
+                    </button>
+
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                      <span className="gudang-ui-pill" style={{ background: "#fff", borderColor: "#c8d8f6", color: "#2458ce" }}>
+                        {row.skuText ? row.serialRange : "Isi SKU untuk melihat nomor seri"}
+                      </span>
+                      {row.matchedSku ? (
+                        <span className="gudang-ui-pill" style={{ background: "#ecfdf5", borderColor: "#b7e4d8", color: "#0f766e" }}>
+                          SKU terdeteksi otomatis
+                        </span>
+                      ) : row.matchedProductList ? (
+                        <span className="gudang-ui-pill" style={{ background: "#fffbeb", borderColor: "#fde68a", color: "#b45309" }}>
+                          SKU akan diaktifkan otomatis saat simpan
+                        </span>
+                      ) : row.skuText ? (
+                        <span className="gudang-ui-pill" style={{ background: "#fff5f5", borderColor: "#fecaca", color: "#b91c1c" }}>
+                          Pilih SKU dari Product List
+                        </span>
+                      ) : null}
+                      {row.matchedProductList ? (
+                        <span className="gudang-ui-pill" style={{ background: "#f8fafc", borderColor: "#dbe4ef", color: "#475569" }}>
+                          {row.matchedProductList.product || "Product List"}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                )}
-
-              </>
-            ) : (
-              <div className="gudang-ui-empty-panel">
-                Setelah SKU dipilih, rekomendasi slot akan muncul di sini.
+                ))}
               </div>
-            )}
-          </section>
-        </div>
 
-        {/* ── RIGHT: Summary + Submit ── */}
-        <div className="gudang-master-visual-stack">
-          <section className="gudang-ui-panel gudang-master-overview-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>Ringkasan Input</h2>
-                <p>Cek kembali sebelum menekan tombol simpan.</p>
+              <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <strong style={{ color: "#0f172a", fontSize: 13 }}>
+                  Total {validRows.length} SKU / {totalQty} pcs
+                </strong>
+                <button
+                  type="button"
+                  className="gudang-ui-button"
+                  onClick={() => handleDownloadBarcode()}
+                  disabled={downloadingRowId === "__all__"}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+                >
+                  <FaDownload /> {downloadingRowId === "__all__" ? "Mengunduh..." : "Unduh Semua Barcode"}
+                </button>
               </div>
-            </div>
+            </section>
+          ) : null}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 20 }}>
-              {[
-                { label: "Kode Seri",    value: selectedSerial?.nomor_seri || "—" },
-                { label: "Gudang",       value: selectedLayout?.name || "—" },
-                { label: "SKU",          value: selectedSkuId === "__raw__" ? rawSeriSkuLabel : (selectedSku?.label || "—") },
-                { label: "Qty",          value: `${qty} pcs` },
-                { label: "Lokasi Slot",  value: selectedSlot?.slotCode || "—" },
-              ].map((row, i, arr) => (
-                <div key={i} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "11px 0",
-                  borderBottom: i < arr.length - 1 ? "1px solid #eef2f6" : "none",
-                  fontSize: 13,
-                }}>
-                  <span style={{ color: "#64748b" }}>{row.label}</span>
-                  <strong style={{ color: "#0f172a", textAlign: "right", maxWidth: "60%" }}>{row.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {/* Status callout */}
-            <div style={{
-              marginBottom: 20, padding: "13px 16px", borderRadius: 12, display: "flex", gap: 10, alignItems: "flex-start",
-              background: isFormReady ? "#ecfdf5" : "#fffbeb",
-              border: `1px solid ${isFormReady ? "#b7e4d8" : "#fde68a"}`,
-              color: isFormReady ? "#0f766e" : "#b45309",
-            }}>
-              <FaCheckCircle style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
-                {isFormReady
-                  ? "Semua data sudah terisi. Siap disimpan!"
-                  : !selectedSerial
-                    ? "Pilih kode seri terlebih dahulu."
-                    : !selectedSku && selectedSkuId !== "__raw__"
-                      ? "Pilih SKU yang sesuai."
-                      : !selectedSlot
-                        ? "Pilih slot lokasi gudang."
-                        : "Pastikan semua data terisi."}
-              </span>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <button
-                type="submit"
-                className="gudang-ui-button"
-                disabled={!isFormReady || isSubmitting}
-                style={{
-                  width: "100%", padding: "14px 20px", fontSize: 14,
-                  display: "flex", justifyContent: "center", alignItems: "center", gap: 8,
-                  opacity: isFormReady && !isSubmitting ? 1 : 0.55,
-                }}
-              >
-                <FaSave />
-                {isSubmitting ? "Menyimpan stok..." : "Simpan ke Gudang"}
-              </button>
-            </form>
-          </section>
-
-          {selectedSku && (
+          {activeSection === 2 ? (
             <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>2. Pilih Lokasi Slot</h2>
+                  <p>Pilih satu lokasi untuk menyimpan semua SKU pada kode seri ini.</p>
+                </div>
+              </div>
+
+              {sameSkuSlots.length ? (
+                <div className="gudang-ui-callout" style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "20px" }}>
+                  <FaMapMarkedAlt />
+                  <strong>
+                    SKU utama sudah tersimpan di {sameSkuSlots[0].slotCode}. Gunakan lokasi yang sama agar SKU tidak tersebar.
+                  </strong>
+                </div>
+              ) : null}
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 20 }}>
+                {suggestedSlots.map((item) => {
+                  const isSelected = String(selectedSlot?.id) === String(item.slot.id);
+                  return (
+                    <button
+                      key={item.slot.id}
+                      type="button"
+                      onClick={() => setSelectedSlot(item.slot)}
+                      className={`gudang-layout-slot-button ${isSelected ? "selected" : ""}`}
+                    >
+                      <strong style={{ fontSize: 15, display: "block" }}>{item.slot.slotCode}</strong>
+                      <span style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>
+                        {buildSlotHeadline(item.slot)}
+                      </span>
+                      <span className="gudang-ui-pill" style={{ fontSize: 11 }}>
+                        {buildSuggestionDescription(item)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedSlot ? (
+                <div className="gudang-ui-detail-box" style={{ marginBottom: 20 }}>
+                  <h4 style={{ margin: "0 0 10px", color: "#17457c", fontSize: 14 }}>Slot Terpilih</h4>
+                  <p style={{ margin: 0, fontWeight: "bold", color: "#0f172a" }}>{buildSlotHeadline(selectedSlot)}</p>
+                  {selectedSlotLines.length ? (
+                    <div className="gudang-ui-pill-list" style={{ marginTop: 8 }}>
+                      {selectedSlotLines.map((line) => (
+                        <span key={line.id} className="gudang-ui-pill">
+                          {line.sku?.label} | {line.qty} pcs
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: "6px 0 0", color: "#0f766e", fontSize: 12, fontWeight: 700 }}>
+                      Slot kosong dan siap diisi.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {slotConflictRows.length ? (
+                <div
+                  className="gudang-ui-callout"
+                  style={{
+                    marginBottom: 20,
+                    background: "#fff5f5",
+                    borderColor: "#fecaca",
+                    color: "#b91c1c",
+                  }}
+                >
+                  <strong>
+                    {slotConflictRows.map((row) => row.skuText).join(", ")} sudah tersimpan di slot lain. Aturan gudang tidak mengizinkan 1 SKU tersebar di banyak slot.
+                  </strong>
+                </div>
+              ) : null}
+
               <details>
-                <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2458ce", userSelect: "none", padding: "8px 0" }}>
+                <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#2458ce", padding: "8px 0" }}>
                   Tampilkan layout visual gudang
                 </summary>
                 <div style={{ marginTop: 12 }}>
@@ -691,10 +976,115 @@ const InputSeriGudang = ({ embedded = false }) => {
                 </div>
               </details>
             </section>
-          )}
+          ) : null}
 
-          {/* Log terbaru */}
-          {placementRows.length > 0 && (
+          {activeSection === 3 ? (
+            <section className="gudang-ui-panel">
+              <div className="gudang-ui-panel-head">
+                <div>
+                  <h2>3. Ringkasan Input</h2>
+                  <p>Pastikan data di bawah sudah benar sebelum stok dimasukkan ke gudang.</p>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: "12px", marginBottom: 18 }}>
+                {[
+                  { label: "Kode Seri", value: normalizeText(serialBase) || "-" },
+                  { label: "Gudang", value: selectedLayout?.name || "-" },
+                  { label: "Lokasi Slot", value: selectedSlot?.slotCode || "-" },
+                  { label: "Total SKU", value: `${validRows.length} SKU` },
+                  { label: "Total Qty", value: `${totalQty} pcs` },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="gudang-ui-detail-box"
+                    style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center" }}
+                  >
+                    <span style={{ color: "#64748b", fontSize: 13 }}>{item.label}</span>
+                    <strong style={{ color: "#0f172a", textAlign: "right" }}>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "grid", gap: 10, marginBottom: 18 }}>
+                {validRows.map((row) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: 12,
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <strong style={{ display: "block", color: "#0f172a", fontSize: 13 }}>{row.skuText}</strong>
+                      <span style={{ color: "#64748b", fontSize: 12 }}>{row.serialRange}</span>
+                    </div>
+                    <strong style={{ color: "#2458ce", fontSize: 13 }}>{row.qty} pcs</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className="gudang-ui-callout"
+                style={{
+                  marginBottom: 20,
+                  background: "#ecfdf5",
+                  borderColor: "#b7e4d8",
+                  color: "#0f766e",
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "center",
+                }}
+              >
+                <FaCheckCircle style={{ flexShrink: 0 }} />
+                <strong>Apakah yakin data ini akan diinputkan ke gudang?</strong>
+              </div>
+
+              <button
+                type="button"
+                className="gudang-ui-button"
+                disabled={!isFormReady || isSubmitting}
+                onClick={handleSubmit}
+                style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}
+              >
+                <FaSave />
+                {isSubmitting ? "Menyimpan stok..." : "Ya, Simpan ke Gudang"}
+              </button>
+            </section>
+          ) : null}
+
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="gudang-ui-button-secondary"
+              disabled={activeSection === 1}
+              onClick={() => setActiveSection((section) => Math.max(1, section - 1))}
+            >
+              Kembali
+            </button>
+            {activeSection < 3 ? (
+              <button
+                type="button"
+                className="gudang-ui-button"
+                disabled={activeSection === 1 ? !skuReady : !isFormReady}
+                onClick={() => setActiveSection((section) => Math.min(3, section + 1))}
+              >
+                Lanjut ke Section {activeSection + 1}
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+        </div>
+
+        <div className="gudang-master-visual-stack">
+          {placementRows.length > 0 ? (
             <section className="gudang-ui-panel">
               <div style={{ marginBottom: 12 }}>
                 <strong style={{ color: "#17457c", fontSize: 14 }}>Log Placement Terbaru</strong>
@@ -703,30 +1093,114 @@ const InputSeriGudang = ({ embedded = false }) => {
                 {placementRows.map((row) => (
                   <div key={row.id} style={{ fontSize: 12, padding: "8px 12px", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
                     <div style={{ fontWeight: 700, color: "#0f172a" }}>{resolveSkuLabel(row.skuId)}</div>
-                    <div style={{ color: "#64748b", marginTop: 2 }}>→ {resolveSlotLabel(row.toSlotId)} · {row.qty} pcs</div>
-                    {row.notes && <div style={{ color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.notes}</div>}
+                    <div style={{ color: "#64748b", marginTop: 2 }}>
+                      {resolveSlotLabel(row.toSlotId)} | {row.qty} pcs
+                    </div>
+                    {row.notes ? (
+                      <div style={{ color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {row.notes}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
         </div>
       </div>
     </>
   );
 
-  if (embedded) return content;
+  if (embedded) {
+    return (
+      <>
+        <section className="gudang-ui-panel gudang-sku-input-launch-panel">
+          <div className="gudang-ui-panel-head">
+            <div>
+              <h2>Input dari Kode Seri</h2>
+              <p>Input kode seri manual, tambahkan banyak SKU, lalu unduh barcode berurutan.</p>
+            </div>
+            <button
+              type="button"
+              className="gudang-ui-button"
+              onClick={() => {
+                setActiveSection(1);
+                setIsSerialInputModalOpen(true);
+              }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+            >
+              <FaBarcode /> Tambahkan Produk
+            </button>
+          </div>
+
+          <div className="gudang-sku-input-launch-summary">
+            {[
+              { label: "Kode Seri", value: normalizeText(serialBase) || "Belum diisi" },
+              { label: "SKU", value: validRows.length ? `${validRows.length} SKU` : "Belum diisi" },
+              { label: "Qty", value: `${totalQty || 0} pcs` },
+              { label: "Lokasi Slot", value: selectedSlot?.slotCode || "Belum dipilih" },
+            ].map((item) => (
+              <div key={item.label} className="gudang-ui-detail-box">
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {isSerialInputModalOpen ? (
+          <div
+            className="gudang-sku-input-modal-backdrop"
+            role="presentation"
+            onMouseDown={() => {
+              if (!isSubmitting) {
+                setIsSerialInputModalOpen(false);
+              }
+            }}
+          >
+            <div
+              className="gudang-sku-input-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="gudang-serial-input-modal-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="gudang-sku-input-modal-head">
+                <div>
+                  <h2 id="gudang-serial-input-modal-title">Input Kode Seri</h2>
+                  <p>Ikuti 3 section: input kode seri, pilih lokasi slot, lalu cek ringkasan sebelum simpan.</p>
+                </div>
+                <button
+                  type="button"
+                  className="gudang-ui-button-secondary"
+                  onClick={() => setIsSerialInputModalOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Tutup
+                </button>
+              </div>
+
+              <div className="gudang-sku-input-modal-body">{content}</div>
+            </div>
+          </div>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <GudangProdukBaseShell
       title="Input Stok dari Kode Seri"
-      subtitle="Pilih kode seri, tentukan SKU, lalu simpan ke lokasi gudang — tanpa perlu aktivasi manual SKU."
+      subtitle="Input kode seri manual beserta SKU dan qty, lalu pilih lokasi gudang."
       icon={FaBarcode}
       statusLabel={
-        isLoading || serialLoading ? "Memuat data..." :
-        isSubmitting ? "Menyimpan stok..." :
-        isFormReady ? "Siap Disimpan" :
-        "Flow Kode Seri"
+        isLoading
+          ? "Memuat data..."
+          : isSubmitting
+            ? "Menyimpan stok..."
+            : isFormReady
+              ? "Siap Disimpan"
+              : "Flow Kode Seri"
       }
     >
       {content}

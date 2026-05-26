@@ -152,6 +152,7 @@ const InputSkuGudang = () => {
   const [importProgress, setImportProgress] = useState(null);
   const [importResult, setImportResult] = useState(null);
   const [replaceExistingStock, setReplaceExistingStock] = useState(false);
+  const [isSkuInputModalOpen, setIsSkuInputModalOpen] = useState(false);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -206,6 +207,17 @@ const InputSkuGudang = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSkuInputModalOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isSkuInputModalOpen]);
 
   const selectedLayout = useMemo(
     () =>
@@ -872,6 +884,7 @@ const InputSkuGudang = () => {
         setSelectedSerialId("");
         setSerialQuery("");
       }
+      setIsSkuInputModalOpen(false);
     } catch (submitError) {
       await showGudangError(
         "Gagal menyimpan stok",
@@ -1127,6 +1140,70 @@ const InputSkuGudang = () => {
             ) : null}
           </section>
 
+          <section className="gudang-ui-panel gudang-sku-input-launch-panel" style={{ marginBottom: 20 }}>
+            <div className="gudang-ui-panel-head">
+              <div>
+                <h2>Input SKU ke Gudang</h2>
+                <p>Form input dipindahkan ke modal agar halaman utama tetap ringkas dan operator fokus satu alur.</p>
+              </div>
+              <button
+                type="button"
+                className="gudang-ui-button"
+                onClick={() => setIsSkuInputModalOpen(true)}
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+              >
+                <FaBoxOpen /> Buka Modal Input
+              </button>
+            </div>
+
+            <div className="gudang-sku-input-launch-summary">
+              {[
+                { label: "Gudang", value: selectedLayout?.name || "-" },
+                { label: "SKU", value: selectedSku?.label || "Belum dipilih" },
+                { label: "Qty", value: `${qty || 0} pcs` },
+                { label: "Lokasi", value: selectedSlot?.slotCode || "Belum dipilih" },
+              ].map((item) => (
+                <div key={item.label} className="gudang-ui-detail-box">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {isSkuInputModalOpen ? (
+            <div
+              className="gudang-sku-input-modal-backdrop"
+              role="presentation"
+              onMouseDown={() => {
+                if (!isSubmitting) {
+                  setIsSkuInputModalOpen(false);
+                }
+              }}
+            >
+              <div
+                className="gudang-sku-input-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="gudang-sku-input-modal-title"
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <div className="gudang-sku-input-modal-head">
+                  <div>
+                    <h2 id="gudang-sku-input-modal-title">Input SKU ke Gudang</h2>
+                    <p>Pilih barang, tentukan lokasi gudang, lalu simpan placement dari satu modal ini.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="gudang-ui-button-secondary"
+                    onClick={() => setIsSkuInputModalOpen(false)}
+                    disabled={isSubmitting}
+                  >
+                    Tutup
+                  </button>
+                </div>
+
+                <div className="gudang-sku-input-modal-body">
           <div className="gudang-master-workspace-grid">
           <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             
@@ -1493,6 +1570,10 @@ const InputSkuGudang = () => {
             </section>
           </div>
           </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </GudangProdukBaseShell>
