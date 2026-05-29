@@ -20,6 +20,7 @@ const Seri = () => {
   const [productOptions, setProductOptions] = useState([]);
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [productListSerialType, setProductListSerialType] = useState("opname");
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productError, setProductError] = useState("");
   
@@ -61,6 +62,16 @@ const Seri = () => {
     }
 
     return skuReference || productName || `Product #${product?.id}`;
+  };
+
+  const buildStockAwalNomorSeri = (skuReference = "") => {
+    const normalizedSku = String(skuReference)
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return normalizedSku ? `SA-${normalizedSku}` : "SA";
   };
 
   const selectedProduct = useMemo(
@@ -146,6 +157,9 @@ const Seri = () => {
     formData.append("nomor_seri", newSeri.nomor_seri);
     formData.append("sku", newSeri.sku);
     formData.append("jumlah", newSeri.jumlah);
+    if (inputMode === "product-list") {
+      formData.append("jenis_seri", productListSerialType);
+    }
 
     try {
       await API.post("/seri", formData, {
@@ -164,6 +178,7 @@ const Seri = () => {
         jumlah: "1",
       });
       setInputMode("manual");
+      setProductListSerialType("opname");
       setProductSearchTerm("");
       setSelectedProductId("");
     } catch (error) {
@@ -187,11 +202,25 @@ const Seri = () => {
 
     if (mode === "product-list") {
       setProductSearchTerm("");
+      setProductListSerialType("opname");
       setNewSeri((prev) => ({
         ...prev,
         sku: "",
+        nomor_seri: "",
       }));
     }
+  };
+
+  const resolveProductListNomorSeri = (product, serialType, currentNomorSeri = "") => {
+    if (serialType === "stok_awal") {
+      return buildStockAwalNomorSeri(getProductSkuReference(product));
+    }
+
+    const skuReference = getProductSkuReference(product).toUpperCase();
+    const serialReference = getProductSerialReference(product).toUpperCase();
+    const fallbackSerialReference = serialReference || skuReference;
+
+    return currentNomorSeri || fallbackSerialReference;
   };
 
   const handleProductSelect = (e) => {
@@ -204,18 +233,31 @@ const Seri = () => {
       setNewSeri((prev) => ({
         ...prev,
         sku: "",
+        nomor_seri: productListSerialType === "stok_awal" ? buildStockAwalNomorSeri() : "",
       }));
       return;
     }
 
     const skuReference = getProductSkuReference(product).toUpperCase();
-    const serialReference = getProductSerialReference(product).toUpperCase();
-    const fallbackSerialReference = serialReference || skuReference;
 
     setNewSeri((prev) => ({
       ...prev,
       sku: skuReference,
-      nomor_seri: fallbackSerialReference && !prev.nomor_seri ? fallbackSerialReference : prev.nomor_seri,
+      nomor_seri: resolveProductListNomorSeri(product, productListSerialType, prev.nomor_seri),
+    }));
+  };
+
+  const handleProductListSerialTypeChange = (e) => {
+    const serialType = e.target.value;
+
+    setProductListSerialType(serialType);
+    setNewSeri((prev) => ({
+      ...prev,
+      nomor_seri: resolveProductListNomorSeri(
+        selectedProduct,
+        serialType,
+        serialType === "stok_awal" || prev.nomor_seri.startsWith("SA-") ? "" : prev.nomor_seri
+      ),
     }));
   };
 
@@ -301,17 +343,18 @@ const Seri = () => {
                       <th style={{ width: '80px', textAlign: 'center' }}>No</th>
                       <th style={{ paddingLeft: '24px' }}>Nomor Seri</th>
                       <th>Informasi SKU</th>
+                      <th>Status Scan</th>
                       <th className="text-right" style={{ paddingRight: '24px' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                       {loading ? (
                         <tr className="empty-row">
-                            <td colSpan="4" className="empty-state">Memuat data seri...</td>
+                            <td colSpan="5" className="empty-state">Memuat data seri...</td>
                         </tr>
                       ) : error ? (
                         <tr className="empty-row">
-                            <td colSpan="4" className="empty-state text-accent">{error}</td>
+                            <td colSpan="5" className="empty-state text-accent">{error}</td>
                         </tr>
                       ) : sortedData.map((item, index) => (
                         <tr key={item.id}>
@@ -330,6 +373,32 @@ const Seri = () => {
                                 <span className="sku-chip">{item.sku}</span>
                             </span>
                           </td>
+                          <td>
+                            {item.scanned_count > 0 ? (
+                              <div className="scanned-status-pill success" title={
+                                item.scanned_details?.map(d => `${d.barcode}: ${d.source}`).join("\n")
+                              }>
+                                <div className="scanned-dot-wrapper">
+                                  <span className="scanned-dot green"></span>
+                                  <span className="scanned-text font-semibold text-success">
+                                    {item.scanned_count} / {item.jumlah} Di-scan
+                                  </span>
+                                </div>
+                                <div className="scanned-origins">
+                                  {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
+                                    <span key={source} className="scanned-source-badge">{source}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="scanned-status-pill neutral">
+                                <div className="scanned-dot-wrapper">
+                                  <span className="scanned-dot gray"></span>
+                                  <span className="scanned-text text-muted">Belum di-scan</span>
+                                </div>
+                              </div>
+                            )}
+                          </td>
                           <td className="text-right" style={{ paddingRight: '24px' }}>
                              <button className="btn-download-blue" onClick={() => downloadQR(item.id, item.nomor_seri)}>
                                 <FiDownload /> Unduh QR
@@ -339,7 +408,7 @@ const Seri = () => {
                       ))}
                     {!loading && sortedData.length === 0 && !error && (
                       <tr className="empty-row">
-                        <td colSpan="4" className="empty-state">
+                        <td colSpan="5" className="empty-state">
                           Tidak ada data seri yang sesuai dengan kata kunci "{searchTerm}".
                         </td>
                       </tr>
@@ -398,23 +467,6 @@ const Seri = () => {
                   </button>
                 </div>
 
-                <div className="form-group">
-                  <label>
-                    <span className="label-content">
-                      <FiHash size={14} />
-                      <span>Nomor Seri Unik</span>
-                    </span>
-                  </label>
-                  <input 
-                    type="text" 
-                    name="nomor_seri" 
-                    required 
-                    placeholder="Contoh: AL-01" 
-                    value={newSeri.nomor_seri}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                
                 <div className="form-row">
                   <div className="form-group">
                     <label>
@@ -433,6 +485,11 @@ const Seri = () => {
                             onChange={(event) => {
                               setProductSearchTerm(event.target.value);
                               setSelectedProductId("");
+                              setNewSeri((prev) => ({
+                                ...prev,
+                                sku: "",
+                                nomor_seri: productListSerialType === "stok_awal" ? buildStockAwalNomorSeri() : "",
+                              }));
                             }}
                             placeholder="Cari produk atau SKU..."
                           />
@@ -485,6 +542,47 @@ const Seri = () => {
                       required
                     />
                   </div>
+                </div>
+
+                {inputMode === "product-list" && (
+                  <div className="form-group">
+                    <label>
+                      <span className="label-content">
+                        <FiFilter size={14} />
+                        <span>Jenis Seri</span>
+                      </span>
+                    </label>
+                    <select
+                      name="jenis_seri"
+                      value={productListSerialType}
+                      onChange={handleProductListSerialTypeChange}
+                      required
+                    >
+                      <option value="opname">Opname</option>
+                      <option value="stok_awal">Stok Awal</option>
+                    </select>
+                    {productListSerialType === "stok_awal" && (
+                      <p className="seri-field-hint">Nomor seri otomatis menggunakan format SA-SKU.</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>
+                    <span className="label-content">
+                      <FiHash size={14} />
+                      <span>Nomor Seri Unik</span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nomor_seri"
+                    required
+                    placeholder={inputMode === "product-list" && productListSerialType === "stok_awal" ? "SA-SKU" : "Contoh: AL-01"}
+                    value={newSeri.nomor_seri}
+                    onChange={handleInputChange}
+                    readOnly={inputMode === "product-list" && productListSerialType === "stok_awal"}
+                  />
                 </div>
 
                 <div className="modal-footer">

@@ -206,6 +206,12 @@
   color: #375a7f;
 }
 
+.gudang-ui-field > span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #375a7f;
+}
+
 .gudang-ui-field input,
 .gudang-ui-field textarea,
 .gudang-ui-field select {
@@ -229,6 +235,10 @@
 .gudang-ui-field select:focus {
   border-color: #0f766e;
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
+}
+
+.gudang-ui-field input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
 }
 
 .gudang-ui-form-actions {
@@ -276,6 +286,61 @@
   color: #6b7f95;
   display: block;
   line-height: 1.45;
+}
+
+.gudang-stok-awal-scan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.gudang-stok-awal-scan-row .gudang-ui-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.gudang-stok-awal-scan-status {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #dbe7f3;
+  border-radius: 14px;
+  background: #f8fbff;
+  color: #375a7f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gudang-stok-awal-session-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #dbe7f3;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(2, 132, 199, 0.06));
+  color: #16324f;
+}
+
+.gudang-stok-awal-session-summary span {
+  color: #58708f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gudang-stok-awal-session-summary strong {
+  font-size: 44px;
+  line-height: 1;
+  color: #0f766e;
+}
+
+.gudang-stok-awal-session-summary small {
+  color: #58708f;
+  font-size: 13px;
 }
 
 .gudang-ui-badge {
@@ -4547,6 +4612,10 @@
 @media (max-width: 640px) {
   .gudang-history-filter-grid,
   .gudang-history-date-range {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-stok-awal-scan-row {
     grid-template-columns: 1fr;
   }
 }

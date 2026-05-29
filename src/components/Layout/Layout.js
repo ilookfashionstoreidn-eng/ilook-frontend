@@ -585,6 +585,7 @@ const Layout = () => {
                 className={`sidebar-link dropdown-toggle ${[
                   "master-gudang-produk",
                   "input-sku-gudang",
+                  "stok-awal-gudang-produk",
                   "stok-lokasi-gudang",
                   "list-stok-product",
                   "mutasi-gudang-produk",
@@ -610,6 +611,11 @@ const Layout = () => {
                   <li>
                     <Link to="input-sku-gudang" className={`dropdown-link ${activeMenu === "input-sku-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("input-sku-gudang")}>
                       <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input SKU Gudang
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-awal-gudang-produk" className={`dropdown-link ${activeMenu === "stok-awal-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-awal-gudang-produk")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Awal
                     </Link>
                   </li>
                   <li>

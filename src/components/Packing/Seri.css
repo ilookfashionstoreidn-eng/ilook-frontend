@@ -637,6 +637,13 @@
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
+.form-group input[readonly] {
+  background: #eef4ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
 .seri-product-search {
   position: relative;
   display: flex;
@@ -659,6 +666,14 @@
 .seri-field-error {
   margin: -2px 0 0;
   color: #be123c;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.seri-field-hint {
+  margin: -2px 0 0;
+  color: #64748b;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
@@ -801,4 +816,73 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ──────────────────────────────────────────
+   SCAN STATUS COLUMN STYLES
+────────────────────────────────────────── */
+.scanned-status-pill {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.scanned-status-pill.success {
+  color: #10b981;
+}
+
+.scanned-status-pill.neutral {
+  color: #64748b;
+}
+
+.scanned-dot-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scanned-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.scanned-dot.green {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.scanned-dot.gray {
+  background: #94a3b8;
+}
+
+.scanned-text {
+  font-size: 13.5px;
+}
+
+.text-success {
+  color: #10b981 !important;
+}
+
+.scanned-origins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.scanned-source-badge {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
