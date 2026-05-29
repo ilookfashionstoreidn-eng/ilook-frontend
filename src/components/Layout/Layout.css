@@ -310,3 +310,19 @@ li[style*="marginTop"] {
     display: block;
   }
 }
+
+/* Layout Grouped Menu */
+.dropdown-group-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 12px 14px 4px 20px;
+  letter-spacing: 0.1em;
+}
+.dropdown-menu-grouped li {
+  margin-bottom: 2px;
+}
+.dropdown-menu-grouped .dropdown-link {
+  padding: 8px 14px 8px 24px;
+}

@@ -362,19 +362,21 @@ const Layout = () => {
 
 
 
-            <li>
-              <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "cutting" ? "active" : ""}`}>
+                        <li>
+              <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${["dashboardCutting", "tukangCutting", "tukangPola", "markeran", "spkcutting", "hasilcutting", "laporanhasil", "historyhasilcutting", "historydistribusispk", "hutangc", "cashboanc", "pendapatancutting", "pendapatanhistory"].includes(activeMenu) ? "active" : ""}`}>
                 <FaCut className="icon" /> Cutting
                 <span className={`arrow ${isCuttingOpen ? "open" : ""}`}>{isCuttingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
               {isCuttingOpen && (
-                <ul className="dropdown-menu show">
+                <ul className="dropdown-menu show dropdown-menu-grouped">
+                  <div className="dropdown-group-label">Utama</div>
                   <li>
                     <Link to="dashboardCutting" className={`dropdown-link ${activeMenu === "dashboardCutting" ? "active" : ""}`} onClick={() => handleMenuClick("dashboardCutting")}>
-                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Dasboard Cutting
+                      <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Dashboard Cutting
                     </Link>
                   </li>
 
+                  <div className="dropdown-group-label">Master Data</div>
                   <li>
                     <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
                       <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Cutting
@@ -390,6 +392,8 @@ const Layout = () => {
                       <FaRuler className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Markeran Produk
                     </Link>
                   </li>
+
+                  <div className="dropdown-group-label">Operasional</div>
                   <li>
                     <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
                       <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
@@ -402,7 +406,7 @@ const Layout = () => {
                   </li>
                   <li>
                     <Link to="laporanhasil" className={`dropdown-link ${activeMenu === "laporanhasil" ? "active" : ""}`} onClick={() => handleMenuClick("laporanhasil")}>
-                      <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Hasil
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Hasil
                     </Link>
                   </li>
                   <li>
@@ -415,6 +419,8 @@ const Layout = () => {
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Distribusi SPK
                     </Link>
                   </li>
+
+                  <div className="dropdown-group-label">Keuangan</div>
                   <li>
                     <Link to="hutangc" className={`dropdown-link ${activeMenu === "hutangc" ? "active" : ""}`} onClick={() => handleMenuClick("hutangc")}>
                       <FaCreditCard className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hutang
@@ -438,7 +444,6 @@ const Layout = () => {
                 </ul>
               )}
             </li>
-
             <li>
               <div onClick={toggleJasaMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "jasa" ? "active" : ""}`}>
                 <FaTools className="icon" /> Jasa

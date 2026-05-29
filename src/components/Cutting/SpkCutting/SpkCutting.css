@@ -821,10 +821,16 @@ select option:disabled {
 }
 
 .spk-cutting-modal-content-create {
-  width: min(1620px, calc(100vw - 32px));
-  max-width: 1620px;
-  height: min(94vh, 980px);
-  max-height: calc(100vh - 20px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -991,7 +997,7 @@ select option:disabled {
   flex: 1;
   min-height: 0;
   padding: 16px 20px;
-  overflow: hidden;
+  overflow-y: auto;
   display: block;
 }
 
@@ -1074,18 +1080,39 @@ select option:disabled {
   gap: 12px;
   padding: 14px 16px;
   min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
 }
 
 .spk-cutting-create-section-body-identity {
   gap: 8px;
 }
 
+
+.spk-cutting-form-group-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.spk-cutting-group-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+  margin-top: 0;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.spk-cutting-form-group-section.mt-4 {
+  margin-top: 16px;
+}
+
 .spk-cutting-identity-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 20px;
 }
 
 .spk-cutting-production-summary {
@@ -1096,10 +1123,8 @@ select option:disabled {
 }
 
 .spk-cutting-create-columns {
-  height: 100%;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(520px, 1.03fr) minmax(480px, 0.97fr);
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
@@ -1136,6 +1161,13 @@ select option:disabled {
   border-radius: 8px;
 }
 
+.spk-cutting-modal-content-create .spk-cutting-bahan-select input {
+  min-height: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .spk-cutting-modal-content-create .spk-cutting-bahan-select .spk-cutting-react-select__value-container {
   padding-top: 0;
   padding-bottom: 0;
@@ -1159,11 +1191,11 @@ select option:disabled {
 }
 
 .spk-cutting-modal-content-create .spk-cutting-bagian-section {
-  border-color: #d3deef;
-  border-radius: 8px;
-  background: #f9fbff;
-  padding: 16px;
-  display: block;
+  background: transparent;
+  border-bottom: 1px solid #cbd5e1;
+  border-radius: 0;
+  padding: 16px 0;
+  margin-bottom: 20px;
 }
 
 .spk-cutting-modal-content-create .spk-cutting-bagian-section > .spk-cutting-bagian-header {
@@ -1180,14 +1212,19 @@ select option:disabled {
 
 .spk-cutting-bahan-lines {
   display: grid;
-  gap: 10px;
+  gap: 16px;
 }
 
 .spk-cutting-bagian-line {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.35fr) minmax(130px, 0.78fr) minmax(96px, 0.48fr) 62px;
-  gap: 10px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .spk-cutting-bagian-line.is-first-line > .spk-cutting-bahan-cell,
@@ -1283,8 +1320,8 @@ select option:disabled {
 
 .spk-cutting-form-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 20px;
 }
 
 .spk-cutting-form-group {
@@ -1382,7 +1419,7 @@ select option:disabled {
 
 .spk-cutting-sku-table {
   width: 100%;
-  min-width: 100%;
+  min-width: 800px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -1615,6 +1652,14 @@ select option:disabled {
   border-radius: 8px;
   box-shadow: none;
   font-family: inherit;
+}
+
+.spk-cutting-bahan-select input {
+  min-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .spk-cutting-bahan-select .spk-cutting-react-select__control:hover {
@@ -2107,4 +2152,34 @@ select option:disabled {
   .spk-cutting-page-indicator {
     min-width: 0;
   }
+}
+
+.spk-cutting-groups-wrapper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.spk-cutting-form-group-section {
+  margin-bottom: 0 !important;
+  height: 100%;
+}
+.spk-cutting-form-group-section.mt-4 {
+  margin-top: 0 !important;
+}
+
+.spk-cutting-bagian-add-wrapper .spk-cutting-btn {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: 1px dashed #94a3b8;
+}
+.spk-cutting-bagian-add-wrapper .spk-cutting-btn:hover {
+  background-color: #e2e8f0;
+  border-color: #64748b;
+}
+
+.spk-cutting-bagian-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
