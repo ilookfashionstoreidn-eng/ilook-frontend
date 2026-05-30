@@ -576,19 +576,18 @@ const Layout = () => {
               )}
             </li>
 
-
-
-
             <li>
               <div
                 onClick={toggleGudangProdukMenu}
                 className={`sidebar-link dropdown-toggle ${[
                   "master-gudang-produk",
                   "input-sku-gudang",
+                  "stok-awal-gudang-produk",
                   "stok-lokasi-gudang",
                   "list-stok-product",
                   "mutasi-gudang-produk",
                   "history-produk-gudang",
+                  "stok-opname-gudang",
                   "gudang-produk",
                   "stok-gudang-produk",
                   "picking-queue",
@@ -613,6 +612,11 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
+                    <Link to="stok-awal-gudang-produk" className={`dropdown-link ${activeMenu === "stok-awal-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-awal-gudang-produk")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Awal
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="stok-lokasi-gudang" className={`dropdown-link ${activeMenu === "stok-lokasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("stok-lokasi-gudang")}>
                       <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok per Lokasi
                     </Link>
@@ -630,6 +634,11 @@ const Layout = () => {
                   <li>
                     <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-opname-gudang" className={`dropdown-link ${activeMenu === "stok-opname-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("stok-opname-gudang")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Stok Opname
                     </Link>
                   </li>
                   <li>

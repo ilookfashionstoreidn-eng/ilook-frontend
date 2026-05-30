@@ -24,6 +24,7 @@ import {
 
 const EMPTY_SUMMARY = {
   total_rows: 0,
+  total_qty_awal: 0,
   total_qty_masuk: 0,
   total_qty_keluar: 0,
   total_qty_sisa: 0,
@@ -351,6 +352,7 @@ const ListStokProductGudang = () => {
           </div>
 
           <div className="gudang-liststok-legend">
+            <span className="gudang-liststok-legend-item awal">Awal</span>
             <span className="gudang-liststok-legend-item masuk">Masuk</span>
             <span className="gudang-liststok-legend-item keluar">Keluar</span>
             <span className="gudang-liststok-legend-item sisa">Sisa</span>
@@ -403,12 +405,14 @@ const ListStokProductGudang = () => {
                   <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-qty" />
+                  <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-location" />
                 </colgroup>
                 <thead>
                   <tr>
                     <th className="gudang-liststok-head-center">No</th>
                     <th>SKU</th>
+                    <th className="gudang-liststok-head-qty">QTY Awal</th>
                     <th className="gudang-liststok-head-qty">QTY Masuk</th>
                     <th className="gudang-liststok-head-qty">Qty Keluar</th>
                     <th className="gudang-liststok-head-qty">Qty Sisa</th>
@@ -428,6 +432,11 @@ const ListStokProductGudang = () => {
                           </span>
                          
                         </div>
+                      </td>
+                      <td className="gudang-liststok-qty-cell">
+                        <span className="gudang-liststok-qty awal">
+                          {formatNumber(row.qtyAwal)}
+                        </span>
                       </td>
                       <td className="gudang-liststok-qty-cell">
                         <span className="gudang-liststok-qty masuk">

@@ -206,6 +206,12 @@
   color: #375a7f;
 }
 
+.gudang-ui-field > span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #375a7f;
+}
+
 .gudang-ui-field input,
 .gudang-ui-field textarea,
 .gudang-ui-field select {
@@ -229,6 +235,10 @@
 .gudang-ui-field select:focus {
   border-color: #0f766e;
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
+}
+
+.gudang-ui-field input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
 }
 
 .gudang-ui-form-actions {
@@ -276,6 +286,61 @@
   color: #6b7f95;
   display: block;
   line-height: 1.45;
+}
+
+.gudang-stok-awal-scan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.gudang-stok-awal-scan-row .gudang-ui-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.gudang-stok-awal-scan-status {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #dbe7f3;
+  border-radius: 14px;
+  background: #f8fbff;
+  color: #375a7f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gudang-stok-awal-session-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #dbe7f3;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(2, 132, 199, 0.06));
+  color: #16324f;
+}
+
+.gudang-stok-awal-session-summary span {
+  color: #58708f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gudang-stok-awal-session-summary strong {
+  font-size: 44px;
+  line-height: 1;
+  color: #0f766e;
+}
+
+.gudang-stok-awal-session-summary small {
+  color: #58708f;
+  font-size: 13px;
 }
 
 .gudang-ui-badge {
@@ -4224,22 +4289,210 @@
   color: #991b1b;
 }
 
-.gudang-liststok-table-stage {
-  position: relative;
+.gudang-stoklokasi-simple-qty.filled {
+  background: #eff6ff;
+  color: #2458ce;
 }
 
-.gudang-liststok-loading-overlay {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 4;
-  padding: 10px 14px;
+.gudang-stoklokasi-simple-slot-meta,
+.gudang-stoklokasi-simple-empty {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.gudang-stoklokasi-simple-empty {
+  font-weight: 700;
+}
+
+.gudang-stoklokasi-table-floor-row td {
+  background: linear-gradient(135deg, #eef5ff, #f8fbff) !important;
+  border-top: 1px solid #dbe5f1;
+  border-bottom: 1px solid #dbe5f1;
+}
+
+.gudang-stoklokasi-table-block-row td {
+  background: #fbfdff !important;
+  border-bottom: 1px solid #e2e8f0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.gudang-stoklokasi-table-group-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gudang-stoklokasi-table-group-line strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.gudang-stoklokasi-table-group-line span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gudang-liststok-toolbar-panel,
+.gudang-liststok-data-panel {
+  overflow: hidden;
+}
+
+.gudang-liststok-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.gudang-liststok-toolbar-copy {
+  min-width: 0;
+}
+
+.gudang-liststok-toolbar-kicker {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.88);
-  color: #ffffff;
+  background: linear-gradient(135deg, rgba(36, 88, 206, 0.1), rgba(15, 118, 110, 0.08));
+  border: 1px solid rgba(36, 88, 206, 0.12);
+  color: #17457c;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gudang-liststok-toolbar-copy h2 {
+  margin: 14px 0 8px;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.gudang-liststok-toolbar-copy p {
+  margin: 0;
+  max-width: 780px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gudang-liststok-toolbar-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.gudang-liststok-select-field {
+  min-width: 160px;
+  display: grid;
+  gap: 8px;
+}
+
+.gudang-liststok-select-field span {
+  color: #375a7f;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.2);
+}
+
+.gudang-liststok-select-field select {
+  border: 1px solid #d7e4f2;
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: #fbfdff;
+  color: #16324f;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.gudang-liststok-select-field select:focus {
+  border-color: #2458ce;
+  box-shadow: 0 0 0 4px rgba(36, 88, 206, 0.1);
+}
+
+.gudang-liststok-meta-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8eef5;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gudang-liststok-chip-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.gudang-liststok-chip-pending {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.gudang-liststok-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gudang-liststok-legend-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gudang-liststok-legend-item.awal {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.gudang-liststok-legend-item.masuk {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.gudang-liststok-legend-item.keluar {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.gudang-liststok-legend-item.sisa {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.gudang-liststok-callout-error {
+  margin-top: 14px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(255, 255, 255, 0.92));
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #991b1b;
+}
+
+.gudang-liststok-table-stage {
+  position: relative;
 }
 
 .gudang-liststok-table-shell {
@@ -4256,15 +4509,15 @@
 }
 
 .gudang-liststok-col-sku {
-  width: 39%;
+  width: 33%;
 }
 
 .gudang-liststok-col-qty {
-  width: 14%;
+  width: 11%;
 }
 
 .gudang-liststok-col-location {
-  width: 12%;
+  width: 16%;
 }
 
 .gudang-liststok-table thead th {
@@ -4372,6 +4625,11 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
+.gudang-liststok-qty.awal {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
 .gudang-liststok-qty.masuk {
   background: #eff6ff;
   color: #1d4ed8;
@@ -4476,19 +4734,62 @@
 
 .gudang-history-table th:first-child,
 .gudang-history-table td:first-child {
-  min-width: 180px;
+  width: 140px;
 }
 
 .gudang-history-table th:nth-child(2),
 .gudang-history-table td:nth-child(2) {
+  min-width: 180px;
+}
+
+.gudang-history-table th:nth-child(3),
+.gudang-history-table td:nth-child(3) {
   width: 88px;
   text-align: center;
 }
 
-.gudang-history-table td:nth-child(3) {
+.gudang-history-table td:nth-child(4) {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
   color: #334155;
+}
+
+.gudang-history-movement-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gudang-history-movement-badge.is-in {
+  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.gudang-history-movement-badge.is-out {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.gudang-liststok-loading-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 4;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.2);
 }
 
 @media (max-width: 1024px) {
@@ -4549,4 +4850,9 @@
   .gudang-history-date-range {
     grid-template-columns: 1fr;
   }
+
+  .gudang-stok-awal-scan-row {
+    grid-template-columns: 1fr;
+  }
 }
+
