@@ -36,12 +36,15 @@ const initialForm = {
   product_source: "",
   product_colour: "",
   materials: [{ ...emptyMaterial, kind: "utama" }],
+  product_accecories: "",
+  product_accecories_colour: "",
   estimasi_cutting: "",
   estimasi_combi: "",
-  id_s: "",
-  id_m: "",
-  id_l: "",
-  id_xl: "",
+  berat_panjang: "",
+  satuan_berat_panjang: "",
+  berat_panjang_combi: "",
+  satuan_berat_panjang_combi: "",
+  LD: "",
   pj_dress: "",
   pj_celana: "",
   pj_baju: "",
@@ -53,6 +56,9 @@ const initialForm = {
 const numericFields = [
   "estimasi_cutting",
   "estimasi_combi",
+  "berat_panjang",
+  "berat_panjang_combi",
+  "LD",
   "pj_dress",
   "pj_baju",
   "price_cmt",
@@ -75,40 +81,29 @@ const exportColumnGroups = [
   {
     title: "Material Utama",
     columns: [
-      { key: "product_material_1", label: "product_material_1" },
-      { key: "product_colour_1", label: "product_colour_1" },
       { key: "product_material_group_1", label: "product_material_group_1" },
+      { key: "product_colour_1", label: "product_colour_1" },
     ],
   },
   {
     title: "Material Kombinasi",
     columns: [
-      { key: "product_material_2", label: "product_material_2" },
-      { key: "product_colour_2", label: "product_colour_2" },
       { key: "product_material_group_2", label: "product_material_group_2" },
-      { key: "product_material_3", label: "product_material_3" },
-      { key: "product_colour_3", label: "product_colour_3" },
-      { key: "product_material_group_3", label: "product_material_group_3" },
-      { key: "product_material_4", label: "product_material_4" },
-      { key: "product_colour_4", label: "product_colour_4" },
-      { key: "product_material_group_4", label: "product_material_group_4" },
-      { key: "product_material_5", label: "product_material_5" },
-      { key: "product_colour_5", label: "product_colour_5" },
-      { key: "product_material_group_5", label: "product_material_group_5" },
-      { key: "product_material_6", label: "product_material_6" },
-      { key: "product_colour_6", label: "product_colour_6" },
-      { key: "product_material_group_6", label: "product_material_group_6" },
+      { key: "product_colour_2", label: "product_colour_2" },
+      { key: "product_accecories", label: "product_accecories" },
+      { key: "product_accecories_colour", label: "product_accecories_colour" },
     ],
   },
   {
-    title: "Estimasi dan ID Size",
+    title: "Estimasi dan Ukuran",
     columns: [
       { key: "estimasi_cutting", label: "Estimasi Cutting" },
       { key: "estimasi_combi", label: "Estimasi Combi" },
-      { key: "id_s", label: "ID S" },
-      { key: "id_m", label: "ID M" },
-      { key: "id_l", label: "ID L" },
-      { key: "id_xl", label: "ID XL" },
+      { key: "berat_panjang", label: "berat_panjang" },
+      { key: "satuan_berat_panjang", label: "satuan_berat_panjang" },
+      { key: "berat_panjang_combi", label: "berat_panjang_combi" },
+      { key: "satuan_berat_panjang_combi", label: "satuan_berat_panjang_combi" },
+      { key: "LD", label: "LD" },
       { key: "pj_dress", label: "PJ Dress" },
       { key: "pj_celana", label: "PJ Celana" },
       { key: "pj_baju", label: "PJ Baju" },
@@ -135,18 +130,19 @@ const defaultExportColumns = [
   "product_size",
   "product_source",
   "product_colour",
-  "product_material_1",
-  "product_colour_1",
   "product_material_group_1",
-  "product_material_2",
-  "product_colour_2",
+  "product_colour_1",
   "product_material_group_2",
+  "product_colour_2",
+  "product_accecories",
+  "product_accecories_colour",
   "estimasi_cutting",
   "estimasi_combi",
-  "id_s",
-  "id_m",
-  "id_l",
-  "id_xl",
+  "berat_panjang",
+  "satuan_berat_panjang",
+  "berat_panjang_combi",
+  "satuan_berat_panjang_combi",
+  "LD",
   "pj_dress",
   "pj_celana",
   "pj_baju",
@@ -362,12 +358,15 @@ const ProductList = () => {
     product_source: item.product_source || "",
     product_colour: item.product_colour || "",
     materials: normalizeMaterials(item.materials),
+    product_accecories: item.product_accecories || "",
+    product_accecories_colour: item.product_accecories_colour || "",
     estimasi_cutting: item.estimasi_cutting ?? "",
     estimasi_combi: item.estimasi_combi ?? "",
-    id_s: item.id_s || "",
-    id_m: item.id_m || "",
-    id_l: item.id_l || "",
-    id_xl: item.id_xl || "",
+    berat_panjang: item.berat_panjang ?? "",
+    satuan_berat_panjang: item.satuan_berat_panjang || "",
+    berat_panjang_combi: item.berat_panjang_combi ?? "",
+    satuan_berat_panjang_combi: item.satuan_berat_panjang_combi || "",
+    LD: item.LD ?? "",
     pj_dress: item.pj_dress ?? "",
     pj_celana: item.pj_celana ?? "",
     pj_baju: item.pj_baju ?? "",
@@ -999,6 +998,7 @@ const ProductList = () => {
 
       const response = await API.post("/product-list/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 600000,
       });
 
       await fetchProductLists();
@@ -1050,8 +1050,13 @@ const ProductList = () => {
     return kind === "aksesoris" ? "Aksesoris" : "Kombinasi";
   };
   const getMaterialRoleClass = (index) => (index === 0 ? "main" : "combo");
+  const tableValue = (value) => (value === null || value === undefined || value === "" ? "-" : value);
+  const getMaterialTableValue = (materials, index, field) => {
+    const material = normalizeMaterials(materials)[index] || {};
+    return tableValue(material[field]);
+  };
 
-  const renderMaterialChips = (materials) => {
+  const renderMaterialText = (materials) => {
     const normalized = normalizeMaterials(materials).filter(
       (item) => item.material || item.colour || item.material_group
     );
@@ -1060,24 +1065,12 @@ const ProductList = () => {
       return <span className="product-list-muted">-</span>;
     }
 
-    return (
-      <div className="product-list-material-chips">
-        {normalized.slice(0, 3).map((material, index) => (
-          <span
-            className={`product-list-material-chip ${getMaterialRoleClass(index)}`}
-            key={`${material.material}-${index}`}
-          >
-            <em>{getMaterialRoleLabel(index, material.kind)}</em>
-            {material.material_group ? `${material.material_group}: ` : ""}
-            {material.material || "-"}
-            {material.colour ? ` / ${material.colour}` : ""}
-          </span>
-        ))}
-        {normalized.length > 3 && (
-          <span className="product-list-material-more">+{normalized.length - 3}</span>
-        )}
-      </div>
-    );
+    return normalized
+      .map((material) =>
+        [material.material_group || material.material, material.colour].filter(Boolean).join(" / ")
+      )
+      .filter(Boolean)
+      .join(" | ");
   };
 
   const renderModal = () => {
@@ -1130,12 +1123,15 @@ const ProductList = () => {
               <DetailItem label="Product Size" value={selectedItem?.product_size} />
               <DetailItem label="Product Source" value={selectedItem?.product_source} />
               <DetailItem label="Product Colour" value={selectedItem?.product_colour} />
+              <DetailItem label="Product Accessories" value={selectedItem?.product_accecories} />
+              <DetailItem label="Product Accessories Colour" value={selectedItem?.product_accecories_colour} />
               <DetailItem label="Estimasi Cutting" value={selectedItem?.estimasi_cutting} suffix=" pcs" />
               <DetailItem label="Estimasi Combi" value={selectedItem?.estimasi_combi} suffix=" pcs" />
-              <DetailItem label="ID S" value={selectedItem?.id_s} />
-              <DetailItem label="ID M" value={selectedItem?.id_m} />
-              <DetailItem label="ID L" value={selectedItem?.id_l} />
-              <DetailItem label="ID XL" value={selectedItem?.id_xl} />
+              <DetailItem label="Berat Panjang" value={selectedItem?.berat_panjang} />
+              <DetailItem label="Satuan Berat Panjang" value={selectedItem?.satuan_berat_panjang} />
+              <DetailItem label="Berat Panjang Combi" value={selectedItem?.berat_panjang_combi} />
+              <DetailItem label="Satuan Berat Panjang Combi" value={selectedItem?.satuan_berat_panjang_combi} />
+              <DetailItem label="LD" value={selectedItem?.LD} />
               <DetailItem label="PJ Dress" value={selectedItem?.pj_dress} />
               <DetailItem label="PJ Celana" value={selectedItem?.pj_celana} />
               <DetailItem label="PJ Baju" value={selectedItem?.pj_baju} />
@@ -1159,8 +1155,8 @@ const ProductList = () => {
                             ? "Material Utama"
                             : `${getMaterialRoleLabel(index, material.kind)} ${index}`}
                         </em>
-                        <strong>{material.material || "-"}</strong>
-                        <small>{material.colour || "-"} / {material.material_group || "-"}</small>
+                        <strong>{material.material_group || material.material || "-"}</strong>
+                        <small>{material.colour || "-"}</small>
                       </div>
                     </div>
                   ))}
@@ -1241,7 +1237,7 @@ const ProductList = () => {
                     </span>
                   </div>
                   <Field
-                    label={index === 0 ? "Material Utama" : "Material Kombinasi"}
+                    label={index === 0 ? "Nama Material" : "Nama Kombinasi"}
                     value={material.material}
                     onChange={(event) => handleMaterialChange(index, "material", event.target.value)}
                   />
@@ -1269,8 +1265,20 @@ const ProductList = () => {
           </div>
 
           <div className="product-list-form-section">
-            <h3>Estimasi, ID Size, dan Price</h3>
+            <h3>Aksesoris, Estimasi, Ukuran, dan Price</h3>
             <div className="product-list-form-grid">
+              <Field
+                label="Product Accessories"
+                name="product_accecories"
+                value={form.product_accecories}
+                onChange={handleInputChange}
+              />
+              <Field
+                label="Product Accessories Colour"
+                name="product_accecories_colour"
+                value={form.product_accecories_colour}
+                onChange={handleInputChange}
+              />
               <Field
                 label="Estimasi Cutting"
                 name="estimasi_cutting"
@@ -1285,10 +1293,11 @@ const ProductList = () => {
                 value={form.estimasi_combi}
                 onChange={handleInputChange}
               />
-              <Field label="ID S" name="id_s" value={form.id_s} onChange={handleInputChange} />
-              <Field label="ID M" name="id_m" value={form.id_m} onChange={handleInputChange} />
-              <Field label="ID L" name="id_l" value={form.id_l} onChange={handleInputChange} />
-              <Field label="ID XL" name="id_xl" value={form.id_xl} onChange={handleInputChange} />
+              <Field label="Berat Panjang" name="berat_panjang" type="number" value={form.berat_panjang} onChange={handleInputChange} />
+              <Field label="Satuan Berat Panjang" name="satuan_berat_panjang" value={form.satuan_berat_panjang} onChange={handleInputChange} />
+              <Field label="Berat Panjang Combi" name="berat_panjang_combi" type="number" value={form.berat_panjang_combi} onChange={handleInputChange} />
+              <Field label="Satuan Berat Panjang Combi" name="satuan_berat_panjang_combi" value={form.satuan_berat_panjang_combi} onChange={handleInputChange} />
+              <Field label="LD" name="LD" type="number" value={form.LD} onChange={handleInputChange} />
               <Field label="PJ Dress" name="pj_dress" type="number" value={form.pj_dress} onChange={handleInputChange} />
               <Field label="PJ Celana" name="pj_celana" value={form.pj_celana} onChange={handleInputChange} />
               <Field label="PJ Baju" name="pj_baju" type="number" value={form.pj_baju} onChange={handleInputChange} />
@@ -1615,7 +1624,7 @@ const ProductList = () => {
           <div>
             <p className="product-list-pill">Produk</p>
             <h1>Product List</h1>
-            <span>Database detail produk, material, estimasi, ID size, price, dan notes SPK.</span>
+            <span>Database detail produk, material, aksesoris, estimasi, ukuran, price, dan notes SPK.</span>
           </div>
         </div>
 
@@ -1625,7 +1634,7 @@ const ProductList = () => {
             type="text"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Cari product, SKU name, group, colour, ID size..."
+            placeholder="Cari product, SKU name, group, colour, aksesoris..."
           />
           {searchInput && (
             <button type="button" onClick={() => setSearchInput("")}>
@@ -1776,93 +1785,75 @@ const ProductList = () => {
             <table className="product-list-table">
               <thead>
                 <tr>
-                  <th>Foto</th>
-                  <th>Product</th>
                   <th>SKU Name</th>
-                  <th>Group / Source</th>
-                  <th>Colour / Size</th>
-                  <th>Material</th>
-                  <th>Estimasi</th>
-                  <th>ID S</th>
-                  <th>ID M</th>
-                  <th>ID L</th>
-                  <th>ID XL</th>
-                  <th>PJ</th>
-                  <th>Price</th>
+                  <th>Product</th>
+                  <th>Product Group</th>
+                  <th>Product Size</th>
+                  <th>Product Source</th>
+                  <th>Product Colour</th>
+                  <th>Material Group 1</th>
+                  <th>Colour 1</th>
+                  <th>Material Group 2</th>
+                  <th>Colour 2</th>
+                  <th>Accessories</th>
+                  <th>Accessories Colour</th>
+                  <th>Estimasi Cutting</th>
+                  <th>Estimasi Combi</th>
+                  <th>Berat Panjang</th>
+                  <th>Satuan Berat Panjang</th>
+                  <th>Berat Panjang Combi</th>
+                  <th>Satuan Berat Panjang Combi</th>
+                  <th>LD</th>
+                  <th>PJ Dress</th>
+                  <th>PJ Celana</th>
+                  <th>PJ Baju</th>
                   <th>Notes SPK</th>
+                  <th>Price CMT</th>
+                  <th>Price Cutting</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="15" className="product-list-state-cell">
+                    <td colSpan="26" className="product-list-state-cell">
                       Memuat data Product List...
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan="15" className="product-list-state-cell">
+                    <td colSpan="26" className="product-list-state-cell">
                       Belum ada data Product List.
                     </td>
                   </tr>
                 ) : (
                   items.map((item) => (
                     <tr key={item.id}>
-                      <td className="product-list-image-cell">
-                        {(() => {
-                          const imageUrl = getProductImageUrl(item);
-                          return (
-                            <button
-                              className={`product-list-thumb-button${imageUrl ? " has-image" : ""}`}
-                              type="button"
-                              onClick={() => openProductImagePreview(imageUrl, item.sku_name || item.product)}
-                              disabled={!imageUrl}
-                              title={imageUrl ? "Preview foto" : "Belum ada foto"}
-                            >
-                              {imageUrl ? (
-                                <img src={imageUrl} alt={item.sku_name || item.product || "Foto produk"} />
-                              ) : (
-                                <FaImage />
-                              )}
-                            </button>
-                          );
-                        })()}
-                      </td>
-                      <td>
-                        <strong>{item.product || "-"}</strong>
-                        <span className="product-list-muted">#{item.id}</span>
-                      </td>
-                      <td>
-                        <strong>{item.sku_name || "-"}</strong>
-                      </td>
-                      <td>
-                        <span>{item.product_group || "-"}</span>
-                        <span className="product-list-muted">{item.product_source || "-"}</span>
-                      </td>
-                      <td>
-                        <span>{item.product_colour || "-"}</span>
-                        <span className="product-list-muted">{item.product_size || "-"}</span>
-                      </td>
-                      <td>{renderMaterialChips(item.materials)}</td>
-                      <td>
-                        <span>Cutting: {item.estimasi_cutting ?? "-"}</span>
-                        <span className="product-list-muted">Combi: {item.estimasi_combi ?? "-"}</span>
-                      </td>
-                      <td>{item.id_s || "-"}</td>
-                      <td>{item.id_m || "-"}</td>
-                      <td>{item.id_l || "-"}</td>
-                      <td>{item.id_xl || "-"}</td>
-                      <td>
-                        <span className="product-list-muted">
-                          D {item.pj_dress ?? "-"} / C {item.pj_celana ?? "-"} / B {item.pj_baju ?? "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <span>CMT: {formatCurrency(item.price_cmt)}</span>
-                        <span className="product-list-muted">Cutting: {formatCurrency(item.price_cutting)}</span>
-                      </td>
+                      <td><strong>{tableValue(item.sku_name)}</strong></td>
+                      <td>{tableValue(item.product)}</td>
+                      <td>{tableValue(item.product_group)}</td>
+                      <td>{tableValue(item.product_size)}</td>
+                      <td>{tableValue(item.product_source)}</td>
+                      <td>{tableValue(item.product_colour)}</td>
+                      <td>{getMaterialTableValue(item.materials, 0, "material_group")}</td>
+                      <td>{getMaterialTableValue(item.materials, 0, "colour")}</td>
+                      <td>{getMaterialTableValue(item.materials, 1, "material_group")}</td>
+                      <td>{getMaterialTableValue(item.materials, 1, "colour")}</td>
+                      <td>{tableValue(item.product_accecories)}</td>
+                      <td>{tableValue(item.product_accecories_colour)}</td>
+                      <td>{tableValue(item.estimasi_cutting)}</td>
+                      <td>{tableValue(item.estimasi_combi)}</td>
+                      <td>{tableValue(item.berat_panjang)}</td>
+                      <td>{tableValue(item.satuan_berat_panjang)}</td>
+                      <td>{tableValue(item.berat_panjang_combi)}</td>
+                      <td>{tableValue(item.satuan_berat_panjang_combi)}</td>
+                      <td>{tableValue(item.LD)}</td>
+                      <td>{tableValue(item.pj_dress)}</td>
+                      <td>{tableValue(item.pj_celana)}</td>
+                      <td>{tableValue(item.pj_baju)}</td>
                       <td className="product-list-notes-cell">{item.notes_spk || "-"}</td>
+                      <td>{tableValue(item.price_cmt)}</td>
+                      <td>{tableValue(item.price_cutting)}</td>
                       <td>
                         <div className="product-list-actions">
                           <button className="product-list-icon-button info" type="button" onClick={() => openDetailModal(item)} title="Detail">
