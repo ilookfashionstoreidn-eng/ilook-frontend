@@ -18,6 +18,7 @@ export const emptyGudangWorkspaceState = {
 
 const emptyGudangStockListSummary = {
   total_rows: 0,
+  total_qty_awal: 0,
   total_qty_masuk: 0,
   total_qty_keluar: 0,
   total_qty_sisa: 0,
@@ -111,9 +112,24 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
       const sku = getSkuById(state, entry.skuId);
       const product = sku ? getProductById(state, sku.productId) : null;
       const qtySisa = Number(entry.qty) || 0;
+      
+      // Find the earliest placement activity log for this sku and slot
+      const placements = state.activityLog.filter(
+        (activity) =>
+          activity?.type === "placement" &&
+          areIdsEqual(activity?.skuId, entry.skuId) &&
+          String(activity?.toSlotId || "") === String(entry.slotId || "")
+      );
+      let qtyAwal = qtySisa;
+      if (placements.length > 0) {
+        const earliestPlacement = [...placements].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        )[0];
+        qtyAwal = Number(earliestPlacement?.qty) || qtySisa;
+      }
+
       const qtyKeluar = getActivityQtyForSlot(state.activityLog, entry.skuId, entry.slotId, "out");
-      const qtyMasukFromLog = getActivityQtyForSlot(state.activityLog, entry.skuId, entry.slotId, "in");
-      const qtyMasuk = Math.max(qtyMasukFromLog, qtySisa + qtyKeluar);
+      const qtyMasuk = Math.max(0, qtySisa + qtyKeluar - qtyAwal);
       const locationParts = [
         slot?.layoutName,
         slot?.alias || slot?.slotCode,
@@ -123,6 +139,7 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
         id: entry.id || `${entry.slotId}_${entry.skuId}`,
         sku: sku?.code || entry.sku || "-",
         productName: product?.name || "",
+        qtyAwal,
         qtyMasuk,
         qtyKeluar,
         qtySisa,
@@ -148,6 +165,7 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
     data: paginatedRows,
     summary: {
       total_rows: total,
+      total_qty_awal: allRows.reduce((sum, row) => sum + row.qtyAwal, 0),
       total_qty_masuk: allRows.reduce((sum, row) => sum + row.qtyMasuk, 0),
       total_qty_keluar: allRows.reduce((sum, row) => sum + row.qtyKeluar, 0),
       total_qty_sisa: allRows.reduce((sum, row) => sum + row.qtySisa, 0),
@@ -350,5 +368,141 @@ export const ensureGudangProdukSkuActive = async (rawSkuCode) => {
   return {
     sku: createResponse?.data?.data || createResponse?.data || null,
     message: createResponse?.data?.message || "SKU berhasil ditambahkan.",
+  };
+};
+
+const normalizeProductListSkuKey = (value) =>
+  normalizeSkuCode(value)
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^A-Z0-9]/g, "");
+
+// ─── Stok Opname API ─────────────────────────────────────────────────────────
+
+const getProductListProductName = (item = {}) =>
+  String(item?.product || item?.product_group || item?.sku_name || "").trim();
+
+const getProductListSkuName = (item = {}) =>
+  String(item?.sku_name || item?.sku || "").trim();
+
+const findProductListRowsForProduct = async (product) => {
+  if (Array.isArray(product?.productListItems)) {
+    return product.productListItems;
+  }
+
+  const response = await API.get("/product-list", {
+    params: {
+      search: String(product?.name || "").trim(),
+      page: 1,
+      per_page: 100,
+      sortBy: "sku_name",
+      sortOrder: "asc",
+    },
+  });
+  const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+  const productName = String(product?.name || "").trim().toLowerCase();
+
+  return rows.filter(
+    (item) => getProductListProductName(item).toLowerCase() === productName
+  );
+};
+
+/**
+ * Ambil daftar produk dari Product List.
+ * Jika all=false, tampilkan hanya produk Product List yang SKU-nya sudah punya stok gudang.
+ * @param {object} params - { search?: string, all?: boolean }
+ */
+export const fetchOpnameProducts = async (params = {}) => {
+  const response = await API.get("/product-list", {
+    params: {
+      opname_products: 1,
+      search: params.search || "",
+      all: params.all ? 1 : undefined,
+    },
+  });
+
+  return Array.isArray(response?.data?.data) ? response.data.data : [];
+};
+
+/**
+ * Ambil daftar SKU + stok per slot untuk produk tertentu.
+ * @param {object|number|string} product
+ */
+export const fetchOpnameSkus = async (product) => {
+  const workspace = await fetchGudangProdukWorkspace({ activityLimit: 0 });
+  const productListRows = await findProductListRowsForProduct(product);
+  const productListSkuKeys = new Set(
+    productListRows
+      .map((item) => normalizeProductListSkuKey(getProductListSkuName(item)))
+      .filter(Boolean)
+  );
+  const productListBySkuKey = new Map(
+    productListRows.map((item) => [
+      normalizeProductListSkuKey(getProductListSkuName(item)),
+      item,
+    ])
+  );
+  const slots = getAllSlots(workspace);
+  const slotsById = new Map(slots.map((slot) => [String(slot.id), slot]));
+  const layoutsById = new Map(
+    (workspace.layouts || []).map((layout) => [String(layout.id), layout])
+  );
+  const skusById = new Map(
+    (workspace.skus || []).map((sku) => [String(sku.id), sku])
+  );
+
+  return (workspace.stockEntries || [])
+    .filter((entry) => Number(entry?.qty) > 0)
+    .map((entry) => {
+      const sku = skusById.get(String(entry?.skuId));
+      const skuKey = normalizeProductListSkuKey(sku?.code);
+      if (!sku || !productListSkuKeys.has(skuKey)) {
+        return null;
+      }
+
+      const productListItem = productListBySkuKey.get(skuKey) || {};
+      const slot = slotsById.get(String(entry?.slotId));
+      const layout = layoutsById.get(String(entry?.layoutId));
+      const variant = [
+        productListItem.product_colour,
+        productListItem.product_size,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      return {
+        entryId: entry.id || `${entry.slotId}_${entry.skuId}`,
+        skuId: sku.id,
+        skuCode: sku.code,
+        warna: productListItem.product_colour || "",
+        ukuran: productListItem.product_size || "",
+        variant,
+        slotId: entry.slotId,
+        slotCode: slot?.alias || slot?.slotCode || entry.slotId,
+        layoutId: entry.layoutId,
+        layoutName: slot?.layoutName || layout?.name || "-",
+        qtyGudang: Number(entry.qty) || 0,
+        updatedAt: entry.updatedAt || null,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) =>
+      String(left.skuCode).localeCompare(String(right.skuCode)) ||
+      String(left.layoutName).localeCompare(String(right.layoutName)) ||
+      String(left.slotCode).localeCompare(String(right.slotCode))
+    );
+};
+
+/**
+ * Commit hasil opname — ganti qty slot dengan jumlah seri yang di-scan.
+ * @param {{ skuId, slotId, layoutId, scannedQty, scannedSeries, notes }} payload
+ */
+export const commitOpname = async (payload) => {
+  const response = await API.post(
+    "/gudang-produk-workspace/opname/commit",
+    payload
+  );
+  return {
+    data: response?.data?.data || null,
+    message: response?.data?.message || "Opname berhasil disimpan.",
   };
 };

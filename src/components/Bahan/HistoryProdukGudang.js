@@ -24,6 +24,8 @@ import {
 const EMPTY_SUMMARY = {
   total_rows: 0,
   total_qty: 0,
+  total_qty_masuk: 0,
+  total_qty_keluar: 0,
   total_sku: 0,
   total_seri: 0,
 };
@@ -272,14 +274,14 @@ const HistoryProdukGudang = () => {
   return (
     <GudangProdukBaseShell
       title="History Produk"
-      subtitle="Riwayat SKU dan kode seri yang sudah keluar dari gudang produk."
+      subtitle="Riwayat barang masuk dan barang keluar dari gudang produk."
       icon={FaHistory}
       statusLabel={
         isInitialLoading
           ? "Memuat data..."
           : isRefreshing
           ? "Memperbarui hasil..."
-          : `${formatNumber(summary.total_qty || summary.total_rows)} produk keluar`
+          : `${formatNumber(summary.total_qty || summary.total_rows)} aktivitas`
       }
       searchValue={searchInput}
       onSearchChange={setSearchInput}
@@ -295,8 +297,13 @@ const HistoryProdukGudang = () => {
     >
       <section className="gudang-ui-stat-grid">
         <GudangStatCard
-          label="Total Keluar"
-          value={formatNumber(summary.total_qty || summary.total_rows)}
+          label="Barang Masuk"
+          value={formatNumber(summary.total_qty_masuk)}
+          helper="Total qty masuk pada filter aktif."
+        />
+        <GudangStatCard
+          label="Barang Keluar"
+          value={formatNumber(summary.total_qty_keluar)}
           helper="Total qty keluar pada filter aktif."
         />
         <GudangStatCard
@@ -410,7 +417,7 @@ const HistoryProdukGudang = () => {
         <div className="gudang-ui-panel-head">
           <div>
             <h2>Tabel History Produk</h2>
-            <p>Data berisi SKU, qty, kode seri, dan waktu keluar.</p>
+            <p>Data berisi arah pergerakan, SKU, qty, kode seri/catatan, dan waktu aktivitas.</p>
           </div>
           {isRefreshing ? (
             <span className="gudang-ui-chip gudang-liststok-chip-pending">
@@ -434,21 +441,36 @@ const HistoryProdukGudang = () => {
                 <table className="gudang-ui-table gudang-history-table">
                   <thead>
                     <tr>
+                      <th>Jenis</th>
                       <th>SKU</th>
                       <th>Qty</th>
-                      <th>Kode Seri</th>
-                      <th>Tanggal Keluar</th>
+                      <th>Kode Seri / Catatan</th>
+                      <th>Sumber</th>
+                      <th>Tanggal</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visibleRows.map((row) => (
                       <tr key={row.id}>
                         <td>
+                          <span
+                            className={`gudang-history-movement-badge ${
+                              row.movementType === "in" ? "is-in" : "is-out"
+                            }`}
+                          >
+                            {row.movementLabel ||
+                              (row.movementType === "in"
+                                ? "Barang Masuk"
+                                : "Barang Keluar")}
+                          </span>
+                        </td>
+                        <td>
                           <strong>{row.sku || "-"}</strong>
                         </td>
                         <td>{formatNumber(row.qty || 0)}</td>
                         <td>{row.kodeSeri || "-"}</td>
-                        <td>{formatDateTime(row.keluarPada)}</td>
+                        <td>{row.sourceLabel || "-"}</td>
+                        <td>{formatDateTime(row.happenedAt || row.keluarPada)}</td>
                       </tr>
                     ))}
                   </tbody>

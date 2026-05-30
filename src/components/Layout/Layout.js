@@ -576,9 +576,6 @@ const Layout = () => {
               )}
             </li>
 
-
-
-
             <li>
               <div
                 onClick={toggleGudangProdukMenu}
@@ -590,6 +587,7 @@ const Layout = () => {
                   "list-stok-product",
                   "mutasi-gudang-produk",
                   "history-produk-gudang",
+                  "stok-opname-gudang",
                   "gudang-produk",
                   "stok-gudang-produk",
                   "picking-queue",
@@ -636,6 +634,11 @@ const Layout = () => {
                   <li>
                     <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-opname-gudang" className={`dropdown-link ${activeMenu === "stok-opname-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("stok-opname-gudang")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Stok Opname
                     </Link>
                   </li>
                   <li>
