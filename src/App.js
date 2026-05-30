@@ -76,6 +76,7 @@ import PendapatanPabrik from "./components/Bahan/PendapatanPabrik";
 import HistoryPendapatanPabrik from "./components/Bahan/HistoryPendapatanPabrik";
 import LaporanHasil from "./components/Cutting/SpkCutting/LaporanHasil";
 import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyProduksi";
+import LaporanDataAcuan from "./components/Cutting/SpkCutting/LaporanDataAcuan";
 import Sku from "./components/Jahit/Sku";
 import GudangProduk from "./components/Bahan/GudangProduk";
 import StokGudangProduk from "./components/Bahan/StokGudangProduk";
@@ -181,6 +182,7 @@ const App = () => {
           <Route path="history-pendapatan-pabrik" element={<HistoryPendapatanPabrik />} />
           <Route path="seri" element={<Seri />} />
           <Route path="laporanhasil" element={<LaporanHasil />} />
+          <Route path="laporan-data-acuan" element={<LaporanDataAcuan />} />
           <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
           <Route path="sku" element={<Sku />} />
           <Route path="master-gudang-produk" element={<MasterGudangProduk />} />

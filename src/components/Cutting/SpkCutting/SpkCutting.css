@@ -1194,12 +1194,12 @@ select option:disabled {
   background: transparent;
   border-bottom: 1px solid #cbd5e1;
   border-radius: 0;
-  padding: 16px 0;
-  margin-bottom: 20px;
+  padding: 10px 0;
+  margin-bottom: 10px;
 }
 
 .spk-cutting-modal-content-create .spk-cutting-bagian-section > .spk-cutting-bagian-header {
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .spk-cutting-bagian-name-field,
@@ -1591,16 +1591,16 @@ select option:disabled {
 .spk-cutting-bagian-section {
   border: 1px solid #d9e3f3;
   background: #f9fbff;
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 10px;
+  padding: 10px;
 }
 
 .spk-cutting-bagian-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .spk-cutting-bagian-header h4 {
@@ -1622,6 +1622,45 @@ select option:disabled {
 .spk-cutting-btn-remove-bagian:hover {
   border-color: #ef9a9a;
   background: #fee2e2;
+}
+
+/* Icon circle buttons for add/remove */
+.spk-cutting-btn-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.spk-cutting-btn-icon-circle.add {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.spk-cutting-btn-icon-circle.add:hover {
+  background: #bbf7d0;
+  color: #15803d;
+}
+
+.spk-cutting-btn-icon-circle.remove {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.spk-cutting-btn-icon-circle.remove:hover {
+  background: #fecaca;
+  color: #b91c1c;
 }
 
 .spk-cutting-bahan-group {

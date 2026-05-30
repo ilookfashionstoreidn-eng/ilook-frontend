@@ -108,6 +108,7 @@
   border: none;
   width: 100%;
   text-align: left;
+  white-space: nowrap;
 }
 
 .sidebar-link:hover {
@@ -185,6 +186,7 @@
   position: relative;
   border-radius: 0 6px 6px 0;
   margin: 1px 0;
+  white-space: nowrap;
 }
 
 /* The clean connector line for submenus like ERPs (Stripe / Stripe Dashboard) */
