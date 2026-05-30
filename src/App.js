@@ -83,6 +83,7 @@ import StokGudangProduk from "./components/Bahan/StokGudangProduk";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import MasterGudangProduk from "./components/Bahan/MasterGudangProduk";
 import InputSkuGudang from "./components/Bahan/InputSkuGudang";
+import ScanProdukMasukGudang from "./components/Bahan/ScanProdukMasukGudang";
 import StokAwalGudangProduk from "./components/Bahan/StokAwalGudangProduk";
 import StokLokasiGudang from "./components/Bahan/StokLokasiGudang";
 import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
@@ -187,6 +188,7 @@ const App = () => {
           <Route path="sku" element={<Sku />} />
           <Route path="master-gudang-produk" element={<MasterGudangProduk />} />
           <Route path="input-sku-gudang" element={<InputSkuGudang />} />
+          <Route path="scan-produk-masuk-gudang" element={<ScanProdukMasukGudang />} />
           <Route path="stok-awal-gudang-produk" element={<StokAwalGudangProduk />} />
           <Route path="stok-lokasi-gudang" element={<StokLokasiGudang />} />
           <Route path="list-stok-product" element={<ListStokProductGudang />} />

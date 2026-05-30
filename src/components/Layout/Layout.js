@@ -588,15 +588,13 @@ const Layout = () => {
                 className={`sidebar-link dropdown-toggle ${[
                   "master-gudang-produk",
                   "input-sku-gudang",
+                  "scan-produk-masuk-gudang",
                   "stok-awal-gudang-produk",
                   "stok-lokasi-gudang",
                   "list-stok-product",
                   "mutasi-gudang-produk",
                   "history-produk-gudang",
                   "stok-opname-gudang",
-                  "gudang-produk",
-                  "stok-gudang-produk",
-                  "picking-queue",
                 ].includes(activeMenu)
                     ? "active"
                     : ""
@@ -618,6 +616,13 @@ const Layout = () => {
                   <li>
                     <Link to="input-sku-gudang" className={`dropdown-link ${activeMenu === "input-sku-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("input-sku-gudang")}>
                       <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input SKU Gudang
+                    </Link>
+                  </li>
+
+                  <div className="dropdown-group-label">Operasional</div>
+                  <li>
+                    <Link to="scan-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "scan-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("scan-produk-masuk-gudang")}>
+                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Produk Masuk
                     </Link>
                   </li>
                   <li>
