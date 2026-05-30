@@ -94,11 +94,11 @@ const getSkuOptionLabel = (sku) => {
   return details ? `${skuName || "SKU"} (${details})` : skuName || `SKU #${sku?.id || "-"}`;
 };
 
-const getSpkProductName = (spk) => spk?.productList?.product || spk?.product_list?.product || spk?.produk?.nama_produk || "N/A";
+const getSpkProductName = (spk) => spk?.productList?.product_group || spk?.productList?.product || spk?.product_list?.product_group || spk?.product_list?.product || spk?.produk?.product_group || spk?.produk?.nama_produk || "N/A";
 const getDistribusiSpk = (distribusi) => distribusi?.spkCutting || distribusi?.spk_cutting || {};
 const getDistribusiProductName = (distribusi) => {
   const spk = getDistribusiSpk(distribusi);
-  return spk?.productList?.product || spk?.product_list?.product || spk?.produk?.nama_produk || "N/A";
+  return spk?.productList?.product_group || spk?.productList?.product || spk?.product_list?.product_group || spk?.product_list?.product || spk?.produk?.product_group || spk?.produk?.nama_produk || "N/A";
 };
 const getDistribusiSku = (distribusi) => {
   const detail = Array.isArray(distribusi?.detail) ? distribusi.detail[0] : null;
@@ -1222,7 +1222,7 @@ const HasilCutting = () => {
                     <th>NO</th>
                     <th>DISTRIBUSI</th>
                     <th>JENIS</th>
-                    <th>PRODUK</th>
+                    <th>PRODUCT GROUP</th>
                     <th>TOTAL PRODUK</th>
                     <th>TOTAL BAYAR</th>
                     <th>TANGGAL</th>
@@ -1377,16 +1377,12 @@ const HasilCutting = () => {
                         <span className="hasil-cutting-workflow-step-no">1</span>
                         Pilih Distribusi
                       </div>
-                      <div className={`hasil-cutting-modal-tab ${dataAcuan.length > 0 ? "is-done" : ""}`}>
-                        <span className="hasil-cutting-workflow-step-no">2</span>
-                        Data Acuan
-                      </div>
                       <div className={`hasil-cutting-modal-tab ${spkDetail?.detail?.length > 0 ? "is-done" : ""}`}>
-                        <span className="hasil-cutting-workflow-step-no">3</span>
+                        <span className="hasil-cutting-workflow-step-no">2</span>
                         Input Detail
                       </div>
                       <div className={`hasil-cutting-modal-tab ${getTotalKeseluruhan() > 0 ? "is-done" : ""}`}>
-                        <span className="hasil-cutting-workflow-step-no">4</span>
+                        <span className="hasil-cutting-workflow-step-no">3</span>
                         Simpan Hasil
                       </div>
                     </div>
@@ -1495,10 +1491,6 @@ const HasilCutting = () => {
                         <p className="hasil-cutting-operational-value">{selectedModeLabel}</p>
                       </div>
                       <div className="hasil-cutting-operational-item">
-                        <p className="hasil-cutting-operational-label">Total Acuan</p>
-                        <p className="hasil-cutting-operational-value">{dataAcuan.length.toLocaleString("id-ID")}</p>
-                      </div>
-                      <div className="hasil-cutting-operational-item">
                         <p className="hasil-cutting-operational-label">Total Produk</p>
                         <p className="hasil-cutting-operational-value">{getTotalKeseluruhan().toLocaleString("id-ID")}</p>
                       </div>
@@ -1506,104 +1498,7 @@ const HasilCutting = () => {
                   </div>
                 </div>
 
-                {/* Tabel Data Acuan - Selalu tampil */}
-                <div className="hasil-cutting-form-section hasil-cutting-form-section-acuan">
-                  <div className="hasil-cutting-section-bar">
-                    <h3 className="hasil-cutting-section-title">Data Acuan</h3>
-                    <button onClick={handleTambahAcuan} className="hasil-cutting-section-action">
-                      <i className="fas fa-plus"></i>
-                      Tambah Data Acuan
-                    </button>
-                  </div>
 
-                  {dataAcuan.length > 0 ? (
-                    <div className="hasil-cutting-table-wrap">
-                      <table className="penjahit-table">
-                        <thead>
-                          <tr>
-                            <th>Warna</th>
-                            <th>Berat Acuan (KG)</th>
-                            <th>Banyak Produk</th>
-                            <th>Berat Acuan per Produk (KG)</th>
-                            <th>Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dataAcuan.map((acuan) => {
-                            const beratAcuanPerProduk = getBeratAcuanPerProduk(parseFloat(acuan.berat_acuan || 0), parseFloat(acuan.banyak_produk || 0));
-                            return (
-                              <tr key={acuan.id}>
-                                <td>
-                                  <div className="hasil-cutting-cell-input-shell">
-                                    <select
-                                      value={acuan.warna}
-                                      onChange={(e) => handleAcuanChange(acuan.id, "warna", e.target.value)}
-                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-select-erp hasil-cutting-input-in-shell"
-                                    >
-                                      <option value="">-- Pilih Warna --</option>
-                                      {getWarnaList().map((warna) => (
-                                        <option key={warna} value={warna}>
-                                          {warna}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="hasil-cutting-cell-input-shell has-addon-left">
-                                    <span className="hasil-cutting-cell-input-addon">KG</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={acuan.berat_acuan || ""}
-                                      onChange={(e) => handleAcuanChange(acuan.id, "berat_acuan", e.target.value)}
-                                      placeholder="0.00"
-                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-in-shell"
-                                    />
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="hasil-cutting-cell-input-shell has-addon-right">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={acuan.banyak_produk || ""}
-                                      onChange={(e) => handleAcuanChange(acuan.id, "banyak_produk", e.target.value)}
-                                      placeholder="0"
-                                      className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-in-shell"
-                                    />
-                                    <span className="hasil-cutting-cell-input-addon right">PCS</span>
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="hasil-cutting-cell-metric is-success">
-                                    {beratAcuanPerProduk > 0 ? `${beratAcuanPerProduk.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : "-"}
-                                  </div>
-                                </td>
-                                <td>
-                                  <button
-                                    onClick={() => handleHapusAcuan(acuan.id)}
-                                    className="hasil-cutting-row-action-btn danger"
-                                  >
-                                    <i className="fas fa-trash"></i>
-                                    Hapus
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="hasil-cutting-empty-state">
-                      <div className="hasil-cutting-empty-state-icon"><i className="fas fa-clipboard-list"></i></div>
-                      <p className="hasil-cutting-empty-state-title">Belum ada data acuan</p>
-                      <p className="hasil-cutting-empty-state-text">Klik "Tambah Data Acuan" untuk menambahkan data acuan</p>
-                    </div>
-                  )}
-                </div>
 
                 {/* Loading State */}
                 {loading && (

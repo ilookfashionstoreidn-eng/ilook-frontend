@@ -254,7 +254,7 @@ const RiwayatStokBahanKeluar = () => {
                           <td>{(currentPage - 1) * perPage + index + 1}</td>
                           <td>{formatTanggal(item.scanned_at || item.created_at)}</td>
                           <td>{item.spk_cutting?.id_spk_cutting || "-"}</td>
-                          <td>{item.spk_cutting?.produk?.nama_produk || "-"}</td>
+                          <td>{item.spk_cutting?.produk?.nama_produk || item.spk_cutting?.product_list?.product || "-"}</td>
                           <td>{item.spk_cutting_bahan?.bagian?.nama_bagian || "-"}</td>
                           <td>{item.spk_cutting_bahan?.bahan?.nama_bahan || "-"}</td>
                           <td>{item.spk_cutting_bahan?.warna || "-"}</td>

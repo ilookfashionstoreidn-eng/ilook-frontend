@@ -1,0 +1,111 @@
+.laporan-erp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--bg-secondary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  transition: all 0.2s ease;
+}
+
+.laporan-erp-checkbox-label:hover {
+  background: var(--bg-hover, #f3f4f6);
+  border-color: var(--primary-hover, #4338ca);
+}
+
+.laporan-erp-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color, #4f46e5);
+  cursor: pointer;
+}
+
+.laporan-data-acuan-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  background: hsla(243, 75%, 97%, 0.6);
+  border-left: 4px solid var(--primary-color, #4f46e5);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary, #4b5563);
+}
+
+.laporan-data-acuan-note .info-icon {
+  font-size: 18px;
+  color: var(--primary-color, #4f46e5);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.laporan-data-acuan-note strong {
+  color: var(--text-primary, #1f2937);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.laporan-erp-table {
+  table-layout: auto !important;
+}
+
+.laporan-erp-table th,
+.laporan-erp-table td {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+
+/* Align columns professionally to match design guidelines */
+.laporan-erp-table th:nth-child(1),
+.laporan-erp-table td:nth-child(1),
+.laporan-erp-table th:nth-child(6),
+.laporan-erp-table td:nth-child(6),
+.laporan-erp-table th:nth-child(7),
+.laporan-erp-table td:nth-child(7),
+.laporan-erp-table th:nth-child(11),
+.laporan-erp-table td:nth-child(11) {
+  text-align: center !important;
+}
+
+.laporan-erp-table th:nth-child(2),
+.laporan-erp-table td:nth-child(2),
+.laporan-erp-table th:nth-child(3),
+.laporan-erp-table td:nth-child(3),
+.laporan-erp-table th:nth-child(4),
+.laporan-erp-table td:nth-child(4),
+.laporan-erp-table th:nth-child(5),
+.laporan-erp-table td:nth-child(5) {
+  text-align: left !important;
+}
+
+.laporan-erp-table th:nth-child(8),
+.laporan-erp-table td:nth-child(8),
+.laporan-erp-table th:nth-child(9),
+.laporan-erp-table td:nth-child(9),
+.laporan-erp-table th:nth-child(10),
+.laporan-erp-table td:nth-child(10) {
+  text-align: right !important;
+}
+
+

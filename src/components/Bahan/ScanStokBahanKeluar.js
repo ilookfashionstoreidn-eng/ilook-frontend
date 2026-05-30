@@ -30,7 +30,6 @@ const ScanStokBahanKeluar = () => {
       }
     };
   }, []);
-
   const fetchSpkCuttingDetail = async (inputValue = null) => {
     const searchValue = inputValue || (scanMode === "barcode" ? spkCuttingBarcode : spkCuttingId);
 
@@ -50,6 +49,13 @@ const ScanStokBahanKeluar = () => {
 
       const response = await API.get(`/stok-bahan-keluar/spk-cutting/${searchValue.trim()}`);
       setSpkCuttingDetail(response.data);
+
+      if (response.data.scanned_items) {
+        setScannedItems(response.data.scanned_items);
+      }
+      if (response.data.scan_progress) {
+        setScanProgress(response.data.scan_progress);
+      }
 
       if (response.data.bahan_detail && response.data.bahan_detail.length === 1) {
         setSelectedBahan(response.data.bahan_detail[0]);
@@ -510,8 +516,8 @@ const ScanStokBahanKeluar = () => {
                           <tr key={item.id || index}>
                             <td>{index + 1}</td>
                             <td>{item.barcode || "-"}</td>
-                            <td>{item.stok_bahan?.pembelian_bahan?.bahan?.nama_bahan || "-"}</td>
-                            <td>{item.stok_bahan?.warna?.warna || "-"}</td>
+                            <td>{item.stok_bahan?.pembelian_bahan?.bahan?.nama_bahan || item.spk_cutting_bahan?.bahan?.nama_bahan || "-"}</td>
+                            <td>{item.stok_bahan?.warna?.warna || item.spk_cutting_bahan?.warna || "-"}</td>
                             <td>{item.berat ? `${item.berat} kg` : "-"}</td>
                             <td>{item.scanned_at ? new Date(item.scanned_at).toLocaleString("id-ID") : "-"}</td>
                           </tr>

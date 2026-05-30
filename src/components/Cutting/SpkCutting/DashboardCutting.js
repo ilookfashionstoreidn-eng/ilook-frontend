@@ -688,7 +688,7 @@ const DashboardCutting = () => {
                         {item.id_spk_cutting}
                       </span>
                       <span className="cutting-deadline-product">
-                        {item.produk?.nama_produk || "-"}
+                        {item.productList?.product_group || item.productList?.product || item.product_list?.product_group || item.product_list?.product || item.produk?.nama_produk || "-"}
                       </span>
                     </div>
                     <div className="cutting-deadline-meta">

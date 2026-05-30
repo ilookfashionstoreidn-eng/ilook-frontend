@@ -451,6 +451,7 @@
   border-collapse: separate;
   border-spacing: 0;
   min-width: 860px;
+  table-layout: auto !important;
 }
 
 .laporan-erp-table th {
@@ -466,7 +467,9 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .laporan-erp-table td {
@@ -477,7 +480,11 @@
   font-weight: 550;
   text-align: center;
   vertical-align: middle;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
+
 
 .laporan-erp-table tbody tr:hover td {
   background: #fcfdff;
@@ -601,3 +608,20 @@
     min-width: 720px;
   }
 }
+
+/* Align columns professionally to match design guidelines */
+.laporan-erp-table th:first-child,
+.laporan-erp-table td:first-child {
+  text-align: left !important;
+}
+
+.laporan-erp-table th:last-child,
+.laporan-erp-table td:last-child {
+  text-align: right !important;
+}
+
+.laporan-erp-table th:not(:first-child):not(:last-child),
+.laporan-erp-table td:not(:first-child):not(:last-child) {
+  text-align: right !important;
+}
+
