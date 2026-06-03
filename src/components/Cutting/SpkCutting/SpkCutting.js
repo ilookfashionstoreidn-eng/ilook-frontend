@@ -615,6 +615,7 @@ const SpkCutting = () => {
     id_spk_cutting: "",
     pic: "",
     produk_id: "",
+    tanggal_buat: "",
     tanggal_batas_kirim: "",
     harga_jasa: "",
     harga_jasaDisplay: "", // Untuk format rupiah di input
@@ -633,6 +634,7 @@ const SpkCutting = () => {
     id_spk_cutting: "",
     pic: "",
     produk_id: "",
+    tanggal_buat: "",
     tanggal_batas_kirim: "",
     harga_jasa: "",
     satuan_harga: "Pcs",
@@ -1309,6 +1311,7 @@ const SpkCutting = () => {
         id_spk_cutting: "",
         pic: "",
         produk_id: "",
+        tanggal_buat: "",
         tanggal_batas_kirim: "",
         harga_jasa: "",
         harga_jasaDisplay: "",
@@ -1980,6 +1983,7 @@ const SpkCutting = () => {
 
         produk_id: productListId ? productListId.toString() : "",
 
+        tanggal_buat: data.created_at ? data.created_at.substring(0, 10) : "",
         tanggal_batas_kirim: data.tanggal_batas_kirim || "",
 
         harga_jasa: data.harga_jasa?.toString() || "",
@@ -2294,6 +2298,7 @@ const SpkCutting = () => {
         id_spk_cutting: "",
         pic: "",
         produk_id: "",
+        tanggal_buat: "",
         tanggal_batas_kirim: "",
         harga_jasa: "",
         harga_jasaDisplay: "",
@@ -2492,7 +2497,7 @@ const SpkCutting = () => {
                   pic: "",
 
                   produk_id: "",
-
+                  tanggal_buat: "",
                   tanggal_batas_kirim: "",
 
                   harga_jasa: "",
@@ -2914,6 +2919,11 @@ const SpkCutting = () => {
                             <option value="Fittingan">Fittingan</option>
                             <option value="Habisin Bahan">Habisin Bahan</option>
                           </select>
+                        </div>
+
+                        <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+                          <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Tanggal Buat: <span className="spk-cutting-required">*</span></label>
+                          <input type="date" name="tanggal_buat" value={newSpkCutting.tanggal_buat} onChange={handleInputChange} required style={{ flex: 1 }} />
                         </div>
 
                         <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
@@ -3395,6 +3405,11 @@ const SpkCutting = () => {
                       <option value="Fittingan">Fittingan</option>
                       <option value="Habisin Bahan">Habisin Bahan</option>
                     </select>
+                  </div>
+
+                  <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+                    <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Tanggal Buat: <span className="spk-cutting-required">*</span></label>
+                    <input type="date" name="tanggal_buat" value={editSpkCutting.tanggal_buat} onChange={handleEditInputChange} required style={{ flex: 1 }} />
                   </div>
 
                   <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
