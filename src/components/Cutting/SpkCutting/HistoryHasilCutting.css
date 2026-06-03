@@ -3,11 +3,12 @@
 .history-cutting-erp-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   background: #f4f6f9;
   color: #0f172a;
   font-family: "Plus Jakarta Sans", sans-serif;
+  overflow: hidden;
 }
 
 .history-cutting-erp-container *,
@@ -265,6 +266,8 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .history-cutting-table-header {
@@ -340,8 +343,8 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: auto;
-  max-height: clamp(320px, 58vh, 640px);
-  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
 }
 
 .history-cutting-table {
@@ -722,3 +725,33 @@
     padding: 14px 16px 16px;
   }
 }
+
+/* Sharp Theme overrides - No rounded corners */
+.history-cutting-erp-container,
+.history-cutting-brand-icon,
+.history-cutting-search-wrap,
+.history-cutting-search-input,
+.history-cutting-search-clear,
+.history-cutting-icon-btn,
+.history-cutting-avatar,
+.history-cutting-stat-item,
+.history-cutting-table-wrapper,
+.history-cutting-table-scroll,
+.history-cutting-product-image,
+.history-cutting-product-fallback,
+.history-cutting-badge,
+.history-cutting-action-btn,
+.history-cutting-modal-overlay,
+.history-cutting-modal-content,
+.history-cutting-modal-header,
+.history-cutting-modal-close,
+.history-cutting-history-card,
+.history-cutting-chip,
+.history-cutting-status,
+input,
+select,
+textarea,
+button {
+  border-radius: 0 !important;
+}
+

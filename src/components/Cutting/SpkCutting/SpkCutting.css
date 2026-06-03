@@ -19,11 +19,12 @@ select option:disabled {
   --erp-success: #0f766e;
   --erp-warning: #b45309;
   --erp-danger: #b91c1c;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--erp-bg);
   color: var(--erp-text);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -345,12 +346,18 @@ select option:disabled {
   border-radius: 12px;
   box-shadow: 0 8px 18px -12px rgba(15, 23, 42, 0.2);
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .spk-cutting-table-scroll {
   width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
   padding-right: 8px;
 }
 
@@ -395,16 +402,17 @@ select option:disabled {
   border: none;
   border-radius: 8px;
   color: #ffffff;
-  height: 36px;
-  padding: 0 14px;
+  height: 38px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
 .spk-cutting-btn-add {
@@ -439,16 +447,18 @@ select option:disabled {
 
 .spk-cutting-search-bar {
   position: relative;
-  min-width: 320px;
+  width: 380px;
+  max-width: 100%;
 }
 
 .spk-cutting-search-bar input {
+  box-sizing: border-box;
   width: 100%;
-  height: 36px;
-  padding: 0 34px 0 12px;
-  font-size: 12px;
+  height: 38px;
+  padding: 0 36px 0 14px;
+  font-size: 13px;
   background: #ffffff;
-  border-color: var(--erp-border-strong);
+  border-color: #cfd8e3;
 }
 
 .spk-cutting-search-bar input:hover {
@@ -507,7 +517,8 @@ select option:disabled {
 .spk-cutting-table thead th {
   position: sticky;
   top: 0;
-  z-index: 4;
+  z-index: 10;
+  background: #eef3f9;
   padding: 12px 10px;
   border-bottom: 1px solid #d8e2f0;
   font-size: 11px;
@@ -1123,9 +1134,10 @@ select option:disabled {
 }
 
 .spk-cutting-create-columns {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 2fr 8fr;
   gap: 14px;
+  align-items: start;
 }
 
 .spk-cutting-create-section-info .spk-cutting-create-section-body,
@@ -2222,3 +2234,45 @@ select option:disabled {
   flex-direction: column;
   gap: 20px;
 }
+
+/* Sharp Theme overrides - No rounded corners */
+.spk-cutting-page,
+.spk-cutting-brand-icon,
+.spk-cutting-summary-card,
+.spk-cutting-summary-card-icon,
+.spk-cutting-in-progress-card,
+.spk-cutting-in-progress-card-icon,
+.spk-cutting-form-input,
+.spk-cutting-form-group input,
+.spk-cutting-form-group select,
+.spk-cutting-form-group textarea,
+.spk-cutting-status-filter,
+.spk-cutting-search-bar input,
+.spk-cutting-reset-btn,
+.spk-cutting-table-container,
+.spk-cutting-table-scroll,
+.spk-cutting-btn-add,
+.spk-cutting-btn-export,
+.spk-cutting-search-icon,
+.spk-cutting-search-clear,
+.spk-cutting-sisa-badge,
+.spk-cutting-jenis-chip,
+.spk-cutting-status-select,
+.spk-cutting-btn-icon,
+.spk-cutting-page-btn,
+.spk-cutting-page-indicator,
+.spk-cutting-modal,
+.spk-cutting-modal-content,
+.spk-cutting-modal-header,
+.spk-cutting-modal-close,
+.spk-cutting-detail-card,
+.modal-card,
+.spk-swal-popup,
+.spk-swal-btn,
+input,
+select,
+textarea,
+button {
+  border-radius: 0 !important;
+}
+

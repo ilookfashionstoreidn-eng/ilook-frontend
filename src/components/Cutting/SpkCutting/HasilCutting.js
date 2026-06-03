@@ -105,6 +105,11 @@ const getDistribusiSku = (distribusi) => {
   return detail?.productListSku || detail?.product_list_sku || detail?.produkSku || detail?.produk_sku || null;
 };
 
+const parseSafeFloat = (value) => {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 const HasilCutting = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -125,6 +130,7 @@ const HasilCutting = () => {
   const [editingId, setEditingId] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // snapshot data lama saat edit
+  const [tanggalPotong, setTanggalPotong] = useState(new Date().toISOString().split("T")[0]);
   // State untuk menyimpan jumlah lembar dan jumlah produk per item (per warna)
   const [inputData, setInputData] = useState({});
   // State untuk menyimpan data acuan
@@ -251,6 +257,7 @@ const HasilCutting = () => {
         
         const params = {
           page: searchParamsChanged ? 1 : currentPage, // Halaman 1 jika filter berubah, otherwise gunakan currentPage
+          per_page: 50,
         };
         
         // Prioritas: jika weekly_start dan weekly_end ada, gunakan itu (jangan gunakan dailyDate)
@@ -379,9 +386,7 @@ const HasilCutting = () => {
   // Fungsi untuk mendapatkan total produk per item
   const getTotalProduk = (bahanId) => {
     const data = inputData[bahanId] || {};
-    const lembar = parseFloat(data.jumlahLembar || 0);
-    const produk = parseFloat(data.jumlahProduk || 0);
-    return lembar * produk;
+    return parseSafeFloat(data.totalProduk);
   };
 
   // Fungsi untuk mendapatkan total keseluruhan
@@ -394,10 +399,12 @@ const HasilCutting = () => {
 
   // Fungsi untuk menghitung berat per produk
   const getBeratPerProduk = (beratScanned, totalProduk) => {
-    if (!beratScanned || beratScanned <= 0 || !totalProduk || totalProduk <= 0) {
+    const total = parseSafeFloat(totalProduk);
+    const berat = parseSafeFloat(beratScanned);
+    if (berat <= 0 || total <= 0) {
       return 0;
     }
-    return beratScanned / totalProduk;
+    return berat / total;
   };
 
   // Fungsi untuk mendapatkan list warna dari detail SPK
@@ -414,10 +421,12 @@ const HasilCutting = () => {
 
   // Fungsi untuk menghitung berat acuan per produk
   const getBeratAcuanPerProduk = (beratAcuan, banyakProduk) => {
-    if (!beratAcuan || beratAcuan <= 0 || !banyakProduk || banyakProduk <= 0) {
+    const acuan = parseSafeFloat(beratAcuan);
+    const banyak = parseSafeFloat(banyakProduk);
+    if (acuan <= 0 || banyak <= 0) {
       return 0;
     }
-    return beratAcuan / banyakProduk;
+    return acuan / banyak;
   };
 
   // Fungsi untuk mendapatkan berat acuan per produk berdasarkan warna
@@ -428,13 +437,13 @@ const HasilCutting = () => {
     // Cari berat acuan untuk warna yang sama
     const acuanSesuaiWarna = dataAcuan.find((a) => a.warna === warna && a.berat_acuan && a.banyak_produk);
     if (acuanSesuaiWarna) {
-      return getBeratAcuanPerProduk(parseFloat(acuanSesuaiWarna.berat_acuan || 0), parseFloat(acuanSesuaiWarna.banyak_produk || 0));
+      return getBeratAcuanPerProduk(parseSafeFloat(acuanSesuaiWarna.berat_acuan), parseSafeFloat(acuanSesuaiWarna.banyak_produk));
     }
 
     // Jika tidak ditemukan, gunakan berat acuan dari warna pertama yang tersedia (fallback)
     const acuanFallback = dataAcuan.find((a) => a.berat_acuan && a.banyak_produk);
     if (acuanFallback) {
-      return getBeratAcuanPerProduk(parseFloat(acuanFallback.berat_acuan || 0), parseFloat(acuanFallback.banyak_produk || 0));
+      return getBeratAcuanPerProduk(parseSafeFloat(acuanFallback.berat_acuan), parseSafeFloat(acuanFallback.banyak_produk));
     }
 
     return null;
@@ -514,22 +523,22 @@ const HasilCutting = () => {
     const hasEmptyData = spkDetail.detail.some((item) => {
       const bahanId = item.spk_cutting_bahan_id;
       const data = inputData[bahanId] || {};
-      return !data.jumlahLembar || !data.jumlahProduk || parseFloat(data.jumlahLembar) <= 0 || parseFloat(data.jumlahProduk) <= 0;
+      return !data.jumlahLembar || !data.totalProduk || parseSafeFloat(data.jumlahLembar) <= 0 || parseSafeFloat(data.totalProduk) <= 0;
     });
 
     if (hasEmptyData) {
-      await showStatusAlert("warning", "Data Belum Lengkap", "Lengkapi semua data jumlah lembar dan jumlah produk.");
+      await showStatusAlert("warning", "Data Belum Lengkap", "Lengkapi semua data jumlah lembar dan total produk.");
       return;
     }
 
-    // Validasi distribusi seri (hanya jika user mengisi distribusi seri)
+    // Validasi distribusi seri (hanya jika user mengisi distribusi seri pada mode kombinasi)
     const totalProduk = getTotalKeseluruhan();
     const totalDistribusi = getTotalDistribusiSeri();
 
     // Cek apakah user mengisi distribusi seri (ada yang diisi)
     const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
 
-    if (hasDistribusiData) {
+    if (hasilMode === "kombinasi" && hasDistribusiData) {
       // Jika user mengisi distribusi seri, validasi harus lengkap dan total harus sama
       const hasEmptyDistribusi = distribusiSeri.some((item) => !item.jumlah_produk || parseInt(item.jumlah_produk) <= 0);
       if (hasEmptyDistribusi) {
@@ -626,10 +635,10 @@ const HasilCutting = () => {
           nama_bahan: item.nama_bahan || null,
           warna: item.warna || null,
           qty: item.qty || null,
-          jumlah_lembar: parseFloat(data.jumlahLembar || 0),
-          jumlah_produk: parseFloat(data.jumlahProduk || 0),
+          jumlah_lembar: parseSafeFloat(data.jumlahLembar),
+          jumlah_produk: parseSafeFloat(data.jumlahLembar) > 0 ? totalProduk / parseSafeFloat(data.jumlahLembar) : 0,
           total_produk: totalProduk,
-          berat_total: parseFloat(item.berat_scanned || 0), // Berat total dari stok_bahan_keluar
+          berat_total: parseSafeFloat(item.berat_scanned), // Berat total dari stok_bahan_keluar
           berat_per_produk: beratPerProduk,
           status_perbandingan: statusPerbandingan?.status || statusPerbandingan,
           selisih_perbandingan: statusPerbandingan?.selisih || 0,
@@ -642,9 +651,9 @@ const HasilCutting = () => {
         .filter((acuan) => acuan.warna && acuan.berat_acuan && acuan.banyak_produk)
         .map((acuan) => ({
           warna: acuan.warna,
-          berat_acuan: parseFloat(acuan.berat_acuan || 0),
-          banyak_produk: parseFloat(acuan.banyak_produk || 0),
-          berat_acuan_per_produk: getBeratAcuanPerProduk(parseFloat(acuan.berat_acuan || 0), parseFloat(acuan.banyak_produk || 0)),
+          berat_acuan: parseSafeFloat(acuan.berat_acuan),
+          banyak_produk: parseSafeFloat(acuan.banyak_produk),
+          berat_acuan_per_produk: getBeratAcuanPerProduk(parseSafeFloat(acuan.berat_acuan), parseSafeFloat(acuan.banyak_produk)),
         }));
 
       // Format status perbandingan agregat (ringkasan per warna)
@@ -666,7 +675,7 @@ const HasilCutting = () => {
       // - Jika user mengisi distribusi seri, kirim array dengan data dan detail
       // - Jika tidak diisi, kirim null (backend akan membuat implicit single series)
       const hasDistribusiData = distribusiSeri.some((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0);
-      const formattedDistribusiSeri = hasDistribusiData
+      const formattedDistribusiSeri = (hasilMode === "kombinasi" && hasDistribusiData)
         ? distribusiSeri
             .filter((item) => item.jumlah_produk && parseInt(item.jumlah_produk) > 0)
             .map((item) => {
@@ -701,6 +710,7 @@ const HasilCutting = () => {
         spk_cutting_id: selectedSpkId,
         spk_cutting_distribusi_id: selectedDistribusiId,
         jenis_hasil: hasilMode,
+        tanggal_potong: tanggalPotong,
         data_hasil: dataHasil,
         data_acuan: formattedDataAcuan,
         status_perbandingan_agregat: statusPerbandinganAgregatArray,
@@ -726,12 +736,13 @@ const HasilCutting = () => {
       setInputData({});
       setDataAcuan([]);
       setDistribusiSeri([{ jumlah_produk: "" }]);
+      setTanggalPotong(new Date().toISOString().split("T")[0]);
       setShowForm(false);
       setEditingId(null);
 
       // Refresh data setelah simpan
       try {
-        const refreshParams = { page: 1, per_page: 7 };
+        const refreshParams = { page: 1, per_page: 50 };
         if (searchKeywordDebounced) {
           refreshParams.search = searchKeywordDebounced;
         }
@@ -783,6 +794,7 @@ const HasilCutting = () => {
       setEditingId(id);
       setSelectedSpkId(data.spk_cutting_id);
       setSelectedDistribusiId(data.spk_cutting_distribusi_id || "");
+      setTanggalPotong(data.tanggal_potong || new Date().toISOString().split("T")[0]);
       setHasilMode(data.jenis_hasil || "utama");
       setSelectedDistribusi(
         data.spk_cutting_distribusi_id
@@ -800,9 +812,9 @@ const HasilCutting = () => {
       console.log("Data acuan:", data.data_acuan);
 
       // Snapshot data lama untuk ditampilkan saat edit
-      const totalProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.total_produk || bahan.hasil) || 0), 0);
-      const totalBeratPerProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.berat_per_produk) || 0), 0);
-      const totalBeratLama = (data.bahan || []).reduce((sum, bahan) => sum + (parseFloat(bahan.berat) || 0), 0);
+      const totalProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + parseSafeFloat(bahan.total_produk || bahan.hasil), 0);
+      const totalBeratPerProdukLama = (data.bahan || []).reduce((sum, bahan) => sum + parseSafeFloat(bahan.berat_per_produk), 0);
+      const totalBeratLama = (data.bahan || []).reduce((sum, bahan) => sum + parseSafeFloat(bahan.berat), 0);
       setOriginalData({
         spk_cutting_id: data.spk_cutting_id,
         catatan: data.catatan || "",
@@ -817,7 +829,7 @@ const HasilCutting = () => {
         data.bahan.forEach((bahan) => {
           inputDataObj[bahan.spk_cutting_bahan_id] = {
             jumlahLembar: bahan.jumlah_lembar !== null && bahan.jumlah_lembar !== undefined ? bahan.jumlah_lembar : "",
-            jumlahProduk: bahan.jumlah_produk !== null && bahan.jumlah_produk !== undefined ? bahan.jumlah_produk : "",
+            totalProduk: bahan.hasil !== null && bahan.hasil !== undefined ? bahan.hasil : (bahan.total_produk !== null && bahan.total_produk !== undefined ? bahan.total_produk : ""),
             produkSkuId: bahan.produk_sku_id ? bahan.produk_sku_id.toString() : "",
           };
         });
@@ -891,7 +903,7 @@ const HasilCutting = () => {
       // Refresh data setelah hapus
       setCurrentPage(1);
       // Force refresh
-      const refreshParams = { page: 1, per_page: 7 };
+      const refreshParams = { page: 1, per_page: 50 };
       if (searchKeywordDebounced) {
         refreshParams.search = searchKeywordDebounced;
       }
@@ -940,6 +952,7 @@ const HasilCutting = () => {
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
     setOriginalData(null);
+    setTanggalPotong(new Date().toISOString().split("T")[0]);
   };
 
   // Handler untuk batal
@@ -957,6 +970,7 @@ const HasilCutting = () => {
     setSearchSpkQuery("");
     setShowSpkDropdown(false);
     setOriginalData(null);
+    setTanggalPotong(new Date().toISOString().split("T")[0]);
   };
 
   // Handler untuk tambah distribusi seri
@@ -1070,6 +1084,14 @@ const HasilCutting = () => {
 
   // Filter distribusi SPK Cutting berdasarkan search query
   const filteredSpkCutting = spkCuttingList.filter((distribusi) => {
+    // Sembunyikan distribusi jika sudah diinput untuk mode ini (kecuali sedang diedit)
+    const isEditingThisDistribusi = editingId && selectedDistribusiId === distribusi.id;
+    if (!isEditingThisDistribusi && distribusi.jenis_hasil_terinput && Array.isArray(distribusi.jenis_hasil_terinput)) {
+      if (distribusi.jenis_hasil_terinput.includes(hasilMode)) {
+        return false;
+      }
+    }
+
     const searchLower = searchSpkQuery.toLowerCase();
     const spk = getDistribusiSpk(distribusi);
     const kodeDistribusi = (distribusi.kode_seri || "").toLowerCase();
@@ -1208,7 +1230,7 @@ const HasilCutting = () => {
           </div>
         </div>
         {/* Tabel Index */}
-        <div>
+        <div className="hasil-cutting-table-index-container">
           {loadingData ? (
             <div className="hasil-cutting-loading-container">
               <div className="hasil-cutting-loading-spinner"></div>
@@ -1216,68 +1238,82 @@ const HasilCutting = () => {
             </div>
           ) : dataHasilCutting.length > 0 ? (
             <>
-              <table className="penjahit-table hasil-cutting-index-table">
-                <thead>
-                  <tr>
-                    <th>NO</th>
-                    <th>DISTRIBUSI</th>
-                    <th>JENIS</th>
-                    <th>PRODUCT GROUP</th>
-                    <th>TOTAL PRODUK</th>
-                    <th>TOTAL BAYAR</th>
-                    <th>TANGGAL</th>
-                    <th>AKSI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataHasilCutting.map((item, index) => (
-                    <tr key={item.id} className="hasil-cutting-table-row">
-                      <td className="hasil-cutting-table-no">{(currentPage - 1) * 7 + index + 1}</td>
-                      <td>
-                        <span className="hasil-cutting-badge">{item.kode_distribusi || item.id_spk_cutting || "-"}</span>
-                      </td>
-                      <td>
-                        <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.jenis_hasil === "kombinasi" ? "Kombinasi" : "Bahan Utama"}</span>
-                      </td>
-                      <td className="hasil-cutting-table-product">{item.nama_produk || "-"}</td>
-                      <td>
-                        <span className={`hasil-cutting-badge ${item.total_produk > 0 ? "hasil-cutting-badge-success" : "hasil-cutting-badge-muted"}`}>{item.total_produk?.toLocaleString("id-ID") || 0}</span>
-                      </td>
-                      <td>
-                        <span className={`hasil-cutting-badge ${item.total_bayar > 0 ? "" : "hasil-cutting-badge-muted"}`}>
-                          {item.total_bayar
-                            ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}`
-                            : "Rp 0"}
-                        </span>
-                      </td>
-                      <td className="hasil-cutting-table-date">
-                        <i className="far fa-calendar hasil-cutting-table-date-icon"></i>
-                        {new Date(item.created_at).toLocaleDateString("id-ID", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td>
-                        <div className="hasil-cutting-action-buttons">
-                          <button onClick={() => handleDetail(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-info" title="Detail">
-                            <i className="fas fa-info-circle"></i>
-                          </button>
-                          <button onClick={() => handleEdit(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-edit" title="Edit">
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button onClick={() => handleDelete(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-delete" title="Hapus">
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
+              <div className="hasil-cutting-table-scroll">
+                <table className="penjahit-table hasil-cutting-index-table">
+                  <thead>
+                    <tr>
+                      <th>NO</th>
+                      <th>DISTRIBUSI</th>
+                      <th>JENIS</th>
+                      <th>PRODUCT GROUP</th>
+                      <th>SIZE</th>
+                      <th>ESTIMASI</th>
+                      <th>TOTAL PRODUK</th>
+                      <th>TOTAL BAYAR</th>
+                      <th>TGL. POTONG</th>
+                      <th>AKSI</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {dataHasilCutting.map((item, index) => (
+                      <tr key={item.id} className="hasil-cutting-table-row">
+                        <td className="hasil-cutting-table-no">{(currentPage - 1) * 50 + index + 1}</td>
+                        <td>
+                          <span className="hasil-cutting-badge">{item.kode_distribusi || item.id_spk_cutting || "-"}</span>
+                        </td>
+                        <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.jenis_hasil === "kombinasi" ? "Kombinasi" : "Bahan Utama"}</span>
+                        </td>
+                        <td className="hasil-cutting-table-product">{item.nama_produk || "-"}</td>
+                        <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.size || "-"}</span>
+                        </td>
+                        <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.estimasi?.toLocaleString("id-ID") || 0}</span>
+                        </td>
+                        <td>
+                          <span className={`hasil-cutting-badge ${item.total_produk > 0 ? "hasil-cutting-badge-success" : "hasil-cutting-badge-muted"}`}>{item.total_produk?.toLocaleString("id-ID") || 0}</span>
+                        </td>
+                        <td>
+                          <span className={`hasil-cutting-badge ${item.total_bayar > 0 ? "" : "hasil-cutting-badge-muted"}`}>
+                            {item.total_bayar
+                              ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}`
+                              : "Rp 0"}
+                          </span>
+                        </td>
+                        <td className="hasil-cutting-table-date">
+                          <i className="far fa-calendar-check hasil-cutting-table-date-icon"></i>
+                          {item.tanggal_potong ? new Date(item.tanggal_potong).toLocaleDateString("id-ID", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }) : new Date(item.created_at).toLocaleDateString("id-ID", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td>
+                          <div className="hasil-cutting-action-buttons">
+                            <button onClick={() => handleDetail(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-info" title="Detail">
+                              <i className="fas fa-info-circle"></i>
+                            </button>
+                            <button onClick={() => handleEdit(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-edit" title="Edit">
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button onClick={() => handleDelete(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-delete" title="Hapus">
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {/* Pagination */}
               {lastPage > 1 && (
                 <div className="hasil-cutting-pagination">
@@ -1472,6 +1508,20 @@ const HasilCutting = () => {
                           )}
                         </div>
                       </div>
+
+                      <div className="hasil-cutting-form-group">
+                        <label className="hasil-cutting-form-label">
+                          Tanggal Potong:
+                        </label>
+                        <div className="hasil-cutting-form-input-wrapper">
+                          <input
+                            type="date"
+                            value={tanggalPotong}
+                            onChange={(e) => setTanggalPotong(e.target.value)}
+                            className="modern-input hasil-cutting-form-input"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1525,8 +1575,8 @@ const HasilCutting = () => {
                         <th>Berat (KG)</th>
                         <th>Qty (Rol)</th>
                         <th>Jumlah Lembar</th>
-                        <th>Jumlah Produk</th>
                         <th>Total Produk</th>
+                        <th>Jumlah per Lembar</th>
                         <th>Berat per Produk (KG)</th>
                         <th>Status Perbandingan</th>
                       </tr>
@@ -1574,15 +1624,15 @@ const HasilCutting = () => {
                                 <input
                                   type="number"
                                   min="0"
-                                  value={currentData.jumlahProduk || ""}
-                                  onChange={(e) => handleInputChange(bahanId, "jumlahProduk", e.target.value)}
+                                  value={currentData.totalProduk || ""}
+                                  onChange={(e) => handleInputChange(bahanId, "totalProduk", e.target.value)}
                                   placeholder="0"
                                   className="modern-input hasil-cutting-input-erp hasil-cutting-input-erp-sm hasil-cutting-input-number hasil-cutting-input-qty-erp"
                                 />
                               </td>
                               <td>
                                 <div className="hasil-cutting-cell-metric is-neutral">
-                                  {totalProduk > 0 ? totalProduk.toLocaleString("id-ID") : "0"}
+                                  {parseSafeFloat(currentData.jumlahLembar) > 0 && totalProduk > 0 ? (totalProduk / parseSafeFloat(currentData.jumlahLembar)).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "0"}
                                 </div>
                               </td>
                               <td>
@@ -1797,6 +1847,19 @@ const HasilCutting = () => {
                         })}
                       </p>
                     </div>
+                    <div className="hasil-cutting-detail-overview-card">
+                      <div className="hasil-cutting-detail-overview-head">
+                        <i className="far fa-calendar-check hasil-cutting-detail-overview-icon"></i>
+                        <p className="hasil-cutting-detail-overview-label">Tanggal Potong</p>
+                      </div>
+                      <p className="hasil-cutting-detail-overview-value">
+                        {detailData.tanggal_potong ? new Date(detailData.tanggal_potong).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        }) : "-"}
+                      </p>
+                    </div>
                     <div className="hasil-cutting-detail-overview-card hasil-cutting-detail-overview-card-highlight">
                       <div className="hasil-cutting-detail-overview-head">
                         <i className="fas fa-money-bill-wave hasil-cutting-detail-overview-icon"></i>
@@ -1951,7 +2014,7 @@ const HasilCutting = () => {
                           <th>Berat (KG)</th>
                           <th>Qty</th>
                           <th>Jumlah Lembar</th>
-                          <th>Jumlah Produk</th>
+                          <th>Jumlah per Lembar</th>
                           <th>Total Produk</th>
                           <th>Berat per Produk (KG)</th>
                           <th>Status Perbandingan</th>
@@ -1987,7 +2050,7 @@ const HasilCutting = () => {
                                 )}
                               </td>
                               <td className="hasil-cutting-detail-cell-medium">{bahan.jumlah_lembar || 0}</td>
-                              <td className="hasil-cutting-detail-cell-medium">{bahan.jumlah_produk || 0}</td>
+                              <td className="hasil-cutting-detail-cell-medium">{parseSafeFloat(bahan.jumlah_produk).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                               <td>
                                 <span className={`hasil-cutting-chip ${bahan.total_produk > 0 ? "hasil-cutting-chip-success" : "hasil-cutting-chip-muted"}`}>
                                   {bahan.total_produk?.toLocaleString("id-ID") || bahan.hasil?.toLocaleString("id-ID") || 0}
@@ -2013,7 +2076,7 @@ const HasilCutting = () => {
                                       const statusInfo = statusPerbandinganAgregat.find((s) => s && s.warna === bahan.warna);
                                       const status = statusInfo?.status || statusPerbandingan;
                                       const selisih = statusInfo?.selisih || 0;
-
+ 
                                       if (status === "lebih berat dari acuan") {
                                         return `${status} ${selisih > 0 ? selisih.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg" : ""}`;
                                       } else if (status === "lebih ringan dari acuan") {
@@ -2042,10 +2105,10 @@ const HasilCutting = () => {
                             </td>
                             <td colSpan="4" className="hasil-cutting-detail-total-spacer"></td>
                             <td className="hasil-cutting-detail-total-value">
-                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.total_produk || bahan.hasil) || 0), 0).toLocaleString("id-ID")}</strong>
+                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + parseSafeFloat(bahan.total_produk || bahan.hasil), 0).toLocaleString("id-ID")}</strong>
                             </td>
                             <td className="hasil-cutting-detail-total-value">
-                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + (parseFloat(bahan.berat_per_produk) || 0), 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</strong>
+                              <strong>{detailData.bahan.reduce((sum, bahan) => sum + parseSafeFloat(bahan.berat_per_produk), 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</strong>
                             </td>
                             <td className="hasil-cutting-detail-total-spacer"></td>
                           </tr>

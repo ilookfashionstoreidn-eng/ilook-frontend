@@ -24,3 +24,12 @@ code {
 @tailwind components;
 @tailwind utilities;
 
+/* Global Data Table Layout Settings */
+table {
+  width: max-content !important;
+  min-width: 100% !important;
+}
+
+table th, table td {
+  white-space: nowrap !important;
+}

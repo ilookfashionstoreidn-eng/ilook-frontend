@@ -1,0 +1,538 @@
+:root {
+  --erp-bg: #f4f6f9;
+  --erp-surface: #ffffff;
+  --erp-border: #e4e9f0;
+  --erp-text: #0f172a;
+  --erp-text-soft: #64748b;
+  --erp-primary: #2458ce;
+  --erp-primary-hover: #1e4caf;
+  --erp-danger: #ef4444;
+  --erp-danger-hover: #dc2626;
+  --erp-success: #10b981;
+  --erp-info: #3b82f6;
+}
+
+.opname-bahan-container {
+  padding: 24px;
+  background: var(--erp-bg);
+  min-height: 100vh;
+  color: var(--erp-text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.opname-bahan-header-section {
+  margin-bottom: 24px;
+}
+
+.opname-bahan-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--erp-text);
+}
+
+.opname-bahan-subtitle {
+  font-size: 14px;
+  color: var(--erp-text-soft);
+  margin: 0;
+}
+
+.opname-bahan-top-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.opname-bahan-search-box {
+  position: relative;
+  width: 320px;
+}
+
+.opname-bahan-search-box input {
+  width: 100%;
+  padding: 10px 36px;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--erp-surface);
+  transition: all 0.2s ease;
+}
+
+.opname-bahan-search-box input:focus {
+  outline: none;
+  border-color: var(--erp-primary);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+}
+
+.opname-bahan-search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--erp-text-soft);
+}
+
+.opname-bahan-search-box .clear-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--erp-text-soft);
+  cursor: pointer;
+}
+
+.opname-bahan-btn-primary {
+  background: var(--erp-primary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+
+.opname-bahan-btn-primary:hover {
+  background: var(--erp-primary-hover);
+}
+
+.opname-bahan-card {
+  background: var(--erp-surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.opname-bahan-table-responsive {
+  overflow-x: auto;
+}
+
+.opname-bahan-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.opname-bahan-table th,
+.opname-bahan-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--erp-border);
+}
+
+.opname-bahan-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--erp-text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.opname-bahan-table td {
+  font-size: 14px;
+}
+
+.opname-bahan-table tr:last-child td {
+  border-bottom: none;
+}
+
+.opname-badge {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.bahan-info strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.small-text {
+  font-size: 12px;
+  color: var(--erp-text-soft);
+}
+
+.gudang-pabrik span {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.gudang-pabrik i {
+  color: var(--erp-text-soft);
+  width: 16px;
+}
+
+.opname-bahan-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.opname-bahan-btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.opname-bahan-btn-icon:hover {
+  opacity: 0.8;
+}
+
+.opname-bahan-btn-info {
+  background: var(--erp-info);
+}
+
+.opname-bahan-btn-success {
+  background: var(--erp-success);
+}
+
+.opname-bahan-btn-danger {
+  background: var(--erp-danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.opname-bahan-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 16px;
+  gap: 16px;
+  background: #f8fafc;
+  border-top: 1px solid var(--erp-border);
+}
+
+.opname-bahan-pagination button {
+  background: white;
+  border: 1px solid var(--erp-border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.opname-bahan-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modals */
+.opname-bahan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.opname-bahan-modal-content {
+  background: var(--erp-surface);
+  width: 98%;
+  max-width: 1800px;
+  max-height: 90vh;
+  border-radius: 12px;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.opname-bahan-modal-detail {
+  max-width: 1800px;
+}
+
+.opname-bahan-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--erp-border);
+  position: sticky;
+  top: 0;
+  background: var(--erp-surface);
+  z-index: 10;
+}
+
+.opname-bahan-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.opname-bahan-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--erp-text-soft);
+  cursor: pointer;
+}
+
+.opname-bahan-modal-body {
+  padding: 24px;
+}
+
+.opname-bahan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.opname-bahan-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opname-bahan-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--erp-text);
+}
+
+.opname-bahan-text-danger {
+  color: var(--erp-danger);
+}
+
+.opname-bahan-form-group input,
+.opname-bahan-form-group select {
+  padding: 10px 12px;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #f8fafc;
+}
+
+.opname-bahan-form-group input:focus,
+.opname-bahan-form-group select:focus {
+  outline: none;
+  border-color: var(--erp-primary);
+  background: white;
+}
+
+.opname-bahan-divider {
+  border: none;
+  border-top: 1px dashed var(--erp-border);
+  margin: 24px 0;
+}
+
+.opname-bahan-section-title {
+  font-size: 16px;
+  margin: 0 0 16px 0;
+}
+
+.opname-bahan-warna-card {
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.opname-bahan-warna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.opname-bahan-form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.opname-bahan-form-group-inline select,
+.opname-bahan-form-group-inline input {
+  padding: 8px 12px;
+  border: 1px solid var(--erp-border);
+  border-radius: 6px;
+}
+
+.opname-bahan-rol-container {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--erp-border);
+}
+
+.opname-bahan-rol-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.opname-bahan-rol-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.rol-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--erp-text-soft);
+  background: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.opname-bahan-rol-item input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--erp-border);
+  border-radius: 4px;
+}
+
+.remove-rol-btn {
+  background: transparent;
+  border: none;
+  color: var(--erp-danger);
+  cursor: pointer;
+  padding: 4px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.opname-bahan-btn-add-small,
+.opname-bahan-btn-add-warna {
+  background: transparent;
+  border: 1px dashed var(--erp-primary);
+  color: var(--erp-primary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.opname-bahan-btn-add-small:hover,
+.opname-bahan-btn-add-warna:hover {
+  background: #eff6ff;
+}
+
+.opname-bahan-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--erp-border);
+}
+
+.opname-bahan-btn-secondary {
+  background: white;
+  border: 1px solid var(--erp-border);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.opname-bahan-detail-info p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.opname-bahan-detail-warna-section h4 {
+  margin: 16px 0 8px 0;
+  color: var(--erp-primary);
+}
+
+.opname-bahan-rol-item.detail {
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  padding: 10px;
+}
+
+.opname-bahan-rol-item.detail.terpakai {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.rol-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.rol-info > div {
+  width: 100%;
+}
+
+.rol-info .rol-actions {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--erp-border);
+  padding-top: 8px;
+  justify-content: center;
+}
+
+.rol-barcode {
+  font-size: 11px;
+  color: var(--erp-text-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* Loaders */
+.opname-bahan-loading-container,
+.opname-bahan-error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+}
+
+.opname-bahan-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--erp-border);
+  border-top-color: var(--erp-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

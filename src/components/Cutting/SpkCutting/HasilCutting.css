@@ -17,13 +17,14 @@
 }
 
 .hasil-cutting-container {
-  min-height: 100vh;
+  height: 100vh;
   background: var(--hc-bg);
   padding: 0;
   font-family: "Plus Jakarta Sans", "Segoe UI", Tahoma, sans-serif;
   color: var(--hc-text);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .hasil-cutting-container::before {
@@ -132,6 +133,7 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
   padding: 16px 24px;
+  flex-shrink: 0;
 }
 
 .hasil-cutting-target-card {
@@ -253,10 +255,14 @@
   background: var(--hc-surface);
   border: 1px solid var(--hc-border);
   border-radius: 16px;
-  overflow: visible;
+  overflow: hidden;
   box-shadow: var(--hc-shadow);
   margin: 0 24px 20px;
   padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .hasil-cutting-table-header {
@@ -267,6 +273,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .hasil-cutting-table-header h3 {
@@ -368,10 +375,19 @@
   font-weight: 500;
 }
 
+.hasil-cutting-table-index-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .hasil-cutting-table-scroll {
   width: 100%;
-  overflow: visible;
-  max-height: none;
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
   overscroll-behavior: auto;
 }
 
@@ -560,6 +576,7 @@
   padding: 12px 16px;
   border-top: 1px solid var(--hc-border);
   background: #f8fafc;
+  flex-shrink: 0;
 }
 
 .hasil-cutting-pagination-button {
@@ -2351,6 +2368,37 @@
     justify-content: center;
   }
 
+
+  .hasil-cutting-modal-top-card {
+    padding: 10px;
+  }
+
+  .hasil-cutting-form-section {
+    padding: 12px;
+  }
+
+  .hasil-cutting-intake-shell {
+    padding: 12px;
+  }
+
+  .hasil-cutting-distribusi-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hasil-cutting-distribusi-meta {
+    align-items: flex-start;
+  }
+
+  .hasil-cutting-distribusi-actions {
+    width: 100%;
+  }
+
+  .hasil-cutting-distribusi-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
   .hasil-cutting-distribusi-row-actions {
     flex-direction: column;
     align-items: stretch;
@@ -2359,4 +2407,83 @@
   .hasil-cutting-inline-alert {
     font-size: 11px;
   }
+}
+
+/* Sharp Theme overrides - No rounded corners */
+.hasil-cutting-container,
+.hasil-cutting-brand-icon,
+.hasil-cutting-primary-button,
+.hasil-cutting-target-card,
+.hasil-cutting-target-card-icon,
+.hasil-cutting-modal-content,
+.hasil-cutting-modal-header,
+.hasil-cutting-modal-body,
+.hasil-cutting-modal-close-button,
+.hasil-cutting-modal-tab,
+.hasil-cutting-action-button,
+.hasil-cutting-pagination-button,
+.hasil-cutting-pagination-info,
+.hasil-cutting-empty-state-icon,
+.hasil-cutting-empty-state,
+.hasil-cutting-original-reference,
+.hasil-cutting-original-reference-icon,
+.hasil-cutting-modal-top-card,
+.hasil-cutting-workflow-step-no,
+.hasil-cutting-form-input,
+.hasil-cutting-form-select,
+.hasil-cutting-form-textarea,
+.hasil-cutting-status-badge,
+.hasil-cutting-sku-select,
+.spk-swal-popup,
+.spk-swal-btn,
+.hasil-cutting-index-table,
+.hasil-cutting-table-wrap,
+.hasil-cutting-entry-detail-table,
+.hasil-cutting-distribusi-detail-table,
+.hasil-cutting-modal-content-form,
+.hasil-cutting-modal-body-form,
+.hasil-cutting-table-card,
+.hasil-cutting-table-scroll,
+.hasil-cutting-table-header,
+.hasil-cutting-table-tools,
+.hasil-cutting-table-search,
+.penjahit-table,
+.penjahit-container,
+.search-bar,
+.search-bar input,
+.table-container,
+.action-card,
+.btn1-icon,
+.btn1-icon2,
+.btn1-icon3,
+.btn,
+.btn-cancel,
+.add-button,
+.detail-card,
+.detail-card-content,
+.popup-overlay,
+.popup-card,
+.popup-header,
+.btn-close,
+.btn2-close,
+.popup-content,
+.popup-details,
+.modal-card-hasil,
+.modal-header,
+.modal-card,
+.modal-body,
+.detail-group,
+.log-item,
+.modal-footer,
+.modal-bayar,
+.modal-bayar .modal-content,
+.btn-submit,
+.modal-pendapatan,
+.modal-pendapatan-content,
+.modal-pendapatan-close,
+input,
+select,
+textarea,
+button {
+  border-radius: 0 !important;
 }

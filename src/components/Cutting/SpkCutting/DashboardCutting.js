@@ -59,9 +59,11 @@ const DashboardCutting = () => {
   const [incomeLoading, setIncomeLoading] = useState(false);
   const [incomeError, setIncomeError] = useState(null);
   const [cuttingStats, setCuttingStats] = useState({
+    monthly_target: 250000,
+    monthly_total: 0,
     weekly_target: 50000,
     weekly_total: 0,
-    daily_target: 7143,
+    daily_target: 8333,
     daily_total: 0,
   });
 
@@ -240,6 +242,10 @@ const DashboardCutting = () => {
       const stats = response.data?.stats || {};
       setCuttingStats((prev) => ({
         ...prev,
+        monthly_target:
+          stats.monthly_target ?? prev.monthly_target,
+        monthly_total:
+          stats.monthly_total ?? prev.monthly_total,
         weekly_target:
           stats.weekly_target ?? prev.weekly_target,
         weekly_total:
@@ -311,14 +317,28 @@ const DashboardCutting = () => {
   const totalSelesai = summary.selesai || 0;
 
   const dailyTotal = cuttingStats.daily_total || 0;
-  const dailyTarget = cuttingStats.daily_target || 7143;
+  const dailyTarget = cuttingStats.daily_target || 8333;
   const dailyProgressPercent =
     dailyTarget > 0 ? Math.min(100, (dailyTotal / dailyTarget) * 100) : 0;
+  const dailyEstTotal = summary.in_progress_daily?.total_asumsi_produk || 0;
+  const dailyEstPercent =
+    dailyTarget > 0 ? Math.min(100, (dailyEstTotal / dailyTarget) * 100) : 0;
 
   const weeklyTotal = cuttingStats.weekly_total || 0;
   const weeklyTarget = cuttingStats.weekly_target || 50000;
   const weeklyProgressPercent =
     weeklyTarget > 0 ? Math.min(100, (weeklyTotal / weeklyTarget) * 100) : 0;
+  const weeklyEstTotal = summary.in_progress_weekly?.total_asumsi_produk || 0;
+  const weeklyEstPercent =
+    weeklyTarget > 0 ? Math.min(100, (weeklyEstTotal / weeklyTarget) * 100) : 0;
+
+  const monthlyTotal = cuttingStats.monthly_total || 0;
+  const monthlyTarget = cuttingStats.monthly_target || 250000;
+  const monthlyProgressPercent =
+    monthlyTarget > 0 ? Math.min(100, (monthlyTotal / monthlyTarget) * 100) : 0;
+  const monthlyEstTotal = summary.in_progress_monthly?.total_asumsi_produk || 0;
+  const monthlyEstPercent =
+    monthlyTarget > 0 ? Math.min(100, (monthlyEstTotal / monthlyTarget) * 100) : 0;
 
   const deadlineItems = useMemo(() => {
     const withDeadline = spkList.filter(
@@ -334,34 +354,20 @@ const DashboardCutting = () => {
   }, [spkList]);
 
   const dailyChartData = useMemo(() => {
-    if (!Array.isArray(spkList) || spkList.length === 0) {
+    const rawData = summary.chart_data;
+    if (!Array.isArray(rawData) || rawData.length === 0) {
       return null;
     }
 
-    const labels = [];
-    const values = [];
-    for (let i = 6; i >= 0; i -= 1) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const key = formatDateParam(date);
-      labels.push(
-        date.toLocaleDateString("id-ID", {
-          day: "2-digit",
-          month: "short",
-        })
-      );
-      const total = spkList
-        .filter((item) => {
-          if (!item.created_at) return false;
-          const createdDate = formatDateParam(new Date(item.created_at));
-          return createdDate === key;
-        })
-        .reduce((sum, item) => {
-          const jumlah = item.jumlah_asumsi_produk || 0;
-          return sum + Number(jumlah);
-        }, 0);
-      values.push(total);
-    }
+    const labels = rawData.map(item => {
+      const date = new Date(item.date);
+      return date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+      });
+    });
+
+    const values = rawData.map(item => Number(item.total_qty) || 0);
 
     const hasValue = values.some((v) => v > 0);
     if (!hasValue) {
@@ -385,7 +391,7 @@ const DashboardCutting = () => {
         },
       ],
     };
-  }, [spkList, today]);
+  }, [summary]);
 
   const dailyChartOptions = useMemo(
     () => ({
@@ -451,6 +457,51 @@ const DashboardCutting = () => {
       ],
     };
   }, [totalSpk, totalBelum, totalProses, totalSelesai]);
+
+  const deadlineStatusCounts = useMemo(() => {
+    let warning = 0; // <= 7 and >= 0
+    let aman = 0; // > 7
+    let over = 0; // < 0
+
+    const withDeadline = spkList.filter(
+      (item) => item.sisa_hari !== null && item.sisa_hari !== undefined
+    );
+
+    withDeadline.forEach((item) => {
+      if (item.sisa_hari < 0) over++;
+      else if (item.sisa_hari <= 7) warning++;
+      else aman++;
+    });
+
+    return { warning, aman, over, total: withDeadline.length };
+  }, [spkList]);
+
+  const deadlineChartData = useMemo(() => {
+    const total = deadlineStatusCounts.total;
+    if (total === 0) {
+      return {
+        labels: ["Aman (> 7 Hari)", "Warning (0-7 Hari)", "Over (< 0 Hari)"],
+        datasets: [
+          {
+            data: [1, 1, 1],
+            backgroundColor: ["#e5e7eb", "#e5e7eb", "#e5e7eb"],
+            borderWidth: 0,
+          },
+        ],
+      };
+    }
+
+    return {
+      labels: ["Aman (> 7 Hari)", "Warning (0-7 Hari)", "Over (< 0 Hari)"],
+      datasets: [
+        {
+          data: [deadlineStatusCounts.aman, deadlineStatusCounts.warning, deadlineStatusCounts.over],
+          backgroundColor: ["#22c55e", "#eab308", "#ef4444"],
+          borderWidth: 0,
+        },
+      ],
+    };
+  }, [deadlineStatusCounts]);
 
   const statusChartOptions = useMemo(
     () => ({
@@ -544,46 +595,6 @@ const DashboardCutting = () => {
             <span>{formattedDate}</span>
           </div>
         </div>
-        <div className="cutting-dashboard-controls">
-          <button className="cutting-date-filter">
-            <span>Filter Tanggal</span>
-          </button>
-          <div className="cutting-tab-group">
-            <button
-              type="button"
-              className={
-                timeFilter === "today"
-                  ? "cutting-tab cutting-tab-active"
-                  : "cutting-tab"
-              }
-              onClick={() => setTimeFilter("today")}
-            >
-              Hari Ini
-            </button>
-            <button
-              type="button"
-              className={
-                timeFilter === "week"
-                  ? "cutting-tab cutting-tab-active"
-                  : "cutting-tab"
-              }
-              onClick={() => setTimeFilter("week")}
-            >
-              Minggu Ini
-            </button>
-            <button
-              type="button"
-              className={
-                timeFilter === "month"
-                  ? "cutting-tab cutting-tab-active"
-                  : "cutting-tab"
-              }
-              onClick={() => setTimeFilter("month")}
-            >
-              Bulan Ini
-            </button>
-          </div>
-        </div>
       </div>
 
       {error && (
@@ -621,16 +632,41 @@ const DashboardCutting = () => {
           <div className="cutting-card-header">
             <span className="cutting-card-label">Produksi Hari Ini</span>
           </div>
-          <div className="cutting-card-main-value">
-            {dailyTotal.toLocaleString("id-ID")} pcs
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
+                {dailyTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
+                {dailyEstTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
           </div>
-          <div className="cutting-card-sub">
-            Target: {dailyTarget.toLocaleString("id-ID")} pcs
+          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Target: {dailyTarget.toLocaleString("id-ID")} pcs</span>
+            <span style={{ color: '#f59e0b' }}>Est: {Math.round(dailyEstPercent)}%</span>
           </div>
           <div className="cutting-progress-bar">
             <div
               className="cutting-progress-bar-fill"
-              style={{ width: `${dailyProgressPercent}%` }}
+              style={{ width: `${dailyProgressPercent}%`, position: 'relative', zIndex: 2 }}
+            />
+            <div
+              style={{
+                width: `${dailyEstPercent}%`,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                background: 'rgba(245, 158, 11, 0.3)',
+                zIndex: 1,
+                borderRadius: '999px',
+                transition: 'width 0.3s ease'
+              }}
             />
           </div>
         </div>
@@ -639,66 +675,90 @@ const DashboardCutting = () => {
           <div className="cutting-card-header">
             <span className="cutting-card-label">Progress Mingguan</span>
           </div>
-          <div className="cutting-card-main-value">
-            {weeklyTotal.toLocaleString("id-ID")} pcs
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
+                {weeklyTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
+                {weeklyEstTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
           </div>
-          <div className="cutting-card-sub">
-            {weeklyTarget > 0
-              ? `${Math.round(
-                  weeklyProgressPercent
-                )}% dari target ${weeklyTarget.toLocaleString("id-ID")} pcs`
-              : "Belum ada target"}
+          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Target: {weeklyTarget.toLocaleString("id-ID")} pcs</span>
+            <span style={{ color: '#f59e0b' }}>Est: {Math.round(weeklyEstPercent)}%</span>
           </div>
           <div className="cutting-progress-bar cutting-progress-bar-week">
             <div
               className="cutting-progress-bar-fill-week"
-              style={{ width: `${weeklyProgressPercent}%` }}
+              style={{ width: `${weeklyProgressPercent}%`, position: 'relative', zIndex: 2 }}
+            />
+            <div
+              style={{
+                width: `${weeklyEstPercent}%`,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                background: 'rgba(245, 158, 11, 0.3)',
+                zIndex: 1,
+                borderRadius: '999px',
+                transition: 'width 0.3s ease'
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="cutting-card cutting-card-month">
+          <div className="cutting-card-header">
+            <span className="cutting-card-label">Progress Bulanan</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
+                {monthlyTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
+              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
+                {monthlyEstTotal.toLocaleString("id-ID")} pcs
+              </div>
+            </div>
+          </div>
+          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Target: {monthlyTarget.toLocaleString("id-ID")} pcs</span>
+            <span style={{ color: '#f59e0b' }}>Est: {Math.round(monthlyEstPercent)}%</span>
+          </div>
+          <div className="cutting-progress-bar cutting-progress-bar-month">
+            <div
+              className="cutting-progress-bar-fill-month"
+              style={{ width: `${monthlyProgressPercent}%`, position: 'relative', zIndex: 2 }}
+            />
+            <div
+              style={{
+                width: `${monthlyEstPercent}%`,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                background: 'rgba(245, 158, 11, 0.3)',
+                zIndex: 1,
+                borderRadius: '999px',
+                transition: 'width 0.3s ease'
+              }}
             />
           </div>
         </div>
       </div>
 
       <div className="cutting-dashboard-bottom-grid">
-        <div className="cutting-card cutting-card-deadline">
-          <div className="cutting-card-header-row">
-            <span className="cutting-card-label">SPK Deadline</span>
-            <button type="button" className="cutting-link-button">
-              Lihat Semua
-            </button>
-          </div>
-          <div className="cutting-deadline-list">
-            {loading && (
-              <div className="cutting-empty-text">Memuat data deadline</div>
-            )}
-            {!loading && deadlineItems.length === 0 && (
-              <div className="cutting-empty-text">
-                Belum ada SPK dengan deadline
-              </div>
-            )}
-            {!loading &&
-              deadlineItems.map((item) => {
-                const badge = renderDeadlineBadge(item.sisa_hari);
-                return (
-                  <div
-                    key={item.id}
-                    className="cutting-deadline-item"
-                  >
-                    <div className="cutting-deadline-main">
-                      <span className="cutting-deadline-id">
-                        {item.id_spk_cutting}
-                      </span>
-                      <span className="cutting-deadline-product">
-                        {item.productList?.product_group || item.productList?.product || item.product_list?.product_group || item.product_list?.product || item.produk?.nama_produk || "-"}
-                      </span>
-                    </div>
-                    <div className="cutting-deadline-meta">
-                      <span className={badge.className}>{badge.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
 
         <div className="cutting-card cutting-card-chart">
           <div className="cutting-card-header">
@@ -778,6 +838,73 @@ const DashboardCutting = () => {
                 </div>
                 <span className="cutting-status-legend-value">
                   {totalSelesai}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="cutting-card cutting-card-status">
+          <div className="cutting-card-header">
+            <span className="cutting-card-label">Distribusi Status Deadline</span>
+          </div>
+          <div className="cutting-status-content">
+            <div className="cutting-status-chart">
+              <Doughnut data={deadlineChartData} options={statusChartOptions} />
+              <div className="cutting-status-center">
+                <span className="cutting-status-center-value">
+                  {deadlineStatusCounts.total.toLocaleString("id-ID")}
+                </span>
+                <span className="cutting-status-center-label">Total SPK</span>
+              </div>
+            </div>
+            <div className="cutting-status-legend">
+              <div className="cutting-status-legend-item">
+                <span className="status-dot status-dot-green" />
+                <div className="cutting-status-legend-text">
+                  <span>Aman (> 7 Hari)</span>
+                  <span className="cutting-status-legend-sub">
+                    {deadlineStatusCounts.total > 0
+                      ? `${Math.round(
+                          (deadlineStatusCounts.aman / deadlineStatusCounts.total) * 100
+                        )}% dari total`
+                      : "0%"}
+                  </span>
+                </div>
+                <span className="cutting-status-legend-value">
+                  {deadlineStatusCounts.aman}
+                </span>
+              </div>
+              <div className="cutting-status-legend-item">
+                <span className="status-dot status-dot-yellow" />
+                <div className="cutting-status-legend-text">
+                  <span>Warning (0-7 Hari)</span>
+                  <span className="cutting-status-legend-sub">
+                    {deadlineStatusCounts.total > 0
+                      ? `${Math.round(
+                          (deadlineStatusCounts.warning / deadlineStatusCounts.total) * 100
+                        )}% dari total`
+                      : "0%"}
+                  </span>
+                </div>
+                <span className="cutting-status-legend-value">
+                  {deadlineStatusCounts.warning}
+                </span>
+              </div>
+              <div className="cutting-status-legend-item">
+                <span className="status-dot status-dot-red" />
+                <div className="cutting-status-legend-text">
+                  <span>Over (&lt; 0 Hari)</span>
+                  <span className="cutting-status-legend-sub">
+                    {deadlineStatusCounts.total > 0
+                      ? `${Math.round(
+                          (deadlineStatusCounts.over / deadlineStatusCounts.total) * 100
+                        )}% dari total`
+                      : "0%"}
+                  </span>
+                </div>
+                <span className="cutting-status-legend-value">
+                  {deadlineStatusCounts.over}
                 </span>
               </div>
             </div>
