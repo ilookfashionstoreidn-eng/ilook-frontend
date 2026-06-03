@@ -21,9 +21,49 @@ const formatTanggal = (value) => {
   });
 };
 
+const normalizeScanKey = (value) => String(value || "").trim().toUpperCase();
+
+const collapseRepeatedScanText = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  if (text.includes(" | ")) {
+    const skuText = text.split(" | ")[0]?.trim();
+    if (skuText) {
+      const secondSkuIndex = text.indexOf(skuText, skuText.length + 3);
+      if (secondSkuIndex > -1) {
+        return text.slice(0, secondSkuIndex).trim();
+      }
+    }
+  }
+
+  for (let chunkLength = Math.floor(text.length / 2); chunkLength >= 8; chunkLength -= 1) {
+    if (text.length % chunkLength !== 0) continue;
+
+    const chunk = text.slice(0, chunkLength);
+    if (chunk.repeat(text.length / chunkLength) === text) {
+      return chunk.trim();
+    }
+  }
+
+  return text;
+};
+
+const getSerialFromBarcode = (value) => {
+  const text = collapseRepeatedScanText(value);
+  if (text.includes(" | ")) {
+    return text.split(" | ").pop()?.trim() || text;
+  }
+  return text.trim();
+};
+
+const getScanKey = (value) => normalizeScanKey(getSerialFromBarcode(value) || value);
+
 const ScanProdukMasukGudang = () => {
   const scanInputRef = useRef(null);
   const barcodeTimeoutRef = useRef(null);
+  const scanInProgressRef = useRef(false);
+  const submittedScanKeysRef = useRef(new Set());
 
   // Workspace state (layouts, slots, etc.)
   const { state, setState, isLoading: workspaceLoading, error: workspaceError, refresh } = useGudangProdukWorkspace();
@@ -111,10 +151,11 @@ const ScanProdukMasukGudang = () => {
       clearTimeout(barcodeTimeoutRef.current);
     }
 
-    const trimmedValue = value.trim();
+    const trimmedValue = collapseRepeatedScanText(value);
 
     if (trimmedValue.length >= 8 && scanStatus !== "loading") {
       barcodeTimeoutRef.current = setTimeout(async () => {
+        setScanInput("");
         await processScan(trimmedValue);
       }, 200);
     }
@@ -122,11 +163,12 @@ const ScanProdukMasukGudang = () => {
 
   const processScan = async (barcodeValue = null) => {
     // If already loading, prevent duplicate concurrent requests
-    if (scanStatus === "loading") {
+    if (scanInProgressRef.current || scanStatus === "loading") {
       return;
     }
 
-    const barcodeToScan = barcodeValue || scanInput.trim();
+    const barcodeToScan = collapseRepeatedScanText(barcodeValue || scanInput);
+    const scanKey = getScanKey(barcodeToScan);
 
     if (!barcodeToScan) {
       setScanMessage("Barcode tidak boleh kosong.");
@@ -140,45 +182,53 @@ const ScanProdukMasukGudang = () => {
       return;
     }
 
+    scanInProgressRef.current = true;
+    setScanInput("");
+
     // Clear timeout immediately to prevent double processing (auto-scan length + manual submit keypress)
     if (barcodeTimeoutRef.current) {
       clearTimeout(barcodeTimeoutRef.current);
     }
 
     // ─── Frontend Duplicate Scan Check ───
-    const getSerialFromBarcode = (bc) => {
-      if (bc.includes(" | ")) {
-        return bc.split(" | ")[1]?.trim() || bc;
-      }
-      return bc.trim();
-    };
-
     const currentSerial = getSerialFromBarcode(barcodeToScan);
     const isSerialBarcode = currentSerial.includes(".") || barcodeToScan.includes(" | ");
+
+    if (submittedScanKeysRef.current.has(scanKey)) {
+      const label = isSerialBarcode ? `Kode seri "${currentSerial}"` : `Barcode "${barcodeToScan}"`;
+      setScanMessage(`${label} sudah pernah di-scan masuk dalam sesi ini.`);
+      setScanStatus("error");
+      scanInProgressRef.current = false;
+      setTimeout(() => {
+        scanInputRef.current?.focus();
+      }, 100);
+      return;
+    }
+
+    submittedScanKeysRef.current.add(scanKey);
 
     if (isSerialBarcode) {
       const isDuplicateSerial = scannedItems.some(
         (item) =>
-          item.status === "success" &&
-          getSerialFromBarcode(item.barcode) === currentSerial
+          getScanKey(item.barcode || item.kode_seri || item.nomor_seri) === scanKey
       );
 
       if (isDuplicateSerial) {
         setScanMessage(`Kode seri "${currentSerial}" sudah pernah di-scan masuk dalam sesi ini.`);
         setScanStatus("error");
-        setScanInput("");
+        scanInProgressRef.current = false;
         return;
       }
     } else {
       // General duplicate check for pure barcodes
       const isDuplicateBarcode = scannedItems.some(
-        (item) => item.barcode === barcodeToScan && item.status === "success"
+        (item) => getScanKey(item.barcode || item.kode_seri || item.nomor_seri) === scanKey
       );
 
       if (isDuplicateBarcode) {
         setScanMessage(`Barcode "${barcodeToScan}" sudah pernah di-scan masuk dalam sesi ini.`);
         setScanStatus("error");
-        setScanInput("");
+        scanInProgressRef.current = false;
         return;
       }
     }
@@ -194,28 +244,40 @@ const ScanProdukMasukGudang = () => {
 
       const resultData = response.data?.data || {};
       const message = response.data?.message || "Produk berhasil di-scan dan masuk ke gudang.";
+      const resultScanKey = getScanKey(resultData.kode_seri || resultData.nomor_seri || barcodeToScan);
 
       setScanMessage(message);
       setScanStatus("success");
-      setScanInput("");
 
       // Add to scanned items list
-      setScannedItems((prev) => [
-        {
-          id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          barcode: barcodeToScan,
-          kode_seri: resultData.kode_seri || "-",
-          nomor_seri: resultData.nomor_seri || "-",
-          sku: resultData.sku || "-",
-          produk: resultData.produk || "-",
-          slot: resultData.slot || selectedSlot?.slotCode || "-",
-          gudang: selectedLayout?.name || "-",
-          qty: resultData.qty || 1,
-          status: "success",
-          scanned_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      setScannedItems((prev) => {
+        const isAlreadyInRows = prev.some(
+          (item) => getScanKey(item.barcode || item.kode_seri || item.nomor_seri) === resultScanKey
+        );
+
+        if (isAlreadyInRows) {
+          return prev;
+        }
+
+        submittedScanKeysRef.current.add(resultScanKey);
+
+        return [
+          {
+            id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            barcode: barcodeToScan,
+            kode_seri: resultData.kode_seri || currentSerial || "-",
+            nomor_seri: resultData.nomor_seri || currentSerial || "-",
+            sku: resultData.sku || "-",
+            produk: resultData.produk || "-",
+            slot: resultData.slot || selectedSlot?.slotCode || "-",
+            gudang: selectedLayout?.name || "-",
+            qty: resultData.qty || 1,
+            status: "success",
+            scanned_at: new Date().toISOString(),
+          },
+          ...prev,
+        ];
+      });
 
       // Update workspace state if placement data returned
       if (resultData.placement?.stockEntry) {
@@ -243,34 +305,45 @@ const ScanProdukMasukGudang = () => {
         });
       }
 
-      setTimeout(() => {
-        scanInputRef.current?.focus();
-      }, 100);
     } catch (error) {
       const msg = error.response?.data?.message || "Gagal memindai barcode produk.";
       setScanMessage(msg);
       setScanStatus("error");
 
       // Add failed scan to list
-      setScannedItems((prev) => [
-        {
-          id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          barcode: barcodeToScan,
-          kode_seri: "-",
-          nomor_seri: "-",
-          sku: "-",
-          produk: "-",
-          slot: selectedSlot?.slotCode || "-",
-          gudang: selectedLayout?.name || "-",
-          qty: 0,
-          status: "error",
-          error_message: msg,
-          scanned_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      setScannedItems((prev) => {
+        const isAlreadyInRows = prev.some(
+          (item) => getScanKey(item.barcode || item.kode_seri || item.nomor_seri) === scanKey
+        );
+
+        if (isAlreadyInRows) {
+          return prev;
+        }
+
+        return [
+          {
+            id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            barcode: barcodeToScan,
+            kode_seri: isSerialBarcode ? currentSerial : "-",
+            nomor_seri: isSerialBarcode ? currentSerial : "-",
+            sku: "-",
+            produk: "-",
+            slot: selectedSlot?.slotCode || "-",
+            gudang: selectedLayout?.name || "-",
+            qty: 0,
+            status: "error",
+            error_message: msg,
+            scanned_at: new Date().toISOString(),
+          },
+          ...prev,
+        ];
+      });
     } finally {
+      scanInProgressRef.current = false;
       setTimeout(() => setScanStatus(""), 3000);
+      setTimeout(() => {
+        scanInputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -281,6 +354,7 @@ const ScanProdukMasukGudang = () => {
 
   const handleClearHistory = () => {
     setScannedItems([]);
+    submittedScanKeysRef.current.clear();
   };
 
   return (

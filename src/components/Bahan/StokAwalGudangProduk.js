@@ -77,6 +77,7 @@ const StokAwalGudangProduk = () => {
   const serialScanInputRef = useRef(null);
   const scanTimeoutRef = useRef(null);
   const lastSubmittedScanRef = useRef("");
+  const scanInProgressRef = useRef(false);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -316,76 +317,80 @@ const StokAwalGudangProduk = () => {
       return;
     }
 
-    if (lastSubmittedScanRef.current === rawScanValue) {
-      return;
-    }
-
-    lastSubmittedScanRef.current = rawScanValue;
-    const scannedCode = parseScannedSerialCode(rawValue);
-    const scannedValue = scannedCode.serialText;
-
-    if (!selectedLayout || !selectedSlot) {
-      await showGudangWarning(
-        "Lokasi stok awal belum lengkap",
-        "Pilih lantai, bilik/blok, rak, dan baris lokasi stok awal sebelum scan kode seri."
-      );
-      return;
-    }
-
-    if (!scannedValue) {
-      await showGudangWarning(
-        "Kode seri kosong",
-        "Scan atau ketik kode seri terlebih dahulu."
-      );
-      return;
-    }
-
-    const serialItem =
-      scannedCode.lookupValues
-        .flatMap((value) => buildSerialSkuLookupKeys(value))
-        .map((key) => serialLookup.get(key))
-        .find(Boolean) ||
-      null;
-    const serialForPlacement =
-      serialItem ||
-      (scannedCode.skuText
-        ? {
-            id: scannedCode.raw,
-            nomor_seri: scannedCode.serialText,
-            sku: scannedCode.skuText,
-            jumlah: 1,
-          }
-        : null);
-
-    if (!serialForPlacement) {
-      await showGudangWarning(
-        "Kode seri tidak ditemukan",
-        `${scannedValue} tidak ditemukan di data kode seri. Scan format "SKU | KODE SERI" agar SKU bisa dibaca langsung.`
-      );
-      setScanMessage(`${scannedValue} tidak ditemukan.`);
-      lastSubmittedScanRef.current = "";
-      return;
-    }
-
-    const normalizedSerial = normalizeScanText(serialForPlacement.nomor_seri);
-    if (
-      scannedRows.some((row) => normalizeScanText(row.nomorSeri) === normalizedSerial) ||
-      storedSerialSet.has(normalizedSerial)
-    ) {
-      await showGudangWarning(
-        "Kode seri sudah masuk gudang",
-        `${serialForPlacement.nomor_seri} sudah pernah discan dan masuk stok awal.`
-      );
+    if (scanInProgressRef.current || lastSubmittedScanRef.current === rawScanValue) {
       setSerialScanValue("");
-      setScanMessage(`${serialForPlacement.nomor_seri} sudah masuk gudang.`);
-      lastSubmittedScanRef.current = "";
       setTimeout(() => {
         serialScanInputRef.current?.focus();
       }, 50);
       return;
     }
 
+    scanInProgressRef.current = true;
+    lastSubmittedScanRef.current = rawScanValue;
+    setSerialScanValue("");
+    const scannedCode = parseScannedSerialCode(rawValue);
+    const scannedValue = scannedCode.serialText;
+
     try {
+      if (!selectedLayout || !selectedSlot) {
+        await showGudangWarning(
+          "Lokasi stok awal belum lengkap",
+          "Pilih lantai, bilik/blok, rak, dan baris lokasi stok awal sebelum scan kode seri."
+        );
+        lastSubmittedScanRef.current = "";
+        return;
+      }
+
+      if (!scannedValue) {
+        await showGudangWarning(
+          "Kode seri kosong",
+          "Scan atau ketik kode seri terlebih dahulu."
+        );
+        lastSubmittedScanRef.current = "";
+        return;
+      }
+
+      const serialItem =
+        scannedCode.lookupValues
+          .flatMap((value) => buildSerialSkuLookupKeys(value))
+          .map((key) => serialLookup.get(key))
+          .find(Boolean) ||
+        null;
+      const serialForPlacement =
+        serialItem ||
+        (scannedCode.skuText
+          ? {
+              id: scannedCode.raw,
+              nomor_seri: scannedCode.serialText,
+              sku: scannedCode.skuText,
+              jumlah: 1,
+            }
+          : null);
+
+      if (!serialForPlacement) {
+        await showGudangWarning(
+          "Kode seri tidak ditemukan",
+          `${scannedValue} tidak ditemukan di data kode seri. Scan format "SKU | KODE SERI" agar SKU bisa dibaca langsung.`
+        );
+        setScanMessage(`${scannedValue} tidak ditemukan.`);
+        lastSubmittedScanRef.current = "";
+        return;
+      }
+
+      const normalizedSerial = normalizeScanText(serialForPlacement.nomor_seri);
+      if (
+        scannedRows.some((row) => normalizeScanText(row.nomorSeri) === normalizedSerial) ||
+        storedSerialSet.has(normalizedSerial)
+      ) {
+        await showGudangWarning(
+          "Kode seri sudah masuk gudang",
+          `${serialForPlacement.nomor_seri} sudah pernah discan dan masuk stok awal.`
+        );
+        setScanMessage(`${serialForPlacement.nomor_seri} sudah masuk gudang.`);
+        lastSubmittedScanRef.current = "";
+        return;
+      }
+
       setIsSubmitting(true);
       setScanMessage("Memproses scan kode seri...");
       const selectedSku = await resolveSerialSku(serialForPlacement);
@@ -424,11 +429,7 @@ const StokAwalGudangProduk = () => {
         },
         ...currentRows,
       ]);
-      setSerialScanValue("");
       setScanMessage(`Scan berhasil. Total sesi ini ${scannedRows.length + 1} kode seri.`);
-      setTimeout(() => {
-        serialScanInputRef.current?.focus();
-      }, 50);
     } catch (submitError) {
       lastSubmittedScanRef.current = "";
       await showGudangError(
@@ -436,7 +437,11 @@ const StokAwalGudangProduk = () => {
         buildGudangWorkspaceErrorMessage(submitError, "Gagal menyimpan stok awal.")
       );
     } finally {
+      scanInProgressRef.current = false;
       setIsSubmitting(false);
+      setTimeout(() => {
+        serialScanInputRef.current?.focus();
+      }, 50);
     }
   };
 
