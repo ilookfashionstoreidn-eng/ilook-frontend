@@ -344,14 +344,13 @@ const Bahan = () => {
     }
   };
 
-  const fetchData = async (page = currentPage) => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await API.get("/bahan", {
         params: {
-          page,
-          per_page: DEFAULT_PER_PAGE,
+          all: 1,
           search: activeSearchTerm || undefined,
           pabrik_bahan: selectedPabrik || undefined,
           satuan: selectedSatuan || undefined,
@@ -361,9 +360,9 @@ const Bahan = () => {
       const payload = res.data || {};
       const rows = Array.isArray(payload.data) ? payload.data : [];
       setItems(rows);
-      setCurrentPage(Number(payload.current_page) || page);
-      setLastPage(Number(payload.last_page) || 1);
-      setTotalRows(Number(payload.total) || rows.length);
+      setCurrentPage(1);
+      setLastPage(1);
+      setTotalRows(rows.length);
       setStats({
         total_bahan: Number(payload.stats?.total_bahan) || 0,
         total_group: Number(payload.stats?.total_group) || 0,
@@ -384,9 +383,9 @@ const Bahan = () => {
   }, []);
 
   useEffect(() => {
-    fetchData(currentPage);
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, debouncedSearchTerm, selectedBahanName, selectedPabrik, selectedSatuan]);
+  }, [debouncedSearchTerm, selectedBahanName, selectedPabrik, selectedSatuan]);
 
   useEffect(() => {
     if (!showImageModal || imageModalStep !== 2) {
@@ -1290,7 +1289,7 @@ const Bahan = () => {
           <div className="bahan-table-header">
             <div>
               <h3>Semua Data Bahan</h3>
-              <p>{isFiltering ? `Menampilkan ${totalRows} data sesuai filter` : `Menampilkan ${currentItems.length} data pada halaman ini`}</p>
+              <p>{isFiltering ? `Menampilkan ${totalRows} data sesuai filter` : `Menampilkan ${currentItems.length} data`}</p>
             </div>
             <div className="bahan-table-actions">
               <button className="bahan-btn-secondary" onClick={handleDownloadTemplate}>
@@ -1448,162 +1447,50 @@ const Bahan = () => {
             </div>
           ) : (
             <>
-              <div className="bahan-table-sections">
-                <section className="bahan-table-panel">
-                  <div className="bahan-table-panel-header">
-                    <div>
-                      <h4>Bahan Sudah Punya Gambar</h4>
-                      <p>
-                        {groupedBahanImages.length > 0
-                          ? `${bahanWithImageItemCount} data dalam ${groupedBahanImages.length} grup gambar pada halaman ini`
-                          : "Belum ada bahan bergambar pada halaman ini"}
-                      </p>
-                    </div>
-                    <div className="bahan-table-panel-summary">
-                      {groupedBahanImages.length} grup
-                    </div>
-                  </div>
-                  <div className="bahan-table-scroll bahan-image-table-scroll">
-                    <table className="bahan-table bahan-image-table">
-                      <thead>
-                        <tr>
-                          <th>No</th>
-                          <th>Gambar</th>
-                          <th>Nama Bahan</th>
-                          <th>Deskripsi</th>
-                          <th>Harga</th>
-                          <th>Satuan</th>
-                          <th>Stok</th>
-                          <th>Warna Bahan</th>
-                          <th className="align-center">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {groupedBahanImages.length > 0
-                          ? groupedBahanImages.map((group) => {
-                              const firstItem = group.items[0] || {};
-                              const imageUrl = getBahanImageUrl(group.image);
-                              const groupTitle = uniqueGroupValues(group.items, "group_bahan").join(" / ") || `Gambar bahan ${group.id}`;
-
-                              return (
-                                <tr className="bahan-image-table-row" key={group.id}>
-                                  <td>
-                                    <strong>{getItemPageNumber(firstItem)}</strong>
-                                  </td>
-                                  <td>
+              <div className="bahan-table-panel">
+                <div className="bahan-table-scroll bahan-table-scroll-plain">
+                  <table className="bahan-table">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Gambar</th>
+                        <th>Group Bahan</th>
+                        <th>Pabrik</th>
+                        <th>Nama Bahan</th>
+                        <th>Deskripsi</th>
+                        <th>Harga</th>
+                        <th>Satuan</th>
+                        <th>Stok</th>
+                        <th>Warna Bahan</th>
+                        <th className="align-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.length > 0
+                        ? currentItems.map((item) => {
+                            const image = item.bahan_image || item.bahanImage || null;
+                            const imageUrl = image ? getBahanImageUrl(image) : null;
+                            const groupTitle = item.group_bahan || item.nama_bahan;
+                            return (
+                              <tr key={item.id}>
+                                <td>
+                                  <strong>{getItemPageNumber(item)}</strong>
+                                </td>
+                                <td>
+                                  {imageUrl ? (
                                     <button
                                       type="button"
                                       className="bahan-table-image-frame bahan-table-image-button"
                                       onClick={() => openPreviewImage(imageUrl, groupTitle)}
                                       title="Klik untuk melihat gambar"
                                     >
-                                      {imageUrl ? (
-                                        <img src={imageUrl} alt={groupTitle} />
-                                      ) : (
-                                        <div className="bahan-image-placeholder">
-                                          <FaImage />
-                                        </div>
-                                      )}
+                                      <img src={imageUrl} alt={groupTitle} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
                                     </button>
-                                  </td>
-                                  <td>{renderGroupedValues(group.items, "nama_bahan")}</td>
-                                  <td>{renderGroupedValues(group.items, "deskripsi")}</td>
-                                  <td>
-                                    <div className="bahan-grouped-value-list">
-                                      {uniqueGroupValues(group.items, "harga").map((harga) => (
-                                        <strong className="bahan-harga-value" key={harga}>
-                                          {formatRupiah(harga)}
-                                        </strong>
-                                      ))}
+                                  ) : (
+                                    <div className="bahan-image-placeholder" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', color: '#94a3b8' }}>
+                                      <FaImage />
                                     </div>
-                                  </td>
-                                  <td>
-                                    <div className="bahan-grouped-satuan-list">
-                                      {uniqueGroupValues(group.items, "satuan").map((satuan) => (
-                                        <span className="bahan-status-badge bahan-status-satuan" key={satuan}>
-                                          <FaTag /> {getSatuanLabel(satuan)}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <strong className="bahan-stok-value">{formatNumber(getGroupedStockTotal(group.items))}</strong>
-                                  </td>
-                                  <td>
-                                    <div className="bahan-image-item-list">
-                                      {group.items.map((item) => (
-                                        <div className="bahan-image-item-row" key={item.id}>
-                                          <strong>{formatNumber(item.stok_bahan)}</strong>
-                                          <span title={item.warna_bahan || "-"}>{item.warna_bahan || "-"}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="bahan-image-item-list bahan-image-item-list-actions">
-                                      {group.items.map((item) => (
-                                        <div className="bahan-image-action-row" key={item.id}>
-                                          <span title={item.warna_bahan || item.nama_bahan || "-"}>{item.warna_bahan || item.nama_bahan || "-"}</span>
-                                          <div className="bahan-actions">
-                                            <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
-                                              <FaEdit />
-                                            </button>
-                                            <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
-                                              <FaEye />
-                                            </button>
-                                            <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
-                                              <FaTrash />
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          : renderEmptyTableRow(9, "Belum ada bahan bergambar pada halaman ini.")}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-
-                <section className="bahan-table-panel">
-                  <div className="bahan-table-panel-header">
-                    <div>
-                      <h4>Bahan Belum Ada Gambar</h4>
-                      <p>
-                        {bahanWithoutImageCount > 0
-                          ? `${bahanWithoutImageCount} data pada halaman ini`
-                          : "Semua data pada halaman ini sudah memiliki gambar"}
-                      </p>
-                    </div>
-                    <div className="bahan-table-panel-summary">
-                      {bahanWithoutImageCount} data
-                    </div>
-                  </div>
-                  <div className="bahan-table-scroll bahan-table-scroll-plain">
-                    <table className="bahan-table">
-                      <thead>
-                        <tr>
-                          <th>No</th>
-                          <th>Group Bahan</th>
-                          <th>Pabrik</th>
-                          <th>Nama Bahan</th>
-                          <th>Deskripsi</th>
-                          <th>Harga</th>
-                          <th>Satuan</th>
-                          <th>Stok</th>
-                          <th>Warna Bahan</th>
-                          <th className="align-center">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {bahanWithoutImageCount > 0
-                          ? bahanWithoutImage.map((item) => (
-                              <tr key={item.id}>
-                                <td>
-                                  <strong>{getItemPageNumber(item)}</strong>
+                                  )}
                                 </td>
                                 <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
                                   {item.group_bahan || "-"}
@@ -1641,30 +1528,13 @@ const Bahan = () => {
                                   </div>
                                 </td>
                               </tr>
-                            ))
-                          : renderEmptyTableRow(10, "Tidak ada bahan tanpa gambar pada halaman ini.")}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="bahan-pagination">
-                  <button className="bahan-pagination-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                    Sebelumnya
-                  </button>
-                  <div className="bahan-pagination-info">
-                    <span>
-                      Halaman {currentPage} dari {totalPages}
-                    </span>
-                    <span className="bahan-pagination-total">(Total: {totalRows} data)</span>
-                  </div>
-                  <button className="bahan-pagination-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                    Selanjutnya
-                  </button>
+                            );
+                          })
+                        : renderEmptyTableRow(11, "Tidak ada data bahan.")}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
             </>
           )}
         </section>

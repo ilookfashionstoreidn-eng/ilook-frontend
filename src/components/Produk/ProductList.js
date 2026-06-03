@@ -16,6 +16,7 @@ import {
   FaSave,
   FaSearch,
   FaTimes,
+  FaTimesCircle,
   FaTrash,
   FaUpload,
 } from "react-icons/fa";
@@ -236,13 +237,22 @@ const ProductList = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
   const [groupSearchTerm, setGroupSearchTerm] = useState("");
+  const [selectedMaterialGroup1, setSelectedMaterialGroup1] = useState("");
+  const [materialGroup1DropdownOpen, setMaterialGroup1DropdownOpen] = useState(false);
+  const [materialGroup1SearchTerm, setMaterialGroup1SearchTerm] = useState("");
+  const [selectedMaterialGroup2, setSelectedMaterialGroup2] = useState("");
+  const [materialGroup2DropdownOpen, setMaterialGroup2DropdownOpen] = useState(false);
+  const [materialGroup2SearchTerm, setMaterialGroup2SearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState({
     total: 0,
+    products: [],
     groups: [],
     sources: [],
+    material_groups_1: [],
+    material_groups_2: [],
     material_rows: 0,
   });
   const [modalMode, setModalMode] = useState(null);
@@ -252,6 +262,15 @@ const ProductList = () => {
   const [isDuplicate, setIsDuplicate] = useState(false); // [DUPLIKAT] - ditambahkan
   const [duplicateSourceSkuName, setDuplicateSourceSkuName] = useState(""); // [DUPLIKAT] - ditambahkan
   const [form, setForm] = useState(initialForm);
+
+  // --- MULTI-SKU MODE STATES ---
+  const [isMultiSkuMode, setIsMultiSkuMode] = useState(false);
+
+
+  const [multiSkuRows, setMultiSkuRows] = useState([
+    { sku_name: "", product_colour: "", LD: "", material_colours: [""] }
+  ]);
+
   const importInputRef = useRef(null);
   const groupDropdownRef = useRef(null);
   const skuNameInputRef = useRef(null); // [DUPLIKAT] - ditambahkan
@@ -259,13 +278,25 @@ const ProductList = () => {
   const groupOptions = useMemo(() => (summary.groups || []).filter(Boolean), [summary.groups]);
   const filteredGroupOptions = useMemo(() => {
     const term = groupSearchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return groupOptions;
-    }
-
+    if (!term) return groupOptions;
     return groupOptions.filter((group) => String(group).toLowerCase().includes(term));
   }, [groupOptions, groupSearchTerm]);
+
+  const productOptions = useMemo(() => (summary.products || []).filter(Boolean), [summary.products]);
+
+  const materialGroup1Options = useMemo(() => (summary.material_groups_1 || []).filter(Boolean), [summary.material_groups_1]);
+  const filteredMaterialGroup1Options = useMemo(() => {
+    const term = materialGroup1SearchTerm.trim().toLowerCase();
+    if (!term) return materialGroup1Options;
+    return materialGroup1Options.filter((group) => String(group).toLowerCase().includes(term));
+  }, [materialGroup1Options, materialGroup1SearchTerm]);
+
+  const materialGroup2Options = useMemo(() => (summary.material_groups_2 || []).filter(Boolean), [summary.material_groups_2]);
+  const filteredMaterialGroup2Options = useMemo(() => {
+    const term = materialGroup2SearchTerm.trim().toLowerCase();
+    if (!term) return materialGroup2Options;
+    return materialGroup2Options.filter((group) => String(group).toLowerCase().includes(term));
+  }, [materialGroup2Options, materialGroup2SearchTerm]);
 
   const showSuccessAlert = (title, text) => {
     return Swal.fire({
@@ -464,8 +495,10 @@ const ProductList = () => {
         params: {
           search: debouncedSearchTerm || "",
           product_group: selectedGroup || "",
+          material_group_1: selectedMaterialGroup1 || "",
+          material_group_2: selectedMaterialGroup2 || "",
           page: currentPage,
-          per_page: 10,
+          per_page: 50,
         },
       });
 
@@ -476,8 +509,11 @@ const ProductList = () => {
       setSummary(
         response.data.summary || {
           total: response.data.total || 0,
+          products: [],
           groups: [],
           sources: [],
+          material_groups_1: [],
+          material_groups_2: [],
           material_rows: 0,
         }
       );
@@ -490,7 +526,7 @@ const ProductList = () => {
 
   useEffect(() => {
     fetchProductLists();
-  }, [debouncedSearchTerm, selectedGroup, currentPage]);
+  }, [debouncedSearchTerm, selectedGroup, selectedMaterialGroup1, selectedMaterialGroup2, currentPage]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -597,11 +633,14 @@ const ProductList = () => {
     return () => window.clearTimeout(focusTimer);
   }, [isDuplicate, modalMode]);
 
+
   const openAddModal = () => {
     setSelectedItem(null);
     setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
     setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(initialForm);
+    setIsMultiSkuMode(false);
+    setMultiSkuRows([{ sku_name: "", product_colour: "", LD: "", material_colours: initialForm.materials.map(() => "") }]);
     setModalMode("add");
   };
 
@@ -610,6 +649,7 @@ const ProductList = () => {
     setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
     setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(toForm(item));
+    setIsMultiSkuMode(false);
     setModalMode("edit");
   };
 
@@ -619,6 +659,7 @@ const ProductList = () => {
     setIsDuplicate(true);
     setDuplicateSourceSkuName(item?.sku_name || ""); // [DUPLIKAT] - ditambahkan
     setForm(toForm(duplicatedItem));
+    setIsMultiSkuMode(false);
     setModalMode("add");
   };
 
@@ -636,13 +677,20 @@ const ProductList = () => {
     setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
     setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(initialForm);
+    setIsMultiSkuMode(false);
   };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => {
       if (name !== "sku_name") {
-        return { ...prev, [name]: value };
+        const nextForm = { ...prev, [name]: value };
+        if (name === "product_group" || name === "product_size") {
+          const pg = name === "product_group" ? value : prev.product_group;
+          const ps = name === "product_size" ? value : prev.product_size;
+          nextForm.product_source = `${pg || ""} ${ps || ""}`.trim();
+        }
+        return nextForm;
       }
 
       const parsedProductFields = parseProductFieldsFromSku(value);
@@ -671,6 +719,10 @@ const ProductList = () => {
       ...prev,
       materials: [...prev.materials, { ...emptyMaterial, kind: "kombinasi" }],
     }));
+    setMultiSkuRows(prev => prev.map(row => ({
+      ...row,
+      material_colours: [...row.material_colours, ""]
+    })));
   };
 
   const removeMaterialRow = (index) => {
@@ -684,6 +736,13 @@ const ProductList = () => {
         materials: prev.materials.filter((_, materialIndex) => materialIndex !== index),
       };
     });
+    setMultiSkuRows(prev => prev.map(row => {
+      const newMaterialColours = [...row.material_colours];
+      if (newMaterialColours.length > 1) {
+        newMaterialColours.splice(index, 1);
+      }
+      return { ...row, material_colours: newMaterialColours };
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -699,20 +758,94 @@ const ProductList = () => {
 
     try {
       setSaving(true);
-      const payload = buildPayload();
 
-      if (!isDuplicate && modalMode === "edit" && selectedItem?.id) { // [DUPLIKAT] - dimodifikasi
-        await API.put(`/product-list/${selectedItem.id}`, payload);
+      if (isMultiSkuMode) {
+        // Mode Multi-SKU (Bulk Insert)
+        const validRows = multiSkuRows.filter(r => r.sku_name.trim());
+        if (validRows.length === 0) {
+          await showErrorAlert("Tabel Kosong", "Masukkan minimal 1 Varian (SKU Name tidak boleh kosong).");
+          setSaving(false);
+          return;
+        }
+
+        Swal.fire({
+          title: "Menyimpan Varian...",
+          text: `Menyimpan 0 dari ${validRows.length} varian.`,
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < validRows.length; i++) {
+          const row = validRows[i];
+
+          // Clone form base materials
+          const materialsClone = form.materials.map((m, index) => ({
+            ...m,
+            colour: row.material_colours[index] || m.colour
+          }));
+
+          const rowPayload = {
+            ...form,
+            sku_name: row.sku_name,
+            product_colour: row.product_colour,
+            LD: row.LD,
+            materials: normalizeMaterials(materialsClone).filter(
+              (item) => item.material || item.colour || item.material_group
+            ),
+          };
+
+          numericFields.forEach((field) => {
+            rowPayload[field] = rowPayload[field] === "" || rowPayload[field] === null ? null : rowPayload[field];
+          });
+
+          try {
+            await API.post("/product-list", rowPayload);
+            successCount++;
+          } catch (err) {
+            console.error("Gagal simpan varian:", row.sku_name, err);
+            failCount++;
+          }
+
+          Swal.update({
+            text: `Menyimpan ${i + 1} dari ${validRows.length} varian.`,
+          });
+        }
+
         closeModal(true);
         await fetchProductLists();
-        await showSuccessAlert("Berhasil", "Product List berhasil diperbarui.");
+
+        if (failCount > 0) {
+          await Swal.fire({
+            icon: "warning",
+            title: "Simpan Selesai dengan Error",
+            text: `Berhasil menyimpan ${successCount} varian, Gagal menyimpan ${failCount} varian.`,
+          });
+        } else {
+          await showSuccessAlert("Berhasil", `${successCount} Varian berhasil ditambahkan.`);
+        }
+
       } else {
-        await API.post("/product-list", payload);
-        closeModal(true);
-        await fetchProductLists();
-        await showSuccessAlert("Berhasil", isDuplicate ? "Product List berhasil diduplikasi." : "Product List berhasil ditambahkan."); // [DUPLIKAT] - dimodifikasi
+        // Single Insert / Update Mode
+        const payload = buildPayload();
+
+        if (!isDuplicate && modalMode === "edit" && selectedItem?.id) { // [DUPLIKAT] - dimodifikasi
+          await API.put(`/product-list/${selectedItem.id}`, payload);
+          closeModal(true);
+          await fetchProductLists();
+          await showSuccessAlert("Berhasil", "Product List berhasil diperbarui.");
+        } else {
+          await API.post("/product-list", payload);
+          closeModal(true);
+          await fetchProductLists();
+          await showSuccessAlert("Berhasil", isDuplicate ? "Product List berhasil diduplikasi." : "Product List berhasil ditambahkan."); // [DUPLIKAT] - dimodifikasi
+        }
       }
     } catch (err) {
+      Swal.close();
       await showErrorAlert("Gagal Menyimpan", getApiErrorMessage(err, "Data Product List gagal disimpan."));
     } finally {
       setSaving(false);
@@ -858,7 +991,7 @@ const ProductList = () => {
     try {
       setImageAssigning(true);
       await API.post("/product-list/assign-image", {
-        image_id: selectedProductImageId,
+        product_list_image_id: selectedProductImageId,
         product_list_ids: selectedImageProductIds,
       });
       resetImageModalState();
@@ -963,6 +1096,41 @@ const ProductList = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      Swal.fire({
+        title: "Menyiapkan Template...",
+        text: "Mohon tunggu sebentar.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await API.get("/product-list/template", {
+        responseType: "blob",
+        timeout: 600000,
+      });
+
+      const fileName = "template_product_list.xlsx";
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      Swal.close();
+    } catch (err) {
+      Swal.close();
+      await showErrorAlert("Gagal", "Gagal mengunduh template Excel.");
+    }
+  };
+
   const handleImportChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1022,10 +1190,9 @@ const ProductList = () => {
             <div><strong>${Number(result.empty_sku_rows || 0).toLocaleString("id-ID")}</strong><span>SKU kosong</span></div>
             <div><strong>${Number(result.duplicate_sku_rows || 0).toLocaleString("id-ID")}</strong><span>SKU duplikat</span></div>
           </div>
-          ${
-            errorList
-              ? `<div class="product-list-import-errors"><p>Catatan:</p><ul>${errorList}</ul></div>`
-              : ""
+          ${errorList
+            ? `<div class="product-list-import-errors"><p>Catatan:</p><ul>${errorList}</ul></div>`
+            : ""
           }
         `,
         confirmButtonText: "Selesai",
@@ -1189,20 +1356,28 @@ const ProductList = () => {
               </p>
               <h2>{modalHeading}{/* [DUPLIKAT] - dimodifikasi */}</h2>
             </div>
-            <button className="product-list-icon-button" onClick={closeModal} type="button">
-              <FaTimes />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              {modalMode === "add" && !isDuplicate && (
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", background: isMultiSkuMode ? "#e0e7ff" : "#f1f5f9", padding: "8px 16px", borderRadius: "8px", fontWeight: "600", color: isMultiSkuMode ? "#4338ca" : "#475569", transition: "all 0.2s" }}>
+                  <input type="checkbox" checked={isMultiSkuMode} onChange={(e) => setIsMultiSkuMode(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#4f46e5", cursor: "pointer" }} />
+                  Mode Multi-SKU (Banyak Varian)
+                </label>
+              )}
+              <button className="product-list-icon-button" onClick={closeModal} type="button">
+                <FaTimes />
+              </button>
+            </div>
           </div>
 
           <div className="product-list-form-section">
-            <h3>Informasi Produk</h3>
+            <h3>Informasi Produk {isMultiSkuMode && <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal', marginLeft: '8px' }}>(Kolom SKU dan Warna dikunci saat Multi-SKU aktif)</span>}</h3>
             <div className="product-list-form-grid">
               <Field label="Product" name="product" value={form.product} onChange={handleInputChange} required />
-              <Field label="SKU Name" name="sku_name" value={form.sku_name} onChange={handleInputChange} inputRef={skuNameInputRef} autoFocus={isDuplicate} required={modalMode !== "edit"} />{/* [DUPLIKAT] - dimodifikasi */}
+              <Field label="SKU Name" name="sku_name" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.sku_name} onChange={handleInputChange} inputRef={skuNameInputRef} autoFocus={isDuplicate} required={!isMultiSkuMode && modalMode !== "edit"} disabled={isMultiSkuMode} />
               <Field label="Product Group" name="product_group" value={form.product_group} onChange={handleInputChange} />
               <Field label="Product Size" name="product_size" value={form.product_size} onChange={handleInputChange} />
-              <Field label="Product Source" name="product_source" value={form.product_source} onChange={handleInputChange} />
-              <Field label="Product Colour" name="product_colour" value={form.product_colour} onChange={handleInputChange} />
+              <Field label="Product Source" name="product_source" value={form.product_source} disabled={true} onChange={handleInputChange} />
+              <Field label="Product Colour" name="product_colour" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_colour} onChange={handleInputChange} disabled={isMultiSkuMode} />
             </div>
           </div>
 
@@ -1237,19 +1412,15 @@ const ProductList = () => {
                     </span>
                   </div>
                   <Field
-                    label={index === 0 ? "Nama Material" : "Nama Kombinasi"}
-                    value={material.material}
-                    onChange={(event) => handleMaterialChange(index, "material", event.target.value)}
-                  />
-                  <Field
-                    label="Product Colour"
-                    value={material.colour}
-                    onChange={(event) => handleMaterialChange(index, "colour", event.target.value)}
-                  />
-                  <Field
                     label="Material Group"
                     value={material.material_group}
                     onChange={(event) => handleMaterialChange(index, "material_group", event.target.value)}
+                  />
+                  <Field
+                    label="Product Colour"
+                    value={isMultiSkuMode ? "Diisi di tabel" : material.colour}
+                    onChange={(event) => handleMaterialChange(index, "colour", event.target.value)}
+                    disabled={isMultiSkuMode}
                   />
                   <button
                     className="product-list-icon-button danger"
@@ -1297,7 +1468,7 @@ const ProductList = () => {
               <Field label="Satuan Berat Panjang" name="satuan_berat_panjang" value={form.satuan_berat_panjang} onChange={handleInputChange} />
               <Field label="Berat Panjang Combi" name="berat_panjang_combi" type="number" value={form.berat_panjang_combi} onChange={handleInputChange} />
               <Field label="Satuan Berat Panjang Combi" name="satuan_berat_panjang_combi" value={form.satuan_berat_panjang_combi} onChange={handleInputChange} />
-              <Field label="LD" name="LD" type="number" value={form.LD} onChange={handleInputChange} />
+              <Field label="LD" name="LD" type={isMultiSkuMode ? "text" : "number"} value={isMultiSkuMode ? "Diisi di tabel" : form.LD} onChange={handleInputChange} disabled={isMultiSkuMode} />
               <Field label="PJ Dress" name="pj_dress" type="number" value={form.pj_dress} onChange={handleInputChange} />
               <Field label="PJ Celana" name="pj_celana" value={form.pj_celana} onChange={handleInputChange} />
               <Field label="PJ Baju" name="pj_baju" type="number" value={form.pj_baju} onChange={handleInputChange} />
@@ -1324,6 +1495,63 @@ const ProductList = () => {
               />
             </label>
           </div>
+
+          {isMultiSkuMode && (
+            <div className="product-list-form-section" style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h3 style={{ margin: 0, color: "#334155" }}>Tabel Varian Multi-SKU</h3>
+                <button
+                  type="button"
+                  onClick={() => setMultiSkuRows(prev => [...prev, { sku_name: "", product_colour: "", LD: "", material_colours: form.materials.map(() => "") }])}
+                  style={{ background: "#4f46e5", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <FaPlus /> Tambah Varian
+                </button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                  <thead>
+                    <tr style={{ background: "#e2e8f0", color: "#475569" }}>
+                      <th style={{ padding: "10px", textAlign: "left", borderRadius: "6px 0 0 0" }}>#</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>SKU Name*</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>Product Colour</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>LD</th>
+                      {form.materials.map((m, idx) => (
+                        <th key={idx} style={{ padding: "10px", textAlign: "left" }}>Warna {idx === 0 ? "Bahan Utama" : "Bahan Kombinasi " + idx}</th>
+                      ))}
+                      <th style={{ padding: "10px", textAlign: "center", borderRadius: "0 6px 0 0" }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {multiSkuRows.map((row, rowIndex) => (
+                      <tr key={rowIndex} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        <td style={{ padding: "8px", color: "#64748b" }}>{rowIndex + 1}</td>
+                        <td style={{ padding: "8px" }}>
+                          <input type="text" value={row.sku_name} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].sku_name = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="SKU Varian" required />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input type="text" value={row.product_colour} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].product_colour = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Warna" />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input type="number" value={row.LD} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].LD = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "80px", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="LD" />
+                        </td>
+                        {form.materials.map((m, matIndex) => (
+                          <td key={matIndex} style={{ padding: "8px" }}>
+                            <input type="text" value={row.material_colours[matIndex] || ""} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].material_colours[matIndex] = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Warna Bahan" />
+                          </td>
+                        ))}
+                        <td style={{ padding: "8px", textAlign: "center" }}>
+                          <button type="button" onClick={() => { if (multiSkuRows.length > 1) { setMultiSkuRows(prev => prev.filter((_, i) => i !== rowIndex)); } }} disabled={multiSkuRows.length <= 1} style={{ background: "none", border: "none", color: multiSkuRows.length <= 1 ? "#cbd5e1" : "#ef4444", cursor: multiSkuRows.length <= 1 ? "not-allowed" : "pointer", padding: "4px" }}>
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="product-list-modal-actions">
             <button className="product-list-ghost-button" type="button" onClick={closeModal}>
@@ -1627,42 +1855,9 @@ const ProductList = () => {
             <span>Database detail produk, material, aksesoris, estimasi, ukuran, price, dan notes SPK.</span>
           </div>
         </div>
-
-        <div className="product-list-search">
-          <FaSearch />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Cari product, SKU name, group, colour, aksesoris..."
-          />
-          {searchInput && (
-            <button type="button" onClick={() => setSearchInput("")}>
-              <FaTimes />
-            </button>
-          )}
-        </div>
       </header>
 
       <main className="product-list-main">
-        <section className="product-list-stats">
-          <div className="product-list-stat">
-            <span>Total Data</span>
-            <strong>{summary.total || total}</strong>
-          </div>
-          <div className="product-list-stat">
-            <span>Product Group</span>
-            <strong>{summary.groups?.length || 0}</strong>
-          </div>
-          <div className="product-list-stat">
-            <span>Product Source</span>
-            <strong>{summary.sources?.length || 0}</strong>
-          </div>
-          <div className="product-list-stat accent">
-            <span>Material Row</span>
-            <strong>{summary.material_rows || 0}</strong>
-          </div>
-        </section>
 
         <section className="product-list-table-card">
           <div className="product-list-table-header">
@@ -1683,36 +1878,68 @@ const ProductList = () => {
                 type="button"
                 onClick={openImageModal}
                 disabled={imageUploading || imageAssigning}
+                title="Tambah Foto"
+                style={{ width: "38px", padding: 0, justifyContent: "center" }}
               >
-                <FaImage /> Tambah Foto
+                <FaImage />
               </button>
               <button
                 className="product-list-secondary-button import"
                 type="button"
                 onClick={handleImportButtonClick}
                 disabled={importing}
+                title="Import Excel"
+                style={{ width: "38px", padding: 0, justifyContent: "center" }}
               >
-                <FaFileExcel /> {importing ? "Import..." : "Import Excel"}
+                <FaFileExcel />
               </button>
               <button
                 className="product-list-secondary-button export"
                 type="button"
                 onClick={openExportModal}
                 disabled={exporting}
+                title="Export Excel"
+                style={{ width: "38px", padding: 0, justifyContent: "center" }}
               >
-                <FaDownload /> {exporting ? "Export..." : "Export Excel"}
+                <FaDownload />
+              </button>
+              <button
+                className="product-list-secondary-button template"
+                type="button"
+                onClick={handleDownloadTemplate}
+                title="Download Template Excel"
+                style={{ width: "38px", padding: 0, justifyContent: "center", color: "#059669", borderColor: "#34d399", background: "#ecfdf5" }}
+              >
+                <FaFileExcel />
               </button>
               <button
                 className="product-list-primary-button product-list-add-button"
                 type="button"
                 onClick={openAddModal}
+                title="Tambah Data"
+                style={{ width: "38px", padding: 0, justifyContent: "center" }}
               >
-                <FaPlus /> Tambah Data
+                <FaPlus />
               </button>
             </div>
           </div>
 
           <div className="product-list-filter-bar">
+            <div className="product-list-search">
+              <FaSearch />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Cari product, SKU name, group, colour, aksesoris..."
+              />
+              {searchInput && (
+                <button type="button" onClick={() => setSearchInput("")}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+
             <div
               className={`product-list-searchable-select${groupDropdownOpen ? " open" : ""}`}
               ref={groupDropdownRef}
@@ -1720,11 +1947,11 @@ const ProductList = () => {
               <button
                 className="product-list-searchable-select-trigger"
                 type="button"
-                onClick={() => setGroupDropdownOpen((prev) => !prev)}
+                onClick={() => { setGroupDropdownOpen((prev) => !prev); setMaterialGroup1DropdownOpen(false); setMaterialGroup2DropdownOpen(false); }}
                 aria-haspopup="listbox"
                 aria-expanded={groupDropdownOpen}
               >
-                <span>{selectedGroup || "Semua Product Group"}</span>
+                <span>{selectedGroup || "Product Group"}</span>
                 <FaChevronDown />
               </button>
 
@@ -1772,6 +1999,122 @@ const ProductList = () => {
                       ))
                     ) : (
                       <div className="product-list-searchable-empty">Product Group tidak ditemukan.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              className={`product-list-searchable-select${materialGroup1DropdownOpen ? " open" : ""}`}
+            >
+              <button
+                className="product-list-searchable-select-trigger"
+                type="button"
+                onClick={() => { setMaterialGroup1DropdownOpen((prev) => !prev); setGroupDropdownOpen(false); setMaterialGroup2DropdownOpen(false); }}
+              >
+                <span>{selectedMaterialGroup1 || "Bahan Utama"}</span>
+                <FaChevronDown />
+              </button>
+
+              {materialGroup1DropdownOpen && (
+                <div className="product-list-searchable-select-menu">
+                  <div className="product-list-searchable-select-search">
+                    <FaSearch />
+                    <input
+                      type="text"
+                      value={materialGroup1SearchTerm}
+                      onChange={(event) => setMaterialGroup1SearchTerm(event.target.value)}
+                      placeholder="Cari Material Bahan Utama"
+                      autoFocus
+                    />
+                    {materialGroup1SearchTerm && (
+                      <button type="button" onClick={() => setMaterialGroup1SearchTerm("")}>
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="product-list-searchable-select-options">
+                    <button
+                      className={`product-list-searchable-option${selectedMaterialGroup1 === "" ? " selected" : ""}`}
+                      type="button"
+                      onClick={() => { setSelectedMaterialGroup1(""); setMaterialGroup1DropdownOpen(false); setCurrentPage(1); }}
+                    >
+                      Semua Material Bahan Utama
+                    </button>
+
+                    {filteredMaterialGroup1Options.length ? (
+                      filteredMaterialGroup1Options.map((group) => (
+                        <button
+                          className={`product-list-searchable-option${selectedMaterialGroup1 === group ? " selected" : ""}`}
+                          type="button"
+                          key={group}
+                          onClick={() => { setSelectedMaterialGroup1(group); setMaterialGroup1DropdownOpen(false); setCurrentPage(1); }}
+                        >
+                          {group}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="product-list-searchable-empty">Material Group 1 tidak ditemukan.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              className={`product-list-searchable-select${materialGroup2DropdownOpen ? " open" : ""}`}
+            >
+              <button
+                className="product-list-searchable-select-trigger"
+                type="button"
+                onClick={() => { setMaterialGroup2DropdownOpen((prev) => !prev); setGroupDropdownOpen(false); setMaterialGroup1DropdownOpen(false); }}
+              >
+                <span>{selectedMaterialGroup2 || "Bahan Kombinasi"}</span>
+                <FaChevronDown />
+              </button>
+
+              {materialGroup2DropdownOpen && (
+                <div className="product-list-searchable-select-menu">
+                  <div className="product-list-searchable-select-search">
+                    <FaSearch />
+                    <input
+                      type="text"
+                      value={materialGroup2SearchTerm}
+                      onChange={(event) => setMaterialGroup2SearchTerm(event.target.value)}
+                      placeholder="Cari Material Bahan Kombinasi"
+                      autoFocus
+                    />
+                    {materialGroup2SearchTerm && (
+                      <button type="button" onClick={() => setMaterialGroup2SearchTerm("")}>
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="product-list-searchable-select-options">
+                    <button
+                      className={`product-list-searchable-option${selectedMaterialGroup2 === "" ? " selected" : ""}`}
+                      type="button"
+                      onClick={() => { setSelectedMaterialGroup2(""); setMaterialGroup2DropdownOpen(false); setCurrentPage(1); }}
+                    >
+                      Material Bahan Kombinasi
+                    </button>
+
+                    {filteredMaterialGroup2Options.length ? (
+                      filteredMaterialGroup2Options.map((group) => (
+                        <button
+                          className={`product-list-searchable-option${selectedMaterialGroup2 === group ? " selected" : ""}`}
+                          type="button"
+                          key={group}
+                          onClick={() => { setSelectedMaterialGroup2(group); setMaterialGroup2DropdownOpen(false); setCurrentPage(1); }}
+                        >
+                          {group}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="product-list-searchable-empty">Material Group 2 tidak ditemukan.</div>
                     )}
                   </div>
                 </div>
@@ -1890,6 +2233,7 @@ const ProductList = () => {
           </div>
         </section>
       </main>
+
 
       {renderModal()}
       {renderExportModal()}

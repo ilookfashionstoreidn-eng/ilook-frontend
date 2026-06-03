@@ -3,11 +3,12 @@
 .distribusi-erp-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   background: #f4f6f9;
   color: #0f172a;
   font-family: "Plus Jakarta Sans", sans-serif;
+  overflow: hidden;
 }
 
 .distribusi-erp-container *,
@@ -265,6 +266,8 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .distribusi-erp-table-header {
@@ -346,8 +349,8 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: auto;
-  max-height: clamp(320px, 58vh, 640px);
-  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
 }
 
 .distribusi-erp-table {
@@ -740,3 +743,35 @@
     padding: 14px 16px 16px;
   }
 }
+
+/* Sharp Theme overrides - No rounded corners */
+.distribusi-erp-container,
+.distribusi-erp-brand-icon,
+.distribusi-erp-search-wrap,
+.distribusi-erp-search-input,
+.distribusi-erp-search-clear,
+.distribusi-erp-icon-btn,
+.distribusi-erp-avatar,
+.distribusi-erp-stat-item,
+.distribusi-erp-table-wrapper,
+.distribusi-erp-table-scroll,
+.distribusi-erp-badge,
+.distribusi-erp-action-btn,
+.distribusi-erp-pagination-btn,
+.distribusi-erp-pagination-info,
+.distribusi-erp-modal-overlay,
+.distribusi-erp-modal-content,
+.distribusi-erp-modal-header,
+.distribusi-erp-modal-close,
+.distribusi-erp-info-card,
+.distribusi-erp-timeline-icon,
+.distribusi-erp-type-badge,
+.distribusi-erp-info-item,
+.distribusi-erp-timeline-content,
+input,
+select,
+textarea,
+button {
+  border-radius: 0 !important;
+}
+

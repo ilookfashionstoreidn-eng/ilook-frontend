@@ -17,10 +17,10 @@ const defaultPagination = {
   current_page: 1,
   last_page: 1,
   total: 0,
-  per_page: 10,
+  per_page: 50,
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";

@@ -63,6 +63,7 @@ import ReturnLogs from "./components/Packing/ReturnLogs";
 import Bahan from "./components/Bahan/Bahan";
 import BahanList from "./components/Bahan/BahanList";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
+import StokOpnameBahan from "./components/Bahan/StokOpnameBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
 import Seri from "./components/Packing/Seri";
@@ -171,6 +172,7 @@ const App = () => {
           <Route path="bahan" element={<Bahan />} />
           <Route path="bahan-list" element={<BahanList />} />
           <Route path="pembelianBahan" element={<PembelianBahan />} />
+          <Route path="stok-opname-bahan" element={<StokOpnameBahan />} />
           <Route path="pabrik" element={<Pabrik />} />
           <Route path="gudang" element={<Gudang />} />
           <Route path="scan-bahan" element={<ScanBahan />} />

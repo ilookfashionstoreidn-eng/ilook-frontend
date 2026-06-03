@@ -6,7 +6,7 @@ import "./SpkCutting.css";
 
 import API from "../../../api";
 
-import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel, FaTrash } from "react-icons/fa";
+import { FaPlus, FaInfoCircle, FaEdit, FaDownload, FaFileExcel, FaTrash, FaCheckCircle, FaTimesCircle, FaFileImage } from "react-icons/fa";
 import { FiCalendar, FiCheckCircle, FiClock, FiFilter, FiMinus, FiScissors, FiSearch, FiTarget, FiX, FiTrash2 } from "react-icons/fi";
 
 import {
@@ -114,6 +114,17 @@ const getSpkProductLabel = (spk) => {
   return productList?.product_group || productList?.product || spk?.produk?.product_group || spk?.produk?.nama_produk || "-";
 };
 
+const getSpkSkuLabel = (spk) => {
+  const productList = spk?.productList || spk?.product_list;
+  return productList?.sku_name || spk?.sku?.sku_name || spk?.sku?.sku || "-";
+};
+
+const getSpkSizeLabel = (spk) => {
+  const productList = spk?.productList || spk?.product_list;
+  const skuSize = spk?.sku?.product_size || spk?.sku?.ukuran;
+  return skuSize || productList?.product_size || spk?.produk?.product_size || spk?.ukuran || "-";
+};
+
 const calculateTotalRoll = (spk) => {
   let total = 0;
   if (Array.isArray(spk?.bagian)) {
@@ -147,6 +158,76 @@ const getSpkWarnaBahan = (spk) => {
     });
   }
   return colors.length > 0 ? colors.join(", ") : "-";
+};
+
+const getSpkWarnaDetail = (spk) => {
+  const colorMap = {};
+  const multiplierCutting = parseFloat(spk?.productList?.estimasi_cutting || 60);
+  const multiplierCombi = parseFloat(spk?.productList?.estimasi_combi || 60);
+
+  if (Array.isArray(spk?.bagian)) {
+    spk.bagian.forEach((bag) => {
+      const namaBagian = String(bag.nama_bagian || "").toLowerCase();
+      if (namaBagian.includes('aksesor') || namaBagian.includes('accessor')) return;
+      
+      const isCombi = namaBagian.includes('combi') || namaBagian.includes('kombinasi');
+      const multiplier = isCombi ? multiplierCombi : multiplierCutting;
+
+      if (Array.isArray(bag.bahan)) {
+        bag.bahan.forEach((bah) => {
+          if (bah.sumber_komponen === "bahan" && bah.warna) {
+            const trimmedColor = String(bah.warna).trim();
+            if (trimmedColor && trimmedColor !== "-") {
+              const totalRollQty = parseFloat(bah.qty) || 0;
+              
+              if (Array.isArray(bah.skus) && bah.skus.length > 0) {
+                const sizesInBahan = Array.from(new Set(bah.skus.map(s => s.product_size || s.ukuran || "-")));
+                const rollQtyPerSize = sizesInBahan.length > 0 ? totalRollQty / sizesInBahan.length : totalRollQty;
+                
+                sizesInBahan.forEach(sizeLabel => {
+                  const key = `${trimmedColor}___${sizeLabel}`;
+                  if (!colorMap[key]) {
+                    colorMap[key] = { qty: 0, estimasi: 0, skus: [], warna: trimmedColor, size: sizeLabel };
+                  }
+                  colorMap[key].qty += rollQtyPerSize;
+                  colorMap[key].estimasi += rollQtyPerSize * multiplier;
+                  
+                  const matchingSkus = bah.skus.filter(s => (s.product_size || s.ukuran || "-") === sizeLabel);
+                  colorMap[key].skus.push(...matchingSkus);
+                });
+              } else {
+                const sizeLabel = spk?.sku?.product_size || spk?.sku?.ukuran || spk?.productList?.product_size || spk?.produk?.product_size || spk?.ukuran || "-";
+                const key = `${trimmedColor}___${sizeLabel}`;
+                if (!colorMap[key]) {
+                  colorMap[key] = { qty: 0, estimasi: 0, skus: [], warna: trimmedColor, size: sizeLabel };
+                }
+                colorMap[key].qty += totalRollQty;
+                colorMap[key].estimasi += totalRollQty * multiplier;
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+  return Object.values(colorMap).map(data => {
+    const uniqueSkus = Array.from(
+      new Map(
+        data.skus
+          .filter(s => s && (s.sku_name || s.sku || s.product_size || s.ukuran))
+          .map(s => [s.sku_id || s.id || s.sku_name, s])
+      ).values()
+    );
+
+    return {
+      warna: data.warna,
+      qty: data.qty,
+      estimasi: Math.round(data.estimasi),
+      totalJasa: Math.round(data.estimasi) * (parseFloat(spk.harga_per_pcs) || 0),
+      skus: uniqueSkus,
+      sizeLabel: data.size
+    };
+  });
 };
 
 const calculateTotalBiayaJasa = (hargaJasa, jumlahAsumsi, satuanHarga) => {
@@ -392,7 +473,7 @@ const SpkCutting = () => {
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
-    per_page: 15,
+    per_page: 50,
     total: 0,
     from: 0,
     to: 0,
@@ -527,27 +608,7 @@ const SpkCutting = () => {
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
 
   const fetchSpkNumber = async (tukangCuttingId) => {
-    if (!tukangCuttingId) {
-      setNewSpkCutting((prev) => ({ ...prev, id_spk_cutting: "" }));
-
-      return;
-    }
-
-    try {
-      const response = await API.post("/spk_cutting/generate-number", {
-        tukang_cutting_id: tukangCuttingId,
-      });
-
-      setNewSpkCutting((prev) => ({
-        ...prev,
-
-        id_spk_cutting: response.data.id_spk_cutting,
-      }));
-    } catch (error) {
-      console.error("Error generating SPK number:", error);
-
-      await showStatusAlert("error", "Generate Nomor SPK Gagal", "Gagal generate nomor seri SPK. Silakan coba lagi.");
-    }
+    // Nomor SPK diinput manual, tidak lagi generate dari backend
   };
 
   const [newSpkCutting, setNewSpkCutting] = useState({
@@ -597,7 +658,7 @@ const SpkCutting = () => {
 
       const params = {
         page,
-        per_page: 15,
+        per_page: 50,
       };
 
       // Gunakan nilai dari ref
@@ -666,7 +727,7 @@ const SpkCutting = () => {
         const paginationData = {
           current_page: parseInt(response.data.pagination.current_page) || 1,
           last_page: parseInt(response.data.pagination.last_page) || 1,
-          per_page: parseInt(response.data.pagination.per_page) || 15, // ✅ Fix: Convert to number
+          per_page: parseInt(response.data.pagination.per_page) || 50, // ✅ Fix: Convert to number
           total: parseInt(response.data.pagination.total) || 0,
           from: parseInt(response.data.pagination.from) || 0,
           to: parseInt(response.data.pagination.to) || 0,
@@ -702,7 +763,7 @@ const SpkCutting = () => {
       setPagination({
         current_page: 1,
         last_page: 1,
-        per_page: 15,
+        per_page: 50,
         total: 0,
         from: 0,
         to: 0,
@@ -710,7 +771,7 @@ const SpkCutting = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
+  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
 
   // Update statusFilter dan jenisSpkFilter dari URL saat component mount atau URL berubah
   useEffect(() => {
@@ -878,23 +939,25 @@ const SpkCutting = () => {
 
   // ✅ OPTIMASI: Reset ke page 1 saat filter berubah, lalu fetch data
   useEffect(() => {
-    setCurrentPage(1);
-    fetchSpkCutting(1);
+    // Abaikan jika component baru mount karena ada effect lain yang handle ini
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchSpkCutting(1);
+    }
   }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, fetchSpkCutting]);
 
   // ✅ OPTIMASI: Debounce search yang BENAR
-  // Hanya reset ke halaman 1 saat search term berubah, jangan dengarkan currentPage di sini
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Jika halaman bukan 1, reset ke 1 (ini akan memicu useEffect pagination di bawah)
+      // Hanya ganti ke halaman 1 jika belum di halaman 1
       if (currentPage !== 1) {
         setCurrentPage(1);
       } else {
-        // Jika sudah halaman 1, kita perlu fetch manual karena useEffect pagination tidak akan trigger
+        // Jika sudah halaman 1, fetch manual
         fetchSpkCutting(1);
       }
     }, 500); // 500ms debounce
-
     return () => clearTimeout(timer);
   }, [searchTerm]); // HANYA dijalankan saat searchTerm berubah
 
@@ -1210,12 +1273,9 @@ const SpkCutting = () => {
 
     // Konversi bahan_id menjadi integer
 
-    // Hapus id_spk_cutting karena akan di-generate otomatis oleh backend
-
-    const { id_spk_cutting, ...dataWithoutSpkNumber } = newSpkCutting;
-
+    // Sertakan id_spk_cutting dari input manual
     const dataToSend = {
-      ...dataWithoutSpkNumber,
+      ...newSpkCutting,
       product_list_id: parseInt(newSpkCutting.produk_id, 10),
       produk_id: null,
       harga_jasa: newSpkCutting.harga_jasa ? parseFloat(newSpkCutting.harga_jasa) : null,
@@ -1507,15 +1567,15 @@ const SpkCutting = () => {
     await showStatusAlert("success", "Berhasil", "Bahan berhasil dihapus dari form.");
   };
 
-  const handleDetailClick = (spk) => {
-    setSelectedDetailSpk(spk); // Simpan data hutang yang dipilih
+  const handleDetailClick = (spk, suffixInfo = null) => {
+    setSelectedDetailSpk({ ...spk, _suffixInfo: suffixInfo });
   };
 
-  const handleDownloadQr = async (spkId) => {
+  const handleDownloadQr = async (spk) => {
     try {
-      setDownloadingSpkId(spkId);
+      setDownloadingSpkId(spk.id);
 
-      const response = await API.get(`/spk_cutting/${spkId}/download-qr`, {
+      const response = await API.get(`/spk_cutting/${spk.id}/download-qr`, {
         responseType: "blob", // Penting untuk download file
       });
 
@@ -1527,7 +1587,11 @@ const SpkCutting = () => {
 
       link.href = url;
 
-      link.setAttribute("download", `qr-code-spk-cutting-${spkId}.pdf`);
+      const productName = getSpkProductLabel(spk);
+      const cleanProduct = productName.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '-');
+      const filename = `SPK-${cleanProduct}-${spk.id_spk_cutting}-${spk.barcode || 'NOBARCODE'}.pdf`;
+
+      link.setAttribute("download", filename);
 
       document.body.appendChild(link);
 
@@ -1543,6 +1607,73 @@ const SpkCutting = () => {
       await showStatusAlert("error", "Download Gagal", error.response?.data?.message || "Gagal mengunduh barcode.");
     } finally {
       setDownloadingSpkId(null);
+    }
+  };
+
+  const handleDownloadPng = async (spk) => {
+    try {
+      setDownloadingSpkId(spk.id);
+
+      // Pastikan pdf.js sudah dimuat untuk konversi yang identik dengan PDF
+      if (!window.pdfjsLib) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+          script.onload = () => {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+            resolve();
+          };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      // Ambil file PDF dari backend
+      const response = await API.get(`/spk_cutting/${spk.id}/download-qr`, {
+        responseType: "arraybuffer", 
+      });
+
+      const pdfData = new Uint8Array(response.data);
+      const loadingTask = window.pdfjsLib.getDocument({ data: pdfData });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1); // Hanya ambil halaman 1
+
+      const scale = 3; // Kualitas resolusi tinggi (3x)
+      const viewport = page.getViewport({ scale: scale });
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+
+      await page.render(renderContext).promise;
+
+      canvas.toBlob((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        const productName = getSpkProductLabel(spk);
+        const cleanProduct = productName.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '-');
+        const filename = `SPK-${cleanProduct}-${spk.id_spk_cutting}-${spk.barcode || 'NOBARCODE'}.png`;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        setDownloadingSpkId(null);
+        void showStatusAlert("success", "Download Berhasil", "SPK berhasil diunduh dalam format PNG dengan rapi.");
+      }, "image/png");
+
+    } catch (error) {
+      console.error("Error downloading PNG:", error);
+      setDownloadingSpkId(null);
+      void showStatusAlert("error", "Download Gagal", "Gagal mengunduh SPK dalam format PNG.");
     }
   };
 
@@ -1677,7 +1808,9 @@ const SpkCutting = () => {
         noOptionsMessage={() => "Bahan master tidak ditemukan"}
         menuPortalTarget={bahanSelectPortalTarget}
         styles={{
+          control: (base) => ({ ...base, borderRadius: '0px' }),
           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+          menu: (base) => ({ ...base, borderRadius: '0px' }),
         }}
       />
     );
@@ -1700,7 +1833,9 @@ const SpkCutting = () => {
         noOptionsMessage={() => "Aksesoris tidak ditemukan"}
         menuPortalTarget={bahanSelectPortalTarget}
         styles={{
+          control: (base) => ({ ...base, borderRadius: '0px' }),
           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+          menu: (base) => ({ ...base, borderRadius: '0px' }),
         }}
       />
     );
@@ -2119,6 +2254,7 @@ const SpkCutting = () => {
     // Konversi bahan_id menjadi integer
 
     const dataToSend = {
+      id_spk_cutting: editSpkCutting.id_spk_cutting || "",
       pic: editSpkCutting.pic || "",
       product_list_id: parseInt(editSpkCutting.produk_id, 10),
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
@@ -2341,64 +2477,7 @@ const SpkCutting = () => {
         </div>
       </div>
 
-      {/* Chart Kuantitas per Hari */}
-      <div className="spk-cutting-chart-container" style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '24px', height: '350px' }}>
-        <Bar
-          data={{
-            labels: (summary?.chart_data || []).map(d => new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })),
-            datasets: [
-              {
-                label: 'Estimasi Cutting (Pcs)',
-                data: (summary?.chart_data || []).map(d => Number(d.total_qty)),
-                backgroundColor: 'rgba(13, 148, 136, 0.7)',
-                borderColor: 'rgba(13, 148, 136, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-                hoverBackgroundColor: 'rgba(13, 148, 136, 0.9)'
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: {
-                display: true,
-                text: 'Grafik Estimasi Cutting per Hari (Pcs)',
-                font: { size: 15, family: "'Inter', sans-serif", weight: '600' },
-                color: '#334155',
-                padding: { bottom: 20 }
-              },
-              tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                titleFont: { size: 13 },
-                bodyFont: { size: 14, weight: 'bold' },
-                padding: 12,
-                callbacks: {
-                  label: (context) => `${context.raw.toLocaleString("id-ID")} Pcs`
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                grid: { color: '#f1f5f9' },
-                border: { dash: [4, 4] },
-                ticks: {
-                  color: '#64748b',
-                  font: { size: 12 },
-                  callback: (value) => value.toLocaleString("id-ID")
-                }
-              },
-              x: {
-                grid: { display: false },
-                ticks: { color: '#64748b', font: { size: 12 } }
-              }
-            }
-          }}
-        />
-      </div>
+
 
       <div className="spk-cutting-table-container">
         <div className="spk-cutting-filter-header">
@@ -2472,75 +2551,233 @@ const SpkCutting = () => {
               <thead>
                 <tr>
                  
+                  <th>Tanggal Buat</th>
                   <th>SPK Cutting ID</th>
-                  <th>PIC</th>
-                  <th>Tukang Cutting</th>
-                  <th>Product</th>
-                  <th>Warna Bahan</th>
-                  <th>Jumlah Rol</th>
                   <th>Deadline</th>
                   <th>Sisa Hari</th>
+                  <th>Tukang Cutting</th>
+                  <th>Jenis SPK</th>
+                  <th>Status Tahap</th>
+                  <th>Product</th>
+                  <th>Size</th>
+                  <th>SKU</th>
+                  <th>Warna Bahan</th>
+                  <th>Jumlah Rol</th>
                   <th>Harga Jasa</th>
                   <th>Harga Per Pcs</th>
                   <th>Estimasi Cutting</th>
-                  <th>Jenis SPK</th>
-                  <th>Status Tahap</th>
-                
+                  <th>Total Estimasi Jasa</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
 
               <tbody>
-                {currentItems.map((spk, index) => (
-                  <tr key={spk.id} className={`spk-cutting-row ${getRowToneClass(spk.status_cutting)}`}>
-                   
-                    <td>{spk.id_spk_cutting}</td>
-                    <td>{spk.pic || "-"}</td>
-                    <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
-                    <td>{getSpkProductLabel(spk)}</td>
-                    <td>{getSpkWarnaBahan(spk)}</td>
-                    <td>{calculateTotalRoll(spk)}</td>
-                    <td>{spk.tanggal_batas_kirim || "-"}</td>
-                    <td>
-                      <span className={`spk-cutting-sisa-badge ${getSisaHariToneClass(spk.sisa_hari)}`}>
-                        {spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}
-                      </span>
-                    </td>
-                    <td className="spk-cutting-price">
-                      {formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}
-                    </td>
-                    <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
-                    <td>{spk.jumlah_asumsi_produk !== null && spk.jumlah_asumsi_produk !== undefined ? spk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</td>
-                    <td>
-                      <span className={`spk-cutting-jenis-chip ${getJenisSpkToneClass(spk.jenis_spk)}`}>{spk.jenis_spk || "-"}</span>
-                    </td>
-                    <td>
-                      {spk.tahap_terakhir || "SPK Cutting"}
-                    </td>
-              
-                    <td>
-                      <div className="spk-cutting-row-actions">
-                        <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail">
-                          <FaInfoCircle />
-                        </button>
-                        <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit">
-                          <FaEdit />
-                        </button>
-                        <button className="spk-cutting-btn-icon delete" onClick={() => handleDeleteClick(spk)} title="Hapus" style={{ color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}>
-                          <FaTrash />
-                        </button>
-                        <button
-                          className="spk-cutting-btn-icon download"
-                          onClick={() => handleDownloadQr(spk.id)}
-                          title={downloadingSpkId === spk.id ? "Sedang menyiapkan barcode..." : "Download Barcode"}
-                          disabled={!spk.barcode || downloadingSpkId === spk.id}
-                        >
-                          <FaDownload />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {currentItems.map((spk, index) => {
+                  const warnaDetails = getSpkWarnaDetail(spk);
+                  const hasDetails = warnaDetails.length > 0;
+                  
+                  const sizeGroups = {};
+                  const sizeKeys = [];
+                  if (hasDetails) {
+                    warnaDetails.forEach(item => {
+                      const sizeLabel = item.sizeLabel || getSpkSizeLabel(spk);
+                      if (!sizeGroups[sizeLabel]) {
+                        sizeGroups[sizeLabel] = [];
+                        sizeKeys.push(sizeLabel);
+                      }
+                      sizeGroups[sizeLabel].push(item);
+                    });
+                  }
+                  
+                  const addSubtotals = hasDetails && sizeKeys.length > 0;
+                  const rowCount = hasDetails ? warnaDetails.length + (addSubtotals ? sizeKeys.length : 0) : 1;
+                  
+                  return (
+                    <React.Fragment key={spk.id}>
+                      {hasDetails ? (
+                        (() => {
+                          let overallIdx = 0;
+                          return sizeKeys.map((sizeKey, sizeIdx) => {
+                            const groupItems = sizeGroups[sizeKey];
+                            const groupRowCount = groupItems.length + 1; // +1 for the subtotal row
+                            const suffix = sizeKeys.length > 1 ? `-${String.fromCharCode(65 + sizeIdx)}` : "";
+                            const mergedId = `${spk.id_spk_cutting}${suffix}`;
+
+                            const groupTotalQty = groupItems.reduce((acc, curr) => acc + curr.qty, 0);
+                            const groupTotalEstimasi = groupItems.reduce((acc, curr) => acc + curr.estimasi, 0);
+                            const groupTotalJasa = groupItems.reduce((acc, curr) => acc + curr.totalJasa, 0);
+
+                            const suffixInfo = { suffix, sizeKey, groupItems, groupTotalQty, groupTotalEstimasi, groupTotalJasa };
+
+                            const rows = groupItems.map((item, localIdx) => {
+                              return (
+                                <tr key={`${spk.id}-${sizeIdx}-${localIdx}`} className={`spk-cutting-row ${getRowToneClass(spk.status_cutting)}`}>
+                                  <td>{spk.created_at ? new Date(spk.created_at).toLocaleDateString('id-ID') : "-"}</td>
+                                  <td>
+                                    {mergedId}
+                                    <div style={{ marginTop: '4px', fontSize: '11px', fontWeight: '600' }}>
+                                      {spk.is_bahan_scanned ? (
+                                        <span style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                          <FaCheckCircle /> Bahan Discan
+                                        </span>
+                                      ) : (
+                                        <span style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                          <FaTimesCircle /> Belum Discan
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td>{spk.tanggal_batas_kirim || "-"}</td>
+                                  <td>
+                                    <span className={`spk-cutting-sisa-badge ${getSisaHariToneClass(spk.sisa_hari)}`}>
+                                      {spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}
+                                    </span>
+                                  </td>
+                                  <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
+                                  <td>
+                                    <span className={`spk-cutting-jenis-chip ${getJenisSpkToneClass(spk.jenis_spk)}`}>{spk.jenis_spk || "-"}</span>
+                                  </td>
+                                  <td>
+                                    <span className={`spk-cutting-sisa-badge ${getTahapToneClass(spk.tahap_terakhir)}`}>
+                                      {spk.tahap_terakhir || "SPK Cutting"}
+                                    </span>
+                                  </td>
+                                  <td>{getSpkProductLabel(spk)}</td>
+                                  <td>{sizeKey}</td>
+                                  <td>{item.skus?.length > 0 ? item.skus.map(s => s.sku_name || s.sku || "-").join(", ") : getSpkSkuLabel(spk)}</td>
+                                  <td>{item.warna}</td>
+                                  <td>{Number.isInteger(item.qty) ? item.qty : Number(item.qty).toFixed(2)}</td>
+                                  <td className="spk-cutting-price">{formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}</td>
+                                  <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
+                                  <td>{item.estimasi.toLocaleString("id-ID")}</td>
+                                  <td className="spk-cutting-price">{formatRupiah(item.totalJasa)}</td>
+                                  <td>
+                                    <div className="spk-cutting-row-actions">
+                                      <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk, suffixInfo)} title="Lihat Detail">
+                                        <FaInfoCircle />
+                                      </button>
+                                      <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit">
+                                        <FaEdit />
+                                      </button>
+                                      <button className="spk-cutting-btn-icon delete" onClick={() => handleDeleteClick(spk)} title="Hapus" style={{ color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}>
+                                        <FaTrash />
+                                      </button>
+                                      <button
+                                        className="spk-cutting-btn-icon download"
+                                        onClick={() => handleDownloadQr(spk)}
+                                        title={downloadingSpkId === spk.id ? "Sedang menyiapkan barcode..." : "Download PDF"}
+                                        disabled={!spk.barcode || downloadingSpkId === spk.id}
+                                      >
+                                        <FaDownload />
+                                      </button>
+                                      <button
+                                        className="spk-cutting-btn-icon download"
+                                        onClick={() => handleDownloadPng(spk)}
+                                        title={downloadingSpkId === spk.id ? "Sedang menyiapkan gambar..." : "Download PNG"}
+                                        disabled={!spk.barcode || downloadingSpkId === spk.id}
+                                        style={{ backgroundColor: '#e0f2fe', color: '#0ea5e9', border: '1px solid #bae6fd' }}
+                                      >
+                                        <FaFileImage />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            });
+                            
+                            
+                            rows.push(
+                              <tr key={`${spk.id}-subtotal-${sizeIdx}`} className="spk-cutting-summary-row" style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                                <td colSpan={9}></td>
+                                <td style={{ textAlign: 'right', fontWeight: 'bold', fontStyle: 'italic', fontSize: '0.9em', color: '#64748b' }}>Subtotal :</td>
+                                <td style={{ textAlign: 'right', fontWeight: 'bold', fontStyle: 'italic', fontSize: '0.9em', color: '#64748b' }}>{groupItems.length} Warna</td>
+                                <td style={{ fontWeight: 'bold', fontStyle: 'italic', fontSize: '0.9em', color: '#64748b' }}>{Number.isInteger(groupTotalQty) ? groupTotalQty : Number(groupTotalQty).toFixed(2)}</td>
+                                <td></td>
+                                <td></td>
+                                <td style={{ fontWeight: 'bold', fontStyle: 'italic', fontSize: '0.9em', color: '#64748b' }}>{groupTotalEstimasi.toLocaleString("id-ID")}</td>
+                                <td style={{ fontWeight: 'bold', fontStyle: 'italic', fontSize: '0.9em', color: '#64748b' }}>{formatRupiah(groupTotalJasa)}</td>
+                                <td></td>
+                              </tr>
+                            );
+                            
+                            return rows;
+                          });
+                        })()
+                      ) : (
+                        <tr key={spk.id} className={`spk-cutting-row ${getRowToneClass(spk.status_cutting)}`}>
+                          <td>{spk.created_at ? new Date(spk.created_at).toLocaleDateString('id-ID') : "-"}</td>
+                          <td>{spk.id_spk_cutting}</td>
+                          <td>{spk.tanggal_batas_kirim || "-"}</td>
+                          <td>
+                            <span className={`spk-cutting-sisa-badge ${getSisaHariToneClass(spk.sisa_hari)}`}>
+                              {spk.sisa_hari !== null ? spk.sisa_hari + " hari" : "Belum ada deadline"}
+                            </span>
+                          </td>
+                          <td>{spk.tukang_cutting?.nama_tukang_cutting || "-"}</td>
+                          <td>
+                            <span className={`spk-cutting-jenis-chip ${getJenisSpkToneClass(spk.jenis_spk)}`}>{spk.jenis_spk || "-"}</span>
+                          </td>
+                          <td>
+                            <span className={`spk-cutting-sisa-badge ${getTahapToneClass(spk.tahap_terakhir)}`}>
+                              {spk.tahap_terakhir || "SPK Cutting"}
+                            </span>
+                          </td>
+                          <td>{getSpkProductLabel(spk)}</td>
+                          <td>{getSpkSizeLabel(spk)}</td>
+                          <td>{getSpkSkuLabel(spk)}</td>
+                          <td>{getSpkWarnaBahan(spk)}</td>
+                          <td>{calculateTotalRoll(spk)}</td>
+                          <td className="spk-cutting-price">{formatRupiah(spk.harga_jasa)} / {spk.satuan_harga}</td>
+                          <td className="spk-cutting-price">{formatRupiah(spk.harga_per_pcs)}</td>
+                          <td>{spk.jumlah_asumsi_produk !== null && spk.jumlah_asumsi_produk !== undefined ? spk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</td>
+                          <td className="spk-cutting-price">{formatRupiah((spk.jumlah_asumsi_produk || 0) * (spk.harga_per_pcs || 0))}</td>
+                          <td>
+                            <div className="spk-cutting-row-actions">
+                              <button className="spk-cutting-btn-icon view" onClick={() => handleDetailClick(spk)} title="Lihat Detail">
+                                <FaInfoCircle />
+                              </button>
+                              <button className="spk-cutting-btn-icon edit" onClick={() => handleEditClick(spk)} title="Edit">
+                                <FaEdit />
+                              </button>
+                              <button className="spk-cutting-btn-icon delete" onClick={() => handleDeleteClick(spk)} title="Hapus" style={{ color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}>
+                                <FaTrash />
+                              </button>
+                              <button
+                                className="spk-cutting-btn-icon download"
+                                onClick={() => handleDownloadQr(spk)}
+                                title={downloadingSpkId === spk.id ? "Sedang menyiapkan barcode..." : "Download PDF"}
+                                disabled={!spk.barcode || downloadingSpkId === spk.id}
+                              >
+                                <FaDownload />
+                              </button>
+                              <button
+                                className="spk-cutting-btn-icon download"
+                                onClick={() => handleDownloadPng(spk)}
+                                title={downloadingSpkId === spk.id ? "Sedang menyiapkan gambar..." : "Download PNG"}
+                                disabled={!spk.barcode || downloadingSpkId === spk.id}
+                                style={{ backgroundColor: '#e0f2fe', color: '#0ea5e9', border: '1px solid #bae6fd' }}
+                              >
+                                <FaFileImage />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {hasDetails && (
+                        <tr className="spk-cutting-summary-row" style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '2px solid #cbd5e1' }}>
+                          <td colSpan={6} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total ({spk.id_spk_cutting}) :</td>
+                          <td style={{ fontWeight: 'bold' }}>{warnaDetails.length} Warna</td>
+                          <td style={{ fontWeight: 'bold' }}>{calculateTotalRoll(spk)}</td>
+                          <td colSpan={4}></td>
+                          <td style={{ fontWeight: 'bold' }}>{spk.jumlah_asumsi_produk?.toLocaleString("id-ID") || "-"}</td>
+                          <td style={{ fontWeight: 'bold' }} className="spk-cutting-price">{formatRupiah((spk.jumlah_asumsi_produk || 0) * (spk.harga_per_pcs || 0))}</td>
+                          <td colSpan={3}></td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
               </table>
             </div>
@@ -2600,9 +2837,9 @@ const SpkCutting = () => {
                   </div>
 
                   <div className="spk-cutting-create-section-body spk-cutting-create-section-body-identity" style={{ gap: '16px', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', alignItems: 'stretch' }}>
-                      {/* Group 1: Tukang & Identitas SPK (Kiri / Left Column) */}
-                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            {/* Group 1: Tukang & Identitas SPK (Kiri / Left Column) */}
+                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                           Tukang & Identitas SPK
                         </h4>
@@ -2637,12 +2874,12 @@ const SpkCutting = () => {
 
                         <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
                           <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Nomor Seri SPK:</label>
-                          <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || "Pilih tukang..."} readOnly disabled style={{ background: '#f1f5f9', flex: 1 }} />
+                          <input type="text" name="id_spk_cutting" value={newSpkCutting.id_spk_cutting || ""} onChange={handleInputChange} placeholder="Input Nomor Seri" style={{ flex: 1 }} />
                         </div>
                       </div>
 
                       {/* Group 2: Spesifikasi Produk & SPK (Tengah / Middle Column) */}
-                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                           Spesifikasi Produk & SPK
                         </h4>
@@ -2661,8 +2898,9 @@ const SpkCutting = () => {
                               noOptionsMessage={() => "Product tidak ditemukan"}
                               menuPortalTarget={bahanSelectPortalTarget}
                               styles={{
-                                control: (base) => ({ ...base, minHeight: '40px', width: '100%' }),
+                                control: (base) => ({ ...base, minHeight: '40px', width: '100%', borderRadius: '0px' }),
                                 menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                menu: (base) => ({ ...base, borderRadius: '0px' }),
                               }}
                             />
                           </div>
@@ -2685,7 +2923,7 @@ const SpkCutting = () => {
                       </div>
 
                       {/* Group 3: Estimasi Cutting & Biaya Jasa (Kanan / Right Column) */}
-                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                           Estimasi Cutting & Biaya Jasa
                         </h4>
@@ -2790,11 +3028,11 @@ const SpkCutting = () => {
                                 {bahanIndex === 0 ? (
                                   bagian.is_auto_bagian ? (
                                     <>
-                                      <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }} />
+                                      <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
                                       {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
                                     </>
                                   ) : (
-                                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}>
+                                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
                                       <option value="">Pilih Bagian</option>
                                       {NAMA_BAGIAN_OPTIONS.map((nama) => (
                                         <option key={nama} value={nama}>{nama}</option>
@@ -2823,10 +3061,10 @@ const SpkCutting = () => {
                                   {/* 3. Warna Bahan */}
                                   <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
                                     {isAksesorisBagian(bagian.nama_bagian) ? (
-                                      <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
+                                      <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
                                     ) : (
                                       <>
-                                        <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
+                                        <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
                                           <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
                                           {(bahan.warnaList || []).map((item, idx) => {
                                             const warna = typeof item === "string" ? item : item.warna;
@@ -2857,7 +3095,7 @@ const SpkCutting = () => {
 
                                   {/* 5. Qty */}
                                   <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
-                                    <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
+                                    <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
                                   </div>
 
                                   {/* 6. Aksi */}
@@ -2923,7 +3161,7 @@ const SpkCutting = () => {
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Nomor Seri</strong>
-                <span>{selectedDetailSpk.id_spk_cutting}</span>
+                <span>{selectedDetailSpk._suffixInfo ? `${selectedDetailSpk.id_spk_cutting}${selectedDetailSpk._suffixInfo.suffix}` : selectedDetailSpk.id_spk_cutting}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>PIC</strong>
@@ -2942,12 +3180,20 @@ const SpkCutting = () => {
                 <span>{getSpkProductLabel(selectedDetailSpk)}</span>
               </div>
               <div className="spk-cutting-detail-item">
+                <strong>SKU</strong>
+                <span>{selectedDetailSpk._suffixInfo ? Array.from(new Set(selectedDetailSpk._suffixInfo.groupItems.flatMap(i => i.skus).map(s => s.sku_name || s.sku).filter(Boolean))).join(", ") || "-" : getSpkSkuLabel(selectedDetailSpk)}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
+                <strong>Size</strong>
+                <span>{selectedDetailSpk._suffixInfo ? selectedDetailSpk._suffixInfo.sizeKey : getSpkSizeLabel(selectedDetailSpk)}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
                 <strong>Warna Bahan</strong>
-                <span>{getSpkWarnaBahan(selectedDetailSpk)}</span>
+                <span>{selectedDetailSpk._suffixInfo ? Array.from(new Set(selectedDetailSpk._suffixInfo.groupItems.map(i => i.warna))).join(", ") : getSpkWarnaBahan(selectedDetailSpk)}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Jumlah Rol</strong>
-                <span>{calculateTotalRoll(selectedDetailSpk)}</span>
+                <span>{selectedDetailSpk._suffixInfo ? (Number.isInteger(selectedDetailSpk._suffixInfo.groupTotalQty) ? selectedDetailSpk._suffixInfo.groupTotalQty : Number(selectedDetailSpk._suffixInfo.groupTotalQty).toFixed(2)) : calculateTotalRoll(selectedDetailSpk)}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Deadline</strong>
@@ -2969,7 +3215,11 @@ const SpkCutting = () => {
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Estimasi Cutting</strong>
-                <span>{selectedDetailSpk.jumlah_asumsi_produk !== null && selectedDetailSpk.jumlah_asumsi_produk !== undefined ? selectedDetailSpk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-"}</span>
+                <span>{selectedDetailSpk._suffixInfo ? selectedDetailSpk._suffixInfo.groupTotalEstimasi.toLocaleString("id-ID") : (selectedDetailSpk.jumlah_asumsi_produk !== null && selectedDetailSpk.jumlah_asumsi_produk !== undefined ? selectedDetailSpk.jumlah_asumsi_produk.toLocaleString("id-ID") : "-")}</span>
+              </div>
+              <div className="spk-cutting-detail-item">
+                <strong>Total Estimasi Jasa</strong>
+                <span className="spk-cutting-price">{selectedDetailSpk._suffixInfo ? formatRupiah(selectedDetailSpk._suffixInfo.groupTotalJasa) : formatRupiah(selectedDetailSpk.jumlah_asumsi_produk * selectedDetailSpk.harga_per_pcs)}</span>
               </div>
               <div className="spk-cutting-detail-item">
                 <strong>Jenis SPK</strong>
@@ -3070,7 +3320,7 @@ const SpkCutting = () => {
             <form onSubmit={handleFormUpdate} className="spk-cutting-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', alignItems: 'stretch' }}>
                 {/* Group 1: Tukang & Identitas SPK (Kiri / Left Column) */}
-                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                     Tukang & Identitas SPK
                   </h4>
@@ -3105,12 +3355,12 @@ const SpkCutting = () => {
 
                   <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
                     <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Nomor Seri SPK:</label>
-                    <input type="text" name="id_spk_cutting" value={editSpkCutting.id_spk_cutting || ""} readOnly disabled style={{ background: '#f1f5f9', flex: 1 }} />
+                    <input type="text" name="id_spk_cutting" value={editSpkCutting.id_spk_cutting || ""} onChange={handleEditInputChange} placeholder="Input Nomor Seri" style={{ flex: 1 }} />
                   </div>
                 </div>
 
                 {/* Group 2: Spesifikasi Produk & SPK (Tengah / Middle Column) */}
-                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                     Spesifikasi Produk & SPK
                   </h4>
@@ -3129,8 +3379,9 @@ const SpkCutting = () => {
                         noOptionsMessage={() => "Product Group tidak ditemukan"}
                         menuPortalTarget={bahanSelectPortalTarget}
                         styles={{
-                          control: (base) => ({ ...base, minHeight: '40px', width: '100%' }),
+                          control: (base) => ({ ...base, minHeight: '40px', width: '100%', borderRadius: '0px' }),
                           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                          menu: (base) => ({ ...base, borderRadius: '0px' }),
                         }}
                       />
                     </div>
@@ -3153,7 +3404,7 @@ const SpkCutting = () => {
                 </div>
 
                 {/* Group 3: Estimasi Cutting & Biaya Jasa (Kanan / Right Column) */}
-                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="spk-cutting-form-group-section" style={{ border: '1px solid #e2e8f0', borderRadius: '0px', padding: '16px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <h4 className="spk-cutting-group-title" style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '4px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                     Estimasi Cutting & Biaya Jasa
                   </h4>
@@ -3241,11 +3492,11 @@ const SpkCutting = () => {
                           {bahanIndex === 0 ? (
                             bagian.is_auto_bagian ? (
                               <>
-                                <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }} />
+                                <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
                                 {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
                               </>
                             ) : (
-                              <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}>
+                              <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
                                 <option value="">Pilih Bagian</option>
                                 {NAMA_BAGIAN_OPTIONS.map((nama) => (
                                   <option key={nama} value={nama}>{nama}</option>
@@ -3274,10 +3525,10 @@ const SpkCutting = () => {
                         {/* 3. Warna Bahan */}
                         <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
                           {isAksesorisBagian(bagian.nama_bagian) ? (
-                            <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
+                            <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
                           ) : (
                             <>
-                              <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
+                              <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
                                 <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
                                 {(bahan.warnaList || []).map((item, idx) => {
                                   const warna = typeof item === "string" ? item : item.warna;
@@ -3308,7 +3559,7 @@ const SpkCutting = () => {
                         
                         {/* 5. Qty */}
                         <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
-                          <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
+                          <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
                         </div>
                         
                         {/* 6. Aksi */}

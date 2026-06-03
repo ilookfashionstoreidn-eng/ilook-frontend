@@ -39,6 +39,7 @@ import API from "../../api";
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCmtOpen, setIsCmtOpen] = useState(false);
   const [isCuttingOpen, setIsCuttingOpen] = useState(false);
   const [isJasaOpen, setIsJasaOpen] = useState(false);
@@ -155,14 +156,20 @@ const Layout = () => {
       </button>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-        <div className="sidebar-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "24px", height: "24px", background: "#4f46e5", borderRadius: "6px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff" }}>
+      <aside className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", overflow: 'hidden' }}>
+            <div style={{ width: "24px", height: "24px", background: "#4f46e5", borderRadius: "6px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff", flexShrink: 0 }}>
               <FaLayerGroup size={12} />
             </div>
-            <h3>ILOOK SYSTEM</h3>
+            <h3 className="sidebar-title">ILOOK SYSTEM</h3>
           </div>
+          <button 
+            className="sidebar-collapse-btn" 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          >
+            <FaBars />
+          </button>
         </div>
         <nav className="sidebar-menu">
           <ul>
@@ -282,7 +289,7 @@ const Layout = () => {
 
 
             <li>
-              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${["gudang", "bahan-list"].includes(activeMenu) ? "active" : ""}`}>
+              <div onClick={toggleGudangMenu} className={`sidebar-link dropdown-toggle ${["gudang", "bahan-list", "stok-opname-bahan"].includes(activeMenu) ? "active" : ""}`}>
                 <FaWarehouse className="icon" /> Gudang Bahan
                 <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
               </div>
@@ -317,6 +324,11 @@ const Layout = () => {
                   <li>
                     <Link to="pembelianBahan" className={`dropdown-link ${activeMenu === "pembelianBahan" ? "active" : ""}`} onClick={() => handleMenuClick("pembelianBahan")}>
                       <FaShoppingCart className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman Bahan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="stok-opname-bahan" className={`dropdown-link ${activeMenu === "stok-opname-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-opname-bahan")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Stok Opname Bahan
                     </Link>
                   </li>
 
@@ -515,17 +527,17 @@ const Layout = () => {
                   </li>
                   <li>
                     <Link to="penjahit" className={`dropdown-link ${activeMenu === "penjahit" ? "active" : ""}`} onClick={() => handleMenuClick("penjahit")}>
-                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> CMT
+                      <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Penjahit
                     </Link>
                   </li>
                   <li>
                     <Link to="kode-seri-belum-dikerjakan" className={`dropdown-link ${activeMenu === "kodeSeri" ? "active" : ""}`} onClick={() => handleMenuClick("kodeSeri")}>
-                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Belum Dikerjakan
+                      <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Pekerjaan Tersedia
                     </Link>
                   </li>
                   <li>
                     <Link to="spkcmt" className={`dropdown-link ${activeMenu === "spk" ? "active" : ""}`} onClick={() => handleMenuClick("spk")}>
-                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK
+                      <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Surat Perintah Kerja CMT
                     </Link>
                   </li>
 

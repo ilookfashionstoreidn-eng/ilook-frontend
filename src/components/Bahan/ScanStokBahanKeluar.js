@@ -3,7 +3,7 @@ import "./ScanStokBahanKeluar.css";
 import API from "../../api";
 import { toast } from "react-toastify";
 import { FaBarcode } from "react-icons/fa";
-import { FiBox, FiCheckCircle, FiSearch, FiTarget } from "react-icons/fi";
+import { FiBox, FiCheckCircle, FiSearch, FiTarget, FiXCircle } from "react-icons/fi";
 
 const ScanStokBahanKeluar = () => {
   const [spkCuttingId, setSpkCuttingId] = useState("");
@@ -389,25 +389,26 @@ const ScanStokBahanKeluar = () => {
                           <td>{qty || "-"}</td>
                           <td>{bahan.berat ? `${bahan.berat} kg` : "-"}</td>
                           <td>
-                            {isSelected ? (
-                              <div className="scan-stok-status-wrap">
+                            <div className="scan-stok-status-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {isSelected ? (
                                 <span className="scan-stok-pill active">Dipilih</span>
-                                <span className={`scan-stok-pill ${isComplete ? "done" : "progress"}`}>
-                                  {progress}/{qty}
-                                </span>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                className="scan-stok-btn scan-stok-btn-secondary scan-stok-btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedBahan(bahan);
-                                }}
-                              >
-                                Pilih
-                              </button>
-                            )}
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="scan-stok-btn scan-stok-btn-secondary scan-stok-btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedBahan(bahan);
+                                  }}
+                                >
+                                  Pilih
+                                </button>
+                              )}
+                              <span className={`scan-stok-pill ${isComplete ? "done" : "progress"}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {isComplete ? <FiCheckCircle style={{ color: '#10b981' }} /> : <FiXCircle style={{ color: '#ef4444' }} />} 
+                                <span>{progress}/{qty}</span>
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       );

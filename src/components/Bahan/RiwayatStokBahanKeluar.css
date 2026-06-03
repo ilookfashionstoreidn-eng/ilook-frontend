@@ -9,7 +9,7 @@
 
 .riwayat-stok-shell {
   width: 100%;
-  max-width: 1480px;
+  max-width: 100%;
   margin: 0 auto;
   min-height: calc(100vh - 36px);
   border-radius: 20px;
@@ -334,8 +334,8 @@
 }
 
 .riwayat-stok-table {
-  width: 100%;
-  min-width: 1080px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
@@ -349,6 +349,7 @@
   text-align: left;
   padding: 13px 14px;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .riwayat-stok-table td {
@@ -357,6 +358,7 @@
   font-size: 14px;
   color: #0f172a;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .riwayat-stok-table tbody tr:hover td {
