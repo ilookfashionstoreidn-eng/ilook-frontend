@@ -101,6 +101,7 @@ import SummarySPKSample from "./components/Sample/SummarySPKSample";
 import Blank from "./components/Blank/Blank";
 import Blank2 from "./components/Blank2/Blank2";
 import OrderMonitor from "./components/Order/OrderMonitor";
+import Maintenance from "./components/Maintenance/Maintenance";
 
 const App = () => {
   return (
@@ -108,6 +109,7 @@ const App = () => {
       <Routes>
         {/* Rute tanpa sidebar */}
         <Route path="/" element={<Login />} />
+        <Route path="/maintenance" element={<Maintenance />} />
 
         {/* Rute dengan Layout (sidebar) */}
         <Route path="/" element={<Layout />}>

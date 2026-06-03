@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ScanProdukMasukGudang.css";
 import "./GudangProdukWorkspace.css";
 import API from "../../api";
-import { FaBarcode, FaBoxOpen, FaMapMarkerAlt, FaTrash, FaWarehouse, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaBarcode, FaBoxOpen, FaMapMarkerAlt, FaTrash, FaWarehouse } from "react-icons/fa";
 import { FiAlertTriangle, FiBox, FiSearch } from "react-icons/fi";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
 import { getAllSlots, getSlotStockSummaryMap } from "./GudangProdukMockStore";
@@ -40,9 +40,6 @@ const ScanProdukMasukGudang = () => {
   // Scanned items (session list)
   const [scannedItems, setScannedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [showMap, setShowMap] = useState(true);
-  const [activeTab, setActiveTab] = useState("detail"); // "detail" or "summary"
 
   // Auto-select first layout
   useEffect(() => {
@@ -102,26 +99,9 @@ const ScanProdukMasukGudang = () => {
     );
   });
 
+  // KPI
   const totalScanHariIni = scannedItems.filter((item) => item.status === "success").length;
   const totalGagal = scannedItems.filter((item) => item.status === "error").length;
-
-  const summaryItems = useMemo(() => {
-    const summary = {};
-    scannedItems.forEach((item) => {
-      if (item.status === "success") {
-        const key = item.sku || "-";
-        if (!summary[key]) {
-          summary[key] = {
-            sku: item.sku,
-            produk: item.produk,
-            qty: 0,
-          };
-        }
-        summary[key].qty += parseInt(item.qty || 1, 10);
-      }
-    });
-    return Object.values(summary).sort((a, b) => b.qty - a.qty);
-  }, [scannedItems]);
 
   // Barcode handling (auto-scan like ScanBahan)
   const handleBarcodeChange = (value) => {
@@ -408,27 +388,21 @@ const ScanProdukMasukGudang = () => {
 
                 {selectedLayout && (
                   <div className="spm-gudang-visual-map-wrap" style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #e2e8f0" }}>
-                    <div 
-                      style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", userSelect: "none" }}
-                      onClick={() => setShowMap(!showMap)}
-                    >
+                    <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
                       <FaMapMarkerAlt style={{ color: "#7c3aed" }} />
-                      <h4 style={{ margin: 0, fontSize: "15px", color: "#0f172a", fontWeight: "700", flex: 1 }}>Peta Visual Layout Gudang</h4>
-                      {showMap ? <FaChevronUp style={{ color: "#64748b" }} /> : <FaChevronDown style={{ color: "#64748b" }} />}
+                      <h4 style={{ margin: 0, fontSize: "15px", color: "#0f172a", fontWeight: "700" }}>Peta Visual Layout Gudang</h4>
                     </div>
-                    {showMap && (
-                      <GudangLayoutMap
-                        layout={selectedLayout}
-                        selectedSlotId={slotId}
-                        onSelectSlot={(slot) => {
-                          if (slot && slot.id) {
-                            setSlotId(slot.id);
-                          }
-                        }}
-                        stockSummaryBySlot={stockSummaryBySlot}
-                        interactive={true}
-                      />
-                    )}
+                    <GudangLayoutMap
+                      layout={selectedLayout}
+                      selectedSlotId={slotId}
+                      onSelectSlot={(slot) => {
+                        if (slot && slot.id) {
+                          setSlotId(slot.id);
+                        }
+                      }}
+                      stockSummaryBySlot={stockSummaryBySlot}
+                      interactive={true}
+                    />
                   </div>
                 )}
               </>
@@ -485,47 +459,11 @@ const ScanProdukMasukGudang = () => {
           {/* ─── Section 3: Hasil Scan ─── */}
           <section className="spm-gudang-card">
             <div className="spm-gudang-toolbar">
-              <div className="spm-gudang-card-title" style={{ flex: 1 }}>
+              <div className="spm-gudang-card-title">
                 <FaBoxOpen />
                 <h3>Hasil Scan Produk Masuk</h3>
               </div>
-              <div className="spm-gudang-tabs" style={{ display: "flex", gap: "10px", flex: 2, justifyContent: "center" }}>
-                <button
-                  type="button"
-                  className={`spm-gudang-tab-btn ${activeTab === "detail" ? "active" : ""}`}
-                  onClick={() => setActiveTab("detail")}
-                  style={{
-                    padding: "8px 16px",
-                    border: "none",
-                    background: activeTab === "detail" ? "#eef3fa" : "transparent",
-                    color: activeTab === "detail" ? "#1f4e95" : "#64748b",
-                    fontWeight: activeTab === "detail" ? "700" : "500",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  Detail
-                </button>
-                <button
-                  type="button"
-                  className={`spm-gudang-tab-btn ${activeTab === "summary" ? "active" : ""}`}
-                  onClick={() => setActiveTab("summary")}
-                  style={{
-                    padding: "8px 16px",
-                    border: "none",
-                    background: activeTab === "summary" ? "#eef3fa" : "transparent",
-                    color: activeTab === "summary" ? "#1f4e95" : "#64748b",
-                    fontWeight: activeTab === "summary" ? "700" : "500",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  Summary Per SKU
-                </button>
-              </div>
-              <div className="spm-gudang-toolbar-right" style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+              <div className="spm-gudang-toolbar-right">
                 {scannedItems.length > 0 && (
                   <button
                     type="button"
@@ -545,7 +483,7 @@ const ScanProdukMasukGudang = () => {
                 <h4>Belum ada produk yang di-scan</h4>
                 <p>Mulai scan barcode kode seri untuk memasukkan produk ke gudang.</p>
               </div>
-            ) : activeTab === "detail" ? (
+            ) : (
               <>
                 <div className="spm-gudang-table-wrap">
                   <table className="spm-gudang-table">
@@ -599,42 +537,6 @@ const ScanProdukMasukGudang = () => {
                   <p>
                     Menampilkan {filteredItems.length} dari {scannedItems.length} data scan
                   </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="spm-gudang-table-wrap">
-                  <table className="spm-gudang-table">
-                    <thead>
-                      <tr>
-                        <th className="spm-gudang-table-no">No</th>
-                        <th>SKU</th>
-                        <th>Produk</th>
-                        <th>Total Qty Masuk</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {summaryItems.length > 0 ? (
-                        summaryItems.map((item, index) => (
-                          <tr key={index}>
-                            <td className="spm-gudang-table-no">{index + 1}</td>
-                            <td className="spm-gudang-table-sku">{item.sku}</td>
-                            <td>{item.produk}</td>
-                            <td><strong>{item.qty}</strong></td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="4" style={{ textAlign: "center", padding: "24px" }}>
-                            Belum ada scan produk masuk yang berhasil.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="spm-gudang-table-footer">
-                  <p>Menampilkan {summaryItems.length} varian SKU berhasil di-scan</p>
                 </div>
               </>
             )}
