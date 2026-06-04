@@ -9,6 +9,8 @@ const createSegmentId = (prefix = "segment") =>
 
 const normalizeSku = (sku = "") => sku.trim().replace(/\s+/g, " ").toUpperCase();
 
+const normalizeSerial = (serial = "") => serial.trim().toUpperCase();
+
 const isSameSku = (left, right) => normalizeSku(left) !== "" && normalizeSku(left) === normalizeSku(right);
 
 const buildInitialRows = (items = []) =>
@@ -43,7 +45,7 @@ const getDuplicateSerial = (rows) => {
 
   for (const row of rows) {
     for (const serial of row.serials || []) {
-      const normalized = (serial || "").trim();
+      const normalized = normalizeSerial(serial || "");
       if (!normalized) {
         continue;
       }
@@ -125,6 +127,8 @@ const PackingRandom = () => {
   const barcodeInputRef = useRef(null);
   const submitButtonRef = useRef(null);
   const skuMetaCacheRef = useRef({});
+  const pendingSerialsRef = useRef(new Map());
+  const [checkingSerial, setCheckingSerial] = useState(false);
 
   const focusTrackingInput = () => {
     setTimeout(() => {
@@ -165,6 +169,7 @@ const PackingRandom = () => {
     setScannedBarcode("");
     setCanSubmitByEnter(false);
     skuMetaCacheRef.current = {};
+    pendingSerialsRef.current = new Map();
     focusTrackingInput();
   };
 
@@ -247,10 +252,12 @@ const PackingRandom = () => {
 
       setOrder(orderData);
       setScannedBarcode("");
+      pendingSerialsRef.current = new Map();
       syncRowsState(buildInitialRows(orderData.items));
     } catch (error) {
       setOrder(null);
       setScannedItems([]);
+      pendingSerialsRef.current = new Map();
 
       const msg = error.response?.data?.message || "Order tidak ditemukan";
       setMessage(msg);
@@ -297,14 +304,14 @@ const PackingRandom = () => {
       return;
     }
 
-    if (!barcode.includes(" | ")) {
+    if (!barcode.includes("|")) {
       setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
       playSound("error");
       setScannedBarcode("");
       return;
     }
 
-    const parts = barcode.split(" | ");
+    const parts = barcode.split(/\s*\|\s*/);
     if (parts.length !== 2) {
       setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
       playSound("error");
@@ -314,6 +321,7 @@ const PackingRandom = () => {
 
     const sku = parts[0].trim();
     const nomorSeri = parts[1].trim();
+    const normalizedNomorSeri = normalizeSerial(nomorSeri);
 
     if (!sku || !nomorSeri) {
       setMessage("❌ SKU atau nomor seri tidak boleh kosong");
@@ -341,7 +349,20 @@ const PackingRandom = () => {
       return;
     }
 
-    if (scannedItems.some((row) => row.serials.includes(nomorSeri))) {
+    const pendingSku = pendingSerialsRef.current.get(normalizedNomorSeri);
+
+    if (pendingSku) {
+      setMessage(`Nomor seri ${nomorSeri} sedang diproses untuk SKU ${pendingSku}`);
+      playSound("error");
+      setScannedBarcode("");
+      return;
+    }
+
+    if (
+      scannedItems.some((row) =>
+        row.serials.some((serial) => normalizeSerial(serial) === normalizedNomorSeri)
+      )
+    ) {
       setMessage(`⚠️ Nomor seri ${nomorSeri} sudah pernah di-scan di order ini`);
       playSound("error");
       setScannedBarcode("");
@@ -351,6 +372,28 @@ const PackingRandom = () => {
     let updatedRows = [...scannedItems];
 
     try {
+      pendingSerialsRef.current.set(normalizedNomorSeri, sku);
+      setCheckingSerial(true);
+
+      try {
+        await API.post("/orders/serial/check", {
+          sku,
+          serial_number: nomorSeri,
+        });
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          "Nomor seri tidak bisa dicek. Scan dibatalkan.";
+
+        setMessage(errorMessage);
+        playSound("error");
+        setScannedBarcode("");
+        return;
+      } finally {
+        pendingSerialsRef.current.delete(normalizedNomorSeri);
+        setCheckingSerial(false);
+      }
+
       const matchingIndex = updatedRows.findIndex(
         (row) =>
           row.row_type === "order_item" &&
@@ -775,9 +818,12 @@ const PackingRandom = () => {
                         onChange={(e) => setScannedBarcode(e.target.value)}
                         onKeyDown={handleBarcodeInputKeyDown}
                         ref={barcodeInputRef}
+                        disabled={checkingSerial}
                         autoFocus
                       />
-                      <button type="submit">Scan</button>
+                      <button type="submit" disabled={checkingSerial}>
+                        {checkingSerial ? "Cek..." : "Scan"}
+                      </button>
                     </form>
                   </div>
 

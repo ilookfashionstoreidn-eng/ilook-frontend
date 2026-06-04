@@ -7,6 +7,7 @@ import API from "../../api";
 const normalizeTrackingNumber = (value = "") => value.trim();
 const normalizeSku = (value = "") => value.trim().replace(/\s+/g, " ").toUpperCase();
 const normalizeSerialNumber = (value = "") => value.trim();
+const normalizeSerialLookup = (value = "") => value.trim().toUpperCase();
 const hasSerialBarcodeSeparator = (value = "") => String(value || "").includes("|");
 
 const getMessageTone = (value = "") => {
@@ -131,6 +132,7 @@ const PackingNoDataGineeSerialMode = ({
   const barcodeLastInputAtRef = useRef(0);
   const barcodeChangeCountRef = useRef(0);
   const isAutoProcessingBarcodeRef = useRef(false);
+  const pendingSerialsRef = useRef(new Map());
 
   const [trackingNumber, setTrackingNumber] = useState("");
   const [activeTrackingNumber, setActiveTrackingNumber] = useState("");
@@ -139,6 +141,7 @@ const PackingNoDataGineeSerialMode = ({
   const [orderPreview, setOrderPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingSerial, setCheckingSerial] = useState(false);
   const [message, setMessage] = useState("");
 
   const messageTone = getMessageTone(message);
@@ -276,6 +279,7 @@ const PackingNoDataGineeSerialMode = ({
     setActiveTrackingNumber("");
     setBarcodeValue("");
     setScannedItems([]);
+    pendingSerialsRef.current = new Map();
     setOrderPreview(null);
   };
 
@@ -383,8 +387,8 @@ const PackingNoDataGineeSerialMode = ({
 
     const isDuplicateSerial = scannedItems.some(
       (item) =>
-        normalizeSerialNumber(item.serial_number).toLowerCase() ===
-        parsedBarcode.serialNumber.toLowerCase()
+        normalizeSerialLookup(item.serial_number) ===
+        normalizeSerialLookup(parsedBarcode.serialNumber)
     );
 
     if (isDuplicateSerial) {
@@ -395,6 +399,38 @@ const PackingNoDataGineeSerialMode = ({
       setBarcodeValue("");
       focusBarcodeInput();
       return;
+    }
+
+    const normalizedSerial = normalizeSerialLookup(parsedBarcode.serialNumber);
+    const pendingSku = pendingSerialsRef.current.get(normalizedSerial);
+
+    if (pendingSku) {
+      playSound("error");
+      setMessage(
+        `WARNING: Nomor seri ${parsedBarcode.serialNumber} sedang diproses untuk SKU ${pendingSku}.`
+      );
+      setBarcodeValue("");
+      focusBarcodeInput();
+      return;
+    }
+
+    pendingSerialsRef.current.set(normalizedSerial, parsedBarcode.actualSku);
+    setCheckingSerial(true);
+
+    try {
+      await API.post("/orders/serial/check", {
+        sku: parsedBarcode.actualSku,
+        serial_number: parsedBarcode.serialNumber,
+      });
+    } catch (error) {
+      playSound("error");
+      setMessage(formatErrorMessage(error, "Nomor seri tidak bisa dicek. Scan dibatalkan."));
+      setBarcodeValue("");
+      focusBarcodeInput();
+      return;
+    } finally {
+      pendingSerialsRef.current.delete(normalizedSerial);
+      setCheckingSerial(false);
     }
 
     setScannedItems((prev) => [
