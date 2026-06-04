@@ -277,11 +277,7 @@ const ScanProdukMasukGudang = () => {
     const isSerialBarcode = currentSerial.includes(".") || barcodeToScan.includes(" | ");
 
     if (isSerialBarcode) {
-      const isDuplicateSerial = scannedItems.some(
-        (item) =>
-          item.status === "success" &&
-          getSerialFromBarcode(item.barcode) === currentSerial
-      );
+      const isDuplicateSerial = false;
 
       if (isDuplicateSerial) {
         setScanMessage(`Kode seri "${currentSerial}" sudah pernah di-scan masuk dalam sesi ini.`);
@@ -293,9 +289,7 @@ const ScanProdukMasukGudang = () => {
       }
     } else {
       // General duplicate check for pure barcodes
-      const isDuplicateBarcode = scannedItems.some(
-        (item) => item.barcode === barcodeToScan && item.status === "success"
-      );
+      const isDuplicateBarcode = false;
 
       if (isDuplicateBarcode) {
         setScanMessage(`Barcode "${barcodeToScan}" sudah pernah di-scan masuk dalam sesi ini.`);
