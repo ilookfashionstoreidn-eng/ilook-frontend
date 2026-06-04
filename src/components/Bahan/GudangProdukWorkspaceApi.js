@@ -506,3 +506,58 @@ export const commitOpname = async (payload) => {
     message: response?.data?.message || "Opname berhasil disimpan.",
   };
 };
+
+// ─── Mutation Sessions ────────────────────────────────────────────────────────
+
+/**
+ * Ambil daftar sesi mutasi yang masih pending.
+ */
+export const fetchMutationSessions = async () => {
+  const response = await API.get("/gudang-produk-workspace/mutation-sessions");
+  return Array.isArray(response?.data?.data) ? response.data.data : [];
+};
+
+/**
+ * Simpan sesi scan baru.
+ * @param {{ layoutId, fromSlotId, skuId, barcodes, notes? }} payload
+ */
+export const storeMutationSession = async (payload) => {
+  const response = await API.post(
+    "/gudang-produk-workspace/mutation-sessions",
+    payload
+  );
+  return {
+    data: response?.data?.data || null,
+    message: response?.data?.message || "Sesi scan berhasil disimpan.",
+  };
+};
+
+/**
+ * Batalkan / hapus sesi yang masih pending.
+ * @param {number|string} id
+ */
+export const deleteMutationSession = async (id) => {
+  const response = await API.delete(
+    `/gudang-produk-workspace/mutation-sessions/${id}`
+  );
+  return {
+    message: response?.data?.message || "Sesi dibatalkan.",
+  };
+};
+
+/**
+ * Eksekusi sesi — pindahkan stok ke slot tujuan.
+ * @param {number|string} id
+ * @param {{ toSlotId: string, notes?: string }} payload
+ */
+export const executeMutationSession = async (id, payload) => {
+  const response = await API.post(
+    `/gudang-produk-workspace/mutation-sessions/${id}/execute`,
+    payload
+  );
+  return {
+    workspace: normalizeWorkspaceState(response?.data?.data),
+    message: response?.data?.message || "Mutasi dari sesi berhasil dieksekusi.",
+  };
+};
+
