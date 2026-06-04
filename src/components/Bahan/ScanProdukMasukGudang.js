@@ -50,10 +50,10 @@ const ScanProdukMasukGudang = () => {
   const [scannedItems, setScannedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch list of active/unfinished nomor seri
+  // Fetch list of all nomor seri
   const fetchSeriList = async () => {
     try {
-      const response = await API.get("/seri?all=true&unfinished=true");
+      const response = await API.get("/seri?all=true");
       setSeriList(response.data?.data || []);
     } catch (err) {
       console.error("Gagal memuat list nomor seri", err);
