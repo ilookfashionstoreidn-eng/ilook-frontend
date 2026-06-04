@@ -16,6 +16,22 @@ const isOrderReadyForValidation = (items) =>
 
 const normalizeSerial = (serial) => (serial || "").trim().toUpperCase();
 
+const checkSpecialBypass = (sku, serial) => {
+  const normalizedSerial = (serial || "").trim().toUpperCase();
+  const normalizedSku = (sku || "").trim().toUpperCase();
+
+  const bypasses = [
+    { sku: "SET BANGWOOL - OLIVE L", serial: "3161.102.189" },
+    { sku: "SET KITANO - CREAM XL", serial: "121.1" }
+  ];
+
+  return bypasses.some(
+    (b) =>
+      (normalizedSku === b.sku.toUpperCase() && normalizedSerial === b.serial.toUpperCase()) ||
+      normalizedSerial === b.serial.toUpperCase()
+  );
+};
+
 const buildScannedSerialMap = (items) => {
   const serialMap = new Map();
 
@@ -210,7 +226,9 @@ const handleSearchOrder = async () => {
     item.serials.some((serial) => normalizeSerial(serial) === normalizedNomorSeri)
   );
 
-  if (duplicateSku || pendingSku || duplicateItem) {
+  const isSpecialBypass = checkSpecialBypass(sku, normalizedNomorSeri);
+
+  if ((duplicateSku || pendingSku || duplicateItem) && !isSpecialBypass) {
     setMessage(
       `Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${duplicateSku || pendingSku || duplicateItem.sku}`
     );
@@ -276,7 +294,7 @@ const handleSearchOrder = async () => {
   setCheckingSerial(false);
 
   // Validasi nomor seri tidak boleh duplikat dalam item yang sama
-  if (target.serials.includes(nomorSeri)) {
+  if (target.serials.includes(nomorSeri) && !isSpecialBypass) {
     setMessage(`⚠️ Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${sku}`);
     playSound("error");
     setScannedBarcode("");
@@ -354,8 +372,10 @@ const handleSearchOrder = async () => {
       const normalizedSerial = normalizeSerial(serial);
       if (!normalizedSerial) continue;
 
+      const isSpecialBypass = checkSpecialBypass(item.sku, normalizedSerial);
+
       const duplicateSku = serialBySku.get(normalizedSerial);
-      if (duplicateSku) {
+      if (duplicateSku && !isSpecialBypass) {
         setMessage(
           `Nomor seri ${serial} sudah pernah di-scan untuk SKU ${duplicateSku}`
         );
