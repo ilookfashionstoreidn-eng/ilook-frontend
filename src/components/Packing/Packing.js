@@ -14,6 +14,23 @@ const isOrderReadyForValidation = (items) =>
       item.serials.every((serial) => serial && serial.trim() !== "")
   );
 
+const normalizeSerial = (serial) => (serial || "").trim().toUpperCase();
+
+const buildScannedSerialMap = (items) => {
+  const serialMap = new Map();
+
+  items.forEach((item) => {
+    item.serials.forEach((serial) => {
+      const normalizedSerial = normalizeSerial(serial);
+      if (normalizedSerial) {
+        serialMap.set(normalizedSerial, item.sku);
+      }
+    });
+  });
+
+  return serialMap;
+};
+
 const validationSoundByTrackingPrefix = [
   { prefix: "JT", sound: "validasiJNE" },
   { prefix: "SP", sound: "validasiShopee" },
@@ -46,8 +63,11 @@ const Packing = () => {
   const barcodeInputRef = useRef(null);
   const serialInputRefs = useRef({});
   const submitButtonRef = useRef(null);
+  const scannedSerialsRef = useRef(new Map());
+  const pendingSerialsRef = useRef(new Map());
   const [canSubmitByEnter, setCanSubmitByEnter] = useState(false);
   const [isSubmittingValidation, setIsSubmittingValidation] = useState(false);
+  const [checkingSerial, setCheckingSerial] = useState(false);
 const [prevSerials, setPrevSerials] = useState({});
 
   const focusTrackingInput = () => {
@@ -99,6 +119,10 @@ const handleSearchOrder = async () => {
     if (orderData.status === "packed") {
       setMessage("⚠️ Order ini sudah berstatus packed dan tidak bisa discan ulang.");
       playSound("sudahpacking");
+      setOrder(null);
+      scannedSerialsRef.current = new Map();
+      pendingSerialsRef.current = new Map();
+      setScannedItems([]);
       setLoading(false);
       return;
     }
@@ -114,9 +138,13 @@ const handleSearchOrder = async () => {
 
     setTrackingNumber(tracking);
     setOrder(orderData);
+    scannedSerialsRef.current = new Map();
+    pendingSerialsRef.current = new Map();
     setScannedItems(initialScan);
   } catch (error) {
     setOrder(null);
+    scannedSerialsRef.current = new Map();
+    pendingSerialsRef.current = new Map();
     setScannedItems([]);
 
     const msg = error.response?.data?.message || "Order tidak ditemukan";
@@ -134,20 +162,30 @@ const handleSearchOrder = async () => {
 };
 
 
- const handleScanBarcode = (e) => {
+ const handleScanBarcode = async (e) => {
   e?.preventDefault();
   const barcode = scannedBarcode.trim();
   if (!barcode) return;
 
+  if (isOrderReadyForValidation(scannedItems)) {
+    setMessage("Semua produk sudah discan. Silakan submit validasi.");
+    setScannedBarcode("");
+    setCanSubmitByEnter(true);
+    setTimeout(() => {
+      submitButtonRef.current?.focus();
+    }, 50);
+    return;
+  }
+
   // Parse barcode format "SKU | KODE_SERI"
-  if (!barcode.includes(" | ")) {
+  if (!barcode.includes("|")) {
     setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
     playSound("error");
     setScannedBarcode("");
     return;
   }
 
-  const parts = barcode.split(" | ");
+  const parts = barcode.split(/\s*\|\s*/);
   if (parts.length !== 2) {
     setMessage("❌ Format barcode tidak valid. Format harus: SKU | KODE_SERI");
     playSound("error");
@@ -157,9 +195,25 @@ const handleSearchOrder = async () => {
 
   const sku = parts[0].trim();
   const nomorSeri = parts[1].trim();
+  const normalizedNomorSeri = normalizeSerial(nomorSeri);
 
   if (!sku || !nomorSeri) {
     setMessage("❌ SKU atau nomor seri tidak boleh kosong");
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
+
+  const duplicateSku = scannedSerialsRef.current.get(normalizedNomorSeri);
+  const pendingSku = pendingSerialsRef.current.get(normalizedNomorSeri);
+  const duplicateItem = scannedItems.find((item) =>
+    item.serials.some((serial) => normalizeSerial(serial) === normalizedNomorSeri)
+  );
+
+  if (duplicateSku || pendingSku || duplicateItem) {
+    setMessage(
+      `Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${duplicateSku || pendingSku || duplicateItem.sku}`
+    );
     playSound("error");
     setScannedBarcode("");
     return;
@@ -197,6 +251,30 @@ const handleSearchOrder = async () => {
     return;
   }
 
+  pendingSerialsRef.current.set(normalizedNomorSeri, sku);
+  setCheckingSerial(true);
+
+  try {
+    await API.post("/orders/serial/check", {
+      sku,
+      serial_number: nomorSeri,
+    });
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      "Nomor seri tidak bisa dicek. Scan dibatalkan.";
+
+    pendingSerialsRef.current.delete(normalizedNomorSeri);
+    setCheckingSerial(false);
+    setMessage(errorMessage);
+    playSound("error");
+    setScannedBarcode("");
+    return;
+  }
+
+  pendingSerialsRef.current.delete(normalizedNomorSeri);
+  setCheckingSerial(false);
+
   // Validasi nomor seri tidak boleh duplikat dalam item yang sama
   if (target.serials.includes(nomorSeri)) {
     setMessage(`⚠️ Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${sku}`);
@@ -208,6 +286,7 @@ const handleSearchOrder = async () => {
   // Tambahkan scanned_qty dan isi nomor seri otomatis
   target.scanned_qty += 1;
   target.serials.push(nomorSeri);
+  scannedSerialsRef.current.set(normalizedNomorSeri, sku);
   setMessage(`✅ SKU ${sku} dengan nomor seri ${nomorSeri} berhasil discan`);
   playSound("scanproduk");
   
@@ -269,6 +348,25 @@ const handleSearchOrder = async () => {
     }
   }
 
+  const serialBySku = new Map();
+  for (let item of scannedItems) {
+    for (let serial of item.serials) {
+      const normalizedSerial = normalizeSerial(serial);
+      if (!normalizedSerial) continue;
+
+      const duplicateSku = serialBySku.get(normalizedSerial);
+      if (duplicateSku) {
+        setMessage(
+          `Nomor seri ${serial} sudah pernah di-scan untuk SKU ${duplicateSku}`
+        );
+        playSound("error");
+        return;
+      }
+
+      serialBySku.set(normalizedSerial, item.sku);
+    }
+  }
+
   setIsSubmittingValidation(true);
 
   try {
@@ -311,6 +409,8 @@ const handleSearchOrder = async () => {
 
   
     setOrder(null);
+    scannedSerialsRef.current = new Map();
+    pendingSerialsRef.current = new Map();
     setScannedItems([]);
     setTrackingNumber("");
     setScannedBarcode("");
@@ -341,6 +441,8 @@ const handleSearchOrder = async () => {
 };
 
   
+  const isScanComplete = isOrderReadyForValidation(scannedItems);
+
 
   return (
     <div className="pk-page">
@@ -474,6 +576,7 @@ const handleSearchOrder = async () => {
 
                   const updated = [...scannedItems];
                   updated[idx].serials[sIdx] = val;
+                  scannedSerialsRef.current = buildScannedSerialMap(updated);
                   setScannedItems(updated);
 
                   const isCurrentItemComplete =
@@ -540,9 +643,12 @@ const handleSearchOrder = async () => {
             onChange={(e) => setScannedBarcode(e.target.value)}
             onKeyDown={handleBarcodeInputKeyDown}
             ref={barcodeInputRef}
+            disabled={isScanComplete || checkingSerial}
             autoFocus
           />
-          <button type="submit">Scan</button>
+          <button type="submit" disabled={isScanComplete || checkingSerial}>
+            {checkingSerial ? "Cek..." : "Scan"}
+          </button>
         </form>
       </div>
 
@@ -561,6 +667,8 @@ const handleSearchOrder = async () => {
             <button
               onClick={() => {
                 setOrder(null);
+                scannedSerialsRef.current = new Map();
+                pendingSerialsRef.current = new Map();
                 setScannedItems([]);
                 setTrackingNumber("");
                 setScannedBarcode("");
