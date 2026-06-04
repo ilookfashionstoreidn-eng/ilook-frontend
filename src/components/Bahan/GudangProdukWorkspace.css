@@ -4856,3 +4856,579 @@
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   MASTER GUDANG PRODUK — Layout & Structure
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Shell: 2-column layout (sidebar + main) ── */
+.gudang-master-shell {
+  grid-template-columns: 340px minmax(0, 1fr);
+  align-items: start;
+}
+
+/* ── Sidebar ── */
+.gudang-master-sidebar {
+  position: sticky;
+  top: 108px;
+  gap: 16px;
+}
+
+.gudang-master-sidebar-panel {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+.gudang-master-sidebar-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.gudang-master-sidebar-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* ── Main content area ── */
+.gudang-master-main {
+  gap: 18px;
+}
+
+/* ── Overview panel (gudang aktif header) ── */
+.gudang-master-overview-panel {
+  overflow: visible;
+}
+
+.gudang-master-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.gudang-master-overview-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gudang-master-overview-main h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.gudang-master-overview-main p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+.gudang-master-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #2458ce;
+  background: #edf3ff;
+  border: 1px solid #cdd9ef;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.gudang-master-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.gudang-master-meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gudang-master-chip-row {
+  margin-top: 4px;
+}
+
+/* ── Overview stats (right side) ── */
+.gudang-master-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.gudang-master-overview-stat {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.gudang-master-overview-stat span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.gudang-master-overview-stat strong {
+  font-size: 26px;
+  line-height: 1.15;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.gudang-master-overview-stat small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Form grid (Lantai+Struktur | Blok+Rak) ── */
+.gudang-master-form-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* ── Floor list compact ── */
+.gudang-master-floor-list {
+  gap: 8px;
+}
+
+.gudang-master-floor-list .gudang-ui-list-item {
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.gudang-master-floor-list .gudang-ui-list-item.active {
+  border-color: #2458ce;
+  background: linear-gradient(135deg, rgba(36, 88, 206, 0.08), rgba(79, 121, 232, 0.05));
+}
+
+/* ── Workspace grid (Struktur Blok + Visual/Map) ── */
+.gudang-master-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* ── Operations panel (Blok & Rak) ── */
+.gudang-master-operations-panel {
+  min-height: 200px;
+}
+
+/* ── Scroll region ── */
+.gudang-master-scroll-region {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.gudang-master-scroll-region::-webkit-scrollbar {
+  width: 4px;
+}
+
+.gudang-master-scroll-region::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* ── Block list ── */
+.gudang-master-block-list {
+  gap: 10px;
+}
+
+.gudang-master-block-list .gudang-ui-list-item {
+  border-radius: 14px;
+}
+
+.gudang-master-block-list .gudang-ui-list-item.active {
+  border-color: #2458ce;
+  background: linear-gradient(135deg, rgba(36, 88, 206, 0.06), rgba(79, 121, 232, 0.03));
+}
+
+/* ── Visual stack (Nama Slot + Peta Layout) ── */
+.gudang-master-visual-stack {
+  gap: 16px;
+  position: sticky;
+  top: 108px;
+}
+
+/* ── Map panel ── */
+.gudang-master-map-panel {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.gudang-master-map-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.gudang-master-map-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* ── Rack grid compact ── */
+.gudang-ui-rack-collection {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.gudang-ui-rack-collection-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.gudang-ui-rack-collection-note {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.gudang-ui-rack-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 8px;
+}
+
+.gudang-ui-rack-compact-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gudang-ui-rack-compact-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.gudang-ui-rack-compact-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.gudang-ui-rack-compact-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gudang-ui-rack-compact-main strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.gudang-ui-rack-compact-main span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.gudang-ui-rack-delete-button {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  font-size: 11px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.gudang-ui-rack-compact-card:hover .gudang-ui-rack-delete-button {
+  opacity: 1;
+}
+
+.gudang-ui-rack-compact-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gudang-ui-rack-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #eef3ff;
+  color: #2458ce;
+  border: 1px solid #dde5f5;
+}
+
+.gudang-ui-rack-mini-chip.soft {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.gudang-ui-rack-empty {
+  padding: 16px;
+  margin-top: 8px;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  background: #fafbfc;
+}
+
+.gudang-ui-block-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.gudang-ui-block-summary small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* ── Responsive: Master Gudang ── */
+@media (max-width: 1200px) {
+  .gudang-master-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-master-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gudang-master-sidebar-panel {
+    max-height: none;
+  }
+
+  .gudang-master-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-master-visual-stack {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .gudang-master-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-master-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-master-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .gudang-master-overview-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .gudang-master-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gudang-ui-rack-grid-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   OVERRIDES: No-rounded + Text Overlap Fixes
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Remove excessive rounded corners ── */
+.gudang-ui-card,
+.gudang-ui-panel,
+.gudang-ui-form-card,
+.gudang-layout-floor,
+.gudang-layout-block,
+.gudang-layout-rack-card,
+.gudang-ui-stat-card,
+.gudang-layout-modal,
+.gudang-layout-modal-asset-card,
+.gudang-layout-modal-block-button,
+.gudang-layout-modal-canvas-panel,
+.gudang-layout-modal-asset-pill,
+.gudang-layout-modal-asset-tag,
+input,
+select,
+button,
+.gudang-ui-button,
+.gudang-ui-button-secondary,
+.gudang-ui-icon-button {
+  border-radius: 2px !important;
+}
+
+.gudang-ui-shell {
+  border-radius: 6px;
+}
+
+.gudang-ui-empty-panel {
+  border-radius: 6px;
+}
+
+.gudang-ui-list-item {
+  border-radius: 6px;
+}
+
+.gudang-ui-table-shell {
+  border-radius: 6px;
+}
+
+.gudang-layout-slot-button {
+  border-radius: 6px;
+}
+
+.gudang-ui-detail-box {
+  border-radius: 6px;
+}
+
+.gudang-ui-callout {
+  border-radius: 6px;
+}
+
+.gudang-ui-slot-meta div {
+  border-radius: 6px;
+}
+
+.gudang-ui-field input,
+.gudang-ui-field textarea,
+.gudang-ui-field select {
+  border-radius: 6px;
+}
+
+.gudang-ui-button,
+.gudang-ui-button-secondary,
+.gudang-ui-button-danger {
+  border-radius: 6px;
+}
+
+.gudang-ui-icon-button {
+  border-radius: 6px;
+}
+
+.gudang-master-overview-stat {
+  border-radius: 6px;
+}
+
+.gudang-master-floor-list .gudang-ui-list-item {
+  border-radius: 6px;
+}
+
+.gudang-master-block-list .gudang-ui-list-item {
+  border-radius: 6px;
+}
+
+.gudang-ui-rack-compact-card {
+  border-radius: 6px;
+}
+
+.gudang-ui-rack-empty {
+  border-radius: 6px;
+}
+
+.gudang-layout-designer-note {
+  border-radius: 6px;
+}
+
+/* ── Fix text overlap on small viewports ── */
+.gudang-master-overview-main h2 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.gudang-master-overview-main p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.gudang-master-meta-row {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.gudang-master-meta-row span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.gudang-master-overview-stats {
+  min-width: 0;
+}
+
+.gudang-master-overview-stat {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gudang-master-overview-stat strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gudang-master-overview-stat small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gudang-ui-chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gudang-ui-list-item h4 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.gudang-ui-list-item p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Prevent form labels from overlapping */
+.gudang-ui-section-head h3,
+.gudang-ui-panel-head h2 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.gudang-ui-section-head p,
+.gudang-ui-panel-head p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+

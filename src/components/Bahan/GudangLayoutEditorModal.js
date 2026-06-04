@@ -461,13 +461,7 @@ const GudangLayoutEditorModal = ({
         <div className="gudang-layout-modal-head">
           <div>
             <h2>Edit Layout Rak</h2>
-            <p>
-              Posisi rak sekarang bisa bebas diatur di dalam kanvas blok. Drag aset untuk
-              memindahkan rak, lalu tarik handle sisi atau sudutnya untuk mengubah lebar dan
-              tinggi langsung dengan mouse.
-            </p>
           </div>
-
           <button type="button" className="gudang-ui-icon-button" onClick={() => onClose?.()}>
             <FaTimes />
           </button>
@@ -678,12 +672,6 @@ const GudangLayoutEditorModal = ({
                 </div>
 
                 <div className="gudang-layout-editor-shell">
-                  <div className="gudang-layout-editor-note">
-                    Drag rak dari header kartunya. Untuk resize, tarik titik di atas, bawah,
-                    kiri, kanan, atau sudut rak. Semua gerakan akan snap ke grid supaya tetap
-                    rapi saat dibuka di layar kecil.
-                  </div>
-
                   <div
                     ref={canvasRef}
                     className="gudang-layout-editor-canvas"
@@ -697,12 +685,6 @@ const GudangLayoutEditorModal = ({
                       const rackDisplayTitle =
                         rackDensity === "micro" ? `R${rackNumberLabel}` : `Rak ${rackNumberLabel}`;
                       const previewSlotCode = buildRackSlotCode(activeFloor, activeBlock, rack, 1);
-                      const previewHelper =
-                        rack.rows > 1 ? `Slot pertama dari ${rack.rows} slot` : "1 slot tersimpan";
-                      const previewFooterPrimary =
-                        rackDensity === "regular"
-                          ? buildRackRangeLabel(activeFloor, activeBlock, rack)
-                          : `${rack.rows} slot siap dipakai`;
 
                       return (
                         <div
@@ -745,11 +727,6 @@ const GudangLayoutEditorModal = ({
                           <div className="gudang-layout-rack-preview editor-preview">
                             <div className="gudang-layout-rack-preview-main">
                               <strong>{previewSlotCode}</strong>
-                              <span>{previewHelper}</span>
-                            </div>
-                            <div className="gudang-layout-rack-preview-footer">
-                              <small>{previewFooterPrimary}</small>
-                              <small>Drag untuk pindah dan resize</small>
                             </div>
                           </div>
 
