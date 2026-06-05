@@ -200,7 +200,7 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
       const sku = getSkuById(state, entry.skuId);
       const product = sku ? getProductById(state, sku.productId) : null;
       const qtySisa = Number(entry.qty) || 0;
-      
+
       // Find the earliest placement activity log for this sku and slot
       const placements = state.activityLog.filter(
         (activity) =>
@@ -225,6 +225,8 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
 
       return {
         id: entry.id || `${entry.slotId}_${entry.skuId}`,
+        skuId: entry.skuId,
+        slotId: entry.slotId,
         sku: sku?.code || entry.sku || "-",
         productName: product?.name || "",
         qtyAwal,
@@ -353,6 +355,18 @@ export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {
     const response = await API.get("/gudang-produk-workspace");
     return buildGudangStockListFromWorkspace(response?.data?.data, params);
   }
+};
+
+/**
+ * Ambil daftar kode seri yang tersedia untuk kombinasi SKU + slot tertentu.
+ * @param {{ skuId: number, slotId: string }} params
+ */
+export const fetchStokSeriDetail = async ({ skuId, slotId }) => {
+  const response = await API.get(
+    "/gudang-produk-workspace/list-stok-product/seri-detail",
+    { params: { sku_id: skuId, slot_id: slotId } }
+  );
+  return response?.data ?? { seri: [], total_seri: 0, qty_sisa: 0, sku: "-" };
 };
 
 export const fetchGudangProdukHistory = async (params = {}) => {
@@ -745,4 +759,3 @@ export const executeMutationSession = async (id, payload) => {
     message: response?.data?.message || "Mutasi dari sesi berhasil dieksekusi.",
   };
 };
-
