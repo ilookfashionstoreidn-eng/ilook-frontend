@@ -608,14 +608,23 @@ const SpkCutting = () => {
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
 
   const fetchSpkNumber = async (tukangCuttingId) => {
-    // Nomor SPK diinput manual, tidak lagi generate dari backend
+    if (!tukangCuttingId) {
+      setNewSpkCutting(prev => ({ ...prev, id_spk_cutting: "" }));
+      return;
+    }
+    try {
+      const response = await API.post("/spk_cutting/generate-number", { tukang_cutting_id: tukangCuttingId });
+      setNewSpkCutting(prev => ({ ...prev, id_spk_cutting: response.data.generated_number || "" }));
+    } catch (error) {
+      console.error("Gagal generate nomor seri:", error);
+    }
   };
 
   const [newSpkCutting, setNewSpkCutting] = useState({
     id_spk_cutting: "",
     pic: "",
     produk_id: "",
-    tanggal_buat: "",
+    tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
     tanggal_batas_kirim: "",
     harga_jasa: "",
     harga_jasaDisplay: "", // Untuk format rupiah di input
@@ -1311,7 +1320,7 @@ const SpkCutting = () => {
         id_spk_cutting: "",
         pic: "",
         produk_id: "",
-        tanggal_buat: "",
+        tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
         tanggal_batas_kirim: "",
         harga_jasa: "",
         harga_jasaDisplay: "",

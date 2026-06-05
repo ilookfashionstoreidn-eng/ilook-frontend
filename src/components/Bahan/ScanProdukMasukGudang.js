@@ -35,6 +35,7 @@ const ScanProdukMasukGudang = () => {
   // Seri list & selection
   const [seriList, setSeriList] = useState([]);
   const [selectedSeriNumber, setSelectedSeriNumber] = useState("");
+  const [selectedSeriId, setSelectedSeriId] = useState("");
   const [seriDetails, setSeriDetails] = useState(null);
   const [loadingSeriDetails, setLoadingSeriDetails] = useState(false);
   const [seriQuery, setSeriQuery] = useState("");
@@ -76,15 +77,15 @@ const ScanProdukMasukGudang = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const fetchSeriDetails = async (nomorSeri) => {
-    if (!nomorSeri) {
+  const fetchSeriDetails = async (seriId) => {
+    if (!seriId) {
       setSeriDetails(null);
       return;
     }
     try {
       setLoadingSeriDetails(true);
       const response = await API.get("/gudang-produk-workspace/seri-details", {
-        params: { nomor_seri: nomorSeri },
+        params: { id: seriId },
       });
       setSeriDetails(response.data?.data || null);
     } catch (err) {
@@ -95,9 +96,10 @@ const ScanProdukMasukGudang = () => {
     }
   };
 
-  const handleSeriChange = (nomorSeri) => {
-    setSelectedSeriNumber(nomorSeri);
-    fetchSeriDetails(nomorSeri);
+  const handleSeriChange = (seriItem) => {
+    setSelectedSeriNumber(seriItem.nomor_seri);
+    setSelectedSeriId(seriItem.id);
+    fetchSeriDetails(seriItem.id);
   };
 
   // Filtered serial items based on search query
@@ -112,11 +114,11 @@ const ScanProdukMasukGudang = () => {
 
   // Selected serial label to display in the input search combobox
   const selectedSeriLabel = useMemo(() => {
-    const found = seriList.find((seriItem) => seriItem.nomor_seri === selectedSeriNumber);
+    const found = seriList.find((seriItem) => seriItem.id === selectedSeriId);
     if (!found) return "";
     const scanned = found.scanned_count ?? 0;
     return `${found.nomor_seri} (${found.sku} - ${scanned}/${found.jumlah} pcs)`;
-  }, [selectedSeriNumber, seriList]);
+  }, [selectedSeriId, seriList]);
 
   // Auto-select first layout
   useEffect(() => {
@@ -370,7 +372,7 @@ const ScanProdukMasukGudang = () => {
       }
 
       // Refresh serial print list details reactively
-      fetchSeriDetails(selectedSeriNumber);
+      fetchSeriDetails(selectedSeriId);
       fetchSeriList();
 
       setTimeout(() => {
@@ -435,8 +437,8 @@ const ScanProdukMasukGudang = () => {
       refresh({ silent: true });
 
       // Refresh active serial details and dropdown list
-      if (selectedSeriNumber) {
-        fetchSeriDetails(selectedSeriNumber);
+      if (selectedSeriId) {
+        fetchSeriDetails(selectedSeriId);
       }
       fetchSeriList();
     } catch (err) {
@@ -568,6 +570,7 @@ const ScanProdukMasukGudang = () => {
                             setIsSeriDropdownOpen(true);
                             if (selectedSeriNumber) {
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                             }
                           }}
@@ -580,6 +583,7 @@ const ScanProdukMasukGudang = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                               setSeriQuery("");
                             }}
@@ -609,6 +613,7 @@ const ScanProdukMasukGudang = () => {
                             type="button"
                             onClick={() => {
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                               setSeriQuery("");
                               setIsSeriDropdownOpen(false);
@@ -632,14 +637,14 @@ const ScanProdukMasukGudang = () => {
                           </button>
                           {filteredSeriList.length ? (
                             filteredSeriList.map((seriItem) => {
-                              const isSelected = selectedSeriNumber === seriItem.nomor_seri;
+                              const isSelected = selectedSeriId === seriItem.id;
                               const scanned = seriItem.scanned_count ?? 0;
                               return (
                                 <button
                                   key={seriItem.id}
                                   type="button"
                                   onClick={() => {
-                                    handleSeriChange(seriItem.nomor_seri);
+                                    handleSeriChange(seriItem);
                                     setSeriQuery("");
                                     setIsSeriDropdownOpen(false);
                                   }}
