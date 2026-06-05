@@ -625,6 +625,7 @@ const SpkCutting = () => {
     pic: "",
     produk_id: "",
     tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
+    tanggal_buat: "",
     tanggal_batas_kirim: "",
     harga_jasa: "",
     harga_jasaDisplay: "", // Untuk format rupiah di input
@@ -1321,6 +1322,7 @@ const SpkCutting = () => {
         pic: "",
         produk_id: "",
         tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
+        tanggal_buat: "",
         tanggal_batas_kirim: "",
         harga_jasa: "",
         harga_jasaDisplay: "",

@@ -78,6 +78,7 @@ const ScanProdukMasukGudang = () => {
   }, []);
 
   const fetchSeriDetails = async (seriId) => {
+  const fetchSeriDetails = async (seriId, nomorSeri) => {
     if (!seriId) {
       setSeriDetails(null);
       return;
@@ -86,6 +87,7 @@ const ScanProdukMasukGudang = () => {
       setLoadingSeriDetails(true);
       const response = await API.get("/gudang-produk-workspace/seri-details", {
         params: { id: seriId },
+        params: { seri_id: seriId, nomor_seri: nomorSeri },
       });
       setSeriDetails(response.data?.data || null);
     } catch (err) {
@@ -100,6 +102,10 @@ const ScanProdukMasukGudang = () => {
     setSelectedSeriNumber(seriItem.nomor_seri);
     setSelectedSeriId(seriItem.id);
     fetchSeriDetails(seriItem.id);
+  const handleSeriChange = (seriId, nomorSeri) => {
+    setSelectedSeriId(seriId);
+    setSelectedSeriNumber(nomorSeri);
+    fetchSeriDetails(seriId, nomorSeri);
   };
 
   // Filtered serial items based on search query
@@ -165,7 +171,7 @@ const ScanProdukMasukGudang = () => {
 
   const selectedSlotSummary = selectedSlot ? stockSummaryBySlot[selectedSlot.id] : null;
 
-  const canScan = Boolean(selectedLayout && selectedSlot && selectedSeriNumber);
+  const canScan = Boolean(selectedLayout && selectedSlot && selectedSeriId);
 
   // Filter scanned items
   const filteredItems = scannedItems.filter((item) => {
@@ -276,17 +282,37 @@ const ScanProdukMasukGudang = () => {
       return;
     }
 
+    if (seriDetails && seriDetails.prints) {
+      const isValidPrint = seriDetails.prints.some((p) => p.barcode_seri === currentSerial);
+      if (!isValidPrint) {
+        setScanMessage(`WARNING: Barcode "${barcodeToScan}" tidak terdaftar dalam cetakan aktif untuk Nomor Seri "${selectedSeriNumber}".`);
+        setScanStatus("error");
+        setScanInput("");
+        playSound("error");
+        setTimeout(() => focusScanInput(), 100);
+        return;
+      }
+    }
+
     const isSerialBarcode = currentSerial.includes(".") || barcodeToScan.includes(" | ");
 
     if (isSerialBarcode) {
-      const isDuplicateSerial = scannedItems.some(
+      // Check in local session history
+      const isDuplicateSerialLocal = scannedItems.some(
         (item) =>
           item.status === "success" &&
           getSerialFromBarcode(item.barcode) === currentSerial
       );
 
+      // Check in fetched database print details
+      const isDuplicateSerialDb = seriDetails && seriDetails.prints
+        ? seriDetails.prints.some((p) => p.barcode_seri === currentSerial && p.is_scanned)
+        : false;
+
+      const isDuplicateSerial = isDuplicateSerialLocal || isDuplicateSerialDb;
+
       if (isDuplicateSerial) {
-        setScanMessage(`Kode seri "${currentSerial}" sudah pernah di-scan masuk dalam sesi ini.`);
+        setScanMessage(`Kode seri "${currentSerial}" sudah pernah di-scan masuk sebelumnya.`);
         setScanStatus("error");
         setScanInput("");
         playSound("error");
@@ -373,6 +399,7 @@ const ScanProdukMasukGudang = () => {
 
       // Refresh serial print list details reactively
       fetchSeriDetails(selectedSeriId);
+      fetchSeriDetails(selectedSeriId, selectedSeriNumber);
       fetchSeriList();
 
       setTimeout(() => {
@@ -439,6 +466,7 @@ const ScanProdukMasukGudang = () => {
       // Refresh active serial details and dropdown list
       if (selectedSeriId) {
         fetchSeriDetails(selectedSeriId);
+        fetchSeriDetails(selectedSeriId, selectedSeriNumber);
       }
       fetchSeriList();
     } catch (err) {
@@ -577,11 +605,12 @@ const ScanProdukMasukGudang = () => {
                           onFocus={() => setIsSeriDropdownOpen(true)}
                           placeholder={selectedSeriLabel || "Cari dan pilih Nomor Seri..."}
                         />
-                        {selectedSeriNumber && !seriQuery ? (
+                        {selectedSeriId && !seriQuery ? (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setSelectedSeriId("");
                               setSelectedSeriNumber("");
                               setSelectedSeriId("");
                               setSeriDetails(null);
@@ -612,6 +641,7 @@ const ScanProdukMasukGudang = () => {
                           <button
                             type="button"
                             onClick={() => {
+                              setSelectedSeriId("");
                               setSelectedSeriNumber("");
                               setSelectedSeriId("");
                               setSeriDetails(null);
@@ -623,13 +653,13 @@ const ScanProdukMasukGudang = () => {
                               display: "block",
                               textAlign: "left",
                               border: "none",
-                              background: selectedSeriNumber === "" ? "#f0fdf4" : "transparent",
-                              color: selectedSeriNumber === "" ? "#166534" : "#0f172a",
+                              background: selectedSeriId === "" ? "#f0fdf4" : "transparent",
+                              color: selectedSeriId === "" ? "#166534" : "#0f172a",
                               borderRadius: 6,
                               padding: "8px 12px",
                               cursor: "pointer",
                               marginBottom: 2,
-                              fontWeight: selectedSeriNumber === "" ? 700 : 500,
+                              fontWeight: selectedSeriId === "" ? 700 : 500,
                               fontSize: 13
                             }}
                           >
@@ -645,6 +675,7 @@ const ScanProdukMasukGudang = () => {
                                   type="button"
                                   onClick={() => {
                                     handleSeriChange(seriItem);
+                                    handleSeriChange(seriItem.id, seriItem.nomor_seri);
                                     setSeriQuery("");
                                     setIsSeriDropdownOpen(false);
                                   }}

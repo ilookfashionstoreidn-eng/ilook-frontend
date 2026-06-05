@@ -606,6 +606,8 @@ const Layout = () => {
                   "list-stok-product",
                   "mutasi-gudang-produk",
                   "history-produk-gudang",
+                  "history-stok-awal-gudang",
+                  "history-produk-masuk-gudang",
                   "stok-opname-gudang",
                 ].includes(activeMenu)
                     ? "active"
@@ -677,13 +679,13 @@ const Layout = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link to="gudang-produk" className={`dropdown-link ${activeMenu === "gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("gudang-produk")}>
-                      <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Gudang Produk Lama
+                    <Link to="history-stok-awal-gudang" className={`dropdown-link ${activeMenu === "history-stok-awal-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-stok-awal-gudang")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> History Stok Awal
                     </Link>
                   </li>
                   <li>
-                    <Link to="stok-gudang-produk" className={`dropdown-link ${activeMenu === "stok-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-gudang-produk")}>
-                      <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Gudang Lama
+                    <Link to="history-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "history-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-masuk-gudang")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk Masuk
                     </Link>
                   </li>
                 </ul>

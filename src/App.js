@@ -79,8 +79,7 @@ import LaporanHasil from "./components/Cutting/SpkCutting/LaporanHasil";
 import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyProduksi";
 import LaporanDataAcuan from "./components/Cutting/SpkCutting/LaporanDataAcuan";
 import Sku from "./components/Jahit/Sku";
-import GudangProduk from "./components/Bahan/GudangProduk";
-import StokGudangProduk from "./components/Bahan/StokGudangProduk";
+import HistoryProdukMasukGudang from "./components/Bahan/HistoryProdukMasukGudang";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import MasterGudangProduk from "./components/Bahan/MasterGudangProduk";
 import InputSkuGudang from "./components/Bahan/InputSkuGudang";
@@ -91,6 +90,7 @@ import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
 import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
 import HistoryProdukGudang from "./components/Bahan/HistoryProdukGudang";
 import StokOpnameGudang from "./components/Bahan/StokOpnameGudang";
+import HistoryStokAwalGudang from "./components/Bahan/HistoryStokAwalGudang";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
 import QCLolos from "./components/QC/QCLolos";
@@ -199,8 +199,8 @@ const App = () => {
           <Route path="mutasi-gudang-produk" element={<MutasiGudangProduk />} />
           <Route path="history-produk-gudang" element={<HistoryProdukGudang />} />
           <Route path="stok-opname-gudang" element={<StokOpnameGudang />} />
-          <Route path="gudang-produk" element={<GudangProduk />} />
-          <Route path="stok-gudang-produk" element={<StokGudangProduk />} />
+          <Route path="history-stok-awal-gudang" element={<HistoryStokAwalGudang />} />
+          <Route path="history-produk-masuk-gudang" element={<HistoryProdukMasukGudang />} />
           <Route path="picking-queue" element={<PickingQueue />} />
           <Route path="qc-lolos" element={<QCLolos />} />
           <Route path="qc-reject" element={<QCReject />} />

@@ -46,6 +46,21 @@ const emptyGudangProdukHistoryPagination = {
   last_page: 1,
 };
 
+const emptyGudangProdukStokAwalHistorySummary = {
+  total_rows: 0,
+  total_qty: 0,
+  total_sku: 0,
+  total_seri: 0,
+  total_locations: 0,
+};
+
+const emptyGudangProdukStokAwalHistoryPagination = {
+  current_page: 1,
+  per_page: 50,
+  total: 0,
+  last_page: 1,
+};
+
 const normalizeWorkspaceState = (payload = {}) => ({
   layouts: Array.isArray(payload.layouts) ? payload.layouts : [],
   products: Array.isArray(payload.products) ? payload.products : [],
@@ -78,6 +93,29 @@ const normalizeGudangProdukHistoryPayload = (payload = {}) => ({
   },
 });
 
+const normalizeGudangProdukStokAwalHistoryRow = (row = {}) => ({
+  id: row.id,
+  tgl: row.tgl || row.happenedAt || row.createdAt || row.keluarPada || null,
+  sku: row.sku || row.skuCode || "-",
+  seri: row.seri || row.kodeSeri || row.serialNumber || "-",
+  qty: Number(row.qty || row.scannedQty || 0),
+  lokasi: row.lokasi || row.location || row.namaGudang || row.slotLabel || "-",
+});
+
+const normalizeGudangProdukStokAwalHistoryPayload = (payload = {}) => ({
+  data: Array.isArray(payload.data)
+    ? payload.data.map(normalizeGudangProdukStokAwalHistoryRow)
+    : [],
+  summary: {
+    ...emptyGudangProdukStokAwalHistorySummary,
+    ...(payload.summary || {}),
+  },
+  pagination: {
+    ...emptyGudangProdukStokAwalHistoryPagination,
+    ...(payload.pagination || {}),
+  },
+});
+
 const areIdsEqual = (left, right) =>
   left !== null &&
   left !== undefined &&
@@ -86,6 +124,56 @@ const areIdsEqual = (left, right) =>
   String(left) === String(right);
 
 const normalizeSearchText = (value) => String(value || "").trim().toLowerCase();
+
+const extractStokAwalSeries = (notes) => {
+  const text = String(notes || "");
+  const match = text.match(/Kode seri:\s*([^|]+)/i);
+
+  return match?.[1]?.trim() || "-";
+};
+
+const groupStokAwalHistoryRows = (rows = []) => {
+  const groupedRows = new Map();
+
+  rows.forEach((row) => {
+    const sku = String(row.sku || "-").trim();
+    const lokasi = String(row.lokasi || "-").trim();
+    const groupKey = `${sku}__${lokasi}`;
+    const current = groupedRows.get(groupKey);
+    const series = String(row.seri || "").trim();
+    const nextSeries = series && series !== "-" ? [series] : [];
+
+    if (!current) {
+      groupedRows.set(groupKey, {
+        ...row,
+        id: groupKey,
+        sku,
+        lokasi,
+        seriList: nextSeries,
+        qty: Number(row.qty) || 0,
+      });
+      return;
+    }
+
+    const currentDate = new Date(current.tgl || 0);
+    const rowDate = new Date(row.tgl || 0);
+
+    groupedRows.set(groupKey, {
+      ...current,
+      tgl:
+        Number.isNaN(rowDate.getTime()) || rowDate <= currentDate
+          ? current.tgl
+          : row.tgl,
+      qty: (Number(current.qty) || 0) + (Number(row.qty) || 0),
+      seriList: [...current.seriList, ...nextSeries],
+    });
+  });
+
+  return Array.from(groupedRows.values()).map((row) => ({
+    ...row,
+    seri: Array.from(new Set(row.seriList)).join(", ") || "-",
+  }));
+};
 
 const getActivityQtyForSlot = (activityLog = [], skuId, slotId, direction) =>
   activityLog.reduce((total, activity) => {
@@ -270,6 +358,103 @@ export const fetchGudangProdukWorkspaceStockList = async (params = {}) => {
 export const fetchGudangProdukHistory = async (params = {}) => {
   const response = await API.get("/gudang-produk/history", { params });
   return normalizeGudangProdukHistoryPayload(response?.data);
+};
+
+const buildGudangProdukStokAwalHistoryFromWorkspace = (workspacePayload = {}, params = {}) => {
+  const state = normalizeWorkspaceState(workspacePayload);
+  const slots = getAllSlots(state);
+  const slotById = new Map(slots.map((slot) => [String(slot.id), slot]));
+  const skuById = new Map((state.skus || []).map((sku) => [String(sku.id), sku]));
+  const search = normalizeSearchText(params.search);
+  const startDate = params.start_date || params.startDate || "";
+  const endDate = params.end_date || params.endDate || "";
+  const page = Math.max(Number(params.page) || 1, 1);
+  const perPage = Math.max(Number(params.per_page || params.perPage) || 50, 1);
+
+  const allRows = groupStokAwalHistoryRows((state.activityLog || [])
+    .filter((activity) =>
+      activity?.type === "placement" &&
+      String(activity?.notes || "").toLowerCase().startsWith("stok awal")
+    )
+    .map((activity) => {
+      const slotId = activity?.toSlotId || activity?.fromSlotId || "";
+      const slot = slotById.get(String(slotId));
+      const sku = skuById.get(String(activity?.skuId));
+      const locationParts = [
+        slot?.layoutName,
+        slot?.alias || slot?.slotCode || slotId,
+      ].filter(Boolean);
+
+      return {
+        id: activity.id || `${activity.skuId}_${slotId}_${activity.createdAt}`,
+        tgl: activity.createdAt || null,
+        sku: sku?.code || activity?.sku || "-",
+        seri: extractStokAwalSeries(activity?.notes),
+        qty: Number(activity?.qty) || 0,
+        lokasi: locationParts.join(" - ") || slotId || "-",
+      };
+    })
+    .filter((row) => {
+      if (startDate && String(row.tgl || "").slice(0, 10) < startDate) {
+        return false;
+      }
+
+      if (endDate && String(row.tgl || "").slice(0, 10) > endDate) {
+        return false;
+      }
+
+      return true;
+    })
+  )
+    .filter((row) => {
+      if (!search) {
+        return true;
+      }
+
+      return [row.sku, row.seri, row.lokasi].some((value) =>
+        normalizeSearchText(value).includes(search)
+      );
+    })
+    .sort((left, right) => new Date(right.tgl || 0) - new Date(left.tgl || 0));
+
+  const total = allRows.length;
+  const paginatedRows = allRows.slice((page - 1) * perPage, page * perPage);
+
+  return normalizeGudangProdukStokAwalHistoryPayload({
+    data: paginatedRows,
+    summary: {
+      total_rows: total,
+      total_qty: allRows.reduce((sum, row) => sum + row.qty, 0),
+      total_sku: new Set(allRows.map((row) => row.sku).filter(Boolean)).size,
+      total_seri: new Set(allRows.map((row) => row.seri).filter(Boolean)).size,
+      total_locations: new Set(allRows.map((row) => row.lokasi).filter(Boolean)).size,
+    },
+    pagination: {
+      current_page: page,
+      per_page: perPage,
+      total,
+      last_page: Math.max(Math.ceil(total / perPage), 1),
+    },
+  });
+};
+
+export const fetchGudangProdukStokAwalHistory = async (params = {}) => {
+  try {
+    const response = await API.get("/gudang-produk-workspace/stok-awal/history", {
+      params,
+    });
+    return normalizeGudangProdukStokAwalHistoryPayload(response?.data);
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      throw error;
+    }
+
+    const response = await API.get("/gudang-produk-workspace", {
+      params: { activity_limit: 500 },
+    });
+
+    return buildGudangProdukStokAwalHistoryFromWorkspace(response?.data?.data, params);
+  }
 };
 
 export const createGudangProdukLayout = async (payload) => {

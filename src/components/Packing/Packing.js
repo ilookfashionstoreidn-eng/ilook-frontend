@@ -17,19 +17,7 @@ const isOrderReadyForValidation = (items) =>
 const normalizeSerial = (serial) => (serial || "").trim().toUpperCase();
 
 const checkSpecialBypass = (sku, serial) => {
-  const normalizedSerial = (serial || "").trim().toUpperCase();
-  const normalizedSku = (sku || "").trim().toUpperCase();
-
-  const bypasses = [
-    { sku: "SET BANGWOOL - OLIVE L", serial: "3161.102.189" },
-    { sku: "SET KITANO - CREAM XL", serial: "121.1" }
-  ];
-
-  return bypasses.some(
-    (b) =>
-      (normalizedSku === b.sku.toUpperCase() && normalizedSerial === b.serial.toUpperCase()) ||
-      normalizedSerial === b.serial.toUpperCase()
-  );
+  return true;
 };
 
 const buildScannedSerialMap = (items) => {
