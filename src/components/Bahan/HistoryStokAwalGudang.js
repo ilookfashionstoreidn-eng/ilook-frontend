@@ -69,6 +69,26 @@ const getToday = () => new Date().toISOString().slice(0, 10);
 
 const formatDateForFile = (value) => String(value || "").replace(/[^0-9]/g, "") || "semua";
 
+const formatSeriSummaryForPdf = (value) => {
+  const serialGroups = String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .reduce((groups, serial) => {
+      const baseSerial = serial.split(".")[0]?.trim() || serial;
+      groups.set(baseSerial, (groups.get(baseSerial) || 0) + 1);
+      return groups;
+    }, new Map());
+
+  if (serialGroups.size === 0) {
+    return "-";
+  }
+
+  return Array.from(serialGroups.entries())
+    .map(([serial, count]) => `${serial} Qty ${count}`)
+    .join("\n");
+};
+
 const escapeRegExp = (value) =>
   String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -346,7 +366,7 @@ const HistoryStokAwalGudang = () => {
                 index + 1,
                 formatDateTime(row.tgl),
                 row.sku || "-",
-                row.seri || "-",
+                formatSeriSummaryForPdf(row.seri),
                 row.lokasi || "-",
                 formatNumber(row.qty),
                 "",
