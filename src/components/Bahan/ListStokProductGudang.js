@@ -6,9 +6,11 @@ import React, {
   useState,
 } from "react";
 import {
+  FaBarcode,
   FaBoxes,
   FaChevronLeft,
   FaChevronRight,
+  FaInfoCircle,
   FaMapMarkedAlt,
   FaSync,
   FaTimes,
@@ -20,6 +22,7 @@ import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukWorkspaceStockList,
+  fetchStokSeriDetail,
 } from "./GudangProdukWorkspaceApi";
 
 const EMPTY_SUMMARY = {
@@ -82,6 +85,127 @@ const highlightText = (value, keyword) => {
   );
 };
 
+// ─── Modal Kode Seri ─────────────────────────────────────────────────────────
+
+const SeriDetailModal = ({ row, onClose }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [seriData, setSeriData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!row) return;
+    let ignore = false;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const data = await fetchStokSeriDetail({
+          skuId: row.skuId,
+          slotId: row.slotId,
+        });
+        if (!ignore) setSeriData(data);
+      } catch (err) {
+        if (!ignore)
+          setError(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Gagal memuat detail kode seri."
+          );
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [row]);
+
+  if (!row) return null;
+
+  return (
+    <div className="liststok-modal-overlay" onClick={onClose}>
+      <div
+        className="liststok-modal-box"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="liststok-modal-header">
+          <div className="liststok-modal-header-icon">
+            <FaBarcode />
+          </div>
+          <div className="liststok-modal-header-copy">
+            <h3>Detail Kode Seri</h3>
+            <p>
+              <strong>{row.sku}</strong>&nbsp;·&nbsp;{row.namaGudang}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="liststok-modal-close"
+            onClick={onClose}
+            aria-label="Tutup modal"
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="liststok-modal-body">
+          {isLoading ? (
+            <div className="liststok-modal-loading">
+              <span className="liststok-modal-spinner" />
+              Memuat kode seri...
+            </div>
+          ) : error ? (
+            <div className="liststok-modal-error">{error}</div>
+          ) : (
+            <>
+              {/* Summary chips */}
+              <div className="liststok-modal-summary">
+                <span className="liststok-modal-summary-chip">
+                  <FaBarcode style={{ marginRight: 6 }} />
+                  {seriData?.total_seri ?? 0} kode seri
+                </span>
+                <span className="liststok-modal-summary-chip">
+                  Qty sisa: <strong>{seriData?.qty_sisa ?? 0}</strong>
+                </span>
+              </div>
+
+              {/* Seri list */}
+              {seriData?.seri?.length > 0 ? (
+                <div className="liststok-modal-seri-grid">
+                  {seriData.seri.map((kode, idx) => (
+                    <div key={`${kode}_${idx}`} className="liststok-modal-seri-item">
+                      <FaBarcode className="liststok-modal-seri-icon" />
+                      <span className="liststok-modal-seri-code">{kode}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="liststok-modal-empty">
+                  <FaInfoCircle style={{ fontSize: 24, marginBottom: 8 }} />
+                  <span>
+                    Tidak ada kode seri yang tercatat untuk SKU ini di lokasi ini.
+                  </span>
+                  <small>
+                    Kode seri hanya tersedia jika stok masuk melalui scan barcode
+                    atau proses stok opname dengan seri.
+                  </small>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 const ListStokProductGudang = () => {
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
@@ -96,6 +220,7 @@ const ListStokProductGudang = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
+  const [seriModalRow, setSeriModalRow] = useState(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -407,6 +532,7 @@ const ListStokProductGudang = () => {
                   <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-location" />
+                  <col className="gudang-liststok-col-action" />
                 </colgroup>
                 <thead>
                   <tr>
@@ -417,6 +543,7 @@ const ListStokProductGudang = () => {
                     <th className="gudang-liststok-head-qty">Qty Keluar</th>
                     <th className="gudang-liststok-head-qty">Qty Sisa</th>
                     <th>Nama Gudang</th>
+                    <th className="gudang-liststok-head-center">Kode Seri</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -459,6 +586,17 @@ const ListStokProductGudang = () => {
                             {highlightText(row.namaGudang, activeSearch)}
                           </span>
                         </div>
+                      </td>
+                      <td className="gudang-liststok-action-cell">
+                        <button
+                          type="button"
+                          className="liststok-detail-btn"
+                          onClick={() => setSeriModalRow(row)}
+                          title={`Lihat kode seri untuk ${row.sku} di ${row.namaGudang}`}
+                        >
+                          <FaBarcode />
+                          Detail
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -534,6 +672,12 @@ const ListStokProductGudang = () => {
           </div>
         )}
       </section>
+      {seriModalRow ? (
+        <SeriDetailModal
+          row={seriModalRow}
+          onClose={() => setSeriModalRow(null)}
+        />
+      ) : null}
     </GudangProdukBaseShell>
   );
 };
