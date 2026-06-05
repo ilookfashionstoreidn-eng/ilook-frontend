@@ -519,15 +519,16 @@ select option:disabled {
   top: 0;
   z-index: 10;
   background: #eef3f9;
-  padding: 12px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid #d8e2f0;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #536985;
   font-weight: 700;
-  text-align: left;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  vertical-align: middle;
 }
 
 .spk-cutting-table tbody tr {
@@ -547,7 +548,7 @@ select option:disabled {
 }
 
 .spk-cutting-table tbody td {
-  padding: 11px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid #e6edf7;
   font-size: 13px;
   color: #1f2937;

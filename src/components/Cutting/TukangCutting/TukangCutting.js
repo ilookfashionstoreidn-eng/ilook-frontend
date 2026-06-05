@@ -5,9 +5,11 @@ import { FaPlus, FaSearch } from "react-icons/fa";
 import {
   FiAlertTriangle,
   FiCheckCircle,
+  FiEdit2,
   FiInfo,
   FiRefreshCw,
   FiScissors,
+  FiTrash2,
   FiUsers,
   FiX,
 } from "react-icons/fi";
@@ -38,12 +40,14 @@ const TukangCutting = () => {
   const [tukangCutting, setTukangCutting] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [newTukangCutting, setNewTukangCutting] = useState(INITIAL_FORM);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const fetchTukangCutting = async () => {
     try {
@@ -119,6 +123,7 @@ const TukangCutting = () => {
 
   const resetForm = () => {
     setNewTukangCutting(INITIAL_FORM);
+    setEditingItem(null);
   };
 
   const closeForm = () => {
@@ -134,42 +139,84 @@ const TukangCutting = () => {
     }));
   };
 
+  const openEditModal = (item) => {
+    setEditingItem(item);
+    setNewTukangCutting({
+      nama_tukang_cutting: item.nama_tukang_cutting || "",
+      kontak: item.kontak || "",
+      bank: item.bank || "",
+      no_rekening: item.no_rekening || "",
+      alamat: item.alamat || "",
+    });
+    setShowForm(true);
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append(
-      "nama_tukang_cutting",
-      newTukangCutting.nama_tukang_cutting.trim()
-    );
-    formData.append("kontak", newTukangCutting.kontak.trim());
-    formData.append("bank", newTukangCutting.bank.trim());
-    formData.append("no_rekening", newTukangCutting.no_rekening.trim());
-    formData.append("alamat", newTukangCutting.alamat.trim());
+    const payload = {
+      nama_tukang_cutting: newTukangCutting.nama_tukang_cutting.trim(),
+      kontak: newTukangCutting.kontak.trim(),
+      bank: newTukangCutting.bank.trim(),
+      no_rekening: newTukangCutting.no_rekening.trim(),
+      alamat: newTukangCutting.alamat.trim(),
+    };
 
     try {
       setIsSubmitting(true);
 
-      const response = await API.post("/tukang_cutting", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (editingItem) {
+        const response = await API.put(`/tukang_cutting/${editingItem.id}`, payload);
+        const updated = response.data?.data || response.data;
 
-      const created = response.data?.data || response.data;
-      if (created && typeof created === "object") {
-        setTukangCutting((prev) => [created, ...prev]);
+        setTukangCutting((prev) =>
+          prev.map((item) => (item.id === editingItem.id ? { ...item, ...updated } : item))
+        );
+        showToast("Data mitra berhasil diperbarui.", "success");
       } else {
-        await fetchTukangCutting();
+        const formData = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+
+        const response = await API.post("/tukang_cutting", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        const created = response.data?.data || response.data;
+        if (created && typeof created === "object") {
+          setTukangCutting((prev) => [created, ...prev]);
+        } else {
+          await fetchTukangCutting();
+        }
+        showToast("Data mitra berhasil disimpan.", "success");
       }
 
       setLastSyncAt(new Date().toISOString());
       closeForm();
-      showToast("Data mitra berhasil disimpan.", "success");
     } catch (submitError) {
       showToast(
         submitError.response?.data?.message ||
           "Terjadi kesalahan saat menyimpan data.",
+        "warning"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (item) => {
+    try {
+      setIsSubmitting(true);
+      await API.delete(`/tukang_cutting/${item.id}`);
+      setTukangCutting((prev) => prev.filter((tc) => tc.id !== item.id));
+      setLastSyncAt(new Date().toISOString());
+      setDeleteConfirm(null);
+      showToast(`Mitra "${item.nama_tukang_cutting}" berhasil dihapus.`, "success");
+    } catch (deleteError) {
+      showToast(
+        deleteError.response?.data?.message ||
+          "Gagal menghapus data mitra. Silakan coba lagi.",
         "warning"
       );
     } finally {
@@ -305,6 +352,7 @@ const TukangCutting = () => {
                     <th>Bank</th>
                     <th>No Rekening</th>
                     <th>Alamat</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -318,6 +366,26 @@ const TukangCutting = () => {
                       </td>
                       <td>{tc.no_rekening || "-"}</td>
                       <td>{tc.alamat || "-"}</td>
+                      <td>
+                        <div className="tc-action-buttons">
+                          <button
+                            type="button"
+                            className="tc-btn-icon tc-btn-icon-edit"
+                            onClick={() => openEditModal(tc)}
+                            title="Edit data"
+                          >
+                            <FiEdit2 />
+                          </button>
+                          <button
+                            type="button"
+                            className="tc-btn-icon tc-btn-icon-delete"
+                            onClick={() => setDeleteConfirm(tc)}
+                            title="Hapus data"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -327,11 +395,12 @@ const TukangCutting = () => {
         </section>
       </main>
 
+      {/* ── Add / Edit Modal ── */}
       {showForm ? (
         <div className="tc-modal-overlay" onClick={closeForm}>
           <div className="tc-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="tc-modal-header">
-              <h3>Tambah Mitra Cutting</h3>
+              <h3>{editingItem ? "Edit Mitra Cutting" : "Tambah Mitra Cutting"}</h3>
               <button className="tc-modal-close" onClick={closeForm} type="button">
                 <FiX />
               </button>
@@ -421,7 +490,11 @@ const TukangCutting = () => {
 
                 <div className="tc-form-actions">
                   <button type="submit" className="tc-btn-submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Menyimpan..." : "Simpan Data"}
+                    {isSubmitting
+                      ? "Menyimpan..."
+                      : editingItem
+                        ? "Perbarui Data"
+                        : "Simpan Data"}
                   </button>
                   <button
                     type="button"
@@ -438,6 +511,40 @@ const TukangCutting = () => {
         </div>
       ) : null}
 
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteConfirm ? (
+        <div className="tc-modal-overlay" onClick={() => setDeleteConfirm(null)}>
+          <div className="tc-delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="tc-delete-modal-icon">
+              <FiTrash2 />
+            </div>
+            <h3>Hapus Mitra Cutting?</h3>
+            <p>
+              Data <strong>"{deleteConfirm.nama_tukang_cutting}"</strong> akan dihapus secara
+              permanen dan tidak dapat dikembalikan.
+            </p>
+            <div className="tc-delete-modal-actions">
+              <button
+                type="button"
+                className="tc-btn-danger"
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Menghapus..." : "Ya, Hapus"}
+              </button>
+              <button
+                type="button"
+                className="tc-btn-cancel"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isSubmitting}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {toast ? (
         <div className={`tc-feedback-toast ${toast.type}`}>
           <span className="tc-feedback-icon">{feedbackIcon}</span>
@@ -449,4 +556,3 @@ const TukangCutting = () => {
 };
 
 export default TukangCutting;
-
