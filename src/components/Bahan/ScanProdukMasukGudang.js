@@ -77,6 +77,7 @@ const ScanProdukMasukGudang = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const fetchSeriDetails = async (seriId) => {
   const fetchSeriDetails = async (seriId, nomorSeri) => {
     if (!seriId) {
       setSeriDetails(null);
@@ -85,6 +86,7 @@ const ScanProdukMasukGudang = () => {
     try {
       setLoadingSeriDetails(true);
       const response = await API.get("/gudang-produk-workspace/seri-details", {
+        params: { id: seriId },
         params: { seri_id: seriId, nomor_seri: nomorSeri },
       });
       setSeriDetails(response.data?.data || null);
@@ -96,6 +98,10 @@ const ScanProdukMasukGudang = () => {
     }
   };
 
+  const handleSeriChange = (seriItem) => {
+    setSelectedSeriNumber(seriItem.nomor_seri);
+    setSelectedSeriId(seriItem.id);
+    fetchSeriDetails(seriItem.id);
   const handleSeriChange = (seriId, nomorSeri) => {
     setSelectedSeriId(seriId);
     setSelectedSeriNumber(nomorSeri);
@@ -392,6 +398,7 @@ const ScanProdukMasukGudang = () => {
       }
 
       // Refresh serial print list details reactively
+      fetchSeriDetails(selectedSeriId);
       fetchSeriDetails(selectedSeriId, selectedSeriNumber);
       fetchSeriList();
 
@@ -458,6 +465,7 @@ const ScanProdukMasukGudang = () => {
 
       // Refresh active serial details and dropdown list
       if (selectedSeriId) {
+        fetchSeriDetails(selectedSeriId);
         fetchSeriDetails(selectedSeriId, selectedSeriNumber);
       }
       fetchSeriList();
@@ -590,6 +598,7 @@ const ScanProdukMasukGudang = () => {
                             setIsSeriDropdownOpen(true);
                             if (selectedSeriNumber) {
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                             }
                           }}
@@ -603,6 +612,7 @@ const ScanProdukMasukGudang = () => {
                               e.stopPropagation();
                               setSelectedSeriId("");
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                               setSeriQuery("");
                             }}
@@ -633,6 +643,7 @@ const ScanProdukMasukGudang = () => {
                             onClick={() => {
                               setSelectedSeriId("");
                               setSelectedSeriNumber("");
+                              setSelectedSeriId("");
                               setSeriDetails(null);
                               setSeriQuery("");
                               setIsSeriDropdownOpen(false);
@@ -663,6 +674,7 @@ const ScanProdukMasukGudang = () => {
                                   key={seriItem.id}
                                   type="button"
                                   onClick={() => {
+                                    handleSeriChange(seriItem);
                                     handleSeriChange(seriItem.id, seriItem.nomor_seri);
                                     setSeriQuery("");
                                     setIsSeriDropdownOpen(false);

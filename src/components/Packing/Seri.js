@@ -16,6 +16,7 @@ const Seri = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [inputMode, setInputMode] = useState("manual");
   const [productOptions, setProductOptions] = useState([]);
   const [productSearchTerm, setProductSearchTerm] = useState("");
@@ -30,20 +31,21 @@ const Seri = () => {
     jumlah: "1",
   });
 
-  const fetchSeri = async (page = 1) => {
+  const fetchSeri = useCallback(async (page = 1, search = "") => {
     try {
       setLoading(true);
-      const response = await API.get(`/seri?page=${page}`);
+      const response = await API.get(`/seri?page=${page}&search=${encodeURIComponent(search)}`);
       setSeri(response.data.data);
       setCurrentPage(response.data.current_page);
       setLastPage(response.data.last_page);
+      setTotalItems(response.data.total || 0);
       setError(null);
     } catch (error) {
       setError("Gagal mengambil data seri");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const getProductSkuReference = (product) => {
     return String(product?.sku_name || product?.sku || product?.product || "").trim();
@@ -104,8 +106,11 @@ const Seri = () => {
   }, []);
 
   useEffect(() => {
-    fetchSeri(1);
-  }, []);
+    const timeoutId = setTimeout(() => {
+      fetchSeri(1, searchTerm);
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, fetchSeri]);
 
   useEffect(() => {
     if (!showForm || inputMode !== "product-list") return;
@@ -168,7 +173,7 @@ const Seri = () => {
         },
       });
 
-      await fetchSeri(currentPage);
+      await fetchSeri(currentPage, searchTerm);
       setSuccessMessage("Data seri berhasil ditambahkan.");
       setShowSuccessModal(true);
       setShowForm(false);
@@ -261,14 +266,8 @@ const Seri = () => {
     }));
   };
 
-  const filteredData = seri.filter((item) => 
-    (item.nomor_seri ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (item.sku ?? "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.id?.toString().includes(searchTerm)
-  );
-  
-  const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
-  const totalRows = seri.length;
+  const sortedData = [...seri].sort((a, b) => b.id - a.id);
+  const totalRows = totalItems;
   const visibleRows = sortedData.length;
   const isFiltering = searchTerm.trim().length > 0;
 
@@ -419,13 +418,13 @@ const Seri = () => {
 
               {!loading && sortedData.length > 0 && (
                 <div className="seri-pagination">
-                  <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1)}>
+                  <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1, searchTerm)}>
                     Sebelumnya
                   </button>
                   <span>
                     Halaman {currentPage} dari {lastPage}
                   </span>
-                  <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1)}>
+                  <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1, searchTerm)}>
                     Selanjutnya
                   </button>
                 </div>

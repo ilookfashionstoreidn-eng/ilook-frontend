@@ -268,7 +268,7 @@ const ProductList = () => {
 
 
   const [multiSkuRows, setMultiSkuRows] = useState([
-    { sku_name: "", product_colour: "", LD: "", material_colours: [""] }
+    { sku_name: "", product_size: "", product_source: "", product_colour: "", LD: "", material_colours: [""] }
   ]);
 
   const importInputRef = useRef(null);
@@ -640,7 +640,7 @@ const ProductList = () => {
     setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
     setForm(initialForm);
     setIsMultiSkuMode(false);
-    setMultiSkuRows([{ sku_name: "", product_colour: "", LD: "", material_colours: initialForm.materials.map(() => "") }]);
+    setMultiSkuRows([{ sku_name: "", product_size: "", product_source: "", product_colour: "", LD: "", material_colours: initialForm.materials.map(() => "") }]);
     setModalMode("add");
   };
 
@@ -791,6 +791,8 @@ const ProductList = () => {
           const rowPayload = {
             ...form,
             sku_name: row.sku_name,
+            product_size: row.product_size || form.product_size,
+            product_source: row.product_source || form.product_source,
             product_colour: row.product_colour,
             LD: row.LD,
             materials: normalizeMaterials(materialsClone).filter(
@@ -1240,6 +1242,48 @@ const ProductList = () => {
       .join(" | ");
   };
 
+  const handleGenerateSizesMLXL = () => {
+    const sizes = ["M", "L", "XL"];
+    const baseRow = multiSkuRows[0] || { sku_name: "", product_size: "", product_source: "", product_colour: "", LD: "", material_colours: form.materials.map(() => "") };
+    const baseSku = baseRow.sku_name || "";
+    const baseColour = baseRow.product_colour || "";
+    
+    const newRows = sizes.map(size => {
+      let newSku = baseSku;
+      if (baseSku) {
+         const parts = baseSku.trim().split(" ");
+         const lastPart = parts[parts.length - 1];
+         if (["M", "L", "XL", "S", "XXL", "ALLSIZE"].includes(lastPart.toUpperCase())) {
+            parts.pop();
+         }
+         newSku = `${parts.join(" ")} ${size}`.trim();
+      }
+      
+      let newSource = baseRow.product_source || form.product_source || "";
+      if (!newSource && form.product_group) {
+        newSource = `${form.product_group} ${size}`;
+      } else if (newSource) {
+         const sourceParts = newSource.trim().split(" ");
+         const lastSourcePart = sourceParts[sourceParts.length - 1];
+         if (["M", "L", "XL", "S", "XXL", "ALLSIZE"].includes(lastSourcePart.toUpperCase())) {
+            sourceParts.pop();
+         }
+         newSource = `${sourceParts.join(" ")} ${size}`.trim();
+      }
+      
+      return {
+        sku_name: newSku,
+        product_size: size,
+        product_source: newSource,
+        product_colour: baseColour,
+        LD: baseRow.LD || "",
+        material_colours: [...(baseRow.material_colours || form.materials.map(() => ""))]
+      };
+    });
+
+    setMultiSkuRows(newRows);
+  };
+
   const renderModal = () => {
     if (!modalMode) return null;
 
@@ -1375,8 +1419,8 @@ const ProductList = () => {
               <Field label="Product" name="product" value={form.product} onChange={handleInputChange} required />
               <Field label="SKU Name" name="sku_name" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.sku_name} onChange={handleInputChange} inputRef={skuNameInputRef} autoFocus={isDuplicate} required={!isMultiSkuMode && modalMode !== "edit"} disabled={isMultiSkuMode} />
               <Field label="Product Group" name="product_group" value={form.product_group} onChange={handleInputChange} />
-              <Field label="Product Size" name="product_size" value={form.product_size} onChange={handleInputChange} />
-              <Field label="Product Source" name="product_source" value={form.product_source} disabled={true} onChange={handleInputChange} />
+              <Field label="Product Size" name="product_size" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_size} onChange={handleInputChange} disabled={isMultiSkuMode} />
+              <Field label="Product Source" name="product_source" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_source} disabled={true} onChange={handleInputChange} />
               <Field label="Product Colour" name="product_colour" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_colour} onChange={handleInputChange} disabled={isMultiSkuMode} />
             </div>
           </div>
@@ -1500,13 +1544,22 @@ const ProductList = () => {
             <div className="product-list-form-section" style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <h3 style={{ margin: 0, color: "#334155" }}>Tabel Varian Multi-SKU</h3>
-                <button
-                  type="button"
-                  onClick={() => setMultiSkuRows(prev => [...prev, { sku_name: "", product_colour: "", LD: "", material_colours: form.materials.map(() => "") }])}
-                  style={{ background: "#4f46e5", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  <FaPlus /> Tambah Varian
-                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateSizesMLXL}
+                    style={{ background: "#10b981", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    Generate M, L, XL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMultiSkuRows(prev => [...prev, { sku_name: "", product_size: "", product_source: "", product_colour: "", LD: "", material_colours: form.materials.map(() => "") }])}
+                    style={{ background: "#4f46e5", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <FaPlus /> Tambah Varian
+                  </button>
+                </div>
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -1514,6 +1567,8 @@ const ProductList = () => {
                     <tr style={{ background: "#e2e8f0", color: "#475569" }}>
                       <th style={{ padding: "10px", textAlign: "left", borderRadius: "6px 0 0 0" }}>#</th>
                       <th style={{ padding: "10px", textAlign: "left" }}>SKU Name*</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>Product Size</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>Product Source</th>
                       <th style={{ padding: "10px", textAlign: "left" }}>Product Colour</th>
                       <th style={{ padding: "10px", textAlign: "left" }}>LD</th>
                       {form.materials.map((m, idx) => (
@@ -1528,6 +1583,12 @@ const ProductList = () => {
                         <td style={{ padding: "8px", color: "#64748b" }}>{rowIndex + 1}</td>
                         <td style={{ padding: "8px" }}>
                           <input type="text" value={row.sku_name} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].sku_name = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="SKU Varian" required />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input type="text" value={row.product_size} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].product_size = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "80px", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Size" />
+                        </td>
+                        <td style={{ padding: "8px" }}>
+                          <input type="text" value={row.product_source} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].product_source = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100px", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Source" />
                         </td>
                         <td style={{ padding: "8px" }}>
                           <input type="text" value={row.product_colour} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].product_colour = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Warna" />
