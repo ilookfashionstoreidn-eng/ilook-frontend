@@ -606,6 +606,7 @@ const Layout = () => {
                   "list-stok-product",
                   "mutasi-gudang-produk",
                   "history-produk-gudang",
+                  "history-stok-awal-gudang",
                   "history-produk-masuk-gudang",
                   "stok-opname-gudang",
                 ].includes(activeMenu)
@@ -675,6 +676,11 @@ const Layout = () => {
                   <li>
                     <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="history-stok-awal-gudang" className={`dropdown-link ${activeMenu === "history-stok-awal-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-stok-awal-gudang")}>
+                      <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> History Stok Awal
                     </Link>
                   </li>
                   <li>

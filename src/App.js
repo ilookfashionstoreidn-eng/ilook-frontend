@@ -90,6 +90,7 @@ import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
 import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
 import HistoryProdukGudang from "./components/Bahan/HistoryProdukGudang";
 import StokOpnameGudang from "./components/Bahan/StokOpnameGudang";
+import HistoryStokAwalGudang from "./components/Bahan/HistoryStokAwalGudang";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
 import QCLolos from "./components/QC/QCLolos";
@@ -198,6 +199,7 @@ const App = () => {
           <Route path="mutasi-gudang-produk" element={<MutasiGudangProduk />} />
           <Route path="history-produk-gudang" element={<HistoryProdukGudang />} />
           <Route path="stok-opname-gudang" element={<StokOpnameGudang />} />
+          <Route path="history-stok-awal-gudang" element={<HistoryStokAwalGudang />} />
           <Route path="history-produk-masuk-gudang" element={<HistoryProdukMasukGudang />} />
           <Route path="picking-queue" element={<PickingQueue />} />
           <Route path="qc-lolos" element={<QCLolos />} />

@@ -49,6 +49,7 @@ const GudangProdukBaseShell = ({
                   type="button"
                   className={`gudang-ui-header-action ${action.variant || "secondary"}`}
                   onClick={action.onClick}
+                  disabled={Boolean(action.disabled)}
                   title={action.label}
                 >
                   {ActionIcon ? <ActionIcon /> : null}
