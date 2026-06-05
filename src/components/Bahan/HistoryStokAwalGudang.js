@@ -339,7 +339,7 @@ const HistoryStokAwalGudang = () => {
 
       doc.autoTable({
         startY: 35,
-        head: [["No", "TGL", "SKU", "SERI", "QTY", "Lokasi"]],
+        head: [["No", "TGL", "SKU", "SERI", "Lokasi", "QTY Produk Awal", "Qty Produk Masuk"]],
         body:
           exportRows.length > 0
             ? exportRows.map((row, index) => [
@@ -347,10 +347,11 @@ const HistoryStokAwalGudang = () => {
                 formatDateTime(row.tgl),
                 row.sku || "-",
                 row.seri || "-",
-                formatNumber(row.qty),
                 row.lokasi || "-",
+                formatNumber(row.qty),
+                "",
               ])
-            : [["-", "-", "Tidak ada data", "-", "-", "-"]],
+            : [["-", "-", "Tidak ada data", "-", "-", "-", "-"]],
         theme: "grid",
         margin: { left: marginX, right: marginX, top: 12, bottom: 12 },
         styles: {
@@ -374,10 +375,11 @@ const HistoryStokAwalGudang = () => {
         columnStyles: {
           0: { cellWidth: 10, halign: "center" },
           1: { cellWidth: 27 },
-          2: { cellWidth: 42 },
-          3: { cellWidth: 46 },
-          4: { cellWidth: 16, halign: "center" },
-          5: { cellWidth: pageWidth - marginX * 2 - 141 },
+          2: { cellWidth: 38 },
+          3: { cellWidth: 38 },
+          4: { cellWidth: pageWidth - marginX * 2 - 159 },
+          5: { cellWidth: 23, halign: "center" },
+          6: { cellWidth: 23, halign: "center" },
         },
         didDrawPage: () => {
           const pageHeight = doc.internal.pageSize.getHeight();
