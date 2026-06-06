@@ -91,10 +91,12 @@ const SeriDetailModal = ({ row, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [seriData, setSeriData] = useState(null);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!row) return;
     let ignore = false;
+    setSearchQuery("");
 
     const load = async () => {
       setIsLoading(true);
@@ -123,6 +125,16 @@ const SeriDetailModal = ({ row, onClose }) => {
     };
   }, [row]);
 
+  // Filter seri berdasarkan search query
+  const filteredSeri = useMemo(() => {
+    if (!seriData?.seri) return [];
+    if (!searchQuery.trim()) return seriData.seri;
+    const q = searchQuery.trim().toLowerCase();
+    return seriData.seri.filter((kode) =>
+      String(kode).toLowerCase().includes(q)
+    );
+  }, [seriData, searchQuery]);
+
   if (!row) return null;
 
   return (
@@ -137,7 +149,7 @@ const SeriDetailModal = ({ row, onClose }) => {
             <FaBarcode />
           </div>
           <div className="liststok-modal-header-copy">
-            <h3>Detail Kode Seri</h3>
+            <h3>Kode Seri Tersisa</h3>
             <p>
               <strong>{row.sku}</strong>&nbsp;·&nbsp;{row.namaGudang}
             </p>
@@ -165,30 +177,96 @@ const SeriDetailModal = ({ row, onClose }) => {
             <>
               {/* Summary chips */}
               <div className="liststok-modal-summary">
-                <span className="liststok-modal-summary-chip">
+                <span className="liststok-modal-summary-chip liststok-chip-sisa">
                   <FaBarcode style={{ marginRight: 6 }} />
-                  {seriData?.total_seri ?? 0} kode seri
+                  {seriData?.total_seri ?? 0} seri tersisa
                 </span>
                 <span className="liststok-modal-summary-chip">
                   Qty sisa: <strong>{seriData?.qty_sisa ?? 0}</strong>
                 </span>
+                {seriData?.total_scanned != null &&
+                  seriData.total_scanned > (seriData?.total_seri ?? 0) && (
+                    <span className="liststok-modal-summary-chip liststok-chip-muted">
+                      Total pernah masuk: {seriData.total_scanned}
+                    </span>
+                  )}
               </div>
+
+              {/* Search bar */}
+              {seriData?.seri?.length > 0 && (
+                <div className="liststok-modal-search-wrap">
+                  <span className="liststok-modal-search-icon">
+                    <FaBarcode />
+                  </span>
+                  <input
+                    type="text"
+                    className="liststok-modal-search"
+                    placeholder="Cari kode seri..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      className="liststok-modal-search-clear"
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Hapus pencarian"
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Result count saat searching */}
+              {searchQuery.trim() && (
+                <div className="liststok-modal-search-result">
+                  Menampilkan{" "}
+                  <strong>{filteredSeri.length}</strong> dari{" "}
+                  {seriData?.total_seri ?? 0} kode seri
+                </div>
+              )}
 
               {/* Seri list */}
               {seriData?.seri?.length > 0 ? (
-                <div className="liststok-modal-seri-grid">
-                  {seriData.seri.map((kode, idx) => (
-                    <div key={`${kode}_${idx}`} className="liststok-modal-seri-item">
-                      <FaBarcode className="liststok-modal-seri-icon" />
-                      <span className="liststok-modal-seri-code">{kode}</span>
-                    </div>
-                  ))}
-                </div>
+                filteredSeri.length > 0 ? (
+                  <div className="liststok-modal-seri-grid">
+                    {filteredSeri.map((kode, idx) => {
+                      const q = searchQuery.trim().toLowerCase();
+                      const lower = String(kode).toLowerCase();
+                      const matchIdx = q ? lower.indexOf(q) : -1;
+                      return (
+                        <div key={`${kode}_${idx}`} className="liststok-modal-seri-item">
+                          <FaBarcode className="liststok-modal-seri-icon" />
+                          <span className="liststok-modal-seri-code">
+                            {matchIdx >= 0 ? (
+                              <>
+                                {kode.slice(0, matchIdx)}
+                                <mark className="liststok-seri-highlight">
+                                  {kode.slice(matchIdx, matchIdx + q.length)}
+                                </mark>
+                                {kode.slice(matchIdx + q.length)}
+                              </>
+                            ) : (
+                              kode
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="liststok-modal-empty">
+                    <FaInfoCircle style={{ fontSize: 24, marginBottom: 8 }} />
+                    <span>Tidak ada kode seri yang cocok dengan "{searchQuery}"</span>
+                  </div>
+                )
               ) : (
                 <div className="liststok-modal-empty">
                   <FaInfoCircle style={{ fontSize: 24, marginBottom: 8 }} />
                   <span>
-                    Tidak ada kode seri yang tercatat untuk SKU ini di lokasi ini.
+                    Tidak ada kode seri yang tersisa di lokasi ini.
                   </span>
                   <small>
                     Kode seri hanya tersedia jika stok masuk melalui scan barcode
