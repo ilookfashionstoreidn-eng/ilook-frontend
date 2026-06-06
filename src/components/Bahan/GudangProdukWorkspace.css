@@ -5719,3 +5719,112 @@ button,
   line-height: 1.5;
 }
 
+/* ─── Chip variants ──────────────────────────────────────────────────────────── */
+
+.liststok-chip-sisa {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fff8 100%) !important;
+  border-color: #6ee7b7 !important;
+  color: #065f46 !important;
+}
+
+.liststok-chip-muted {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+}
+
+/* ─── Search bar ─────────────────────────────────────────────────────────────── */
+
+.liststok-modal-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1.5px solid #dde3ed;
+  border-radius: 13px;
+  background: #f8fafc;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.liststok-modal-search-wrap:focus-within {
+  border-color: #2458ce;
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+  background: #fff;
+}
+
+.liststok-modal-search-icon {
+  padding: 0 12px;
+  color: #94a3b8;
+  font-size: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.liststok-modal-search-wrap:focus-within .liststok-modal-search-icon {
+  color: #2458ce;
+}
+
+.liststok-modal-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  padding: 10px 0;
+  min-width: 0;
+}
+
+.liststok-modal-search::placeholder {
+  color: #b0bec5;
+}
+
+.liststok-modal-search-clear {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  transition: all 0.14s ease;
+}
+
+.liststok-modal-search-clear:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ─── Search result counter ──────────────────────────────────────────────────── */
+
+.liststok-modal-search-result {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+
+.liststok-modal-search-result strong {
+  color: #2458ce;
+  font-weight: 700;
+}
+
+/* ─── Highlight text ─────────────────────────────────────────────────────────── */
+
+.liststok-seri-highlight {
+  background: #fef08a;
+  color: #713f12;
+  border-radius: 3px;
+  padding: 0 1px;
+  font-style: normal;
+}
+

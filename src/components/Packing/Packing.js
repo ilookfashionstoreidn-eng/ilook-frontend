@@ -15,9 +15,12 @@ const isOrderReadyForValidation = (items) =>
   );
 
 const normalizeSerial = (serial) => (serial || "").trim().toUpperCase();
+const normalizeSku = (sku) => (sku || "").trim().toUpperCase();
+const buildSerialKey = (sku, serial) =>
+  `${normalizeSku(sku)}::${normalizeSerial(serial)}`;
 
 const checkSpecialBypass = (sku, serial) => {
-  return true;
+  return false;
 };
 
 const buildScannedSerialMap = (items) => {
@@ -25,9 +28,9 @@ const buildScannedSerialMap = (items) => {
 
   items.forEach((item) => {
     item.serials.forEach((serial) => {
-      const normalizedSerial = normalizeSerial(serial);
-      if (normalizedSerial) {
-        serialMap.set(normalizedSerial, item.sku);
+      const serialKey = buildSerialKey(item.sku, serial);
+      if (normalizeSerial(serial)) {
+        serialMap.set(serialKey, item.sku);
       }
     });
   });
@@ -200,6 +203,7 @@ const handleSearchOrder = async () => {
   const sku = parts[0].trim();
   const nomorSeri = parts[1].trim();
   const normalizedNomorSeri = normalizeSerial(nomorSeri);
+  const serialKey = buildSerialKey(sku, nomorSeri);
 
   if (!sku || !nomorSeri) {
     setMessage("❌ SKU atau nomor seri tidak boleh kosong");
@@ -208,9 +212,10 @@ const handleSearchOrder = async () => {
     return;
   }
 
-  const duplicateSku = scannedSerialsRef.current.get(normalizedNomorSeri);
-  const pendingSku = pendingSerialsRef.current.get(normalizedNomorSeri);
+  const duplicateSku = scannedSerialsRef.current.get(serialKey);
+  const pendingSku = pendingSerialsRef.current.get(serialKey);
   const duplicateItem = scannedItems.find((item) =>
+    normalizeSku(item.sku) === normalizeSku(sku) &&
     item.serials.some((serial) => normalizeSerial(serial) === normalizedNomorSeri)
   );
 
@@ -257,7 +262,7 @@ const handleSearchOrder = async () => {
     return;
   }
 
-  pendingSerialsRef.current.set(normalizedNomorSeri, sku);
+  pendingSerialsRef.current.set(serialKey, sku);
   setCheckingSerial(true);
 
   try {
@@ -270,7 +275,7 @@ const handleSearchOrder = async () => {
       error.response?.data?.message ||
       "Nomor seri tidak bisa dicek. Scan dibatalkan.";
 
-    pendingSerialsRef.current.delete(normalizedNomorSeri);
+    pendingSerialsRef.current.delete(serialKey);
     setCheckingSerial(false);
     setMessage(errorMessage);
     playSound("error");
@@ -278,11 +283,14 @@ const handleSearchOrder = async () => {
     return;
   }
 
-  pendingSerialsRef.current.delete(normalizedNomorSeri);
+  pendingSerialsRef.current.delete(serialKey);
   setCheckingSerial(false);
 
   // Validasi nomor seri tidak boleh duplikat dalam item yang sama
-  if (target.serials.includes(nomorSeri) && !isSpecialBypass) {
+  if (
+    target.serials.some((serial) => normalizeSerial(serial) === normalizedNomorSeri) &&
+    !isSpecialBypass
+  ) {
     setMessage(`⚠️ Nomor seri ${nomorSeri} sudah pernah di-scan untuk SKU ${sku}`);
     playSound("error");
     setScannedBarcode("");
@@ -292,7 +300,7 @@ const handleSearchOrder = async () => {
   // Tambahkan scanned_qty dan isi nomor seri otomatis
   target.scanned_qty += 1;
   target.serials.push(nomorSeri);
-  scannedSerialsRef.current.set(normalizedNomorSeri, sku);
+  scannedSerialsRef.current.set(serialKey, sku);
   setMessage(`✅ SKU ${sku} dengan nomor seri ${nomorSeri} berhasil discan`);
   playSound("scanproduk");
   
@@ -357,12 +365,12 @@ const handleSearchOrder = async () => {
   const serialBySku = new Map();
   for (let item of scannedItems) {
     for (let serial of item.serials) {
-      const normalizedSerial = normalizeSerial(serial);
-      if (!normalizedSerial) continue;
+      const serialKey = buildSerialKey(item.sku, serial);
+      if (!normalizeSerial(serial)) continue;
 
-      const isSpecialBypass = checkSpecialBypass(item.sku, normalizedSerial);
+      const isSpecialBypass = checkSpecialBypass(item.sku, serial);
 
-      const duplicateSku = serialBySku.get(normalizedSerial);
+      const duplicateSku = serialBySku.get(serialKey);
       if (duplicateSku && !isSpecialBypass) {
         setMessage(
           `Nomor seri ${serial} sudah pernah di-scan untuk SKU ${duplicateSku}`
@@ -371,7 +379,7 @@ const handleSearchOrder = async () => {
         return;
       }
 
-      serialBySku.set(normalizedSerial, item.sku);
+      serialBySku.set(serialKey, item.sku);
     }
   }
 
