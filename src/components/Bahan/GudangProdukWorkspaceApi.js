@@ -759,3 +759,8 @@ export const executeMutationSession = async (id, payload) => {
     message: response?.data?.message || "Mutasi dari sesi berhasil dieksekusi.",
   };
 };
+
+export const fetchGudangProdukMutationHistory = async (params = {}) => {
+  const response = await API.get("/gudang-produk/history-mutations", { params });
+  return response?.data;
+};
