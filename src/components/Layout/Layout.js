@@ -605,6 +605,7 @@ const Layout = () => {
                   "stok-lokasi-gudang",
                   "list-stok-product",
                   "mutasi-gudang-produk",
+                  "history-mutasi-gudang",
                   "history-produk-gudang",
                   "history-stok-awal-gudang",
                   "history-produk-masuk-gudang",
@@ -673,6 +674,11 @@ const Layout = () => {
                   </li>
 
                   <div className="dropdown-group-label">History & Lainnya</div>
+                  <li>
+                    <Link to="history-mutasi-gudang" className={`dropdown-link ${activeMenu === "history-mutasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-mutasi-gudang")}>
+                      <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Mutasi
+                    </Link>
+                  </li>
                   <li>
                     <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
                       <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
