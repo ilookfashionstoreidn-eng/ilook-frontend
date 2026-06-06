@@ -24,6 +24,7 @@ const formatTanggal = (value) => {
 const ScanProdukMasukGudang = () => {
   const scanInputRef = useRef(null);
   const barcodeTimeoutRef = useRef(null);
+  const activeScanKeysRef = useRef(new Set());
 
   // Workspace state (layouts, slots, etc.)
   const { state, setState, isLoading: workspaceLoading, error: workspaceError, refresh } = useGudangProdukWorkspace();
@@ -46,6 +47,7 @@ const ScanProdukMasukGudang = () => {
   const [scanInput, setScanInput] = useState("");
   const [scanMessage, setScanMessage] = useState("");
   const [scanStatus, setScanStatus] = useState(""); // "", "loading", "success", "error"
+  const [cancelingPrintKey, setCancelingPrintKey] = useState("");
 
   // Scanned items (session list)
   const [scannedItems, setScannedItems] = useState([]);
@@ -77,22 +79,29 @@ const ScanProdukMasukGudang = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const fetchSeriDetails = async (seriId, nomorSeri) => {
+  const fetchSeriDetails = async (seriId, nomorSeri, options = {}) => {
+    const { silent = false } = options;
     if (!seriId) {
       setSeriDetails(null);
       return;
     }
     try {
-      setLoadingSeriDetails(true);
+      if (!silent) {
+        setLoadingSeriDetails(true);
+      }
       const response = await API.get("/gudang-produk-workspace/seri-details", {
         params: { seri_id: seriId, nomor_seri: nomorSeri },
       });
       setSeriDetails(response.data?.data || null);
     } catch (err) {
       console.error("Gagal mengambil detail seri", err);
-      setSeriDetails(null);
+      if (!silent) {
+        setSeriDetails(null);
+      }
     } finally {
-      setLoadingSeriDetails(false);
+      if (!silent) {
+        setLoadingSeriDetails(false);
+      }
     }
   };
 
@@ -166,6 +175,18 @@ const ScanProdukMasukGudang = () => {
   const selectedSlotSummary = selectedSlot ? stockSummaryBySlot[selectedSlot.id] : null;
 
   const canScan = Boolean(selectedLayout && selectedSlot && selectedSeriId);
+  const orderedSeriPrints = useMemo(() => {
+    if (!seriDetails?.prints) return [];
+    return [...seriDetails.prints].sort(
+      (a, b) => (Number(b.print_seq) || 0) - (Number(a.print_seq) || 0)
+    );
+  }, [seriDetails]);
+  const activeSeriPrintCount = seriDetails?.prints?.filter((print) => !print.is_cancelled).length || 0;
+  const scannedSeriPrintCount =
+    seriDetails?.prints?.filter((print) => print.is_scanned && !print.is_cancelled).length || 0;
+  const seriProgressPercent = activeSeriPrintCount
+    ? (scannedSeriPrintCount / activeSeriPrintCount) * 100
+    : 0;
 
   // Filter scanned items
   const filteredItems = scannedItems.filter((item) => {
@@ -210,7 +231,25 @@ const ScanProdukMasukGudang = () => {
     }
   }, [canScan]);
 
-  // Barcode handling (auto-scan like ScanBahan)
+  const getSerialFromBarcode = (bc) => {
+    if (bc.includes(" | ")) {
+      return bc.split(" | ")[1]?.trim() || bc;
+    }
+    return bc.trim();
+  };
+
+  const getKodeSeriFromSerial = (serial) => {
+    const lastDot = serial.lastIndexOf(".");
+    return lastDot !== -1 ? serial.slice(0, lastDot) : serial;
+  };
+
+  const getScanKey = (barcode) => {
+    const serial = getSerialFromBarcode(barcode);
+    const isSerialBarcode = serial.includes(".") || barcode.includes(" | ");
+    return isSerialBarcode ? `serial:${serial}` : `barcode:${barcode}`;
+  };
+
+  // Barcode handling: Enter scans instantly, with a tiny fallback for scanners without Enter.
   const handleBarcodeChange = (value) => {
     setScanInput(value);
 
@@ -220,19 +259,14 @@ const ScanProdukMasukGudang = () => {
 
     const trimmedValue = value.trim();
 
-    if (trimmedValue.length >= 8 && scanStatus !== "loading") {
+    if (trimmedValue.length >= 8) {
       barcodeTimeoutRef.current = setTimeout(async () => {
         await processScan(trimmedValue);
-      }, 200);
+      }, 35);
     }
   };
 
   const processScan = async (barcodeValue = null) => {
-    // If already loading, prevent duplicate concurrent requests
-    if (scanStatus === "loading") {
-      return;
-    }
-
     const barcodeToScan = barcodeValue || scanInput.trim();
 
     if (!barcodeToScan) {
@@ -255,16 +289,8 @@ const ScanProdukMasukGudang = () => {
     }
 
     // ─── Frontend Duplicate Scan Check ───
-    const getSerialFromBarcode = (bc) => {
-      if (bc.includes(" | ")) {
-        return bc.split(" | ")[1]?.trim() || bc;
-      }
-      return bc.trim();
-    };
-
     const currentSerial = getSerialFromBarcode(barcodeToScan);
-    const lastDot = currentSerial.lastIndexOf('.');
-    const parsedKodeSeri = lastDot !== -1 ? currentSerial.slice(0, lastDot) : currentSerial;
+    const parsedKodeSeri = getKodeSeriFromSerial(currentSerial);
 
     // Validate against selected Nomor Seri
     if (parsedKodeSeri !== selectedSeriNumber) {
@@ -277,9 +303,18 @@ const ScanProdukMasukGudang = () => {
     }
 
     if (seriDetails && seriDetails.prints) {
-      const isValidPrint = seriDetails.prints.some((p) => p.barcode_seri === currentSerial);
-      if (!isValidPrint) {
+      const matchedPrint = seriDetails.prints.find((p) => p.barcode_seri === currentSerial);
+      if (!matchedPrint) {
         setScanMessage(`WARNING: Barcode "${barcodeToScan}" tidak terdaftar dalam cetakan aktif untuk Nomor Seri "${selectedSeriNumber}".`);
+        setScanStatus("error");
+        setScanInput("");
+        playSound("error");
+        setTimeout(() => focusScanInput(), 100);
+        return;
+      }
+
+      if (matchedPrint.is_cancelled) {
+        setScanMessage(`WARNING: Barcode "${barcodeToScan}" sudah dibatalkan dan tidak bisa di-scan masuk.`);
         setScanStatus("error");
         setScanInput("");
         playSound("error");
@@ -289,6 +324,16 @@ const ScanProdukMasukGudang = () => {
     }
 
     const isSerialBarcode = currentSerial.includes(".") || barcodeToScan.includes(" | ");
+    const scanKey = getScanKey(barcodeToScan);
+
+    if (activeScanKeysRef.current.has(scanKey)) {
+      setScanMessage(`Barcode "${barcodeToScan}" sedang diproses.`);
+      setScanStatus("error");
+      setScanInput("");
+      playSound("error");
+      setTimeout(() => focusScanInput(), 20);
+      return;
+    }
 
     if (isSerialBarcode) {
       // Check in local session history
@@ -330,7 +375,10 @@ const ScanProdukMasukGudang = () => {
     }
 
     try {
+      activeScanKeysRef.current.add(scanKey);
       setScanStatus("loading");
+      setScanInput("");
+      scanInputRef.current?.focus();
 
       const response = await API.post("/gudang-produk-workspace/scan-produk-masuk", {
         barcode: barcodeToScan,
@@ -391,13 +439,29 @@ const ScanProdukMasukGudang = () => {
         });
       }
 
-      // Refresh serial print list details reactively
-      fetchSeriDetails(selectedSeriId, selectedSeriNumber);
+      setSeriDetails((prevDetails) => {
+        if (!prevDetails?.prints) return prevDetails;
+        return {
+          ...prevDetails,
+          prints: prevDetails.prints.map((print) =>
+            print.barcode_seri === currentSerial
+              ? {
+                  ...print,
+                  is_scanned: true,
+                  slot_code: resultData.slot || selectedSlot?.slotCode || print.slot_code,
+                }
+              : print
+          ),
+        };
+      });
+
+      // Refresh serial print list details reactively without blanking the status panel.
+      fetchSeriDetails(selectedSeriId, selectedSeriNumber, { silent: true });
       fetchSeriList();
 
       setTimeout(() => {
         focusScanInput();
-      }, 100);
+      }, 20);
     } catch (error) {
       const msg = error.response?.data?.message || "Gagal memindai barcode produk.";
       setScanMessage(msg);
@@ -423,10 +487,61 @@ const ScanProdukMasukGudang = () => {
         ...prev,
       ]);
     } finally {
+      activeScanKeysRef.current.delete(scanKey);
       setTimeout(() => setScanStatus(""), 3000);
       setTimeout(() => {
         focusScanInput();
-      }, 100);
+      }, 20);
+    }
+  };
+
+  const handleCancelSeriPrint = async (print) => {
+    if (!print || print.is_scanned || print.is_cancelled) {
+      return;
+    }
+
+    if (!window.confirm(`Batalkan kode seri "${print.barcode_seri}" karena kelebihan cetak?`)) {
+      focusScanInput();
+      return;
+    }
+
+    try {
+      setCancelingPrintKey(print.barcode_seri);
+      const response = await API.post("/gudang-produk-workspace/cancel-print-seri", {
+        seri_id: selectedSeriId,
+        barcode_seri: print.barcode_seri,
+        reason: "Kelebihan cetak",
+      });
+
+      setScanMessage(response.data?.message || `Kode seri "${print.barcode_seri}" berhasil dibatalkan.`);
+      setScanStatus("success");
+      setSeriDetails((prevDetails) => {
+        if (!prevDetails?.prints) return prevDetails;
+        return {
+          ...prevDetails,
+          prints: prevDetails.prints.map((item) =>
+            item.barcode_seri === print.barcode_seri
+              ? {
+                  ...item,
+                  is_cancelled: true,
+                  cancelled_at: response.data?.data?.cancelled_at || new Date().toISOString(),
+                }
+              : item
+          ),
+        };
+      });
+
+      fetchSeriDetails(selectedSeriId, selectedSeriNumber, { silent: true });
+      fetchSeriList();
+    } catch (err) {
+      console.error("Gagal membatalkan kode seri", err);
+      setScanMessage(err.response?.data?.message || "Gagal membatalkan kode seri.");
+      setScanStatus("error");
+      playSound("error");
+    } finally {
+      setCancelingPrintKey("");
+      setTimeout(() => setScanStatus(""), 3000);
+      setTimeout(() => focusScanInput(), 20);
     }
   };
 
@@ -478,6 +593,15 @@ const ScanProdukMasukGudang = () => {
   const handleScan = async (e) => {
     e.preventDefault();
     await processScan();
+  };
+
+  const handleScanKeyDown = async (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (barcodeTimeoutRef.current) {
+      clearTimeout(barcodeTimeoutRef.current);
+    }
+    await processScan(e.currentTarget.value.trim());
   };
 
   const handleClearHistory = () => {
@@ -758,6 +882,7 @@ const ScanProdukMasukGudang = () => {
                     type="text"
                     value={scanInput}
                     onChange={(e) => handleBarcodeChange(e.target.value)}
+                    onKeyDown={handleScanKeyDown}
                     placeholder={
                       !layoutId || !slotId
                         ? "Pilih gudang & slot terlebih dahulu"
@@ -766,13 +891,13 @@ const ScanProdukMasukGudang = () => {
                         : "Scan barcode kode seri produk..."
                     }
                     className="spm-gudang-input"
-                    disabled={!canScan || scanStatus === "loading"}
+                    disabled={!canScan}
                     autoFocus
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={!canScan || scanStatus === "loading"}
+                  disabled={!canScan}
                   className="spm-gudang-btn spm-gudang-btn-primary"
                 >
                   {scanStatus === "loading" ? "Memindai..." : "Scan"}
@@ -948,14 +1073,14 @@ const ScanProdukMasukGudang = () => {
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
                       <span>Progress Scan Masuk</span>
                       <span style={{ fontWeight: 600 }}>
-                        {seriDetails.prints.filter(p => p.is_scanned).length} / {seriDetails.jumlah} pcs
+                        {scannedSeriPrintCount} / {activeSeriPrintCount} pcs
                       </span>
                     </div>
 
                     {/* Progress Bar */}
                     <div style={{ width: "100%", height: "8px", background: "#cbd5e1", borderRadius: "4px", overflow: "hidden" }}>
                       <div style={{
-                        width: `${(seriDetails.prints.filter(p => p.is_scanned).length / seriDetails.jumlah) * 100}%`,
+                        width: `${seriProgressPercent}%`,
                         height: "100%",
                         background: "linear-gradient(90deg, #10b981, #059669)",
                         transition: "width 0.4s ease"
@@ -973,65 +1098,111 @@ const ScanProdukMasukGudang = () => {
                     gap: "10px",
                     paddingRight: "4px"
                   }}>
-                    {seriDetails.prints.map((print) => (
-                      <div
-                        key={print.barcode_seri}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: "10px",
-                          border: print.is_scanned ? "1px solid #a7f3d0" : "1px solid #e2e8f0",
-                          background: print.is_scanned ? "#f0fdf4" : "#ffffff",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                          fontSize: "12px",
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontWeight: 700, color: print.is_scanned ? "#15803d" : "#475569" }}>
-                            #{print.print_seq}
+                    {orderedSeriPrints.map((print) => {
+                      const isCancelled = Boolean(print.is_cancelled);
+                      const isScanned = Boolean(print.is_scanned);
+                      const isCanceling = cancelingPrintKey === print.barcode_seri;
+                      const borderColor = isCancelled ? "#fecaca" : isScanned ? "#a7f3d0" : "#e2e8f0";
+                      const backgroundColor = isCancelled ? "#fff1f2" : isScanned ? "#f0fdf4" : "#ffffff";
+                      const textColor = isCancelled ? "#be123c" : isScanned ? "#15803d" : "#475569";
+                      const dotColor = isCancelled ? "#ef4444" : isScanned ? "#10b981" : "#94a3b8";
+
+                      return (
+                        <div
+                          key={print.barcode_seri}
+                          style={{
+                            padding: "10px 12px",
+                            borderRadius: "10px",
+                            border: `1px solid ${borderColor}`,
+                            background: backgroundColor,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                            fontSize: "12px",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontWeight: 700, color: textColor }}>
+                              #{print.print_seq}
+                            </span>
+                            <span style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              background: dotColor
+                            }} />
+                          </div>
+
+                          <span style={{ fontFamily: "monospace", fontSize: "11px", color: isCancelled ? "#9f1239" : isScanned ? "#166534" : "#64748b" }}>
+                            {print.barcode_seri}
                           </span>
-                          <span style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: print.is_scanned ? "#10b981" : "#94a3b8"
-                          }} />
+
+                          {isScanned ? (
+                            <div style={{
+                              marginTop: "4px",
+                              fontSize: "10px",
+                              color: "#15803d",
+                              fontWeight: 600,
+                              background: "#d1fae5",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              width: "fit-content"
+                            }}>
+                              {print.slot_code}
+                            </div>
+                          ) : isCancelled ? (
+                            <div style={{
+                              marginTop: "4px",
+                              fontSize: "10px",
+                              color: "#be123c",
+                              fontWeight: 700,
+                              background: "#ffe4e6",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              width: "fit-content"
+                            }}>
+                              Batal
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", marginTop: "4px" }}>
+                              <div style={{
+                                fontSize: "10px",
+                                color: "#64748b",
+                                background: "#f1f5f9",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                width: "fit-content"
+                              }}>
+                                Belum
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCancelSeriPrint(print)}
+                                disabled={isCanceling}
+                                title="Batalkan kode seri kelebihan cetak"
+                                style={{
+                                  border: "1px solid #fecaca",
+                                  background: isCanceling ? "#f1f5f9" : "#fff1f2",
+                                  color: isCanceling ? "#94a3b8" : "#dc2626",
+                                  borderRadius: "5px",
+                                  padding: "2px 6px",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  cursor: isCanceling ? "wait" : "pointer"
+                                }}
+                              >
+                                <FaTimes size={9} />
+                                {isCanceling ? "..." : "Batal"}
+                              </button>
+                            </div>
+                          )}
                         </div>
-
-                        <span style={{ fontFamily: "monospace", fontSize: "11px", color: print.is_scanned ? "#166534" : "#64748b" }}>
-                          {print.barcode_seri}
-                        </span>
-
-                        {print.is_scanned ? (
-                          <div style={{
-                            marginTop: "4px",
-                            fontSize: "10px",
-                            color: "#15803d",
-                            fontWeight: 600,
-                            background: "#d1fae5",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            width: "fit-content"
-                          }}>
-                            {print.slot_code}
-                          </div>
-                        ) : (
-                          <div style={{
-                            marginTop: "4px",
-                            fontSize: "10px",
-                            color: "#64748b",
-                            background: "#f1f5f9",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            width: "fit-content"
-                          }}>
-                            Belum
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
