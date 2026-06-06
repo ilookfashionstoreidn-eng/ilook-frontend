@@ -14,7 +14,9 @@ import {
   FiSearch,
   FiUsers,
   FiX,
+  FiTrash2,
 } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 const emptyPenjahit = {
   nama_penjahit: "",
@@ -257,6 +259,29 @@ const Penjahit = () => {
     setShowForm(true);
   };
 
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data penjahit ini akan dihapus permanen!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/penjahit/${id}`);
+        setPenjahits((prev) => prev.filter((p) => p.id_penjahit !== id));
+        Swal.fire("Terhapus!", "Data penjahit telah dihapus.", "success");
+      } catch (err) {
+        Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus data.", "error");
+      }
+    }
+  };
+
   const handleMesinChange = (index, field, value) => {
     setNewPenjahit((prev) => {
       const updatedMesin = [...prev.mesin];
@@ -422,6 +447,15 @@ const Penjahit = () => {
                             aria-label={`Edit ${penjahit.nama_penjahit}`}
                           >
                             <FiEdit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="table-icon-btn table-icon-delete"
+                            onClick={() => handleDeleteClick(penjahit.id_penjahit)}
+                            aria-label={`Hapus ${penjahit.nama_penjahit}`}
+                            style={{ color: '#ef4444', background: '#fef2f2', border: '1px solid #fee2e2' }}
+                          >
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
                       </td>

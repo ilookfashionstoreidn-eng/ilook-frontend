@@ -89,6 +89,23 @@ const formatSeriSummaryForPdf = (value) => {
     .join("\n");
 };
 
+const parseSeriGroups = (value) => {
+  const serialGroups = String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .reduce((groups, serial) => {
+      const baseSerial = serial.split(".")[0]?.trim() || serial;
+      groups.set(baseSerial, (groups.get(baseSerial) || 0) + 1);
+      return groups;
+    }, new Map());
+
+  return Array.from(serialGroups.entries()).map(([serial, count]) => ({
+    serial,
+    count,
+  }));
+};
+
 const escapeRegExp = (value) =>
   String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -357,21 +374,43 @@ const HistoryStokAwalGudang = () => {
         29
       );
 
+      // Flatten rows: each seri group becomes its own PDF row
+      const pdfBody = [];
+      if (exportRows.length > 0) {
+        exportRows.forEach((row, index) => {
+          const groups = parseSeriGroups(row.seri);
+          if (groups.length === 0) {
+            pdfBody.push([
+              index + 1,
+              formatDateTime(row.tgl),
+              row.sku || "-",
+              "-",
+              "-",
+              formatNumber(row.qty),
+              row.lokasi || "-",
+            ]);
+          } else {
+            groups.forEach((g, gIdx) => {
+              pdfBody.push([
+                gIdx === 0 ? index + 1 : "",
+                gIdx === 0 ? formatDateTime(row.tgl) : "",
+                gIdx === 0 ? (row.sku || "-") : "",
+                g.serial,
+                String(g.count),
+                gIdx === 0 ? formatNumber(row.qty) : "",
+                gIdx === 0 ? (row.lokasi || "-") : "",
+              ]);
+            });
+          }
+        });
+      } else {
+        pdfBody.push(["-", "-", "Tidak ada data", "-", "-", "-", "-"]);
+      }
+
       doc.autoTable({
         startY: 35,
-        head: [["No", "TGL", "SKU", "SERI", "Lokasi", "QTY Produk Awal", "Qty Produk Masuk"]],
-        body:
-          exportRows.length > 0
-            ? exportRows.map((row, index) => [
-                index + 1,
-                formatDateTime(row.tgl),
-                row.sku || "-",
-                formatSeriSummaryForPdf(row.seri),
-                row.lokasi || "-",
-                formatNumber(row.qty),
-                "",
-              ])
-            : [["-", "-", "Tidak ada data", "-", "-", "-", "-"]],
+        head: [["No", "TGL", "SKU", "SERI", "QTY Seri", "QTY Total", "Lokasi"]],
+        body: pdfBody,
         theme: "grid",
         margin: { left: marginX, right: marginX, top: 12, bottom: 12 },
         styles: {
@@ -396,10 +435,10 @@ const HistoryStokAwalGudang = () => {
           0: { cellWidth: 10, halign: "center" },
           1: { cellWidth: 27 },
           2: { cellWidth: 38 },
-          3: { cellWidth: 38 },
-          4: { cellWidth: pageWidth - marginX * 2 - 159 },
-          5: { cellWidth: 23, halign: "center" },
-          6: { cellWidth: 23, halign: "center" },
+          3: { cellWidth: 30, halign: "center" },
+          4: { cellWidth: 20, halign: "center" },
+          5: { cellWidth: 22, halign: "center" },
+          6: { cellWidth: pageWidth - marginX * 2 - 147 },
         },
         didDrawPage: () => {
           const pageHeight = doc.internal.pageSize.getHeight();
@@ -623,35 +662,94 @@ const HistoryStokAwalGudang = () => {
 
               <div className="gudang-ui-table-shell">
                 <table className="gudang-ui-table gudang-history-table gudang-stok-awal-history-table">
+                  <colgroup>
+                    <col style={{ width: '130px' }} />
+                    <col />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '140px' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>TGL</th>
                       <th>SKU</th>
                       <th>SERI</th>
-                      <th>QTY</th>
+                      <th>QTY Seri</th>
+                      <th>QTY Total</th>
                       <th>Lokasi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {visibleRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>{formatDateTime(row.tgl)}</td>
-                        <td>
-                          <strong>{highlightText(row.sku, activeSearch)}</strong>
-                        </td>
-                        <td>{highlightText(row.seri, activeSearch)}</td>
-                        <td className="gudang-liststok-qty-cell">
-                          <span className="gudang-liststok-qty sisa">
-                            {formatNumber(row.qty)}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="gudang-ui-pill gudang-liststok-location">
-                            {highlightText(row.lokasi, activeSearch)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {visibleRows.map((row) => {
+                      const seriGroups = parseSeriGroups(row.seri);
+                      const spanCount = Math.max(seriGroups.length, 1);
+
+                      if (seriGroups.length === 0) {
+                        return (
+                          <tr key={row.id} className="stok-awal-row-first">
+                            <td>{formatDateTime(row.tgl)}</td>
+                            <td>
+                              <strong>{highlightText(row.sku, activeSearch)}</strong>
+                            </td>
+                            <td className="stok-awal-seri-cell">-</td>
+                            <td>-</td>
+                            <td className="gudang-liststok-qty-cell">
+                              <span className="gudang-liststok-qty sisa">
+                                {formatNumber(row.qty)}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="gudang-ui-pill gudang-liststok-location">
+                                {highlightText(row.lokasi, activeSearch)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return seriGroups.map((group, idx) => (
+                        <tr
+                          key={`${row.id}_${group.serial}`}
+                          className={idx === 0 ? "stok-awal-row-first" : "stok-awal-row-sub"}
+                        >
+                          {idx === 0 && (
+                            <>
+                              <td rowSpan={spanCount} className="stok-awal-cell-span">
+                                {formatDateTime(row.tgl)}
+                              </td>
+                              <td rowSpan={spanCount} className="stok-awal-cell-span">
+                                <strong>{highlightText(row.sku, activeSearch)}</strong>
+                              </td>
+                            </>
+                          )}
+                          <td className="stok-awal-seri-cell">
+                            <span className="stok-awal-seri-name">
+                              {highlightText(group.serial, activeSearch)}
+                            </span>
+                          </td>
+                          <td className="gudang-liststok-qty-cell">
+                            <span className="stok-awal-qty-seri">
+                              {formatNumber(group.count)}
+                            </span>
+                          </td>
+                          {idx === 0 && (
+                            <>
+                              <td rowSpan={spanCount} className="gudang-liststok-qty-cell stok-awal-cell-span">
+                                <span className="gudang-liststok-qty sisa">
+                                  {formatNumber(row.qty)}
+                                </span>
+                              </td>
+                              <td rowSpan={spanCount} className="stok-awal-cell-span">
+                                <span className="gudang-ui-pill gudang-liststok-location">
+                                  {highlightText(row.lokasi, activeSearch)}
+                                </span>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ));
+                    })}
                   </tbody>
                 </table>
               </div>

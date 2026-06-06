@@ -12,6 +12,7 @@ import {
   FaChevronRight,
   FaInfoCircle,
   FaMapMarkedAlt,
+  FaQrcode,
   FaSync,
   FaTimes,
   FaWarehouse,
@@ -24,6 +25,17 @@ import {
   fetchGudangProdukWorkspaceStockList,
   fetchStokSeriDetail,
 } from "./GudangProdukWorkspaceApi";
+
+const formatDateOnly = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 const EMPTY_SUMMARY = {
   total_rows: 0,
@@ -285,15 +297,24 @@ const SeriDetailModal = ({ row, onClose }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const ListStokProductGudang = () => {
+  const today = new Date().toISOString().slice(0, 10);
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [searchInput, setSearchInput] = useState("");
   const deferredSearchInput = useDeferredValue(searchInput);
+
+  // Date range states
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [singleDate, setSingleDate] = useState(today);
+
   const [query, setQuery] = useState({
     page: 1,
     perPage: 50,
     search: "",
+    startDate: today,
+    endDate: today,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -333,6 +354,8 @@ const ListStokProductGudang = () => {
           page: query.page,
           per_page: query.perPage,
           search: query.search,
+          start_date: query.startDate,
+          end_date: query.endDate,
         });
 
         if (ignore) {
@@ -379,6 +402,47 @@ const ListStokProductGudang = () => {
     };
   }, [query]);
 
+  const openDatePicker = (event) => {
+    const input = event.currentTarget;
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch (pickerError) {
+        // ignore
+      }
+    }
+  };
+
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleEndDateChange = (event) => {
+    setEndDate(event.target.value);
+    setSingleDate("");
+  };
+
+  const handleSingleDateChange = (event) => {
+    const selectedDate = event.target.value;
+    setSingleDate(selectedDate);
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      setEndDate(selectedDate);
+    }
+  };
+
+  const applyFilter = () => {
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        startDate,
+        endDate,
+        page: 1,
+      }));
+    });
+  };
+
   const refreshRows = () => {
     startTransition(() => {
       setQuery((current) => ({
@@ -410,11 +474,16 @@ const ListStokProductGudang = () => {
 
   const clearSearch = () => {
     setSearchInput("");
+    setStartDate(today);
+    setEndDate(today);
+    setSingleDate(today);
 
     startTransition(() => {
       setQuery((current) => ({
         ...current,
         search: "",
+        startDate: today,
+        endDate: today,
         page: 1,
       }));
     });
@@ -443,15 +512,15 @@ const ListStokProductGudang = () => {
 
   return (
     <GudangProdukBaseShell
-      title="List Stok Product"
-      subtitle="Lihat ringkasan stok masuk, keluar, sisa, dan lokasi rak aktif untuk semua SKU di gudang produk."
+      title="List Stok Product (Daily)"
+      subtitle="Lihat ringkasan stok masuk, keluar, sisa, dan lokasi rak aktif per hari untuk semua SKU di gudang produk."
       icon={FaBoxes}
       statusLabel={
         isInitialLoading
           ? "Memuat data..."
           : isRefreshing
           ? "Memperbarui hasil..."
-          : `${summary.total_rows} baris stok aktif`
+          : `${summary.total_rows} baris stok harian`
       }
       searchValue={searchInput}
       onSearchChange={setSearchInput}
@@ -467,24 +536,24 @@ const ListStokProductGudang = () => {
     >
       <section className="gudang-ui-stat-grid">
         <GudangStatCard
-          label="SKU Aktif"
+          label="Baris Stok"
           value={formatNumber(summary.total_rows)}
-          helper="Baris stok yang masih punya qty sisa."
+          helper="Jumlah baris data stok pada filter aktif."
         />
         <GudangStatCard
           label="Qty Masuk"
           value={formatNumber(summary.total_qty_masuk)}
-          helper="Akumulasi qty yang pernah masuk ke lokasi aktif."
+          helper="Akumulasi qty masuk harian."
         />
         <GudangStatCard
           label="Qty Keluar"
           value={formatNumber(summary.total_qty_keluar)}
-          helper="Akumulasi qty yang sudah keluar dari lokasi aktif."
+          helper="Akumulasi qty keluar harian."
         />
         <GudangStatCard
           label="Qty Sisa"
           value={formatNumber(summary.total_qty_sisa)}
-          helper={`${formatNumber(summary.total_locations)} lokasi rak masih terisi.`}
+          helper={`${formatNumber(summary.total_locations)} lokasi rak aktif terisi.`}
         />
       </section>
 
@@ -495,11 +564,9 @@ const ListStokProductGudang = () => {
               <FaWarehouse />
               Panel Operasional
             </div>
-            <h2>Cari stok product lebih cepat.</h2>
+            <h2>Running Stok Perday</h2>
             <p>
-              Gunakan pencarian cepat untuk SKU, nama produk, layout, atau kode rak.
-              Hasil lama tetap terlihat saat pencarian atau refresh berjalan supaya fokus
-              baca user tidak terputus.
+              Tampilkan data pergerakan dan sisa stok harian. Gunakan rentang tanggal untuk melihat riwayat stok gudang di hari-hari sebelumnya.
             </p>
           </div>
 
@@ -514,21 +581,66 @@ const ListStokProductGudang = () => {
                 ))}
               </select>
             </label>
+          </div>
+        </div>
 
-            {activeSearch ? (
+        {/* Date Filter Toolbar */}
+        <div className="gudang-history-filter-grid" style={{ marginTop: "16px", borderTop: "1px solid #edf2f7", paddingTop: "16px" }}>
+          <label className="gudang-history-date-field">
+            <span>Range Tanggal</span>
+            <div className="gudang-history-date-range">
+              <input
+                type="date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                onClick={openDatePicker}
+                onFocus={openDatePicker}
+              />
+              <span>-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                onClick={openDatePicker}
+                onFocus={openDatePicker}
+              />
+            </div>
+          </label>
+
+          <label className="gudang-history-date-field">
+            <span>1 Tanggal</span>
+            <input
+              type="date"
+              value={singleDate}
+              onChange={handleSingleDateChange}
+              onClick={openDatePicker}
+              onFocus={openDatePicker}
+            />
+          </label>
+
+          <div className="gudang-history-filter-actions">
+            {activeSearch || startDate !== today || endDate !== today ? (
               <button
                 type="button"
                 className="gudang-ui-button-secondary"
                 onClick={clearSearch}
               >
                 <FaTimes />
-                Reset Pencarian
+                Reset
               </button>
             ) : null}
+            <button
+              type="button"
+              className="gudang-ui-header-action primary"
+              onClick={applyFilter}
+            >
+              <FaQrcode />
+              Tampilkan
+            </button>
           </div>
         </div>
 
-        <div className="gudang-liststok-meta-row">
+        <div className="gudang-liststok-meta-row" style={{ marginTop: "16px" }}>
           <div className="gudang-ui-chip-row">
             <span className="gudang-ui-chip">
               Menampilkan {formatNumber(resultFrom)}-{formatNumber(resultTo)} dari{" "}
@@ -572,10 +684,9 @@ const ListStokProductGudang = () => {
       <section className="gudang-ui-panel gudang-liststok-data-panel">
         <div className="gudang-ui-panel-head">
           <div>
-            <h2>Tabel Stok Product</h2>
+            <h2>Tabel Running Stok Harian</h2>
             <p>
-              Susunan kolom dibuat agar angka masuk, keluar, sisa, dan lokasi rak lebih
-              mudah dipindai dalam sekali lihat.
+              Riwayat kuantitas awal, masuk, keluar, sisa harian beserta lokasi rak dan detail kode seri produk.
             </p>
           </div>
           <div className="gudang-ui-chip-row">
@@ -590,7 +701,7 @@ const ListStokProductGudang = () => {
         </div>
 
         {isInitialLoading ? (
-          <div className="gudang-ui-empty-panel">Memuat list stok product...</div>
+          <div className="gudang-ui-empty-panel">Memuat data running stok...</div>
         ) : hasRows ? (
           <>
             <div className="gudang-liststok-table-stage">
@@ -604,6 +715,7 @@ const ListStokProductGudang = () => {
               <table className="gudang-ui-table gudang-liststok-table">
                 <colgroup>
                   <col className="gudang-liststok-col-order" />
+                  <col style={{ width: '110px' }} />
                   <col className="gudang-liststok-col-sku" />
                   <col className="gudang-liststok-col-qty" />
                   <col className="gudang-liststok-col-qty" />
@@ -615,6 +727,7 @@ const ListStokProductGudang = () => {
                 <thead>
                   <tr>
                     <th className="gudang-liststok-head-center">No</th>
+                    <th>Tanggal</th>
                     <th>SKU</th>
                     <th className="gudang-liststok-head-qty">QTY Awal</th>
                     <th className="gudang-liststok-head-qty">QTY Masuk</th>
@@ -631,11 +744,13 @@ const ListStokProductGudang = () => {
                         {formatNumber(row.rowNumber)}
                       </td>
                       <td>
+                        <strong>{formatDateOnly(row.tanggal)}</strong>
+                      </td>
+                      <td>
                         <div className="gudang-liststok-sku">
                           <span className="gudang-liststok-sku-code">
                             {highlightText(row.sku, activeSearch)}
                           </span>
-                         
                         </div>
                       </td>
                       <td className="gudang-liststok-qty-cell">
