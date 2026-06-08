@@ -661,7 +661,7 @@ const ScanProdukMasukGudang = () => {
             <div className="spm-gudang-brand-icon">
               <FaBarcode />
             </div>
-            <div>
+            <div> 
               <h1>Scan Produk Masuk</h1>
               <p>Scan barcode kode seri untuk memasukkan produk ke gudang secara real-time</p>
             </div>
