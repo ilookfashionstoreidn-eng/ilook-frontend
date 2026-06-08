@@ -34,22 +34,19 @@ const ReturnPage = () => {
   const handleScanReturn = async (event) => {
     event?.preventDefault();
 
-    const tracking = trackingNumber.trim();
-    if (!tracking || loading) {
-      return;
-    }
+    if (loading) return;
 
     setLoading(true);
     setMessage(null);
 
     try {
       const response = await API.post("/returns/scan", {
-        tracking_number: tracking,
+        tracking_number: trackingNumber.trim() || null,
       });
       const payload = response.data?.data || {};
 
       setLastScan({
-        order: payload.order,
+        order: payload.order ?? null,
         log: payload.log,
       });
       setTrackingNumber("");
@@ -85,7 +82,7 @@ const ReturnPage = () => {
               </div>
               <div>
                 <h1>Return</h1>
-                <p>Scan tracking number untuk mencatat return dan menampilkan detail order.</p>
+                <p>Scan tracking number untuk mencatat return. Tracking number bersifat opsional.</p>
               </div>
             </div>
           </header>
@@ -101,7 +98,7 @@ const ReturnPage = () => {
                 <input
                   ref={trackingInputRef}
                   type="text"
-                  placeholder="Scan / masukkan Tracking Number..."
+                  placeholder="Scan / masukkan Tracking Number (opsional)..."
                   value={trackingNumber}
                   onChange={(event) => setTrackingNumber(event.target.value)}
                   autoFocus
