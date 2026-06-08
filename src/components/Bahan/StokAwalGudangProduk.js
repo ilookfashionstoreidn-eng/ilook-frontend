@@ -68,7 +68,7 @@ const StokAwalGudangProduk = () => {
   const [rackId, setRackId] = useState("");
   const [rowNumber, setRowNumber] = useState("");
   const [notes, setNotes] = useState("");
-  const [serialItems, setSerialItems] = useState([]);
+  const [serialCache, setSerialCache] = useState(new Map());
   const [serialScanValue, setSerialScanValue] = useState("");
   const [serialLoading, setSerialLoading] = useState(false);
   const [scanMessage, setScanMessage] = useState("");
@@ -84,36 +84,6 @@ const StokAwalGudangProduk = () => {
       setLayoutId(state.layouts[0].id);
     }
   }, [layoutId, state.layouts]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchSerials = async () => {
-      try {
-        setSerialLoading(true);
-        const response = await API.get("/seri", { params: { all: 1 } });
-        if (!isMounted) return;
-        setSerialItems(Array.isArray(response?.data?.data) ? response.data.data : []);
-      } catch (fetchError) {
-        if (!isMounted) return;
-        setScanMessage(
-          fetchError?.response?.data?.message ||
-            fetchError?.message ||
-            "Gagal memuat data kode seri."
-        );
-      } finally {
-        if (isMounted) {
-          setSerialLoading(false);
-        }
-      }
-    };
-
-    fetchSerials();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const selectedLayout = useMemo(
     () => state.layouts.find((layout) => String(layout.id) === String(layoutId)) || state.layouts[0] || null,
@@ -228,25 +198,43 @@ const StokAwalGudangProduk = () => {
     return lookup;
   }, [skuOptions]);
 
-  const serialLookup = useMemo(() => {
-    const lookup = new Map();
+  const lookupSerial = async (scannedValue, scannedCode) => {
+    const lookupKeys = scannedCode.lookupValues.flatMap((value) => buildSerialSkuLookupKeys(value));
+    
+    // Check in cache first
+    let serialItem = lookupKeys.map((key) => serialCache.get(key)).find(Boolean) || null;
+    if (serialItem) {
+      return serialItem;
+    }
 
-    serialItems.forEach((item) => {
-      [
-        item?.nomor_seri,
-        item?.barcode,
-        item?.sku && item?.nomor_seri ? `${item.sku} | ${item.nomor_seri}` : "",
-      ].forEach((value) => {
-        buildSerialSkuLookupKeys(value).forEach((key) => {
-          if (key && !lookup.has(key)) {
-            lookup.set(key, item);
-          }
-        });
+    if (!scannedCode.skuText) {
+      // Query backend lookup endpoint
+      const response = await API.get("/seri/lookup", {
+        params: { search: scannedValue }
       });
-    });
+      const data = response.data;
+      if (data) {
+        // Cache the result
+        setSerialCache((prev) => {
+          const next = new Map(prev);
+          [
+            data.nomor_seri,
+            data.sku && data.nomor_seri ? `${data.sku} | ${data.nomor_seri}` : "",
+          ].forEach((value) => {
+            buildSerialSkuLookupKeys(value).forEach((key) => {
+              if (key && !next.has(key)) {
+                next.set(key, data);
+              }
+            });
+          });
+          return next;
+        });
+        return data;
+      }
+    }
 
-    return lookup;
-  }, [serialItems]);
+    return null;
+  };
 
   const totalQty = scannedRows.reduce((total, row) => total + Number(row.qty || 0), 0);
   const activityRows = state.activityLog
@@ -350,12 +338,16 @@ const StokAwalGudangProduk = () => {
         return;
       }
 
-      const serialItem =
-        scannedCode.lookupValues
-          .flatMap((value) => buildSerialSkuLookupKeys(value))
-          .map((key) => serialLookup.get(key))
-          .find(Boolean) ||
-        null;
+      setIsSubmitting(true);
+      setScanMessage("Mencari referensi nomor seri...");
+
+      let serialItem = null;
+      try {
+        serialItem = await lookupSerial(rawValue, scannedCode);
+      } catch (err) {
+        // Not found or error
+      }
+
       const serialForPlacement =
         serialItem ||
         (scannedCode.skuText
@@ -368,6 +360,7 @@ const StokAwalGudangProduk = () => {
           : null);
 
       if (!serialForPlacement) {
+        setIsSubmitting(false);
         await showGudangWarning(
           "Kode seri tidak ditemukan",
           `${scannedValue} tidak ditemukan di data kode seri. Scan format "SKU | KODE SERI" agar SKU bisa dibaca langsung.`
@@ -382,6 +375,7 @@ const StokAwalGudangProduk = () => {
         scannedRows.some((row) => normalizeScanText(row.nomorSeri) === normalizedSerial) ||
         storedSerialSet.has(normalizedSerial)
       ) {
+        setIsSubmitting(false);
         await showGudangWarning(
           "Kode seri sudah masuk gudang",
           `${serialForPlacement.nomor_seri} sudah pernah discan dan masuk stok awal.`

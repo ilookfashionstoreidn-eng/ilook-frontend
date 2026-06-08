@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "./QualityControl.css";
 
 /* ─── Searchable Dropdown ───────────────────────────────────── */
-const SeriDropdown = ({ value, onChange, seriList }) => {
+const SeriDropdown = ({ value, onChange, seriList, onSearch }) => {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -26,6 +26,17 @@ const SeriDropdown = ({ value, onChange, seriList }) => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Trigger debounced backend search on query change
+  useEffect(() => {
+    if (!open) return;
+    const delayDebounce = setTimeout(() => {
+      if (onSearch) {
+        onSearch(query.trim());
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [query, open, onSearch]);
 
   const filtered = seriList.filter((s) =>
     s.nomor_seri.toLowerCase().includes(query.toLowerCase())
@@ -119,7 +130,10 @@ const QualityControl = () => {
   // Di sini kita ambil semua seri dengan nomor_seri yang sama lalu collect unique SKU
   const skuOptions = selectedSeri
     ? [...new Set(
-      seriList
+      (selectedSeri && !seriList.some((s) => s.id === selectedSeri.id)
+        ? [selectedSeri, ...seriList]
+        : seriList
+      )
         .filter((s) => s.nomor_seri === selectedSeri.nomor_seri)
         .map((s) => s.sku)
     )]
@@ -137,9 +151,14 @@ const QualityControl = () => {
     }
   }, []);
 
-  const fetchSeriList = useCallback(async () => {
+  const fetchSeriList = useCallback(async (search = "") => {
     try {
-      const res = await API.get("/seri-list");
+      const res = await API.get("/seri-list", {
+        params: {
+          all: 1,
+          search: search
+        }
+      });
       setSeriList(res.data.data || []);
     } catch {
       toast.error("Gagal memuat data nomor seri.");
@@ -148,7 +167,7 @@ const QualityControl = () => {
 
   useEffect(() => {
     fetchQcList();
-    fetchSeriList();
+    fetchSeriList("");
   }, [fetchQcList, fetchSeriList]);
 
   const handleInputChange = (e) => {
@@ -416,7 +435,8 @@ const QualityControl = () => {
                   <SeriDropdown
                     value={selectedSeri?.nomor_seri || ""}
                     onChange={handleSeriChange}
-                    seriList={seriList}
+                    seriList={selectedSeri && !seriList.some((s) => s.id === selectedSeri.id) ? [selectedSeri, ...seriList] : seriList}
+                    onSearch={fetchSeriList}
                   />
                   {selectedSeri && (
                     <div className="qc-seri-info">
