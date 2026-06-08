@@ -7,9 +7,9 @@ export const DEFAULT_BLOCK_CANVAS = Object.freeze({
 
 export const BLOCK_CANVAS_LIMITS = Object.freeze({
   minColumns: 6,
-  maxColumns: 30,
+  maxColumns: 50,
   minRows: 4,
-  maxRows: 30,
+  maxRows: 50,
   minRackSpan: 2,
   maxAutoGridColumns: 20,
 });
