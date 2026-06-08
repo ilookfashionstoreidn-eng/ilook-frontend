@@ -71,6 +71,7 @@ const normalizeWorkspaceState = (payload = {}) => ({
 
 const normalizeGudangStockListPayload = (payload = {}) => ({
   data: Array.isArray(payload.data) ? payload.data : [],
+  locations: Array.isArray(payload.locations) ? payload.locations : [],
   summary: {
     ...emptyGudangStockListSummary,
     ...(payload.summary || {}),
@@ -192,6 +193,8 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
   const search = normalizeSearchText(params.search);
   const page = Math.max(Number(params.page) || 1, 1);
   const perPage = Math.max(Number(params.per_page || params.perPage) || 50, 1);
+  const filterLayoutId = params.layout_id || params.layoutId || "";
+  const filterLocation = params.location || "";
 
   const allRows = state.stockEntries
     .filter((entry) => Number(entry?.qty) > 0)
@@ -235,9 +238,12 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
         qtySisa,
         namaGudang: locationParts.join(" - ") || entry.slotId || "-",
         updatedAt: entry.updatedAt || null,
+        layoutId: slot?.layoutId || entry.layoutId || "",
       };
     })
     .filter((row) => {
+      if (filterLayoutId && row.layoutId !== filterLayoutId) return false;
+      if (filterLocation && row.namaGudang !== filterLocation) return false;
       if (!search) return true;
 
       return [
@@ -250,16 +256,18 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
 
   const total = allRows.length;
   const paginatedRows = allRows.slice((page - 1) * perPage, page * perPage);
+  const locations = Array.from(new Set(allRows.map((row) => row.namaGudang).filter(Boolean))).sort();
 
   return normalizeGudangStockListPayload({
     data: paginatedRows,
+    locations,
     summary: {
       total_rows: total,
       total_qty_awal: allRows.reduce((sum, row) => sum + row.qtyAwal, 0),
       total_qty_masuk: allRows.reduce((sum, row) => sum + row.qtyMasuk, 0),
       total_qty_keluar: allRows.reduce((sum, row) => sum + row.qtyKeluar, 0),
       total_qty_sisa: allRows.reduce((sum, row) => sum + row.qtySisa, 0),
-      total_locations: new Set(allRows.map((row) => row.namaGudang).filter(Boolean)).size,
+      total_locations: locations.length,
     },
     pagination: {
       current_page: page,
