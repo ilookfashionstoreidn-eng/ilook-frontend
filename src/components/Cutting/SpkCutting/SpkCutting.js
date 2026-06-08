@@ -607,14 +607,14 @@ const SpkCutting = () => {
 
   // Fungsi untuk fetch nomor seri SPK dari backend berdasarkan tukang cutting
 
-  const fetchSpkNumber = async (tukangCuttingId) => {
-    if (!tukangCuttingId) {
-      setNewSpkCutting(prev => ({ ...prev, id_spk_cutting: "" }));
-      return;
-    }
+  const fetchSpkNumber = async (tukangCuttingId = null) => {
     try {
-      const response = await API.post("/spk_cutting/generate-number", { tukang_cutting_id: tukangCuttingId });
-      setNewSpkCutting(prev => ({ ...prev, id_spk_cutting: response.data.generated_number || "" }));
+      const payload = {};
+      if (tukangCuttingId) {
+        payload.tukang_cutting_id = tukangCuttingId;
+      }
+      const response = await API.post("/spk_cutting/generate-number", payload);
+      setNewSpkCutting(prev => ({ ...prev, id_spk_cutting: response.data.id_spk_cutting || response.data.generated_number || "" }));
     } catch (error) {
       console.error("Gagal generate nomor seri:", error);
     }
@@ -802,6 +802,12 @@ const SpkCutting = () => {
     fetchSpkCutting(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Hanya sekali saat mount
+
+  useEffect(() => {
+    if (showForm) {
+      fetchSpkNumber();
+    }
+  }, [showForm]);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -1396,11 +1402,6 @@ const SpkCutting = () => {
     }
 
     setNewSpkCutting((prev) => ({ ...prev, [name]: value }));
-
-    // Jika tukang cutting berubah, generate nomor seri baru
-    if (name === "tukang_cutting_id") {
-      await fetchSpkNumber(value);
-    }
   };
 
   const handleBagianChange = (index, key, value) => {
