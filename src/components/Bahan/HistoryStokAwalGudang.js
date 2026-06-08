@@ -69,13 +69,22 @@ const getToday = () => new Date().toISOString().slice(0, 10);
 
 const formatDateForFile = (value) => String(value || "").replace(/[^0-9]/g, "") || "semua";
 
+const cleanSerial = (serial) => {
+  let clean = String(serial || "").trim();
+  // 1. Remove leading uppercase letter prefix followed by dot or hyphen (e.g. EK-, EK., SA-, TS-, RTN-)
+  clean = clean.replace(/^[A-Z]+[-.]/i, "");
+  // 2. Remove trailing print sequence suffix (e.g. .1, .12, .123 at the end of the serial)
+  clean = clean.replace(/\.\d+$/, "");
+  return clean || serial;
+};
+
 const formatSeriSummaryForPdf = (value) => {
   const serialGroups = String(value || "")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean)
     .reduce((groups, serial) => {
-      const baseSerial = serial.split(".")[0]?.trim() || serial;
+      const baseSerial = cleanSerial(serial);
       groups.set(baseSerial, (groups.get(baseSerial) || 0) + 1);
       return groups;
     }, new Map());
@@ -95,7 +104,7 @@ const parseSeriGroups = (value) => {
     .map((item) => item.trim())
     .filter(Boolean)
     .reduce((groups, serial) => {
-      const baseSerial = serial.split(".")[0]?.trim() || serial;
+      const baseSerial = cleanSerial(serial);
       groups.set(baseSerial, (groups.get(baseSerial) || 0) + 1);
       return groups;
     }, new Map());
