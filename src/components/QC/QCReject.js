@@ -19,7 +19,7 @@ const INITIAL_FORM = {
   jumlah: "",
 };
 
-const SeriDropdown = ({ value, onChange, seriList, disabled, loading }) => {
+const SeriDropdown = ({ value, onChange, seriList, disabled, loading, onSearch }) => {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -40,6 +40,17 @@ const SeriDropdown = ({ value, onChange, seriList, disabled, loading }) => {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  // Trigger debounced backend search on query change
+  useEffect(() => {
+    if (!open) return;
+    const delayDebounce = setTimeout(() => {
+      if (onSearch) {
+        onSearch(query.trim());
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [query, open, onSearch]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -112,6 +123,7 @@ const QCReject = () => {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState(INITIAL_FORM);
+  const [selectedSeriItem, setSelectedSeriItem] = useState(null);
 
   const fetchRejectData = useCallback(async () => {
     try {
@@ -126,10 +138,15 @@ const QCReject = () => {
     }
   }, []);
 
-  const fetchSeriData = useCallback(async () => {
+  const fetchSeriData = useCallback(async (search = "") => {
     setLoadingSeri(true);
     try {
-      const seriRes = await API.get("/seri-list", { params: { all: 1 } });
+      const seriRes = await API.get("/seri-list", {
+        params: {
+          all: 1,
+          search: search
+        }
+      });
       setSeriList(seriRes.data.data || []);
       return true;
     } catch {
@@ -143,7 +160,7 @@ const QCReject = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      await Promise.allSettled([fetchRejectData(), fetchSeriData()]);
+      await Promise.allSettled([fetchRejectData(), fetchSeriData("")]);
     } finally {
       setLoading(false);
     }
@@ -156,15 +173,19 @@ const QCReject = () => {
   const skuOptions = useMemo(() => {
     if (!form.nomor_seri) return [];
 
+    const list = selectedSeriItem && selectedSeriItem.nomor_seri === form.nomor_seri
+      ? [selectedSeriItem, ...seriList]
+      : seriList;
+
     return [
       ...new Set(
-        seriList
+        list
           .filter((item) => item.nomor_seri === form.nomor_seri)
           .map((item) => item.sku)
           .filter(Boolean)
       ),
     ];
-  }, [seriList, form.nomor_seri]);
+  }, [seriList, form.nomor_seri, selectedSeriItem]);
 
   useEffect(() => {
     if (!form.nomor_seri) {
@@ -186,6 +207,7 @@ const QCReject = () => {
 
   const resetForm = () => {
     setForm(INITIAL_FORM);
+    setSelectedSeriItem(null);
   };
 
   const handleSubmit = async (e) => {
@@ -317,10 +339,12 @@ const QCReject = () => {
                 onChange={(selected) => {
                   const nomorSeri = selected?.nomor_seri || "";
                   handleFormChange("nomor_seri", nomorSeri);
+                  setSelectedSeriItem(selected);
                 }}
-                seriList={seriList}
+                seriList={selectedSeriItem && !seriList.some(item => item.id === selectedSeriItem.id) ? [selectedSeriItem, ...seriList] : seriList}
                 disabled={submitting}
                 loading={loadingSeri}
+                onSearch={fetchSeriData}
               />
             </div>
 

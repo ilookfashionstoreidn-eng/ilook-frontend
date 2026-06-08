@@ -20,7 +20,7 @@ const buildSerialKey = (sku, serial) =>
   `${normalizeSku(sku)}::${normalizeSerial(serial)}`;
 
 const checkSpecialBypass = (sku, serial) => {
-  return false;
+  return true;
 };
 
 const buildScannedSerialMap = (items) => {

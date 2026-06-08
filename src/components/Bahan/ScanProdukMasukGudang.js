@@ -37,6 +37,7 @@ const ScanProdukMasukGudang = () => {
   const [seriList, setSeriList] = useState([]);
   const [selectedSeriNumber, setSelectedSeriNumber] = useState("");
   const [selectedSeriId, setSelectedSeriId] = useState("");
+  const [selectedSeriItem, setSelectedSeriItem] = useState(null);
   const [seriDetails, setSeriDetails] = useState(null);
   const [loadingSeriDetails, setLoadingSeriDetails] = useState(false);
   const [seriQuery, setSeriQuery] = useState("");
@@ -53,10 +54,15 @@ const ScanProdukMasukGudang = () => {
   const [scannedItems, setScannedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch list of all nomor seri
-  const fetchSeriList = async () => {
+  // Fetch list of nomor seri with search query
+  const fetchSeriList = async (search = "") => {
     try {
-      const response = await API.get("/seri?all=true");
+      const response = await API.get("/seri", {
+        params: {
+          all: 1,
+          search: search
+        }
+      });
       setSeriList(response.data?.data || []);
     } catch (err) {
       console.error("Gagal memuat list nomor seri", err);
@@ -65,8 +71,17 @@ const ScanProdukMasukGudang = () => {
 
   // Load nomor seri directory on mount
   useEffect(() => {
-    fetchSeriList();
+    fetchSeriList("");
   }, []);
+
+  // Debounced search for serial directory dropdown
+  useEffect(() => {
+    if (!isSeriDropdownOpen) return;
+    const delayDebounce = setTimeout(() => {
+      fetchSeriList(seriQuery.trim());
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [seriQuery, isSeriDropdownOpen]);
 
   // Click outside to close combobox dropdown
   useEffect(() => {
@@ -108,6 +123,7 @@ const ScanProdukMasukGudang = () => {
   const handleSeriChange = (seriItem) => {
     setSelectedSeriNumber(seriItem.nomor_seri);
     setSelectedSeriId(seriItem.id);
+    setSelectedSeriItem(seriItem);
     fetchSeriDetails(seriItem.id, seriItem.nomor_seri);
   };
 
@@ -123,11 +139,11 @@ const ScanProdukMasukGudang = () => {
 
   // Selected serial label to display in the input search combobox
   const selectedSeriLabel = useMemo(() => {
-    const found = seriList.find((seriItem) => seriItem.id === selectedSeriId);
+    const found = selectedSeriItem || seriList.find((seriItem) => seriItem.id === selectedSeriId);
     if (!found) return "";
     const scanned = found.scanned_count ?? 0;
     return `${found.nomor_seri} (${found.sku} - ${scanned}/${found.jumlah} pcs)`;
-  }, [selectedSeriId, seriList]);
+  }, [selectedSeriId, seriList, selectedSeriItem]);
 
   // Auto-select first layout
   useEffect(() => {
@@ -661,7 +677,7 @@ const ScanProdukMasukGudang = () => {
             <div className="spm-gudang-brand-icon">
               <FaBarcode />
             </div>
-            <div>
+            <div> 
               <h1>Scan Produk Masuk</h1>
               <p>Scan barcode kode seri untuk memasukkan produk ke gudang secara real-time</p>
             </div>
@@ -759,6 +775,7 @@ const ScanProdukMasukGudang = () => {
                             if (selectedSeriNumber) {
                               setSelectedSeriNumber("");
                               setSelectedSeriId("");
+                              setSelectedSeriItem(null);
                               setSeriDetails(null);
                             }
                           }}
@@ -772,7 +789,7 @@ const ScanProdukMasukGudang = () => {
                               e.stopPropagation();
                               setSelectedSeriId("");
                               setSelectedSeriNumber("");
-                              setSelectedSeriId("");
+                              setSelectedSeriItem(null);
                               setSeriDetails(null);
                               setSeriQuery("");
                             }}
@@ -803,7 +820,7 @@ const ScanProdukMasukGudang = () => {
                             onClick={() => {
                               setSelectedSeriId("");
                               setSelectedSeriNumber("");
-                              setSelectedSeriId("");
+                              setSelectedSeriItem(null);
                               setSeriDetails(null);
                               setSeriQuery("");
                               setIsSeriDropdownOpen(false);
