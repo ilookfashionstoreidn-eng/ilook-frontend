@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import Select from "react-select";
 import {
   FaBarcode,
   FaBoxes,
@@ -22,6 +23,7 @@ import { GudangStatCard } from "./GudangProdukSharedV2";
 import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
+  fetchGudangProdukWorkspace,
   fetchGudangProdukWorkspaceStockList,
   fetchStokSeriDetail,
 } from "./GudangProdukWorkspaceApi";
@@ -315,11 +317,83 @@ const ListStokProductGudang = () => {
     search: "",
     startDate: today,
     endDate: today,
+    layoutId: "",
+    location: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
   const [seriModalRow, setSeriModalRow] = useState(null);
+  const [layouts, setLayouts] = useState([]);
+  const [isLayoutsLoading, setIsLayoutsLoading] = useState(false);
+  const [locations, setLocations] = useState([]);
+
+  const customSelectStyles = {
+    control: (base, state) => ({
+      ...base,
+      borderColor: state.isFocused ? '#2458ce' : '#d7e4f2',
+      borderRadius: '12px',
+      minHeight: '43px',
+      backgroundColor: '#fbfdff',
+      boxShadow: state.isFocused ? '0 0 0 4px rgba(36, 88, 206, 0.1)' : 'none',
+      fontFamily: 'inherit',
+      fontSize: '13px',
+      color: '#16324f',
+      minWidth: '220px',
+      '&:hover': {
+        borderColor: '#b6c2d6'
+      }
+    }),
+    option: (base, state) => ({
+      ...base,
+      fontSize: '13px',
+      fontFamily: 'inherit',
+      backgroundColor: state.isSelected 
+        ? '#2458ce' 
+        : state.isFocused 
+        ? 'rgba(2, 132, 199, 0.08)' 
+        : '#ffffff',
+      color: state.isSelected ? '#ffffff' : '#16324f',
+      cursor: 'pointer',
+      '&:active': {
+        backgroundColor: '#2458ce'
+      }
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: '#16324f',
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: '#94a3b8',
+    })
+  };
+
+  useEffect(() => {
+    let ignore = false;
+    const loadLayouts = async () => {
+      setIsLayoutsLoading(true);
+      try {
+        const workspaceData = await fetchGudangProdukWorkspace({
+          includeCatalog: false,
+          activityLimit: 0,
+        });
+        if (!ignore) {
+          setLayouts(workspaceData.layouts || []);
+        }
+      } catch (err) {
+        console.error("Failed to load layouts", err);
+      } finally {
+        if (!ignore) {
+          setIsLayoutsLoading(false);
+        }
+      }
+    };
+    loadLayouts();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -356,6 +430,8 @@ const ListStokProductGudang = () => {
           search: query.search,
           start_date: query.startDate,
           end_date: query.endDate,
+          layout_id: query.layoutId,
+          location: query.location,
         });
 
         if (ignore) {
@@ -363,6 +439,7 @@ const ListStokProductGudang = () => {
         }
 
         setRows(result.data);
+        setLocations(result.locations || []);
         setSummary(result.summary);
         setPagination(result.pagination);
         setError("");
@@ -472,7 +549,32 @@ const ListStokProductGudang = () => {
     });
   };
 
-  const clearSearch = () => {
+  const handleLayoutChange = (event) => {
+    const nextLayoutId = event.target.value || "";
+
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        layoutId: nextLayoutId,
+        location: "", // Reset location filter if layout changes
+        page: 1,
+      }));
+    });
+  };
+
+  const handleLocationChange = (event) => {
+    const nextLocation = event.target.value || "";
+
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        location: nextLocation,
+        page: 1,
+      }));
+    });
+  };
+
+  const clearFilters = () => {
     setSearchInput("");
     setStartDate(today);
     setEndDate(today);
@@ -484,6 +586,8 @@ const ListStokProductGudang = () => {
         search: "",
         startDate: today,
         endDate: today,
+        layoutId: "",
+        location: "",
         page: 1,
       }));
     });
@@ -494,6 +598,12 @@ const ListStokProductGudang = () => {
   const hasRows = rows.length > 0;
   const activeSearch = query.search;
   const isSearchDirty = searchInput.trim() !== query.search;
+  const hasActiveFilters =
+    activeSearch ||
+    query.layoutId ||
+    query.location ||
+    query.startDate !== today ||
+    query.endDate !== today;
   const resultFrom = hasRows
     ? (pagination.current_page - 1) * pagination.per_page + 1
     : 0;
@@ -572,6 +682,63 @@ const ListStokProductGudang = () => {
 
           <div className="gudang-liststok-toolbar-controls">
             <label className="gudang-liststok-select-field">
+              <span>Filter Gudang</span>
+              <Select
+                options={[
+                  { value: "", label: "Semua Gudang" },
+                  ...layouts.map((layout) => ({
+                    value: layout.id,
+                    label: layout.name,
+                  })),
+                ]}
+                value={
+                  [
+                    { value: "", label: "Semua Gudang" },
+                    ...layouts.map((layout) => ({
+                      value: layout.id,
+                      label: layout.name,
+                    })),
+                  ].find((opt) => opt.value === query.layoutId) || { value: "", label: "Semua Gudang" }
+                }
+                onChange={(selected) => {
+                  handleLayoutChange({ target: { value: selected ? selected.value : "" } });
+                }}
+                isLoading={isLayoutsLoading}
+                placeholder="Pilih Gudang"
+                isSearchable
+                styles={customSelectStyles}
+              />
+            </label>
+
+            <label className="gudang-liststok-select-field">
+              <span>Filter Lokasi</span>
+              <Select
+                options={[
+                  { value: "", label: "Semua Lokasi" },
+                  ...locations.map((loc) => ({
+                    value: loc,
+                    label: loc,
+                  })),
+                ]}
+                value={
+                  [
+                    { value: "", label: "Semua Lokasi" },
+                    ...locations.map((loc) => ({
+                      value: loc,
+                      label: loc,
+                    })),
+                  ].find((opt) => opt.value === query.location) || { value: "", label: "Semua Lokasi" }
+                }
+                onChange={(selected) => {
+                  handleLocationChange({ target: { value: selected ? selected.value : "" } });
+                }}
+                placeholder="Pilih Lokasi"
+                isSearchable
+                styles={customSelectStyles}
+              />
+            </label>
+
+            <label className="gudang-liststok-select-field">
               <span>Baris / halaman</span>
               <select value={query.perPage} onChange={handlePerPageChange}>
                 {PAGE_SIZE_OPTIONS.map((pageSize) => (
@@ -583,7 +750,6 @@ const ListStokProductGudang = () => {
             </label>
           </div>
         </div>
-
         {/* Date Filter Toolbar */}
         <div className="gudang-history-filter-grid" style={{ marginTop: "16px", borderTop: "1px solid #edf2f7", paddingTop: "16px" }}>
           <label className="gudang-history-date-field">
@@ -619,14 +785,14 @@ const ListStokProductGudang = () => {
           </label>
 
           <div className="gudang-history-filter-actions">
-            {activeSearch || startDate !== today || endDate !== today ? (
+            {hasActiveFilters ? (
               <button
                 type="button"
                 className="gudang-ui-button-secondary"
-                onClick={clearSearch}
+                onClick={clearFilters}
               >
                 <FaTimes />
-                Reset
+                Reset Filter
               </button>
             ) : null}
             <button
@@ -657,6 +823,16 @@ const ListStokProductGudang = () => {
             {activeSearch ? (
               <span className="gudang-ui-chip gudang-liststok-chip-active">
                 Pencarian aktif: "{activeSearch}"
+              </span>
+            ) : null}
+            {query.layoutId ? (
+              <span className="gudang-ui-chip gudang-liststok-chip-active">
+                Gudang: {layouts.find((l) => l.id === query.layoutId)?.name || query.layoutId}
+              </span>
+            ) : null}
+            {query.location ? (
+              <span className="gudang-ui-chip gudang-liststok-chip-active">
+                Lokasi: "{query.location}"
               </span>
             ) : null}
             {isSearchDirty ? (
@@ -852,11 +1028,11 @@ const ListStokProductGudang = () => {
             <span style={{ display: "block", marginBottom: 16 }}>
               Coba ganti kata kunci pencarian atau reset filter pencarian yang sedang aktif.
             </span>
-            {activeSearch ? (
+            {hasActiveFilters ? (
               <button
                 type="button"
                 className="gudang-ui-button-secondary"
-                onClick={clearSearch}
+                onClick={clearFilters}
               >
                 <FaTimes />
                 Tampilkan Semua Data
