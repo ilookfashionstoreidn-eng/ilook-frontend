@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { FaBoxes, FaDownload, FaSearchLocation, FaSearch, FaTimes } from "react-icons/fa";
+import * as XLSX from "xlsx";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+import { FaBoxes, FaDownload, FaSearchLocation, FaSearch, FaTimes, FaFileExcel } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import {
   getAllSlots,
@@ -850,6 +853,117 @@ const StokLokasiGudang = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!selectedLayout) {
+      return;
+    }
+
+    try {
+      const skuQtyMap = {};
+      slotRows.forEach((slot) => {
+        slot.lines.forEach((line) => {
+          const skuCode = line.sku?.code || line.skuCode || (typeof line.sku === "string" ? line.sku : null) || "-";
+          const qty = Number(line.qty) || 0;
+          if (skuCode && skuCode !== "-") {
+            skuQtyMap[skuCode] = (skuQtyMap[skuCode] || 0) + qty;
+          }
+        });
+      });
+
+      const exportRows = Object.entries(skuQtyMap).map(([sku, qty]) => [sku, qty]);
+
+      if (exportRows.length === 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak ada data",
+          text: `Tidak ada data stok di gudang "${selectedLayout.name}" untuk diexport.`,
+          confirmButtonColor: "#2458ce",
+        });
+        return;
+      }
+
+      // Sort by SKU code alphabetically
+      exportRows.sort((a, b) => a[0].localeCompare(b[0]));
+
+      const worksheet = XLSX.utils.aoa_to_sheet([
+        ["SKU", "QTY"],
+        ...exportRows,
+      ]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Stok Gudang");
+
+      const warehouseName = selectedLayout.name || "gudang";
+      const safeWarehouseName = String(warehouseName)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      const dateStr = new Date().toISOString().slice(0, 10);
+
+      XLSX.writeFile(workbook, `stok-${safeWarehouseName}-${dateStr}.xlsx`);
+    } catch (exportError) {
+      console.error("Gagal export excel:", exportError);
+      Swal.fire({
+        icon: "error",
+        title: "Export Gagal",
+        text: "Gagal membuat file Excel. Coba ulangi lagi.",
+        confirmButtonColor: "#2458ce",
+      });
+    }
+  };
+
+  const handleExportSlotExcel = () => {
+    if (!focusedSlot) {
+      return;
+    }
+
+    try {
+      const skuQtyMap = {};
+      focusedSlotLines.forEach((line) => {
+        const skuCode = line.sku?.code || line.skuCode || (typeof line.sku === "string" ? line.sku : null) || "-";
+        const qty = Number(line.qty) || 0;
+        if (skuCode && skuCode !== "-") {
+          skuQtyMap[skuCode] = (skuQtyMap[skuCode] || 0) + qty;
+        }
+      });
+
+      const exportRows = Object.entries(skuQtyMap).map(([sku, qty]) => [sku, qty]);
+
+      if (exportRows.length === 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak ada data",
+          text: `Tidak ada data stok di lokasi "${focusedSlot.slotCode}" untuk diexport.`,
+          confirmButtonColor: "#2458ce",
+        });
+        return;
+      }
+
+      // Sort by SKU code alphabetically
+      exportRows.sort((a, b) => a[0].localeCompare(b[0]));
+
+      const worksheet = XLSX.utils.aoa_to_sheet([
+        ["SKU", "QTY"],
+        ...exportRows,
+      ]);
+      const workbook = XLSX.utils.book_new();
+      const sheetName = `Stok ${focusedSlot.slotCode.replace(/\//g, "-")}`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.slice(0, 31));
+
+      const slotCodeStr = focusedSlot.slotCode.replace(/\//g, "-");
+      const dateStr = new Date().toISOString().slice(0, 10);
+
+      XLSX.writeFile(workbook, `stok-lokasi-${slotCodeStr}-${dateStr}.xlsx`);
+    } catch (exportError) {
+      console.error("Gagal export excel lokasi:", exportError);
+      Swal.fire({
+        icon: "error",
+        title: "Export Gagal",
+        text: "Gagal membuat file Excel untuk lokasi ini. Coba ulangi lagi.",
+        confirmButtonColor: "#2458ce",
+      });
+    }
+  };
+
   return (
     <GudangProdukBaseShell
       title="Stok per Lokasi Gudang"
@@ -857,6 +971,13 @@ const StokLokasiGudang = () => {
       icon={FaBoxes}
       statusLabel={isLoading ? "Memuat workspace..." : `${summary.filledSlots} slot terisi`}
       headerActions={[
+        {
+          key: "export-excel",
+          label: "Export Excel",
+          icon: FaFileExcel,
+          variant: "secondary",
+          onClick: handleExportExcel,
+        },
         {
           key: "download-layout-pdf",
           label: isExportingPdf ? "Menyiapkan PDF..." : "Download PDF Layout",
@@ -1032,6 +1153,17 @@ const StokLokasiGudang = () => {
                     : `${selectedSkuLabel || "SKU terpilih"} belum ditemukan pada layout ini.`}
                 </p>
               </div>
+              {focusedSlot && focusedSlotLines.length > 0 && (
+                <button
+                  type="button"
+                  className="gudang-ui-header-action"
+                  onClick={handleExportSlotExcel}
+                  style={{ height: 34, padding: "0 10px", borderRadius: 8, fontSize: 12 }}
+                >
+                  <FaFileExcel style={{ fontSize: 14 }} />
+                  <span>Export Excel</span>
+                </button>
+              )}
             </div>
 
             {focusedSlot ? (
