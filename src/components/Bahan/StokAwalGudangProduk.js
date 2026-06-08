@@ -77,7 +77,28 @@ const StokAwalGudangProduk = () => {
   const serialScanInputRef = useRef(null);
   const scanTimeoutRef = useRef(null);
   const lastSubmittedScanRef = useRef("");
-  const scanInProgressRef = useRef(false);
+  const scanQueueRef = useRef([]);
+  const processingQueueRef = useRef(false);
+
+  const scannedRowsRef = useRef(scannedRows);
+  useEffect(() => {
+    scannedRowsRef.current = scannedRows;
+  }, [scannedRows]);
+
+  const storedSerialSetRef = useRef(storedSerialSet);
+  useEffect(() => {
+    storedSerialSetRef.current = storedSerialSet;
+  }, [storedSerialSet]);
+
+  const serialCacheRef = useRef(serialCache);
+  useEffect(() => {
+    serialCacheRef.current = serialCache;
+  }, [serialCache]);
+
+  const serialSkuLookupRef = useRef(serialSkuLookup);
+  useEffect(() => {
+    serialSkuLookupRef.current = serialSkuLookup;
+  }, [serialSkuLookup]);
 
   useEffect(() => {
     if (!layoutId && state.layouts.length) {
@@ -202,7 +223,7 @@ const StokAwalGudangProduk = () => {
     const lookupKeys = scannedCode.lookupValues.flatMap((value) => buildSerialSkuLookupKeys(value));
     
     // Check in cache first
-    let serialItem = lookupKeys.map((key) => serialCache.get(key)).find(Boolean) || null;
+    let serialItem = lookupKeys.map((key) => serialCacheRef.current.get(key)).find(Boolean) || null;
     if (serialItem) {
       return serialItem;
     }
@@ -266,7 +287,7 @@ const StokAwalGudangProduk = () => {
     async (serialItem) => {
       const matchedSku =
         buildSerialSkuLookupKeys(serialItem?.sku)
-          .map((key) => serialSkuLookup.get(key))
+          .map((key) => serialSkuLookupRef.current.get(key))
           .find(Boolean) || null;
 
       if (matchedSku?.id) {
@@ -291,10 +312,10 @@ const StokAwalGudangProduk = () => {
         null
       );
     },
-    [serialSkuLookup, setState]
+    [setState]
   );
 
-  const handleScanSerial = async (rawValue = serialScanValue) => {
+  const handleScanSerial = (rawValue = serialScanValue) => {
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = null;
@@ -305,17 +326,36 @@ const StokAwalGudangProduk = () => {
       return;
     }
 
-    if (scanInProgressRef.current || lastSubmittedScanRef.current === rawScanValue) {
-      setSerialScanValue("");
+    // Clear input immediately so the next scan can start typing
+    setSerialScanValue("");
+
+    if (scanQueueRef.current.includes(rawScanValue) || lastSubmittedScanRef.current === rawScanValue) {
       setTimeout(() => {
         serialScanInputRef.current?.focus();
       }, 50);
       return;
     }
 
-    scanInProgressRef.current = true;
-    lastSubmittedScanRef.current = rawScanValue;
-    setSerialScanValue("");
+    scanQueueRef.current.push(rawScanValue);
+    processScanQueue();
+  };
+
+  const processScanQueue = async () => {
+    if (processingQueueRef.current) {
+      return;
+    }
+    processingQueueRef.current = true;
+
+    while (scanQueueRef.current.length > 0) {
+      const nextScan = scanQueueRef.current.shift();
+      lastSubmittedScanRef.current = nextScan;
+      await executeScan(nextScan);
+    }
+
+    processingQueueRef.current = false;
+  };
+
+  const executeScan = async (rawValue) => {
     const scannedCode = parseScannedSerialCode(rawValue);
     const scannedValue = scannedCode.serialText;
 
@@ -325,7 +365,6 @@ const StokAwalGudangProduk = () => {
           "Lokasi stok awal belum lengkap",
           "Pilih lantai, bilik/blok, rak, dan baris lokasi stok awal sebelum scan kode seri."
         );
-        lastSubmittedScanRef.current = "";
         return;
       }
 
@@ -334,7 +373,6 @@ const StokAwalGudangProduk = () => {
           "Kode seri kosong",
           "Scan atau ketik kode seri terlebih dahulu."
         );
-        lastSubmittedScanRef.current = "";
         return;
       }
 
@@ -347,7 +385,6 @@ const StokAwalGudangProduk = () => {
       } catch (err) {
         // Not found or error
       }
-
       const serialForPlacement =
         serialItem ||
         (scannedCode.skuText
@@ -366,14 +403,13 @@ const StokAwalGudangProduk = () => {
           `${scannedValue} tidak ditemukan di data kode seri. Scan format "SKU | KODE SERI" agar SKU bisa dibaca langsung.`
         );
         setScanMessage(`${scannedValue} tidak ditemukan.`);
-        lastSubmittedScanRef.current = "";
         return;
       }
 
       const normalizedSerial = normalizeScanText(serialForPlacement.nomor_seri);
       if (
-        scannedRows.some((row) => normalizeScanText(row.nomorSeri) === normalizedSerial) ||
-        storedSerialSet.has(normalizedSerial)
+        scannedRowsRef.current.some((row) => normalizeScanText(row.nomorSeri) === normalizedSerial) ||
+        storedSerialSetRef.current.has(normalizedSerial)
       ) {
         setIsSubmitting(false);
         await showGudangWarning(
@@ -381,7 +417,6 @@ const StokAwalGudangProduk = () => {
           `${serialForPlacement.nomor_seri} sudah pernah discan dan masuk stok awal.`
         );
         setScanMessage(`${serialForPlacement.nomor_seri} sudah masuk gudang.`);
-        lastSubmittedScanRef.current = "";
         return;
       }
 
@@ -423,15 +458,13 @@ const StokAwalGudangProduk = () => {
         },
         ...currentRows,
       ]);
-      setScanMessage(`Scan berhasil. Total sesi ini ${scannedRows.length + 1} kode seri.`);
+      setScanMessage(`Scan berhasil. Total sesi ini ${scannedRowsRef.current.length + 1} kode seri.`);
     } catch (submitError) {
-      lastSubmittedScanRef.current = "";
       await showGudangError(
         "Gagal menyimpan stok awal",
         buildGudangWorkspaceErrorMessage(submitError, "Gagal menyimpan stok awal.")
       );
     } finally {
-      scanInProgressRef.current = false;
       setIsSubmitting(false);
       setTimeout(() => {
         serialScanInputRef.current?.focus();
@@ -456,7 +489,7 @@ const StokAwalGudangProduk = () => {
       clearTimeout(scanTimeoutRef.current);
     }
 
-    if (!value.trim() || isSubmitting || serialLoading) {
+    if (!value.trim() || serialLoading) {
       return;
     }
 
@@ -600,14 +633,14 @@ const StokAwalGudangProduk = () => {
                 onChange={handleSerialInputChange}
                 onKeyDown={handleSerialKeyDown}
                 placeholder="Scan kode seri"
-                disabled={isSubmitting || serialLoading}
+                disabled={serialLoading}
                 autoComplete="off"
               />
               <button
                 className="gudang-ui-button"
                 type="button"
                 onClick={() => handleScanSerial()}
-                disabled={isSubmitting || serialLoading || !serialScanValue.trim()}
+                disabled={serialLoading || !serialScanValue.trim()}
               >
                 <FaQrcode /> Scan Masuk
               </button>
