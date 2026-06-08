@@ -8,6 +8,7 @@ import {
   normalizeBlockCanvas,
   resolveRackLayoutPosition,
 } from "./GudangProdukMockStore";
+import { confirmGudangAction } from "./GudangProdukAlerts";
 
 const clampNumber = (value, min, max, fallback) => {
   const parsed = Number(value);
@@ -211,6 +212,33 @@ const GudangLayoutEditorModal = ({
   const [interactionMode, setInteractionMode] = useState("");
   const canvasRef = useRef(null);
   const dragStateRef = useRef(null);
+  const originalLayoutSnapshotRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      originalLayoutSnapshotRef.current = JSON.stringify(buildLayoutDraft(layout));
+    }
+  }, [isOpen, layout]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isOpen) return false;
+    if (!originalLayoutSnapshotRef.current) return false;
+    return JSON.stringify(draftLayout) !== originalLayoutSnapshotRef.current;
+  }, [draftLayout, isOpen]);
+
+  const requestClose = async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = await confirmGudangAction({
+        title: "Batalkan perubahan layout?",
+        text: "Perubahan posisi rak dan kanvas yang belum disimpan akan hilang.",
+        confirmButtonText: "Ya, batalkan",
+        cancelButtonText: "Kembali mengedit",
+        icon: "warning",
+      });
+      if (!confirmed) return;
+    }
+    onClose?.();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -453,7 +481,7 @@ const GudangLayoutEditorModal = ({
       className="gudang-layout-modal-backdrop"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onClose?.();
+          requestClose();
         }
       }}
     >
@@ -462,7 +490,7 @@ const GudangLayoutEditorModal = ({
           <div>
             <h2>Edit Layout Rak</h2>
           </div>
-          <button type="button" className="gudang-ui-icon-button" onClick={() => onClose?.()}>
+          <button type="button" className="gudang-ui-icon-button" onClick={() => requestClose()}>
             <FaTimes />
           </button>
         </div>
@@ -715,9 +743,6 @@ const GudangLayoutEditorModal = ({
                           >
                             <div className="gudang-layout-rack-title-group">
                               <strong>{rackDisplayTitle}</strong>
-                              <span>{`Pos x${rackPosition.x} y${rackPosition.y} | Uk ${buildRackFootprintLabel(
-                                rackPosition
-                              )}`}</span>
                             </div>
                             <span className="gudang-layout-rack-chip editor-chip">
                               {rack.rows} SLOT
@@ -753,7 +778,7 @@ const GudangLayoutEditorModal = ({
             </div>
 
             <div className="gudang-layout-modal-footer">
-              <button type="button" className="gudang-ui-button-secondary" onClick={() => onClose?.()}>
+              <button type="button" className="gudang-ui-button-secondary" onClick={() => requestClose()}>
                 <FaTimes /> Batal
               </button>
               <button
