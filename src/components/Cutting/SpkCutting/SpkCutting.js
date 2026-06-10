@@ -2271,6 +2271,7 @@ const SpkCutting = () => {
       id_spk_cutting: editSpkCutting.id_spk_cutting || "",
       pic: editSpkCutting.pic || "",
       product_list_id: parseInt(editSpkCutting.produk_id, 10),
+      tanggal_buat: editSpkCutting.tanggal_buat,
       tanggal_batas_kirim: editSpkCutting.tanggal_batas_kirim,
       produk_id: null,
       harga_jasa: editSpkCutting.harga_jasa ? parseFloat(editSpkCutting.harga_jasa) : null,
