@@ -768,6 +768,21 @@ export const executeMutationSession = async (id, payload) => {
   };
 };
 
+/**
+ * Membatalkan eksekusi sesi — pindahkan stok kembali ke rak asal.
+ * @param {number|string} id
+ */
+export const revertMutationSession = async (id) => {
+  const response = await API.post(
+    `/gudang-produk-workspace/mutation-sessions/${id}/revert`
+  );
+  return {
+    workspace: normalizeWorkspaceState(response?.data?.data),
+    message: response?.data?.message || "Mutasi berhasil dibatalkan.",
+  };
+};
+
+
 export const fetchGudangProdukMutationHistory = async (params = {}) => {
   const response = await API.get("/gudang-produk/history-mutations", { params });
   return response?.data;
