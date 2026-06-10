@@ -710,9 +710,10 @@ const GudangLayoutEditorModal = ({
                         rack.layoutPosition || resolveRackLayoutPosition(rack, rackIndex, activeBlock);
                       const rackDensity = getRackCardDensity(rackPosition);
                       const rackNumberLabel = String(rack.number).padStart(2, "0");
+                      const rackPrefix = `L${activeFloor?.number || ""}${String(activeBlock?.code || "").toUpperCase()}${rackNumberLabel}`;
                       const rackDisplayTitle =
-                        rackDensity === "micro" ? `R${rackNumberLabel}` : `Rak ${rackNumberLabel}`;
-                      const previewSlotCode = buildRackSlotCode(activeFloor, activeBlock, rack, 1);
+                        rackDensity === "micro" ? `R${rackNumberLabel} - ${rackPrefix}` : `Rak ${rackNumberLabel} - ${rackPrefix}`;
+                      const isVertical = rackPosition.h > rackPosition.w;
 
                       return (
                         <div
@@ -741,17 +742,11 @@ const GudangLayoutEditorModal = ({
                               beginRackInteraction(event, rack, rackIndex, "move")
                             }
                           >
-                            <div className="gudang-layout-rack-title-group">
+                            <div 
+                              className="gudang-layout-rack-title-group"
+                              style={isVertical ? { display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap" } : {}}
+                            >
                               <strong>{rackDisplayTitle}</strong>
-                            </div>
-                            <span className="gudang-layout-rack-chip editor-chip">
-                              {rack.rows} SLOT
-                            </span>
-                          </div>
-
-                          <div className="gudang-layout-rack-preview editor-preview">
-                            <div className="gudang-layout-rack-preview-main">
-                              <strong>{previewSlotCode}</strong>
                             </div>
                           </div>
 

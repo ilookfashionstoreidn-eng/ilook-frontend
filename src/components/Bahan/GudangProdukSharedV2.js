@@ -90,11 +90,7 @@ const buildRackCardStyle = (position, canvas) => ({
 });
 
 const shouldUseRackPopup = (position, rack) => {
-  const width = Number(position?.w || 0);
-  const height = Number(position?.h || 0);
-  const availablePreviewRows = Math.max(height - 1, 1);
-
-  return Number(rack?.rows || 0) > 1 && (Number(rack?.rows || 0) > availablePreviewRows || width <= 3);
+  return true;
 };
 
 const getRackCardDensity = (position) => {
@@ -278,8 +274,9 @@ export const GudangLayoutMap = ({
                             const rackMatchesSkuFilter = highlightedRackSlots.length > 0;
                             const rackDensity = getRackCardDensity(position);
                             const rackNumberLabel = String(rack.number).padStart(2, "0");
+                            const rackPrefix = `L${floor?.number || ""}${String(block?.code || "").toUpperCase()}${rackNumberLabel}`;
                             const rackDisplayTitle =
-                              rackDensity === "micro" ? `R${rackNumberLabel}` : `Rak ${rackNumberLabel}`;
+                              rackDensity === "micro" ? `R${rackNumberLabel} - ${rackPrefix}` : `Rak ${rackNumberLabel} - ${rackPrefix}`;
                             const rackDisplaySubtitle =
                               rackDensity === "regular"
                                 ? rack.label || "Tanpa label"
@@ -345,32 +342,17 @@ export const GudangLayoutMap = ({
                                     })
                                   }
                                 >
-                                  <div className="gudang-layout-rack-head">
-                                    <div className="gudang-layout-rack-title-group">
+                                  <div 
+                                    className="gudang-layout-rack-head"
+                                    style={{
+                                      width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center"
+                                    }}
+                                  >
+                                    <div 
+                                      className="gudang-layout-rack-title-group"
+                                      style={position.h > position.w ? { display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap" } : { textAlign: "center", width: "100%" }}
+                                    >
                                       <strong>{rackDisplayTitle}</strong>
-                                      {rackDisplaySubtitle ? <span>{rackDisplaySubtitle}</span> : null}
-                                    </div>
-                                    <span className="gudang-layout-rack-chip">{rackChipLabel}</span>
-                                  </div>
-
-                                  <div className="gudang-layout-rack-preview">
-                                    <div className="gudang-layout-rack-preview-main">
-                                      <strong>{previewSlot?.slotCode || rackDisplayTitle}</strong>
-                                      <span>{rackPreviewSecondary}</span>
-                                    </div>
-                                    <div className="gudang-layout-rack-preview-footer">
-                                      <small>
-                                        {hasHighlightedSkuFilter
-                                          ? rackMatchesSkuFilter
-                                            ? `${highlightedRackSlots.length} lokasi cocok SKU`
-                                            : "Tidak ada lokasi SKU"
-                                          : rackFooterStatusText}
-                                      </small>
-                                      <small>
-                                        {rackDensity === "micro"
-                                          ? "Klik untuk buka"
-                                          : "Klik untuk lihat semua baris"}
-                                      </small>
                                     </div>
                                   </div>
                                 </button>
@@ -394,11 +376,9 @@ export const GudangLayoutMap = ({
                                 style={buildRackCardStyle(position, canvas)}
                               >
                                 <div className="gudang-layout-rack-head">
-                                  <div className="gudang-layout-rack-title-group">
-                                    <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
-                                    <span>{rack.label || "Tanpa label"}</span>
+                                  <div className="gudang-layout-rack-title-group" style={{ textAlign: "center", width: "100%" }}>
+                                    <strong>{rackDisplayTitle}</strong>
                                   </div>
-                                  <span className="gudang-layout-rack-chip">{rack.rows} baris</span>
                                 </div>
 
                                 <div className="gudang-layout-slot-grid compact">
