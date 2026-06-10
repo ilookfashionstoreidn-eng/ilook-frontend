@@ -5895,3 +5895,11 @@ button,
   color: #334155;
 }
 
+/* Styling for highlight mark in History Stok Awal Gudang table */
+.gudang-stok-awal-history-table mark {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: #fef08a !important;
+  color: #0f172a !important;
+}
+
