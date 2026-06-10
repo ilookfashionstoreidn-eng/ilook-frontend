@@ -85,6 +85,46 @@ const StokAwalGudangProduk = () => {
     scannedRowsRef.current = scannedRows;
   }, [scannedRows]);
 
+  const skuOptions = useMemo(
+    () =>
+      [...state.skus].sort((left, right) =>
+        String(left.code || left.sku || left.label || "").localeCompare(
+          String(right.code || right.sku || right.label || "")
+        )
+      ),
+    [state.skus]
+  );
+
+  const serialSkuLookup = useMemo(() => {
+    const lookup = new Map();
+
+    skuOptions.forEach((sku) => {
+      [sku.code, sku.sku, sku.label].forEach((value) => {
+        buildSerialSkuLookupKeys(value).forEach((key) => {
+          if (!lookup.has(key)) {
+            lookup.set(key, sku);
+          }
+        });
+      });
+    });
+
+    return lookup;
+  }, [skuOptions]);
+
+  const storedSerialSet = useMemo(() => {
+    const set = new Set();
+
+    state.activityLog.forEach((activity) => {
+      const notes = String(activity?.notes || "");
+      const match = notes.match(/Kode seri:\s*([^|]+)/i);
+      if (match?.[1]) {
+        set.add(normalizeScanText(match[1]));
+      }
+    });
+
+    return set;
+  }, [state.activityLog]);
+
   const storedSerialSetRef = useRef(storedSerialSet);
   useEffect(() => {
     storedSerialSetRef.current = storedSerialSet;
@@ -193,32 +233,6 @@ const StokAwalGudangProduk = () => {
   const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
   const selectedSlotSummary = selectedSlot ? stockSummaryBySlot[selectedSlot.id] : null;
 
-  const skuOptions = useMemo(
-    () =>
-      [...state.skus].sort((left, right) =>
-        String(left.code || left.sku || left.label || "").localeCompare(
-          String(right.code || right.sku || right.label || "")
-        )
-      ),
-    [state.skus]
-  );
-
-  const serialSkuLookup = useMemo(() => {
-    const lookup = new Map();
-
-    skuOptions.forEach((sku) => {
-      [sku.code, sku.sku, sku.label].forEach((value) => {
-        buildSerialSkuLookupKeys(value).forEach((key) => {
-          if (!lookup.has(key)) {
-            lookup.set(key, sku);
-          }
-        });
-      });
-    });
-
-    return lookup;
-  }, [skuOptions]);
-
   const lookupSerial = async (scannedValue, scannedCode) => {
     const lookupKeys = scannedCode.lookupValues.flatMap((value) => buildSerialSkuLookupKeys(value));
     
@@ -261,19 +275,6 @@ const StokAwalGudangProduk = () => {
   const activityRows = state.activityLog
     .filter((item) => item.type === "placement")
     .slice(0, 10);
-  const storedSerialSet = useMemo(() => {
-    const set = new Set();
-
-    state.activityLog.forEach((activity) => {
-      const notes = String(activity?.notes || "");
-      const match = notes.match(/Kode seri:\s*([^|]+)/i);
-      if (match?.[1]) {
-        set.add(normalizeScanText(match[1]));
-      }
-    });
-
-    return set;
-  }, [state.activityLog]);
 
   const resetSession = () => {
     setNotes("");
