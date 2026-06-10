@@ -553,12 +553,19 @@
 }
 
 .gudang-ui-pill {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #eef5fc;
-  color: #375a7f;
-  font-size: 12px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .gudang-ui-callout {
@@ -4101,6 +4108,7 @@
 .gudang-stoklokasi-simple-empty {
   color: #64748b;
   font-size: 12px;
+  text-transform: capitalize;
 }
 
 .gudang-stoklokasi-simple-empty {
