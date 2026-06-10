@@ -22,6 +22,7 @@ import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukMutationHistory,
+  revertMutationSession,
 } from "./GudangProdukWorkspaceApi";
 
 const EMPTY_SUMMARY = {
@@ -86,6 +87,29 @@ const HistoryMutasiGudang = () => {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [isRevertingId, setIsRevertingId] = useState(null);
+
+  const handleRevert = async (activityLogId, notes) => {
+    const sessionId = notes.match(/Sesi:\s*(\d+)/i)?.[1];
+    if (!sessionId) {
+      alert("Tidak dapat membatalkan: ID Sesi tidak ditemukan dalam catatan.");
+      return;
+    }
+    if (!window.confirm("Apakah Anda yakin ingin membatalkan mutasi ini dan mengembalikan sesi?")) {
+      return;
+    }
+    
+    setIsRevertingId(activityLogId);
+    try {
+      const res = await revertMutationSession(sessionId);
+      alert(res.message || "Mutasi berhasil dibatalkan.");
+      refreshRows();
+    } catch (err) {
+      alert(buildGudangWorkspaceErrorMessage(err, "Gagal membatalkan mutasi."));
+    } finally {
+      setIsRevertingId(null);
+    }
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -539,10 +563,10 @@ const HistoryMutasiGudang = () => {
                       <th>Qty</th>
                       <th>Lokasi Asal</th>
                       {activeTab === "executed" && <th>Lokasi Tujuan</th>}
-                      <th>Catatan / Keterangan</th>
                       <th>Operator</th>
                       <th>Waktu</th>
                       {(activeTab === "pending" || activeTab === "cancelled") && <th>Seri</th>}
+                      {activeTab === "executed" && <th>Aksi</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -582,11 +606,6 @@ const HistoryMutasiGudang = () => {
                               </span>
                             </td>
                           )}
-                          <td>
-                            <span style={{ fontSize: "12px", color: "#475569" }}>
-                              {row.notes || "-"}
-                            </span>
-                          </td>
                           <td>{row.creator_name || "-"}</td>
                           <td>{formatDateTime(row.created_at)}</td>
                           {(activeTab === "pending" || activeTab === "cancelled") && (
@@ -605,11 +624,36 @@ const HistoryMutasiGudang = () => {
                               )}
                             </td>
                           )}
+                          {activeTab === "executed" && (
+                            <td>
+                              {row.notes && row.notes.includes("Sesi:") ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRevert(row.id, row.notes)}
+                                  disabled={isRevertingId === row.id}
+                                  style={{
+                                    padding: "4px 8px",
+                                    fontSize: "11px",
+                                    background: "#fee2e2",
+                                    color: "#991b1b",
+                                    border: "1px solid #f87171",
+                                    borderRadius: "4px",
+                                    cursor: isRevertingId === row.id ? "not-allowed" : "pointer",
+                                    opacity: isRevertingId === row.id ? 0.6 : 1
+                                  }}
+                                >
+                                  {isRevertingId === row.id ? "Membatalkan..." : "Batalkan"}
+                                </button>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          )}
                         </tr>
                         {/* Expanded details row for barcodes */}
                         {(activeTab === "pending" || activeTab === "cancelled") && expandedRowId === row.id && (
-                          <tr>
-                            <td colSpan={activeTab === "executed" ? 8 : 9} style={{ background: "#f8fafc", padding: "12px" }}>
+                          <tr className="gudang-ui-expanded-row">
+                            <td colSpan={7} style={{ background: "#f8fafc", padding: "12px" }}>
                               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                                 <strong style={{ fontSize: "11px", color: "#64748b" }}>
                                   Daftar Barcode / Nomor Seri yang di-scan:
