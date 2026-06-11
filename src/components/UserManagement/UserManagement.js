@@ -234,9 +234,8 @@ const UserManagement = () => {
   const stats = useMemo(() => {
     const total = users.length;
     const superAdmins = users.filter((u) => u.role === "super-admin").length;
-    const cmtUsers = users.filter((u) => u.role === "penjahit").length;
-    const otherUsers = total - superAdmins - cmtUsers;
-    return { total, superAdmins, cmtUsers, otherUsers };
+    const otherUsers = total - superAdmins;
+    return { total, superAdmins, otherUsers };
   }, [users]);
 
   const getMenuLabel = (key) => {
@@ -486,10 +485,6 @@ const UserManagement = () => {
           <div className="um-stat-item">
             <h4 className="um-stat-label">Super Admin</h4>
             <div className="um-stat-value success">{stats.superAdmins}</div>
-          </div>
-          <div className="um-stat-item">
-            <h4 className="um-stat-label">Penjahit Terhubung</h4>
-            <div className="um-stat-value warning">{stats.cmtUsers}</div>
           </div>
           <div className="um-stat-item">
             <h4 className="um-stat-label">Staff / Lainnya</h4>
