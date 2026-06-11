@@ -26,6 +26,7 @@ const Login = () => {
       localStorage.setItem("userId", data.user.id);
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("foto", data.user.foto);
+      localStorage.setItem("menus", JSON.stringify(data.user.menus || []));
       localStorage.setItem("loginTimestamp", Date.now().toString());
 
       navigate("/home");
