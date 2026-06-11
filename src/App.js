@@ -103,6 +103,8 @@ import Blank from "./components/Blank/Blank";
 import Blank2 from "./components/Blank2/Blank2";
 import OrderMonitor from "./components/Order/OrderMonitor";
 import Maintenance from "./components/Maintenance/Maintenance";
+import MenuProtectedRoute from "./components/UserManagement/MenuProtectedRoute";
+import UserManagement from "./components/UserManagement/UserManagement";
 
 const App = () => {
   return (
@@ -114,104 +116,159 @@ const App = () => {
 
         {/* Rute dengan Layout (sidebar) */}
         <Route path="/" element={<Layout />}>
-          <Route path="home" element={<Home />} />
-          <Route path="penjahit" element={<Penjahit />} />
-          <Route path="kode-seri-belum-dikerjakan" element={<KodeSeriBelumDikerjakan />} />
-          <Route path="spk" element={<Spk />} />
-          <Route path="dashboard-cmt" element={<DashboardCmt />} />
-          <Route path="spkcmt" element={<SpkCmt />} />
-          <Route path="pengiriman" element={<Pengiriman />} />
-          <Route path="hutang" element={<Hutang />} />
-          <Route path="cashbon" element={<Cashbon />} />
-          <Route path="pendapatan" element={<Pendapatan />} />
-          <Route path="deadline" element={<Deadline />} />
-          <Route path="status" element={<Status />} />
-          <Route path="kinerja" element={<Kinerja />} />
-          <Route path="kinerja2" element={<Kinerja2 />} />
-          <Route path="data-dikerjakan-pengiriman-cmt" element={<DataDikerjakanPengirimanCmt />} />
-          <Route path="/kinerja/:kategori" element={<Kinerja />} />
-          <Route path="produk" element={<Produk />} />
-          <Route path="historyPendapatan" element={<HistoryPendapatan />} />
-          <Route path="aksesoris" element={<Aksesoris />} />
-          <Route path="resetstok" element={<ResetStokAksesoris />} />
-          <Route path="pembelianA" element={<PembelianAksesoris />} />
-          <Route path="pembelianB" element={<PembelianBAksesoris />} />
-          <Route path="stok-aksesoris" element={<StokAksesoris />} />
-          <Route path="petugas-c" element={<PesananPetugasC />} />
-          <Route path="petugas-d" element={<PesananPetugasD />} />
-          <Route path="dashboardCutting" element={<DashboardCutting />} />
-          <Route path="tukangCutting" element={<TukangCutting />} />
-          <Route path="tukangPola" element={<TukangPola />} />
-          <Route path="spkcutting" element={<SpkCutting />} />
-          <Route path="hasilcutting" element={<HasilCutting />} />
-          <Route path="historyhasilcutting" element={<HistoryHasilCutting />} />
-          <Route path="historydistribusispk" element={<SpkDistribusiHistory />} />
-          <Route path="hutangc" element={<HutangCutting />} />
-          <Route path="cashboanc" element={<CashboanCutting />} />
-          <Route path="pendapatancutting" element={<PendapatanCutting />} />
-          <Route path="pendapatanhistory" element={<HistoryPendapatanCutting />} />
-          <Route path="markeran" element={<MarkeranProduk />} />
-          <Route path="dashboard-jasa" element={<DashboardJasa />} />
-          <Route path="tukangJasa" element={<TukangJasa />} />
-          <Route path="spkjasa" element={<SpkJasa />} />
-          <Route path="hasiljasa" element={<HasilJasa />} />
-          <Route path="cashboanjasa" element={<CashboanJasa />} />
-          <Route path="hutangjasa" element={<HutangJasa />} />
-          <Route path="pendapatanjasa" element={<PendapatanJasa />} />
-          <Route path="pendapatanhistoryjasa" element={<HistoryPendapatanJasa />} />
-          <Route path="hppProduk" element={<HppProduk />} />
-          <Route path="produk-list" element={<ProductList />} />
-          <Route path="getPassword" element={<PackingPasswordPage />} />
-          <Route path="packing" element={<Packing />} />
-          <Route path="packing-belum-barcode" element={<PackingAccessGate menuKey="packing-belum-barcode" featureName="Produk Belum Barcode"><PackingBelumBarcode /></PackingAccessGate>} />
-          <Route path="packing-random" element={<PackingAccessGate menuKey="packing-random" featureName="Packing Random"><PackingRandom /></PackingAccessGate>} />
-          <Route path="packing-pendingan" element={<PackingAccessGate menuKey="packing-pendingan" featureName="Packing Pendingan"><PackingPendingan /></PackingAccessGate>} />
-          <Route path="packing-no-data-ginee" element={<PackingAccessGate menuKey="packing-no-data-ginee" featureName="No Data Ginee"><PackingNoDataGinee /></PackingAccessGate>} />
-          <Route path="packing-inject" element={<PackingInject />} />
-          <Route path="logs" element={<Logs />} />
-          <Route path="return" element={<ReturnPage />} />
-          <Route path="return-logs" element={<ReturnLogs />} />
+          {/* User Management (Only Superadmin) */}
+          <Route path="user-management" element={<MenuProtectedRoute menuKey="user-management"><UserManagement /></MenuProtectedRoute>} />
+
+          {/* Dashboard */}
+          <Route element={<MenuProtectedRoute menuKey="dashboard" />}>
+            <Route path="home" element={<Home />} />
+          </Route>
+
+          {/* Laporan Daily Produksi */}
+          <Route element={<MenuProtectedRoute menuKey="laporan_daily_produksi" />}>
+            <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
+          </Route>
+
+          {/* CMT Group */}
+          <Route element={<MenuProtectedRoute menuKey="cmt" />}>
+            <Route path="penjahit" element={<MenuProtectedRoute menuKey="cmt:penjahit"><Penjahit /></MenuProtectedRoute>} />
+            <Route path="kode-seri-belum-dikerjakan" element={<MenuProtectedRoute menuKey="cmt:pekerjaan_tersedia"><KodeSeriBelumDikerjakan /></MenuProtectedRoute>} />
+            <Route path="spk" element={<MenuProtectedRoute menuKey="cmt:spk"><Spk /></MenuProtectedRoute>} />
+            <Route path="dashboard-cmt" element={<MenuProtectedRoute menuKey="cmt:dashboard"><DashboardCmt /></MenuProtectedRoute>} />
+            <Route path="spkcmt" element={<MenuProtectedRoute menuKey="cmt:spk"><SpkCmt /></MenuProtectedRoute>} />
+            <Route path="pengiriman" element={<MenuProtectedRoute menuKey="cmt:pengiriman"><Pengiriman /></MenuProtectedRoute>} />
+            <Route path="hutang" element={<MenuProtectedRoute menuKey="cmt:hutang"><Hutang /></MenuProtectedRoute>} />
+            <Route path="cashbon" element={<MenuProtectedRoute menuKey="cmt:cashbon"><Cashbon /></MenuProtectedRoute>} />
+            <Route path="pendapatan" element={<MenuProtectedRoute menuKey="cmt:pendapatan"><Pendapatan /></MenuProtectedRoute>} />
+            <Route path="deadline" element={<MenuProtectedRoute menuKey="cmt:deadline"><Deadline /></MenuProtectedRoute>} />
+            <Route path="status" element={<MenuProtectedRoute menuKey="cmt:status"><Status /></MenuProtectedRoute>} />
+            <Route path="kinerja" element={<Kinerja />} />
+            <Route path="kinerja2" element={<Kinerja2 />} />
+            <Route path="data-dikerjakan-pengiriman-cmt" element={<MenuProtectedRoute menuKey="cmt:data_dikerjakan"><DataDikerjakanPengirimanCmt /></MenuProtectedRoute>} />
+            <Route path="/kinerja/:kategori" element={<Kinerja />} />
+            <Route path="produk" element={<Produk />} />
+            <Route path="historyPendapatan" element={<MenuProtectedRoute menuKey="cmt:history_pendapatan"><HistoryPendapatan /></MenuProtectedRoute>} />
+            <Route path="sku" element={<MenuProtectedRoute menuKey="cmt:sku"><Sku /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Aksesoris Group */}
+          <Route element={<MenuProtectedRoute menuKey="aksesoris" />}>
+            <Route path="aksesoris" element={<MenuProtectedRoute menuKey="aksesoris:data"><Aksesoris /></MenuProtectedRoute>} />
+            <Route path="resetstok" element={<ResetStokAksesoris />} />
+            <Route path="pembelianA" element={<MenuProtectedRoute menuKey="aksesoris:pembelian_toko"><PembelianAksesoris /></MenuProtectedRoute>} />
+            <Route path="pembelianB" element={<PembelianBAksesoris />} />
+            <Route path="stok-aksesoris" element={<StokAksesoris />} />
+            <Route path="petugas-c" element={<MenuProtectedRoute menuKey="aksesoris:pembelian_cmt"><PesananPetugasC /></MenuProtectedRoute>} />
+            <Route path="petugas-d" element={<PesananPetugasD />} />
+          </Route>
+
+          {/* Cutting Group */}
+          <Route element={<MenuProtectedRoute menuKey="cutting" />}>
+            <Route path="dashboardCutting" element={<MenuProtectedRoute menuKey="cutting:dashboard"><DashboardCutting /></MenuProtectedRoute>} />
+            <Route path="tukangCutting" element={<MenuProtectedRoute menuKey="cutting:tukang"><TukangCutting /></MenuProtectedRoute>} />
+            <Route path="tukangPola" element={<MenuProtectedRoute menuKey="cutting:pola"><TukangPola /></MenuProtectedRoute>} />
+            <Route path="spkcutting" element={<MenuProtectedRoute menuKey="cutting:spk"><SpkCutting /></MenuProtectedRoute>} />
+            <Route path="hasilcutting" element={<MenuProtectedRoute menuKey="cutting:hasil"><HasilCutting /></MenuProtectedRoute>} />
+            <Route path="historyhasilcutting" element={<MenuProtectedRoute menuKey="cutting:history_hasil"><HistoryHasilCutting /></MenuProtectedRoute>} />
+            <Route path="historydistribusispk" element={<MenuProtectedRoute menuKey="cutting:history_distribusi"><SpkDistribusiHistory /></MenuProtectedRoute>} />
+            <Route path="hutangc" element={<MenuProtectedRoute menuKey="cutting:hutang"><HutangCutting /></MenuProtectedRoute>} />
+            <Route path="cashboanc" element={<MenuProtectedRoute menuKey="cutting:cashbon"><CashboanCutting /></MenuProtectedRoute>} />
+            <Route path="pendapatancutting" element={<MenuProtectedRoute menuKey="cutting:piutang"><PendapatanCutting /></MenuProtectedRoute>} />
+            <Route path="pendapatanhistory" element={<MenuProtectedRoute menuKey="cutting:history_pembayaran"><HistoryPendapatanCutting /></MenuProtectedRoute>} />
+            <Route path="markeran" element={<MenuProtectedRoute menuKey="cutting:marker"><MarkeranProduk /></MenuProtectedRoute>} />
+            <Route path="laporanhasil" element={<MenuProtectedRoute menuKey="cutting:laporan"><LaporanHasil /></MenuProtectedRoute>} />
+            <Route path="laporan-data-acuan" element={<MenuProtectedRoute menuKey="cutting:acuan"><LaporanDataAcuan /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Jasa Group */}
+          <Route element={<MenuProtectedRoute menuKey="jasa" />}>
+            <Route path="dashboard-jasa" element={<MenuProtectedRoute menuKey="jasa:dashboard"><DashboardJasa /></MenuProtectedRoute>} />
+            <Route path="tukangJasa" element={<MenuProtectedRoute menuKey="jasa:tukang"><TukangJasa /></MenuProtectedRoute>} />
+            <Route path="spkjasa" element={<MenuProtectedRoute menuKey="jasa:spk"><SpkJasa /></MenuProtectedRoute>} />
+            <Route path="hasiljasa" element={<MenuProtectedRoute menuKey="jasa:hasil"><HasilJasa /></MenuProtectedRoute>} />
+            <Route path="cashboanjasa" element={<MenuProtectedRoute menuKey="jasa:cashbon"><CashboanJasa /></MenuProtectedRoute>} />
+            <Route path="hutangjasa" element={<MenuProtectedRoute menuKey="jasa:hutang"><HutangJasa /></MenuProtectedRoute>} />
+            <Route path="pendapatanjasa" element={<MenuProtectedRoute menuKey="jasa:pendapatan"><PendapatanJasa /></MenuProtectedRoute>} />
+            <Route path="pendapatanhistoryjasa" element={<MenuProtectedRoute menuKey="jasa:history_pendapatan"><HistoryPendapatanJasa /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Produk Group */}
+          <Route element={<MenuProtectedRoute menuKey="produk" />}>
+            <Route path="hppProduk" element={<MenuProtectedRoute menuKey="produk:hpp"><HppProduk /></MenuProtectedRoute>} />
+            <Route path="produk-list" element={<MenuProtectedRoute menuKey="produk:list"><ProductList /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Packing Group */}
+          <Route element={<MenuProtectedRoute menuKey="packing" />}>
+            <Route path="getPassword" element={<PackingPasswordPage />} />
+            <Route path="packing" element={<MenuProtectedRoute menuKey="packing:packing"><Packing /></MenuProtectedRoute>} />
+            <Route path="packing-belum-barcode" element={<PackingAccessGate menuKey="packing-belum-barcode" featureName="Produk Belum Barcode"><PackingBelumBarcode /></PackingAccessGate>} />
+            <Route path="packing-random" element={<PackingAccessGate menuKey="packing-random" featureName="Packing Random"><PackingRandom /></PackingAccessGate>} />
+            <Route path="packing-pendingan" element={<PackingAccessGate menuKey="packing-pendingan" featureName="Packing Pendingan"><PackingPendingan /></PackingAccessGate>} />
+            <Route path="packing-no-data-ginee" element={<PackingAccessGate menuKey="packing-no-data-ginee" featureName="No Data Ginee"><PackingNoDataGinee /></PackingAccessGate>} />
+            <Route path="packing-inject" element={<MenuProtectedRoute menuKey="packing:inject"><PackingInject /></MenuProtectedRoute>} />
+            <Route path="logs" element={<MenuProtectedRoute menuKey="packing:logs"><Logs /></MenuProtectedRoute>} />
+            <Route path="seri" element={<MenuProtectedRoute menuKey="packing:seri"><Seri /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Return Group */}
+          <Route element={<MenuProtectedRoute menuKey="return" />}>
+            <Route path="return" element={<MenuProtectedRoute menuKey="return:return"><ReturnPage /></MenuProtectedRoute>} />
+            <Route path="return-logs" element={<MenuProtectedRoute menuKey="return:logs"><ReturnLogs /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Gudang Bahan Group */}
+          <Route element={<MenuProtectedRoute menuKey="gudang_bahan" />}>
+            <Route path="bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:bahan"><Bahan /></MenuProtectedRoute>} />
+            <Route path="bahan-list" element={<MenuProtectedRoute menuKey="gudang_bahan:list_bahan"><BahanList /></MenuProtectedRoute>} />
+            <Route path="pembelianBahan" element={<MenuProtectedRoute menuKey="gudang_bahan:pengiriman"><PembelianBahan /></MenuProtectedRoute>} />
+            <Route path="stok-opname-bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:opname"><StokOpnameBahan /></MenuProtectedRoute>} />
+            <Route path="pabrik" element={<MenuProtectedRoute menuKey="gudang_bahan:pabrik"><Pabrik /></MenuProtectedRoute>} />
+            <Route path="gudang" element={<MenuProtectedRoute menuKey="gudang_bahan:gudang"><Gudang /></MenuProtectedRoute>} />
+            <Route path="scan-bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:scan_masuk"><ScanBahan /></MenuProtectedRoute>} />
+            <Route path="stok-per-bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:stok"><StokPerBahan /></MenuProtectedRoute>} />
+            <Route path="scan-stok-bahan-keluar" element={<MenuProtectedRoute menuKey="gudang_bahan:scan_keluar"><ScanStokBahanKeluar /></MenuProtectedRoute>} />
+            <Route path="riwayat-stok-bahan-keluar" element={<MenuProtectedRoute menuKey="gudang_bahan:history_keluar"><RiwayatStokBahanKeluar /></MenuProtectedRoute>} />
+            <Route path="spk-bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:pemesanan"><SpkBahan /></MenuProtectedRoute>} />
+            <Route path="refund-bahan" element={<MenuProtectedRoute menuKey="gudang_bahan:return"><RefundBahan /></MenuProtectedRoute>} />
+            <Route path="pendapatan-pabrik" element={<MenuProtectedRoute menuKey="gudang_bahan:hutang_pabrik"><PendapatanPabrik /></MenuProtectedRoute>} />
+            <Route path="history-pendapatan-pabrik" element={<MenuProtectedRoute menuKey="gudang_bahan:history_hutang_pabrik"><HistoryPendapatanPabrik /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Gudang Produk Group */}
+          <Route element={<MenuProtectedRoute menuKey="gudang_produk" />}>
+            <Route path="master-gudang-produk" element={<MenuProtectedRoute menuKey="gudang_produk:master_layout"><MasterGudangProduk /></MenuProtectedRoute>} />
+            <Route path="input-sku-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:input_sku"><InputSkuGudang /></MenuProtectedRoute>} />
+            <Route path="scan-produk-masuk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:scan_masuk"><ScanProdukMasukGudang /></MenuProtectedRoute>} />
+            <Route path="stok-awal-gudang-produk" element={<MenuProtectedRoute menuKey="gudang_produk:stok_awal"><StokAwalGudangProduk /></MenuProtectedRoute>} />
+            <Route path="stok-lokasi-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:stok_lokasi"><StokLokasiGudang /></MenuProtectedRoute>} />
+            <Route path="list-stok-product" element={<MenuProtectedRoute menuKey="gudang_produk:list_stok"><ListStokProductGudang /></MenuProtectedRoute>} />
+            <Route path="mutasi-gudang-produk" element={<MenuProtectedRoute menuKey="gudang_produk:mutasi"><MutasiGudangProduk /></MenuProtectedRoute>} />
+            <Route path="history-produk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk"><HistoryProdukGudang /></MenuProtectedRoute>} />
+            <Route path="history-mutasi-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_mutasi"><HistoryMutasiGudang /></MenuProtectedRoute>} />
+            <Route path="stok-opname-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:stok_opname"><StokOpnameGudang /></MenuProtectedRoute>} />
+            <Route path="history-stok-awal-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_stok_awal"><HistoryStokAwalGudang /></MenuProtectedRoute>} />
+            <Route path="history-produk-masuk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk_masuk"><HistoryProdukMasukGudang /></MenuProtectedRoute>} />
+            <Route path="picking-queue" element={<MenuProtectedRoute menuKey="gudang_produk:picking_queue"><PickingQueue /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Quality Control Group */}
+          <Route element={<MenuProtectedRoute menuKey="qc" />}>
+            <Route path="qc-lolos" element={<MenuProtectedRoute menuKey="qc:lolos"><QCLolos /></MenuProtectedRoute>} />
+            <Route path="qc-reject" element={<MenuProtectedRoute menuKey="qc:reject"><QCReject /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Management Sample Group */}
+          <Route element={<MenuProtectedRoute menuKey="sample" />}>
+            <Route path="tukang-sample" element={<MenuProtectedRoute menuKey="sample:tukang"><TukangSample /></MenuProtectedRoute>} />
+            <Route path="spk-sample" element={<MenuProtectedRoute menuKey="sample:spk"><SPKSample /></MenuProtectedRoute>} />
+            <Route path="summary-spk-sample" element={<MenuProtectedRoute menuKey="sample:summary"><SummarySPKSample /></MenuProtectedRoute>} />
+          </Route>
+
+          {/* Other routes */}
           <Route path="order" element={<OrderMonitor />} />
-          <Route path="bahan" element={<Bahan />} />
-          <Route path="bahan-list" element={<BahanList />} />
-          <Route path="pembelianBahan" element={<PembelianBahan />} />
-          <Route path="stok-opname-bahan" element={<StokOpnameBahan />} />
-          <Route path="pabrik" element={<Pabrik />} />
-          <Route path="gudang" element={<Gudang />} />
-          <Route path="scan-bahan" element={<ScanBahan />} />
-          <Route path="stok-per-bahan" element={<StokPerBahan />} />
-          <Route path="scan-stok-bahan-keluar" element={<ScanStokBahanKeluar />} />
-          <Route path="riwayat-stok-bahan-keluar" element={<RiwayatStokBahanKeluar />} />
-          <Route path="spk-bahan" element={<SpkBahan />} />
-          <Route path="refund-bahan" element={<RefundBahan />} />
-          <Route path="pendapatan-pabrik" element={<PendapatanPabrik />} />
-          <Route path="history-pendapatan-pabrik" element={<HistoryPendapatanPabrik />} />
-          <Route path="seri" element={<Seri />} />
-          <Route path="laporanhasil" element={<LaporanHasil />} />
-          <Route path="laporan-data-acuan" element={<LaporanDataAcuan />} />
-          <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
-          <Route path="sku" element={<Sku />} />
-          <Route path="master-gudang-produk" element={<MasterGudangProduk />} />
-          <Route path="input-sku-gudang" element={<InputSkuGudang />} />
-          <Route path="scan-produk-masuk-gudang" element={<ScanProdukMasukGudang />} />
-          <Route path="stok-awal-gudang-produk" element={<StokAwalGudangProduk />} />
-          <Route path="stok-lokasi-gudang" element={<StokLokasiGudang />} />
-          <Route path="list-stok-product" element={<ListStokProductGudang />} />
-          <Route path="mutasi-gudang-produk" element={<MutasiGudangProduk />} />
-          <Route path="history-produk-gudang" element={<HistoryProdukGudang />} />
-          <Route path="history-mutasi-gudang" element={<HistoryMutasiGudang />} />
-          <Route path="stok-opname-gudang" element={<StokOpnameGudang />} />
-          <Route path="history-stok-awal-gudang" element={<HistoryStokAwalGudang />} />
-          <Route path="history-produk-masuk-gudang" element={<HistoryProdukMasukGudang />} />
-          <Route path="picking-queue" element={<PickingQueue />} />
-          <Route path="qc-lolos" element={<QCLolos />} />
-          <Route path="qc-reject" element={<QCReject />} />
-          <Route path="tukang-sample" element={<TukangSample />} />
-          <Route path="spk-sample" element={<SPKSample />} />
-          <Route path="summary-spk-sample" element={<SummarySPKSample />} />
           <Route path="blank" element={<Blank />} />
           <Route path="blank2" element={<Blank2 />} />
-
         </Route>
       </Routes>
     </Router>
@@ -219,6 +276,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
