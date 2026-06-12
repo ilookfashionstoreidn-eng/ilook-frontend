@@ -144,7 +144,8 @@ const AVAILABLE_MENUS = [
       { key: "gudang_produk:history_mutasi", label: "History Mutasi" },
       { key: "gudang_produk:history_produk", label: "History Produk" },
       { key: "gudang_produk:history_stok_awal", label: "History Stok Awal" },
-      { key: "gudang_produk:history_produk_masuk", label: "History Produk Masuk" }
+      { key: "gudang_produk:history_produk_masuk", label: "History Produk Masuk" },
+      { key: "gudang_produk:history_out_check", label: "History Keluar - Cek Masuk" }
     ]
   },
   {
