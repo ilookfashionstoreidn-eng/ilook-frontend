@@ -646,14 +646,20 @@ const SpkCutting = () => {
     tanggal_buat: "",
     tanggal_batas_kirim: "",
     harga_jasa: "",
+    harga_jasaDisplay: "",
     satuan_harga: "Pcs",
     jumlah_asumsi_produk: "",
+    jumlah_asumsi_produkDisplay: "",
     jenis_spk: "",
     keterangan: "",
     tukang_cutting_id: "",
     tukang_pola_id: "",
     bagian: [],
   });
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
 
   // Ref untuk search term agar tidak memicu re-creation fetchSpkCutting
   const searchTermRef = React.useRef(searchTerm);
@@ -1698,8 +1704,10 @@ const SpkCutting = () => {
         params.status = statusFilter;
       }
 
-      // Gunakan filter tanggal dari card progress untuk export
-      if (dailyDate) {
+      if (exportStartDate && exportEndDate) {
+        params.start_date = exportStartDate;
+        params.end_date = exportEndDate;
+      } else if (dailyDate) {
         params.start_date = dailyDate;
         params.end_date = dailyDate;
       } else if (weeklyStart && weeklyEnd) {
@@ -1733,6 +1741,7 @@ const SpkCutting = () => {
 
       window.URL.revokeObjectURL(url);
       void showStatusAlert("success", "Export Berhasil", "Data SPK Cutting berhasil diexport ke Excel.");
+      setShowExportModal(false);
     } catch (error) {
       console.error("Error exporting to Excel:", error);
 
@@ -2535,7 +2544,7 @@ const SpkCutting = () => {
               <FaPlus /> Tambah SPK Cutting
             </button>
 
-            <button className="spk-cutting-btn-export" onClick={handleExportExcel}>
+            <button className="spk-cutting-btn-export" onClick={() => setShowExportModal(true)}>
               <FaFileExcel /> Export Excel
             </button>
           </div>
@@ -2825,6 +2834,57 @@ const SpkCutting = () => {
           </>
         )}
       </div>
+
+      {/* Modal Export Excel */}
+      {showExportModal && (
+        <div className="spk-cutting-modal" style={{ zIndex: 1200 }}>
+          <div className="spk-cutting-modal-content" style={{ maxWidth: '400px' }}>
+            <div className="spk-cutting-create-header">
+              <div className="spk-cutting-create-title">
+                <span>Export Data</span>
+                <h2>Export SPK Cutting</h2>
+              </div>
+              <button type="button" className="spk-cutting-create-close" onClick={() => setShowExportModal(false)}><FiX /></button>
+            </div>
+            <div className="spk-cutting-create-body" style={{ padding: '24px' }}>
+              <div className="spk-cutting-form-group">
+                <label>Dari Tanggal:</label>
+                <input 
+                  type="date" 
+                  className="spk-cutting-input"
+                  value={exportStartDate} 
+                  onChange={(e) => setExportStartDate(e.target.value)} 
+                />
+              </div>
+              <div className="spk-cutting-form-group" style={{ marginTop: '16px' }}>
+                <label>Sampai Tanggal:</label>
+                <input 
+                  type="date" 
+                  className="spk-cutting-input"
+                  value={exportEndDate} 
+                  onChange={(e) => setExportEndDate(e.target.value)} 
+                />
+              </div>
+            </div>
+            <div className="spk-cutting-form-actions" style={{ padding: '20px' }}>
+              <button 
+                type="button" 
+                className="spk-cutting-btn spk-cutting-btn-primary" 
+                onClick={handleExportExcel}
+              >
+                <FaFileExcel style={{ marginRight: '8px' }} /> Download Excel
+              </button>
+              <button 
+                type="button" 
+                className="spk-cutting-btn spk-cutting-btn-secondary" 
+                onClick={() => setShowExportModal(false)}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Tambah SPK Cutting */}
       {showForm && (

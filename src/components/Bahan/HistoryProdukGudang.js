@@ -76,12 +76,16 @@ const HistoryProdukGudang = () => {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [singleDate, setSingleDate] = useState(today);
+  const [movementType, setMovementType] = useState("");
+  const [source, setSource] = useState("");
   const [query, setQuery] = useState({
     page: 1,
     perPage: 50,
     search: "",
     startDate: today,
     endDate: today,
+    movementType: "",
+    source: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -122,6 +126,8 @@ const HistoryProdukGudang = () => {
           search: query.search,
           start_date: query.startDate,
           end_date: query.endDate,
+          movement_type: query.movementType,
+          source: query.source,
         });
 
         if (ignore) {
@@ -206,6 +212,8 @@ const HistoryProdukGudang = () => {
         ...current,
         startDate,
         endDate,
+        movementType,
+        source,
         page: 1,
       }));
     });
@@ -319,7 +327,10 @@ const HistoryProdukGudang = () => {
       </section>
 
       <section className="gudang-ui-panel gudang-history-filter-panel">
-        <div className="gudang-history-filter-grid">
+        <div 
+          className="gudang-history-filter-grid" 
+          style={{ gridTemplateColumns: "minmax(260px, 1.2fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(160px, 1.2fr) minmax(120px, 0.8fr) auto" }}
+        >
           <label className="gudang-history-date-field">
             <span>Range Tanggal</span>
             <div className="gudang-history-date-range">
@@ -350,6 +361,32 @@ const HistoryProdukGudang = () => {
               onClick={openDatePicker}
               onFocus={openDatePicker}
             />
+          </label>
+
+          <label className="gudang-history-date-field">
+            <span>Jenis</span>
+            <select value={movementType} onChange={(e) => setMovementType(e.target.value)}>
+              <option value="">Semua Jenis</option>
+              <option value="in">Barang Masuk</option>
+              <option value="out">Barang Keluar</option>
+            </select>
+          </label>
+
+          <label className="gudang-history-date-field">
+            <span>Sumber</span>
+            <select value={source} onChange={(e) => setSource(e.target.value)}>
+              <option value="">Semua Sumber</option>
+              <option value="Packing Normal">Packing Normal</option>
+              <option value="Packing Random">Packing Random</option>
+              <option value="Packing Pendingan">Packing Pendingan</option>
+              <option value="Produk Belum Barcode">Produk Belum Barcode</option>
+              <option value="No Data Ginee">No Data Ginee</option>
+              <option value="Inject Data">Inject Data</option>
+              <option value="Barang Masuk Gudang">Barang Masuk Gudang</option>
+              <option value="Mutasi/Koreksi Keluar">Mutasi/Koreksi Keluar</option>
+              <option value="Stok Opname Masuk">Stok Opname Masuk</option>
+              <option value="Stok Opname Keluar">Stok Opname Keluar</option>
+            </select>
           </label>
 
           <label className="gudang-history-date-field">
@@ -446,6 +483,7 @@ const HistoryProdukGudang = () => {
                       <th>Qty</th>
                       <th>Kode Seri / Catatan</th>
                       <th>Sumber</th>
+                      <th>User Input</th>
                       <th>Tanggal</th>
                     </tr>
                   </thead>
@@ -470,6 +508,7 @@ const HistoryProdukGudang = () => {
                         <td>{formatNumber(row.qty || 0)}</td>
                         <td>{row.kodeSeri || "-"}</td>
                         <td>{row.sourceLabel || "-"}</td>
+                        <td>{row.scannerName || "-"}</td>
                         <td>{formatDateTime(row.happenedAt || row.keluarPada)}</td>
                       </tr>
                     ))}
