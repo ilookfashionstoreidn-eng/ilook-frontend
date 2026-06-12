@@ -177,9 +177,12 @@ const handleSearchOrder = async () => {
 };
 
 
- const handleScanBarcode = async (e) => {
-  e?.preventDefault();
-  const barcode = scannedBarcode.trim();
+const handleScanBarcode = async (barcodeValue = null) => {
+  if (barcodeValue && typeof barcodeValue === "object" && typeof barcodeValue.preventDefault === "function") {
+    barcodeValue.preventDefault();
+  }
+  const rawBarcode = typeof barcodeValue === "string" ? barcodeValue : scannedBarcode;
+  const barcode = (rawBarcode || "").trim();
   if (!barcode) return;
 
   if (isOrderReadyForValidation(scannedItems)) {
@@ -333,12 +336,14 @@ const handleSearchOrder = async () => {
 
     e.preventDefault();
 
-    if (canSubmitByEnter && !scannedBarcode.trim()) {
+    const value = e.currentTarget.value.trim();
+
+    if (canSubmitByEnter && !value) {
       handleSubmitValidation();
       return;
     }
 
-    handleScanBarcode();
+    handleScanBarcode(value);
   };
 
   const handleSubmitValidation = async () => {
