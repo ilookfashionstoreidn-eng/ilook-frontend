@@ -16,6 +16,7 @@ import {
   FaSync,
   FaTimes,
   FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import { GudangStatCard } from "./GudangProdukSharedV2";
@@ -25,8 +26,14 @@ import {
   fetchGudangProdukStokAwalHistory,
   fetchGudangProdukWorkspace,
   updateGudangProdukStokAwalLocation,
+  deleteGudangProdukStokAwal,
 } from "./GudangProdukWorkspaceApi";
 import { getAllSlots } from "./GudangProdukMockStore";
+import {
+  confirmGudangAction,
+  showGudangSuccess,
+  showGudangError,
+} from "./GudangProdukAlerts";
 
 const EMPTY_SUMMARY = {
   total_rows: 0,
@@ -416,6 +423,38 @@ const HistoryStokAwalGudang = () => {
     } catch (err) {
       const errMsg = buildGudangWorkspaceErrorMessage(err, "Gagal memperbarui lokasi stok awal.");
       setEditModal(prev => ({ ...prev, isSaving: false, error: errMsg }));
+    }
+  };
+
+  const handleDeleteStokAwal = async (row) => {
+    const confirmed = await confirmGudangAction({
+      title: "Hapus History Stok Awal",
+      text: `Apakah Anda yakin ingin menghapus history stok awal SKU ${row.sku} pada lokasi ${row.lokasi}? Tindakan ini akan mengurangi stok gudang sebanyak ${row.qty} pcs secara otomatis.`,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await deleteGudangProdukStokAwal({
+        sku_id: row.sku_id,
+        slot_id: row.slot_id,
+      });
+
+      await showGudangSuccess(
+        "Berhasil Dihapus",
+        "History stok awal telah dihapus dan stok gudang berhasil disesuaikan."
+      );
+      
+      refreshRows();
+    } catch (err) {
+      const errMsg = buildGudangWorkspaceErrorMessage(
+        err,
+        "Gagal menghapus history stok awal."
+      );
+      await showGudangError("Gagal", errMsg);
     }
   };
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
@@ -993,23 +1032,42 @@ const HistoryStokAwalGudang = () => {
                                   {highlightText(row.lokasi, activeSearch)}
                                 </span>
                                 {row.sku_id && row.slot_id && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditModal(row)}
-                                    title="Edit Lokasi"
-                                    style={{
-                                      border: "none",
-                                      background: "transparent",
-                                      color: "#2458ce",
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      padding: "4px",
-                                      borderRadius: "4px",
-                                    }}
-                                  >
-                                    <FaEdit size={14} />
-                                  </button>
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditModal(row)}
+                                      title="Edit Lokasi"
+                                      style={{
+                                        border: "none",
+                                        background: "transparent",
+                                        color: "#2458ce",
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "4px",
+                                        borderRadius: "4px",
+                                      }}
+                                    >
+                                      <FaEdit size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteStokAwal(row)}
+                                      title="Hapus History"
+                                      style={{
+                                        border: "none",
+                                        background: "transparent",
+                                        color: "#dc2626",
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "4px",
+                                        borderRadius: "4px",
+                                      }}
+                                    >
+                                      <FaTrash size={14} />
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -1055,23 +1113,42 @@ const HistoryStokAwalGudang = () => {
                                     {highlightText(row.lokasi, activeSearch)}
                                   </span>
                                   {row.sku_id && row.slot_id && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenEditModal(row)}
-                                      title="Edit Lokasi"
-                                      style={{
-                                        border: "none",
-                                        background: "transparent",
-                                        color: "#2458ce",
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        padding: "4px",
-                                        borderRadius: "4px",
-                                      }}
-                                    >
-                                      <FaEdit size={14} />
-                                    </button>
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditModal(row)}
+                                        title="Edit Lokasi"
+                                        style={{
+                                          border: "none",
+                                          background: "transparent",
+                                          color: "#2458ce",
+                                          cursor: "pointer",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          padding: "4px",
+                                          borderRadius: "4px",
+                                        }}
+                                      >
+                                        <FaEdit size={14} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteStokAwal(row)}
+                                        title="Hapus History"
+                                        style={{
+                                          border: "none",
+                                          background: "transparent",
+                                          color: "#dc2626",
+                                          cursor: "pointer",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          padding: "4px",
+                                          borderRadius: "4px",
+                                        }}
+                                      >
+                                        <FaTrash size={14} />
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               </td>
