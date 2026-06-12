@@ -187,13 +187,19 @@ const Seri = () => {
     }
 
     try {
-      await API.post("/seri", formData, {
+      const response = await API.post("/seri", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
       await fetchSeri(currentPage, searchTerm);
+
+      const createdSeri = response.data?.data;
+      if (createdSeri && createdSeri.id) {
+        await downloadQR(createdSeri.id, createdSeri.nomor_seri);
+      }
+
       setSuccessMessage("Data seri berhasil ditambahkan.");
       setShowSuccessModal(true);
       setShowForm(false);

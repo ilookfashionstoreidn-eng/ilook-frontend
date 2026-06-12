@@ -101,6 +101,8 @@ const normalizeGudangProdukStokAwalHistoryRow = (row = {}) => ({
   seri: row.seri || row.kodeSeri || row.serialNumber || "-",
   qty: Number(row.qty || row.scannedQty || 0),
   lokasi: row.lokasi || row.location || row.namaGudang || row.slotLabel || "-",
+  sku_id: row.sku_id || row.skuId || null,
+  slot_id: row.slot_id || row.slotId || null,
 });
 
 const normalizeGudangProdukStokAwalHistoryPayload = (payload = {}) => ({
@@ -790,5 +792,13 @@ export const fetchGudangProdukMutationHistory = async (params = {}) => {
 
 export const fetchGudangProdukHistoryOutCheck = async (params = {}) => {
   const response = await API.get("/gudang-produk/history-out-check", { params });
+  return response?.data;
+};
+
+export const updateGudangProdukStokAwalLocation = async (payload) => {
+  const response = await API.post(
+    "/gudang-produk-workspace/stok-awal/update-location",
+    payload
+  );
   return response?.data;
 };
