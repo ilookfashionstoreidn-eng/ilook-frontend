@@ -275,15 +275,26 @@ const ScanProdukMasukGudang = () => {
 
     const trimmedValue = value.trim();
 
-    if (trimmedValue.length >= 8) {
+    // Prevent premature processing by checking if it's a prefix of expected formats:
+    // 1. "SKU | nomor_seri."
+    // 2. "nomor_seri."
+    const sku = selectedSeriItem?.sku || "";
+    const nomorSeri = selectedSeriNumber || "";
+    const expectedPrefix = sku && nomorSeri ? `${sku} | ${nomorSeri}.` : "";
+    const expectedPlainPrefix = nomorSeri ? `${nomorSeri}.` : "";
+
+    const isPrefix = (expectedPrefix && expectedPrefix.startsWith(trimmedValue)) ||
+                     (expectedPlainPrefix && expectedPlainPrefix.startsWith(trimmedValue));
+
+    if (trimmedValue.length >= 8 && !isPrefix) {
       barcodeTimeoutRef.current = setTimeout(async () => {
         await processScan(trimmedValue);
-      }, 150);
+      }, 1000); // 1000ms delay to prevent race conditions during scanner input
     }
   };
 
   const processScan = async (barcodeValue = null) => {
-    const barcodeToScan = barcodeValue || scanInput.trim();
+    let barcodeToScan = (barcodeValue || scanInput).trim();
 
     if (!barcodeToScan) {
       setScanMessage("Barcode tidak boleh kosong.");
@@ -297,6 +308,13 @@ const ScanProdukMasukGudang = () => {
       setScanStatus("error");
       playSound("error");
       return;
+    }
+
+    // Automatically prepend SKU if the barcode is scanned/typed as a plain serial number (without " | ")
+    if (selectedSeriItem && selectedSeriItem.sku && selectedSeriNumber) {
+      if (!barcodeToScan.includes(" | ") && barcodeToScan.startsWith(selectedSeriNumber)) {
+        barcodeToScan = `${selectedSeriItem.sku} | ${barcodeToScan}`;
+      }
     }
 
     // Clear timeout immediately to prevent double processing (auto-scan length + manual submit keypress)
