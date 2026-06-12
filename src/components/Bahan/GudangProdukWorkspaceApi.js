@@ -787,3 +787,8 @@ export const fetchGudangProdukMutationHistory = async (params = {}) => {
   const response = await API.get("/gudang-produk/history-mutations", { params });
   return response?.data;
 };
+
+export const fetchGudangProdukHistoryOutCheck = async (params = {}) => {
+  const response = await API.get("/gudang-produk/history-out-check", { params });
+  return response?.data;
+};

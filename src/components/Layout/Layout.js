@@ -754,6 +754,7 @@ const Layout = () => {
                     "history-produk-gudang",
                     "history-stok-awal-gudang",
                     "history-produk-masuk-gudang",
+                    "history-out-check-gudang",
                     "stok-opname-gudang",
                   ].includes(activeMenu)
                     ? "active"
@@ -862,6 +863,13 @@ const Layout = () => {
                       <li>
                         <Link to="history-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "history-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-masuk-gudang")}>
                           <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk Masuk
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("gudang_produk:history_out_check") && (
+                      <li>
+                        <Link to="history-out-check-gudang" className={`dropdown-link ${activeMenu === "history-out-check-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-out-check-gudang")}>
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Keluar - Cek Masuk
                         </Link>
                       </li>
                     )}

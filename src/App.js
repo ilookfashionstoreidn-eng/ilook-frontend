@@ -80,6 +80,7 @@ import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyPr
 import LaporanDataAcuan from "./components/Cutting/SpkCutting/LaporanDataAcuan";
 import Sku from "./components/Jahit/Sku";
 import HistoryProdukMasukGudang from "./components/Bahan/HistoryProdukMasukGudang";
+import HistoryOutCheckGudang from "./components/Bahan/HistoryOutCheckGudang";
 import PickingQueue from "./components/Bahan/PickingQueue";
 import MasterGudangProduk from "./components/Bahan/MasterGudangProduk";
 import InputSkuGudang from "./components/Bahan/InputSkuGudang";
@@ -249,6 +250,7 @@ const App = () => {
             <Route path="stok-opname-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:stok_opname"><StokOpnameGudang /></MenuProtectedRoute>} />
             <Route path="history-stok-awal-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_stok_awal"><HistoryStokAwalGudang /></MenuProtectedRoute>} />
             <Route path="history-produk-masuk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk_masuk"><HistoryProdukMasukGudang /></MenuProtectedRoute>} />
+            <Route path="history-out-check-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_out_check"><HistoryOutCheckGudang /></MenuProtectedRoute>} />
             <Route path="picking-queue" element={<MenuProtectedRoute menuKey="gudang_produk:picking_queue"><PickingQueue /></MenuProtectedRoute>} />
           </Route>
 
