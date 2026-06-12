@@ -15,6 +15,7 @@ import {
   FaQrcode,
   FaSync,
   FaTimes,
+  FaEdit,
 } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import { GudangStatCard } from "./GudangProdukSharedV2";
@@ -22,7 +23,10 @@ import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukStokAwalHistory,
+  fetchGudangProdukWorkspace,
+  updateGudangProdukStokAwalLocation,
 } from "./GudangProdukWorkspaceApi";
+import { getAllSlots } from "./GudangProdukMockStore";
 
 const EMPTY_SUMMARY = {
   total_rows: 0,
@@ -139,6 +143,281 @@ const highlightText = (value, keyword) => {
 const HistoryStokAwalGudang = () => {
   const today = getToday();
   const [rows, setRows] = useState([]);
+  const [editModal, setEditModal] = useState({
+    show: false,
+    row: null,
+    workspace: null,
+    isLoading: false,
+    layoutId: "",
+    floorId: "",
+    blockId: "",
+    rackId: "",
+    rowNumber: "",
+    isSaving: false,
+    error: "",
+  });
+
+  const handleOpenEditModal = async (row) => {
+    setEditModal({
+      show: true,
+      row,
+      workspace: null,
+      isLoading: true,
+      layoutId: "",
+      floorId: "",
+      blockId: "",
+      rackId: "",
+      rowNumber: "",
+      isSaving: false,
+      error: "",
+    });
+
+    try {
+      const workspace = await fetchGudangProdukWorkspace({ activityLimit: 0 });
+      const allSlots = getAllSlots(workspace);
+      const currentSlot = allSlots.find(slot => String(slot.id) === String(row.slot_id)) || null;
+
+      let initialLayoutId = "";
+      let initialFloorId = "";
+      let initialBlockId = "";
+      let initialRackId = "";
+      let initialRowNumber = "";
+
+      if (currentSlot) {
+        initialLayoutId = currentSlot.layoutId || "";
+        const layout = workspace.layouts.find(l => String(l.id) === String(currentSlot.layoutId));
+        if (layout) {
+          const floor = layout.floors.find(f => Number(f.number) === Number(currentSlot.floorNumber));
+          if (floor) {
+            initialFloorId = floor.id;
+            const block = floor.blocks.find(b => String(b.code).toUpperCase() === String(currentSlot.blockCode).toUpperCase());
+            if (block) {
+              initialBlockId = block.id;
+              const rack = block.racks.find(r => Number(r.number) === Number(currentSlot.rackNumber));
+              if (rack) {
+                initialRackId = rack.id;
+                initialRowNumber = String(currentSlot.rowNumber);
+              }
+            }
+          }
+        }
+      }
+
+      if (!initialLayoutId && workspace.layouts.length > 0) {
+        const layout = workspace.layouts[0];
+        initialLayoutId = layout.id;
+        if (layout.floors.length > 0) {
+          const floor = layout.floors[0];
+          initialFloorId = floor.id;
+          if (floor.blocks.length > 0) {
+            const block = floor.blocks[0];
+            initialBlockId = block.id;
+            if (block.racks.length > 0) {
+              const rack = block.racks[0];
+              initialRackId = rack.id;
+              initialRowNumber = "1";
+            }
+          }
+        }
+      }
+
+      setEditModal(prev => ({
+        ...prev,
+        workspace,
+        isLoading: false,
+        layoutId: initialLayoutId,
+        floorId: initialFloorId,
+        blockId: initialBlockId,
+        rackId: initialRackId,
+        rowNumber: initialRowNumber,
+      }));
+    } catch (err) {
+      setEditModal(prev => ({
+        ...prev,
+        isLoading: false,
+        error: "Gagal memuat layout gudang.",
+      }));
+    }
+  };
+
+  const editSelectedLayout = useMemo(() => {
+    if (!editModal.workspace || !editModal.layoutId) return null;
+    return editModal.workspace.layouts.find(l => String(l.id) === String(editModal.layoutId)) || editModal.workspace.layouts[0] || null;
+  }, [editModal.workspace, editModal.layoutId]);
+
+  const editFloors = useMemo(() => {
+    if (!editSelectedLayout) return [];
+    return [...(editSelectedLayout.floors || [])].sort((left, right) => Number(left.number) - Number(right.number));
+  }, [editSelectedLayout]);
+
+  const editSelectedFloor = useMemo(() => {
+    if (!editFloors.length || !editModal.floorId) return null;
+    return editFloors.find(f => String(f.id) === String(editModal.floorId)) || editFloors[0] || null;
+  }, [editFloors, editModal.floorId]);
+
+  const editBlocks = useMemo(() => {
+    if (!editSelectedFloor) return [];
+    return [...(editSelectedFloor.blocks || [])].sort((left, right) => String(left.code || "").localeCompare(String(right.code || "")));
+  }, [editSelectedFloor]);
+
+  const editSelectedBlock = useMemo(() => {
+    if (!editBlocks.length || !editModal.blockId) return null;
+    return editBlocks.find(b => String(b.id) === String(editModal.blockId)) || editBlocks[0] || null;
+  }, [editBlocks, editModal.blockId]);
+
+  const editRacks = useMemo(() => {
+    if (!editSelectedBlock) return [];
+    return [...(editSelectedBlock.racks || [])].sort((left, right) => Number(left.number) - Number(right.number));
+  }, [editSelectedBlock]);
+
+  const editSelectedRack = useMemo(() => {
+    if (!editRacks.length || !editModal.rackId) return null;
+    return editRacks.find(r => String(r.id) === String(editModal.rackId)) || editRacks[0] || null;
+  }, [editRacks, editModal.rackId]);
+
+  const editSelectedSlot = useMemo(() => {
+    if (!editModal.workspace || !editSelectedLayout || !editSelectedFloor || !editSelectedBlock || !editSelectedRack || !editModal.rowNumber) {
+      return null;
+    }
+    const allSlots = getAllSlots(editModal.workspace);
+    return allSlots.find(
+      (slot) =>
+        String(slot.layoutId) === String(editSelectedLayout.id) &&
+        Number(slot.floorNumber) === Number(editSelectedFloor.number) &&
+        String(slot.blockCode).toUpperCase() === String(editSelectedBlock.code).toUpperCase() &&
+        Number(slot.rackNumber) === Number(editSelectedRack.number) &&
+        Number(slot.rowNumber) === Number(editModal.rowNumber)
+    ) || null;
+  }, [editModal.workspace, editSelectedLayout, editSelectedFloor, editSelectedBlock, editSelectedRack, editModal.rowNumber]);
+
+  const handleEditLayoutChange = (e) => {
+    const nextLayoutId = e.target.value;
+    const layout = editModal.workspace?.layouts.find(l => String(l.id) === String(nextLayoutId));
+    let nextFloorId = "";
+    let nextBlockId = "";
+    let nextRackId = "";
+    let nextRowNumber = "";
+
+    if (layout && layout.floors.length) {
+      const floor = layout.floors[0];
+      nextFloorId = floor.id;
+      if (floor.blocks.length) {
+        const block = floor.blocks[0];
+        nextBlockId = block.id;
+        if (block.racks.length) {
+          const rack = block.racks[0];
+          nextRackId = rack.id;
+          nextRowNumber = "1";
+        }
+      }
+    }
+
+    setEditModal(prev => ({
+      ...prev,
+      layoutId: nextLayoutId,
+      floorId: nextFloorId,
+      blockId: nextBlockId,
+      rackId: nextRackId,
+      rowNumber: nextRowNumber,
+    }));
+  };
+
+  const handleEditFloorChange = (e) => {
+    const nextFloorId = e.target.value;
+    const floor = editFloors.find(f => String(f.id) === String(nextFloorId));
+    let nextBlockId = "";
+    let nextRackId = "";
+    let nextRowNumber = "";
+
+    if (floor && floor.blocks.length) {
+      const block = floor.blocks[0];
+      nextBlockId = block.id;
+      if (block.racks.length) {
+        const rack = block.racks[0];
+        nextRackId = rack.id;
+        nextRowNumber = "1";
+      }
+    }
+
+    setEditModal(prev => ({
+      ...prev,
+      floorId: nextFloorId,
+      blockId: nextBlockId,
+      rackId: nextRackId,
+      rowNumber: nextRowNumber,
+    }));
+  };
+
+  const handleEditBlockChange = (e) => {
+    const nextBlockId = e.target.value;
+    const block = editBlocks.find(b => String(b.id) === String(nextBlockId));
+    let nextRackId = "";
+    let nextRowNumber = "";
+
+    if (block && block.racks.length) {
+      const rack = block.racks[0];
+      nextRackId = rack.id;
+      nextRowNumber = "1";
+    }
+
+    setEditModal(prev => ({
+      ...prev,
+      blockId: nextBlockId,
+      rackId: nextRackId,
+      rowNumber: nextRowNumber,
+    }));
+  };
+
+  const handleEditRackChange = (e) => {
+    const nextRackId = e.target.value;
+    setEditModal(prev => ({
+      ...prev,
+      rackId: nextRackId,
+      rowNumber: "1",
+    }));
+  };
+
+  const handleSaveEditLocation = async () => {
+    if (!editSelectedSlot) {
+      setEditModal(prev => ({ ...prev, error: "Silakan pilih lokasi tujuan yang valid." }));
+      return;
+    }
+
+    if (String(editSelectedSlot.id) === String(editModal.row.slot_id)) {
+      setEditModal(prev => ({ ...prev, error: "Lokasi baru sama dengan lokasi lama." }));
+      return;
+    }
+
+    setEditModal(prev => ({ ...prev, isSaving: true, error: "" }));
+
+    try {
+      await updateGudangProdukStokAwalLocation({
+        sku_id: editModal.row.sku_id,
+        old_slot_id: editModal.row.slot_id,
+        new_layout_id: editSelectedLayout.id,
+        new_slot_id: editSelectedSlot.id,
+      });
+
+      setEditModal({
+        show: false,
+        row: null,
+        workspace: null,
+        isLoading: false,
+        layoutId: "",
+        floorId: "",
+        blockId: "",
+        rackId: "",
+        rowNumber: "",
+        isSaving: false,
+        error: "",
+      });
+
+      refreshRows();
+    } catch (err) {
+      const errMsg = buildGudangWorkspaceErrorMessage(err, "Gagal memperbarui lokasi stok awal.");
+      setEditModal(prev => ({ ...prev, isSaving: false, error: errMsg }));
+    }
+  };
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [searchInput, setSearchInput] = useState("");
@@ -709,9 +988,30 @@ const HistoryStokAwalGudang = () => {
                               </span>
                             </td>
                             <td>
-                              <span className="gudang-ui-pill gudang-liststok-location">
-                                {highlightText(row.lokasi, activeSearch)}
-                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span className="gudang-ui-pill gudang-liststok-location">
+                                  {highlightText(row.lokasi, activeSearch)}
+                                </span>
+                                {row.sku_id && row.slot_id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditModal(row)}
+                                    title="Edit Lokasi"
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#2458ce",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "4px",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    <FaEdit size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -750,9 +1050,30 @@ const HistoryStokAwalGudang = () => {
                                 </span>
                               </td>
                               <td rowSpan={spanCount} className="stok-awal-cell-span">
-                                <span className="gudang-ui-pill gudang-liststok-location">
-                                  {highlightText(row.lokasi, activeSearch)}
-                                </span>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  <span className="gudang-ui-pill gudang-liststok-location">
+                                    {highlightText(row.lokasi, activeSearch)}
+                                  </span>
+                                  {row.sku_id && row.slot_id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditModal(row)}
+                                      title="Edit Lokasi"
+                                      style={{
+                                        border: "none",
+                                        background: "transparent",
+                                        color: "#2458ce",
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "4px",
+                                        borderRadius: "4px",
+                                      }}
+                                    >
+                                      <FaEdit size={14} />
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </>
                           )}
@@ -808,6 +1129,161 @@ const HistoryStokAwalGudang = () => {
           </div>
         )}
       </section>
+
+      {editModal.show && (
+        <div className="gudang-edit-location-modal-overlay">
+          <div className="gudang-edit-location-modal-content">
+            <div className="gudang-edit-location-modal-header">
+              <h3>Edit Lokasi Stok Awal</h3>
+              <button
+                type="button"
+                className="gudang-edit-location-modal-close-btn"
+                onClick={() => setEditModal(prev => ({ ...prev, show: false }))}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className="gudang-edit-location-modal-body">
+              {editModal.error && (
+                <div className="gudang-edit-location-modal-error-message">
+                  {editModal.error}
+                </div>
+              )}
+
+              <div className="gudang-edit-location-modal-row-info">
+                <div className="gudang-edit-location-modal-info-item">
+                  <span>SKU</span>
+                  <strong>{editModal.row?.sku}</strong>
+                </div>
+                <div className="gudang-edit-location-modal-info-item">
+                  <span>Qty Total</span>
+                  <strong>{formatNumber(editModal.row?.qty)} pcs</strong>
+                </div>
+                <div className="gudang-edit-location-modal-info-item" style={{ gridColumn: "span 2", marginTop: "8px" }}>
+                  <span>Lokasi Saat Ini</span>
+                  <strong>{editModal.row?.lokasi}</strong>
+                </div>
+              </div>
+
+              {editModal.isLoading ? (
+                <div style={{ textAlign: "center", padding: "24px 0", color: "#64748b" }}>
+                  Memuat data layout gudang...
+                </div>
+              ) : (
+                <div className="gudang-edit-location-modal-form">
+                  <label className="gudang-ui-field gudang-edit-location-modal-form-full">
+                    <span>Gudang Produk</span>
+                    <select
+                      value={editModal.layoutId}
+                      onChange={handleEditLayoutChange}
+                      disabled={editModal.isSaving}
+                    >
+                      <option value="">-- Pilih Gudang --</option>
+                      {editModal.workspace?.layouts.map((layout) => (
+                        <option key={layout.id} value={layout.id}>
+                          {layout.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="gudang-ui-field">
+                    <span>Lantai</span>
+                    <select
+                      value={editModal.floorId}
+                      onChange={handleEditFloorChange}
+                      disabled={editModal.isSaving || !editModal.layoutId}
+                    >
+                      <option value="">-- Pilih Lantai --</option>
+                      {editFloors.map((floor) => (
+                        <option key={floor.id} value={floor.id}>
+                          {floor.label || `Lantai ${floor.number}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="gudang-ui-field">
+                    <span>Bilik / Blok</span>
+                    <select
+                      value={editModal.blockId}
+                      onChange={handleEditBlockChange}
+                      disabled={editModal.isSaving || !editModal.floorId}
+                    >
+                      <option value="">-- Pilih Blok --</option>
+                      {editBlocks.map((block) => (
+                        <option key={block.id} value={block.id}>
+                          {block.label || `Blok ${block.code}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="gudang-ui-field">
+                    <span>Rak</span>
+                    <select
+                      value={editModal.rackId}
+                      onChange={handleEditRackChange}
+                      disabled={editModal.isSaving || !editModal.blockId}
+                    >
+                      <option value="">-- Pilih Rak --</option>
+                      {editRacks.map((rack) => (
+                        <option key={rack.id} value={rack.id}>
+                          {rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="gudang-ui-field">
+                    <span>Baris Rak</span>
+                    <select
+                      value={editModal.rowNumber}
+                      onChange={(e) => setEditModal(prev => ({ ...prev, rowNumber: e.target.value }))}
+                      disabled={editModal.isSaving || !editModal.rackId}
+                    >
+                      <option value="">-- Pilih Baris --</option>
+                      {Array.from({ length: Number(editSelectedRack?.rows || 0) }, (_, index) => index + 1).map((number) => (
+                        <option key={number} value={number}>
+                          Baris {number}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {editSelectedSlot && (
+                    <div className="gudang-edit-location-modal-form-full">
+                      <div className="gudang-edit-location-modal-preview">
+                        Lokasi Baru: {editSelectedLayout?.name} - {editSelectedSlot.slotCode}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="gudang-edit-location-modal-footer">
+              <button
+                type="button"
+                className="gudang-ui-button-secondary"
+                onClick={() => setEditModal(prev => ({ ...prev, show: false }))}
+                disabled={editModal.isSaving}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="gudang-ui-header-action primary"
+                onClick={handleSaveEditLocation}
+                disabled={editModal.isSaving || editModal.isLoading || !editSelectedSlot}
+              >
+                {editModal.isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </GudangProdukBaseShell>
   );
 };

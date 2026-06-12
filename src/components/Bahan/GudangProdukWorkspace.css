@@ -5914,3 +5914,136 @@ button,
   color: #0f172a !important;
 }
 
+/* --- Edit Lokasi Stok Awal Modal --- */
+.gudang-edit-location-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.gudang-edit-location-modal-content {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(218, 228, 240, 0.8);
+  overflow: hidden;
+  animation: modalSlideUp 0.25s ease-out;
+}
+
+.gudang-edit-location-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gudang-edit-location-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gudang-edit-location-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.gudang-edit-location-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.gudang-edit-location-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gudang-edit-location-modal-row-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gudang-edit-location-modal-info-item span {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.gudang-edit-location-modal-info-item strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.gudang-edit-location-modal-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gudang-edit-location-modal-form-full {
+  grid-column: span 2;
+}
+
+.gudang-edit-location-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.gudang-edit-location-modal-preview {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.gudang-edit-location-modal-error-message {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+
