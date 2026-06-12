@@ -275,15 +275,30 @@ const ScanProdukMasukGudang = () => {
 
     const trimmedValue = value.trim();
 
-    if (trimmedValue.length >= 8) {
+    // Prevent premature processing by checking if it's a prefix of expected formats:
+    // 1. "SKU | nomor_seri."
+    // 2. "nomor_seri."
+    const sku = selectedSeriItem?.sku || "";
+    const nomorSeri = selectedSeriNumber || "";
+    const expectedPrefix = sku && nomorSeri ? `${sku} | ${nomorSeri}.` : "";
+    const expectedPlainPrefix = nomorSeri ? `${nomorSeri}.` : "";
+
+    const isPrefix = (expectedPrefix && expectedPrefix.startsWith(trimmedValue)) ||
+                     (expectedPlainPrefix && expectedPlainPrefix.startsWith(trimmedValue));
+
+    if (trimmedValue.length >= 8 && !isPrefix) {
       barcodeTimeoutRef.current = setTimeout(async () => {
+        if (scanInputRef.current) {
+          scanInputRef.current.value = "";
+        }
+        setScanInput("");
         await processScan(trimmedValue);
-      }, 150);
+      }, 300); // 300ms delay to prevent race conditions during scanner input while staying fast
     }
   };
 
   const processScan = async (barcodeValue = null) => {
-    const barcodeToScan = barcodeValue || scanInput.trim();
+    let barcodeToScan = (barcodeValue || scanInput).trim();
 
     if (!barcodeToScan) {
       setScanMessage("Barcode tidak boleh kosong.");
@@ -299,6 +314,13 @@ const ScanProdukMasukGudang = () => {
       return;
     }
 
+    // Automatically prepend SKU if the barcode is scanned/typed as a plain serial number (without " | ")
+    if (selectedSeriItem && selectedSeriItem.sku && selectedSeriNumber) {
+      if (!barcodeToScan.includes(" | ") && barcodeToScan.startsWith(selectedSeriNumber)) {
+        barcodeToScan = `${selectedSeriItem.sku} | ${barcodeToScan}`;
+      }
+    }
+
     // Clear timeout immediately to prevent double processing (auto-scan length + manual submit keypress)
     if (barcodeTimeoutRef.current) {
       clearTimeout(barcodeTimeoutRef.current);
@@ -312,6 +334,9 @@ const ScanProdukMasukGudang = () => {
     if (parsedKodeSeri !== selectedSeriNumber) {
       setScanMessage(`WARNING: Kode seri "${parsedKodeSeri}" tidak cocok dengan Nomor Seri aktif "${selectedSeriNumber}".`);
       setScanStatus("error");
+      if (scanInputRef.current) {
+        scanInputRef.current.value = "";
+      }
       setScanInput("");
       playSound("error");
       setTimeout(() => focusScanInput(), 100);
@@ -323,6 +348,9 @@ const ScanProdukMasukGudang = () => {
       if (!matchedPrint) {
         setScanMessage(`WARNING: Barcode "${barcodeToScan}" tidak terdaftar dalam cetakan aktif untuk Nomor Seri "${selectedSeriNumber}".`);
         setScanStatus("error");
+        if (scanInputRef.current) {
+          scanInputRef.current.value = "";
+        }
         setScanInput("");
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
@@ -332,6 +360,9 @@ const ScanProdukMasukGudang = () => {
       if (matchedPrint.is_cancelled) {
         setScanMessage(`WARNING: Barcode "${barcodeToScan}" sudah dibatalkan dan tidak bisa di-scan masuk.`);
         setScanStatus("error");
+        if (scanInputRef.current) {
+          scanInputRef.current.value = "";
+        }
         setScanInput("");
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
@@ -345,6 +376,9 @@ const ScanProdukMasukGudang = () => {
     if (activeScanKeysRef.current.has(scanKey)) {
       setScanMessage(`Barcode "${barcodeToScan}" sedang diproses.`);
       setScanStatus("error");
+      if (scanInputRef.current) {
+        scanInputRef.current.value = "";
+      }
       setScanInput("");
       playSound("error");
       setTimeout(() => focusScanInput(), 20);
@@ -361,14 +395,17 @@ const ScanProdukMasukGudang = () => {
 
       // Check in fetched database print details
       const isDuplicateSerialDb = seriDetails && seriDetails.prints
-        ? seriDetails.prints.some((p) => p.barcode_seri === currentSerial && p.is_scanned)
-        : false;
+         ? seriDetails.prints.some((p) => p.barcode_seri === currentSerial && p.is_scanned)
+         : false;
 
       const isDuplicateSerial = isDuplicateSerialLocal || isDuplicateSerialDb;
 
       if (isDuplicateSerial) {
         setScanMessage(`Kode seri "${currentSerial}" sudah pernah di-scan masuk sebelumnya.`);
         setScanStatus("error");
+        if (scanInputRef.current) {
+          scanInputRef.current.value = "";
+        }
         setScanInput("");
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
@@ -383,6 +420,9 @@ const ScanProdukMasukGudang = () => {
       if (isDuplicateBarcode) {
         setScanMessage(`Barcode "${barcodeToScan}" sudah pernah di-scan masuk dalam sesi ini.`);
         setScanStatus("error");
+        if (scanInputRef.current) {
+          scanInputRef.current.value = "";
+        }
         setScanInput("");
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
@@ -430,6 +470,9 @@ const ScanProdukMasukGudang = () => {
     activeScanKeysRef.current.add(scanKey);
 
     // 4. Kosongkan input scan & fokus kembali secara instan agar scanner siap memindai berikutnya
+    if (scanInputRef.current) {
+      scanInputRef.current.value = "";
+    }
     setScanInput("");
     focusScanInput();
 
@@ -444,6 +487,7 @@ const ScanProdukMasukGudang = () => {
         const message = response.data?.message || "Produk berhasil di-scan dan masuk ke gudang.";
 
         setScanMessage(message);
+        setScanStatus("success");
         playSound("success");
 
         // Perbarui item optimistik tadi menjadi sukses di tabel
@@ -453,6 +497,7 @@ const ScanProdukMasukGudang = () => {
               ? {
                   ...item,
                   status: "success",
+                  barcode: resultData.barcode || item.barcode,
                   kode_seri: resultData.kode_seri || item.kode_seri,
                   nomor_seri: resultData.nomor_seri || item.nomor_seri,
                   sku: resultData.sku || item.sku,
@@ -652,7 +697,12 @@ const ScanProdukMasukGudang = () => {
 
   const handleScan = async (e) => {
     e.preventDefault();
-    await processScan();
+    const val = scanInput.trim();
+    if (scanInputRef.current) {
+      scanInputRef.current.value = "";
+    }
+    setScanInput("");
+    await processScan(val);
   };
 
   const handleScanKeyDown = async (e) => {
@@ -661,7 +711,10 @@ const ScanProdukMasukGudang = () => {
     if (barcodeTimeoutRef.current) {
       clearTimeout(barcodeTimeoutRef.current);
     }
-    await processScan(e.currentTarget.value.trim());
+    const val = e.currentTarget.value.trim();
+    e.currentTarget.value = "";
+    setScanInput("");
+    await processScan(val);
   };
 
   const handleClearHistory = () => {
