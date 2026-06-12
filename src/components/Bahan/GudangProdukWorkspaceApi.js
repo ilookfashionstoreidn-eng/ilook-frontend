@@ -802,3 +802,10 @@ export const updateGudangProdukStokAwalLocation = async (payload) => {
   );
   return response?.data;
 };
+
+export const deleteGudangProdukStokAwal = async ({ sku_id, slot_id }) => {
+  const response = await API.delete("/gudang-produk-workspace/stok-awal", {
+    data: { sku_id, slot_id },
+  });
+  return response?.data;
+};
