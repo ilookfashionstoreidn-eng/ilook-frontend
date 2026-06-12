@@ -15,7 +15,15 @@ const isOrderReadyForValidation = (items) =>
   );
 
 const normalizeSerial = (serial) => (serial || "").trim().toUpperCase();
-const normalizeSku = (sku) => (sku || "").trim().toUpperCase();
+const normalizeSkuForComparison = (sku) => {
+  if (!sku) return "";
+  let s = sku.trim().toUpperCase();
+  if (s.startsWith("SET ") || s.startsWith("SET-")) {
+    s = s.substring(4);
+  }
+  return s.replace(/[^A-Z0-9]/g, "");
+};
+const normalizeSku = (sku) => normalizeSkuForComparison(sku);
 const buildSerialKey = (sku, serial) =>
   `${normalizeSku(sku)}::${normalizeSerial(serial)}`;
 
@@ -243,7 +251,7 @@ const handleSearchOrder = async () => {
     return;
   }
 
-  const itemIndex = scannedItems.findIndex((item) => item.sku === sku);
+  const itemIndex = scannedItems.findIndex((item) => normalizeSku(item.sku) === normalizeSku(sku));
 
   if (itemIndex === -1) {
     setMessage(`❌ SKU ${sku} tidak ditemukan dalam order`);
