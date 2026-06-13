@@ -484,6 +484,8 @@ const SpkCutting = () => {
   const [selectedSkuIds, setSelectedSkuIds] = useState([]);
   const [editSelectedSkuIds, setEditSelectedSkuIds] = useState([]);
   const [skuQuantities, setSkuQuantities] = useState({});
+  const [selectedPotongKecilSkus, setSelectedPotongKecilSkus] = useState([]);
+  const [showAddSkuSelect, setShowAddSkuSelect] = useState(false);
 
   const getSkuQuantitiesFromBagian = (bagianList) => {
     const quantities = {};
@@ -1493,6 +1495,8 @@ const SpkCutting = () => {
       await fetchSkuByProduk(value);
       setSelectedSkuIds([]);
       setSkuQuantities({});
+      setSelectedPotongKecilSkus([]);
+      setShowAddSkuSelect(false);
       return;
     }
 
@@ -2132,9 +2136,13 @@ const SpkCutting = () => {
       if (data.mode === "potong_kecil") {
         const quantities = getSkuQuantitiesFromBagian(bagianData);
         setSkuQuantities(quantities);
+        const skuIds = Object.keys(quantities).filter(id => parseFloat(quantities[id]) > 0);
+        setSelectedPotongKecilSkus(skuIds);
       } else {
         setSkuQuantities({});
+        setSelectedPotongKecilSkus([]);
       }
+      setShowAddSkuSelect(false);
 
       setShowEditForm(true);
     } catch (error) {
@@ -2177,6 +2185,8 @@ const SpkCutting = () => {
       await fetchSkuByProduk(value);
       setEditSelectedSkuIds([]);
       setSkuQuantities({});
+      setSelectedPotongKecilSkus([]);
+      setShowAddSkuSelect(false);
       return;
     }
 
@@ -2667,6 +2677,8 @@ const SpkCutting = () => {
                 setSelectedSkuIds([]);
                 setSkuList([]);
                 setSkuQuantities({});
+                setSelectedPotongKecilSkus([]);
+                setShowAddSkuSelect(false);
                 setShowForm(true);
               }}
             >
@@ -3241,14 +3253,16 @@ const SpkCutting = () => {
                   <div className="spk-cutting-create-section-body">
                     {newSpkCutting.mode === "potong_kecil" ? (
                       <div className="spk-cutting-potong-kecil-grid" style={{ padding: "16px", background: "#fff", border: "1px solid #e2e8f0" }}>
-                        <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "16px" }}>Input Qty Potong per SKU</h3>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
+                          <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", margin: 0 }}>Input Qty Potong per SKU</h3>
+                        </div>
                         {!newSpkCutting.produk_id ? (
                           <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
                             Silakan pilih Product terlebih dahulu untuk memuat daftar SKU.
                           </div>
-                        ) : skuList.length === 0 ? (
+                        ) : selectedPotongKecilSkus.length === 0 ? (
                           <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
-                            Tidak ada SKU ditemukan untuk Product ini.
+                            Belum ada SKU yang dipilih. Silakan klik tombol "+ Tambah SKU" di bawah untuk menambahkan SKU.
                           </div>
                         ) : (
                           <table className="spk-cutting-table" style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -3258,42 +3272,111 @@ const SpkCutting = () => {
                                 <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Warna</th>
                                 <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Size</th>
                                 <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569", width: "150px" }}>Target Qty (Pcs)</th>
+                                <th style={{ padding: "10px 12px", width: "50px", textAlign: "center" }}>Aksi</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {skuList.map((sku) => (
-                                <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
-                                    {sku.sku_name || sku.sku || sku.sku_code || "-"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
-                                    {sku.product_colour || "-"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
-                                    {getSkuSizeGroup(sku)}
-                                  </td>
-                                  <td style={{ padding: "8px 12px" }}>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      placeholder="0"
-                                      value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
-                                      onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, false)}
-                                      style={{
-                                        width: "100%",
-                                        height: "36px",
-                                        padding: "6px 10px",
-                                        border: "1px solid #cbd5e1",
-                                        borderRadius: "0px",
-                                        boxSizing: "border-box",
-                                        fontSize: "13px",
-                                      }}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
+                              {skuList
+                                .filter((sku) => selectedPotongKecilSkus.includes(sku.id.toString()))
+                                .map((sku) => (
+                                  <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                    <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
+                                      {sku.sku_name || sku.sku || sku.sku_code || "-"}
+                                    </td>
+                                    <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                      {sku.product_colour || "-"}
+                                    </td>
+                                    <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                      {getSkuSizeGroup(sku)}
+                                    </td>
+                                    <td style={{ padding: "8px 12px" }}>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
+                                        onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, false)}
+                                        style={{
+                                          width: "100%",
+                                          height: "36px",
+                                          padding: "6px 10px",
+                                          border: "1px solid #cbd5e1",
+                                          borderRadius: "0px",
+                                          boxSizing: "border-box",
+                                          fontSize: "13px",
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                      <button
+                                        type="button"
+                                        style={{
+                                          background: "none",
+                                          border: "none",
+                                          color: "#ef4444",
+                                          cursor: "pointer",
+                                          padding: "4px",
+                                        }}
+                                        onClick={() => {
+                                          setSelectedPotongKecilSkus((prev) => prev.filter((id) => id !== sku.id.toString()));
+                                          handleSkuQtyChange(sku.id, "0", false);
+                                        }}
+                                        title="Hapus SKU"
+                                      >
+                                        <FaTrash />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
                             </tbody>
                           </table>
+                        )}
+                        {newSpkCutting.produk_id && skuList.length > 0 && (
+                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+                            {showAddSkuSelect ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "350px" }}>
+                                <div style={{ flex: 1 }}>
+                                  <Select
+                                    placeholder="Pilih SKU..."
+                                    options={skuList
+                                      .filter((sku) => !selectedPotongKecilSkus.includes(sku.id.toString()))
+                                      .map((sku) => ({
+                                        value: sku.id.toString(),
+                                        label: getSkuLabel(sku),
+                                      }))}
+                                    onChange={(option) => {
+                                      if (option) {
+                                        setSelectedPotongKecilSkus((prev) => [...prev, option.value]);
+                                        setShowAddSkuSelect(false);
+                                      }
+                                    }}
+                                    value={null}
+                                    autoFocus
+                                    menuPortalTarget={bahanSelectPortalTarget}
+                                    styles={{
+                                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                    }}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="spk-cutting-btn spk-cutting-btn-secondary"
+                                  style={{ height: "38px" }}
+                                  onClick={() => setShowAddSkuSelect(false)}
+                                >
+                                  Batal
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="spk-cutting-btn spk-cutting-btn-success"
+                                onClick={() => setShowAddSkuSelect(true)}
+                              >
+                                <FaPlus /> Tambah SKU
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -3817,14 +3900,16 @@ const SpkCutting = () => {
               {/* Bagian dan Bahan */}
               {editSpkCutting.mode === "potong_kecil" ? (
                 <div className="spk-cutting-potong-kecil-grid" style={{ padding: "16px", background: "#fff", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-                  <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "16px" }}>Input Qty Potong per SKU</h3>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
+                    <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", margin: 0 }}>Input Qty Potong per SKU</h3>
+                  </div>
                   {!editSpkCutting.produk_id ? (
                     <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
                       Silakan pilih Product terlebih dahulu untuk memuat daftar SKU.
                     </div>
-                  ) : skuList.length === 0 ? (
+                  ) : selectedPotongKecilSkus.length === 0 ? (
                     <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
-                      Tidak ada SKU ditemukan untuk Product ini.
+                      Belum ada SKU yang dipilih. Silakan klik tombol "+ Tambah SKU" di bawah untuk menambahkan SKU.
                     </div>
                   ) : (
                     <table className="spk-cutting-table" style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -3834,42 +3919,111 @@ const SpkCutting = () => {
                           <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Warna</th>
                           <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Size</th>
                           <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569", width: "150px" }}>Target Qty (Pcs)</th>
+                          <th style={{ padding: "10px 12px", width: "50px", textAlign: "center" }}>Aksi</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {skuList.map((sku) => (
-                          <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
-                              {sku.sku_name || sku.sku || sku.sku_code || "-"}
-                            </td>
-                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
-                              {sku.product_colour || "-"}
-                            </td>
-                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
-                              {getSkuSizeGroup(sku)}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
-                                onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, true)}
-                                style={{
-                                  width: "100%",
-                                  height: "36px",
-                                  padding: "6px 10px",
-                                  border: "1px solid #cbd5e1",
-                                  borderRadius: "0px",
-                                  boxSizing: "border-box",
-                                  fontSize: "13px",
-                                }}
-                              />
-                            </td>
-                          </tr>
-                        ))}
+                        {skuList
+                          .filter((sku) => selectedPotongKecilSkus.includes(sku.id.toString()))
+                          .map((sku) => (
+                            <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                              <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
+                                {sku.sku_name || sku.sku || sku.sku_code || "-"}
+                              </td>
+                              <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                {sku.product_colour || "-"}
+                              </td>
+                              <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                {getSkuSizeGroup(sku)}
+                              </td>
+                              <td style={{ padding: "8px 12px" }}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
+                                  onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, true)}
+                                  style={{
+                                    width: "100%",
+                                    height: "36px",
+                                    padding: "6px 10px",
+                                    border: "1px solid #cbd5e1",
+                                    borderRadius: "0px",
+                                    boxSizing: "border-box",
+                                    fontSize: "13px",
+                                  }}
+                                />
+                              </td>
+                              <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                <button
+                                  type="button"
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#ef4444",
+                                    cursor: "pointer",
+                                    padding: "4px",
+                                  }}
+                                  onClick={() => {
+                                    setSelectedPotongKecilSkus((prev) => prev.filter((id) => id !== sku.id.toString()));
+                                    handleSkuQtyChange(sku.id, "0", true);
+                                  }}
+                                  title="Hapus SKU"
+                                >
+                                  <FaTrash />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
+                  )}
+                  {editSpkCutting.produk_id && skuList.length > 0 && (
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+                      {showAddSkuSelect ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "350px" }}>
+                          <div style={{ flex: 1 }}>
+                            <Select
+                              placeholder="Pilih SKU..."
+                              options={skuList
+                                .filter((sku) => !selectedPotongKecilSkus.includes(sku.id.toString()))
+                                .map((sku) => ({
+                                  value: sku.id.toString(),
+                                  label: getSkuLabel(sku),
+                                }))}
+                              onChange={(option) => {
+                                if (option) {
+                                  setSelectedPotongKecilSkus((prev) => [...prev, option.value]);
+                                  setShowAddSkuSelect(false);
+                                }
+                              }}
+                              value={null}
+                              autoFocus
+                              menuPortalTarget={bahanSelectPortalTarget}
+                              styles={{
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="spk-cutting-btn spk-cutting-btn-secondary"
+                            style={{ height: "38px" }}
+                            onClick={() => setShowAddSkuSelect(false)}
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="spk-cutting-btn spk-cutting-btn-success"
+                          onClick={() => setShowAddSkuSelect(true)}
+                        >
+                          <FaPlus /> Tambah SKU
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (
