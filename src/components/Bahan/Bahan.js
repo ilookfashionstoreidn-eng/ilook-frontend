@@ -202,6 +202,7 @@ const imageUrlToPdfDataUrl = async (imageUrl) => {
 
 const Bahan = () => {
   const [items, setItems] = useState([]);
+  const [warnaInput, setWarnaInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedBahanName, setSelectedBahanName] = useState("");
@@ -231,7 +232,7 @@ const Bahan = () => {
     deskripsi: "",
     harga: "",
     satuan: "kg",
-    warna_bahan: "",
+    warna_bahan: [],
     stok_bahan: "",
   });
   const [editItem, setEditItem] = useState({
@@ -300,6 +301,35 @@ const Bahan = () => {
   const totalStok = stats.total_stok;
   const pabrikSelectOptions = pabrikOptions.includes("-") ? pabrikOptions : ["-", ...pabrikOptions];
   const { bahanWithoutImage, groupedBahanImages } = useMemo(() => splitBahanByImage(items), [items]);
+
+  const handleAddWarna = () => {
+    const trimmed = warnaInput.trim();
+    if (!trimmed) return;
+
+    if (newItem.warna_bahan.includes(trimmed)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Warna sudah ada",
+        text: `Warna "${trimmed}" sudah ditambahkan.`,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    setNewItem((prev) => ({
+      ...prev,
+      warna_bahan: [...prev.warna_bahan, trimmed],
+    }));
+    setWarnaInput("");
+  };
+
+  const handleRemoveWarna = (indexToRemove) => {
+    setNewItem((prev) => ({
+      ...prev,
+      warna_bahan: prev.warna_bahan.filter((_, index) => index !== indexToRemove),
+    }));
+  };
   const filteredExportBahanRows = useMemo(() => {
     const search = exportBahanSearch.trim().toLowerCase();
     if (!search) return exportBahanRows;
@@ -479,8 +509,9 @@ const Bahan = () => {
   };
 
   const resetForm = () => {
-    setNewItem({ group_bahan: "", pabrik_bahan: "-", nama_bahan: "", deskripsi: "", harga: "", satuan: "kg", warna_bahan: "", stok_bahan: "" });
+    setNewItem({ group_bahan: "", pabrik_bahan: "-", nama_bahan: "", deskripsi: "", harga: "", satuan: "kg", warna_bahan: [], stok_bahan: "" });
     setEditItem({ id: null, group_bahan: "", pabrik_bahan: "-", nama_bahan: "", deskripsi: "", harga: "", satuan: "kg", warna_bahan: "", stok_bahan: "" });
+    setWarnaInput("");
     setShowForm(false);
     setShowEditForm(false);
   };
@@ -651,7 +682,7 @@ const Bahan = () => {
         deskripsi: newItem.deskripsi || undefined,
         harga: hargaNumeric,
         satuan: newItem.satuan,
-        warna_bahan: newItem.warna_bahan || undefined,
+        warna_bahan: newItem.warna_bahan && newItem.warna_bahan.length > 0 ? newItem.warna_bahan : undefined,
         stok_bahan: stokNumeric,
       };
 
@@ -1593,17 +1624,66 @@ const Bahan = () => {
                   />
                 </div>
 
-              <div className="bahan-form-group">
-                <label>Warna Bahan</label>
-                <input
-                  type="text"
-                  name="warna_bahan"
-                  value={showEditForm ? editItem.warna_bahan : newItem.warna_bahan}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: Navy"
-                  className="bahan-form-input"
-                />
-              </div>
+              {showEditForm ? (
+                <div className="bahan-form-group">
+                  <label>Warna Bahan</label>
+                  <input
+                    type="text"
+                    name="warna_bahan"
+                    value={editItem.warna_bahan}
+                    onChange={handleInputChange}
+                    placeholder="Contoh: Navy"
+                    className="bahan-form-input"
+                  />
+                </div>
+              ) : (
+                <div className="bahan-form-group-full">
+                  <label>Warna Bahan</label>
+                  <div className="bahan-warna-input-row">
+                    <input
+                      type="text"
+                      placeholder="Masukkan warna..."
+                      value={warnaInput}
+                      onChange={(e) => setWarnaInput(e.target.value)}
+                      className="bahan-form-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddWarna();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddWarna}
+                      className="bahan-btn-primary bahan-btn-add-warna"
+                    >
+                      Tambah Warna
+                    </button>
+                  </div>
+                  <div className="bahan-warna-tag-container">
+                    {newItem.warna_bahan && newItem.warna_bahan.length > 0 ? (
+                      newItem.warna_bahan.map((warna, idx) => (
+                        <span key={idx} className="bahan-warna-tag">
+                          {warna}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWarna(idx)}
+                            className="bahan-warna-tag-remove"
+                            title="Hapus warna"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="bahan-warna-tag-empty">
+                        Belum ada warna yang ditambahkan
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="bahan-form-group">
                 <label>Deskripsi</label>
