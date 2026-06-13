@@ -371,6 +371,73 @@
   color: #ffffff !important;
 }
 
+.bahan-form-group-full {
+  grid-column: 1 / -1;
+  margin-bottom: 10px;
+}
+
+.bahan-warna-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bahan-btn-add-warna {
+  height: 38px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.bahan-warna-tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px;
+  border: 1px solid #cfd8e3;
+  border-radius: 9px;
+  background: #f8fafc;
+  align-items: center;
+}
+
+.bahan-warna-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #edf4ff;
+  color: #2458ce;
+  border: 1px solid #c8d8f6;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.bahan-warna-tag-remove {
+  border: none;
+  background: transparent;
+  color: #2458ce;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.bahan-warna-tag-remove:hover {
+  color: #1e4caf;
+}
+
+.bahan-warna-tag-empty {
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 3px 6px;
+  font-style: italic;
+}
+
 .bahan-filter-select:focus,
 .bahan-form-input:focus,
 .bahan-form-select:focus {
