@@ -17,6 +17,9 @@ const ScanStokBahanKeluar = () => {
   const [scannedItems, setScannedItems] = useState([]);
   const [scanMode, setScanMode] = useState("id");
   const [scanProgress, setScanProgress] = useState({});
+  const [isSplitMode, setIsSplitMode] = useState(false);
+  const [splitWeight, setSplitWeight] = useState("");
+  const [checkedRollInfo, setCheckedRollInfo] = useState(null);
   const barcodeTimeoutRef = useRef(null);
   const spkBarcodeTimeoutRef = useRef(null);
 
@@ -30,6 +33,14 @@ const ScanStokBahanKeluar = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    setBarcode("");
+    setCheckedRollInfo(null);
+    setSplitWeight("");
+    setScanResult(null);
+  }, [selectedBahan]);
+
   const fetchSpkCuttingDetail = async (inputValue = null) => {
     const searchValue = inputValue || (scanMode === "barcode" ? spkCuttingBarcode : spkCuttingId);
 
@@ -46,6 +57,8 @@ const ScanStokBahanKeluar = () => {
       setScanResult(null);
       setScannedItems([]);
       setScanProgress({});
+      setCheckedRollInfo(null);
+      setSplitWeight("");
 
       const response = await API.get(`/stok-bahan-keluar/spk-cutting/${searchValue.trim()}`);
       setSpkCuttingDetail(response.data);
@@ -96,6 +109,14 @@ const ScanStokBahanKeluar = () => {
     }
   };
 
+  const processBarcodeScan = async (barcodeValue) => {
+    if (isSplitMode) {
+      await checkBarcode(barcodeValue.trim(), selectedBahan);
+    } else {
+      await scanBarcode(barcodeValue.trim(), null, selectedBahan);
+    }
+  };
+
   const handleBarcodeChange = (value) => {
     setBarcode(value);
 
@@ -104,24 +125,88 @@ const ScanStokBahanKeluar = () => {
     }
 
     const trimmedValue = value.trim();
+    const isPotongKecil = spkCuttingDetail?.spk_cutting?.mode === "potong_kecil";
+    const canTrigger = selectedBahan || isPotongKecil;
 
-    if (trimmedValue.length >= 8 && !loading && selectedBahan) {
+    if (trimmedValue.length >= 8 && !loading && canTrigger) {
       barcodeTimeoutRef.current = setTimeout(async () => {
-        await scanBarcode(trimmedValue);
+        await processBarcodeScan(trimmedValue);
       }, 200);
     }
   };
 
   const handleScanBarcode = async (e) => {
     if (e.key === "Enter" && barcode.trim() !== "") {
-      await scanBarcode(barcode.trim());
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+      await processBarcodeScan(barcode.trim());
     }
   };
 
-  const scanBarcode = async (barcodeValue = null) => {
-    const barcodeToScan = barcodeValue || barcode;
+  const checkBarcode = async (barcodeValue, targetBahanParam = null) => {
+    const activeBahan = targetBahanParam || selectedBahan;
+    const isPotongKecil = spkCuttingDetail?.spk_cutting?.mode === "potong_kecil";
 
-    if (!selectedBahan) {
+    if (!activeBahan && !isPotongKecil) {
+      toast.error("Pilih bahan terlebih dahulu.");
+      setBarcode("");
+      return;
+    }
+
+    if (!barcodeValue || barcodeValue.trim() === "") {
+      toast.error("Masukkan barcode terlebih dahulu.");
+      setBarcode("");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setCheckedRollInfo(null);
+      setSplitWeight("");
+
+      const response = await API.get(`/stok-bahan/barcode/${barcodeValue.trim()}`);
+      const rollData = response.data;
+
+      const isPotongKecil = spkCuttingDetail?.spk_cutting?.mode === "potong_kecil";
+
+      if (!isPotongKecil && activeBahan.nama_bahan && rollData.nama_bahan && 
+          rollData.nama_bahan.toLowerCase().trim() !== activeBahan.nama_bahan.toLowerCase().trim()) {
+        toast.error(`Bahan tidak sesuai. Diharapkan: ${activeBahan.nama_bahan}, Ditemukan: ${rollData.nama_bahan}`);
+        setBarcode("");
+        return;
+      }
+
+      if (!isPotongKecil && activeBahan.warna && rollData.warna && 
+          rollData.warna.toLowerCase().trim() !== activeBahan.warna.toLowerCase().trim()) {
+        toast.error(`Warna tidak sesuai. Diharapkan: ${activeBahan.warna}, Ditemukan: ${rollData.warna}`);
+        setBarcode("");
+        return;
+      }
+
+      if (rollData.status === "tidak tersedia") {
+        toast.error("Bahan dengan barcode ini sudah tidak tersedia");
+        setBarcode("");
+        return;
+      }
+
+      setCheckedRollInfo(rollData);
+      toast.info(`Barcode terdeteksi. Silakan masukkan berat potong (Stok: ${rollData.berat} kg).`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Barcode tidak ditemukan di stok bahan.");
+      setBarcode("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const scanBarcode = async (barcodeValue = null, beratKeluar = null, targetBahanParam = null) => {
+    const barcodeToScan = barcodeValue || barcode;
+    const activeBahan = targetBahanParam || selectedBahan;
+    const isPotongKecil = spkCuttingDetail?.spk_cutting?.mode === "potong_kecil";
+
+    if (!activeBahan && !isPotongKecil) {
       toast.error("Pilih bahan terlebih dahulu.");
       setBarcode("");
       return;
@@ -133,10 +218,10 @@ const ScanStokBahanKeluar = () => {
       return;
     }
 
-    const currentProgress = scanProgress[selectedBahan.spk_cutting_bahan_id] || 0;
-    const requiredQty = selectedBahan.qty || 0;
+    const currentProgress = activeBahan ? (scanProgress[activeBahan.spk_cutting_bahan_id] || 0) : 0;
+    const requiredQty = activeBahan ? (activeBahan.qty || 0) : 0;
 
-    if (currentProgress >= requiredQty) {
+    if (activeBahan && currentProgress >= requiredQty) {
       toast.warning(`QTY untuk bahan ini sudah terpenuhi (${currentProgress}/${requiredQty}).`);
       setBarcode("");
       setTimeout(() => {
@@ -154,24 +239,37 @@ const ScanStokBahanKeluar = () => {
         return;
       }
 
-      const response = await API.post("/stok-bahan-keluar/scan", {
+      const payload = {
         spk_cutting_id: spkCuttingDetail.spk_cutting.id,
-        spk_cutting_bahan_id: selectedBahan.spk_cutting_bahan_id,
         barcode: barcodeToScan.trim(),
-      });
+      };
+
+      if (activeBahan) {
+        payload.spk_cutting_bahan_id = activeBahan.spk_cutting_bahan_id;
+      }
+
+      if (beratKeluar) {
+        payload.berat_keluar = parseFloat(beratKeluar);
+      }
+
+      const response = await API.post("/stok-bahan-keluar/scan", payload);
 
       if (response.data.valid) {
-        const newProgress = currentProgress + 1;
+        const returnedBahanId = response.data.data?.spk_cutting_bahan_id || (activeBahan?.spk_cutting_bahan_id);
+        const currentCount = response.data.current_count;
+        const requiredQtyReturned = response.data.required_qty;
 
-        setScanProgress((prev) => ({
-          ...prev,
-          [selectedBahan.spk_cutting_bahan_id]: newProgress,
-        }));
+        if (returnedBahanId) {
+          setScanProgress((prev) => ({
+            ...prev,
+            [returnedBahanId]: currentCount,
+          }));
+        }
 
-        if (newProgress < requiredQty) {
-          toast.success(`${response.data.message || "Barcode berhasil divalidasi"} (${newProgress}/${requiredQty})`);
+        if (currentCount < requiredQtyReturned) {
+          toast.success(`${response.data.message || "Barcode berhasil divalidasi"} (${currentCount}/${requiredQtyReturned})`);
         } else {
-          toast.success(`Lengkap. ${response.data.message || "Barcode berhasil divalidasi"} (${newProgress}/${requiredQty})`);
+          toast.success(`Lengkap. ${response.data.message || "Barcode berhasil divalidasi"} (${currentCount}/${requiredQtyReturned})`);
         }
 
         setScanResult({
@@ -182,8 +280,10 @@ const ScanStokBahanKeluar = () => {
 
         setScannedItems((prev) => [...prev, response.data.data]);
         setBarcode("");
+        setSplitWeight("");
+        setCheckedRollInfo(null);
 
-        if (newProgress < requiredQty) {
+        if (currentCount < requiredQtyReturned || isPotongKecil) {
           document.getElementById("barcode-input")?.focus();
         }
       } else {
@@ -337,12 +437,14 @@ const ScanStokBahanKeluar = () => {
 
           {spkCuttingDetail && (
             <section className="scan-stok-card">
-              <div className="scan-stok-card-header">
+               <div className="scan-stok-card-header">
                 <div className="scan-stok-card-title">
                   <FiBox />
                   <h3>SPK #{spkCuttingDetail.spk_cutting?.id_spk_cutting}</h3>
                 </div>
-                <p>Pilih bahan target terlebih dahulu, lalu scan barcode hingga kuota roll terpenuhi.</p>
+                <p>
+                  Pilih bahan target terlebih dahulu, lalu scan barcode hingga kuota roll terpenuhi.
+                </p>
               </div>
 
               <div className="scan-stok-detail-grid">
@@ -360,129 +462,222 @@ const ScanStokBahanKeluar = () => {
                 </div>
               </div>
 
-              <div className="scan-stok-table-wrap">
-                <table className="scan-stok-table">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>Nama Bagian</th>
-                      <th>Nama Bahan</th>
-                      <th>Warna</th>
-                      <th>Qty (Roll)</th>
-                      <th>Berat</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spkCuttingDetail.bahan_detail?.map((bahan, index) => {
-                      const isSelected = selectedBahan?.spk_cutting_bahan_id === bahan.spk_cutting_bahan_id;
-                      const progress = scanProgress[bahan.spk_cutting_bahan_id] || 0;
-                      const qty = bahan.qty || 0;
-                      const isComplete = progress >= qty && qty > 0;
+              {spkCuttingDetail.spk_cutting?.mode !== 'potong_kecil' && (
+                <div className="scan-stok-table-wrap">
+                  <table className="scan-stok-table">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Nama Bagian</th>
+                        <th>Nama Bahan</th>
+                        <th>Warna</th>
+                        <th>Qty (Roll)</th>
+                        <th>Berat</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {spkCuttingDetail.bahan_detail?.map((bahan, index) => {
+                        const isSelected = selectedBahan?.spk_cutting_bahan_id === bahan.spk_cutting_bahan_id;
+                        const progress = scanProgress[bahan.spk_cutting_bahan_id] || 0;
+                        const qty = bahan.qty || 0;
+                        const isComplete = progress >= qty && qty > 0;
 
-                      return (
-                        <tr key={bahan.spk_cutting_bahan_id} className={isSelected ? "is-selected" : ""} onClick={() => setSelectedBahan(bahan)}>
-                          <td>{index + 1}</td>
-                          <td>{bahan.nama_bagian || "-"}</td>
-                          <td>{bahan.nama_bahan || "-"}</td>
-                          <td>{bahan.warna || "-"}</td>
-                          <td>{qty || "-"}</td>
-                          <td>{bahan.berat ? `${bahan.berat} kg` : "-"}</td>
-                          <td>
-                            <div className="scan-stok-status-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {isSelected ? (
-                                <span className="scan-stok-pill active">Dipilih</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="scan-stok-btn scan-stok-btn-secondary scan-stok-btn-sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedBahan(bahan);
-                                  }}
-                                >
-                                  Pilih
-                                </button>
-                              )}
-                              <span className={`scan-stok-pill ${isComplete ? "done" : "progress"}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                {isComplete ? <FiCheckCircle style={{ color: '#10b981' }} /> : <FiXCircle style={{ color: '#ef4444' }} />} 
-                                <span>{progress}/{qty}</span>
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        return (
+                          <tr key={bahan.spk_cutting_bahan_id} className={isSelected ? "is-selected" : ""} onClick={() => setSelectedBahan(bahan)}>
+                            <td>{index + 1}</td>
+                            <td>{bahan.nama_bagian || "-"}</td>
+                            <td>{bahan.nama_bahan || "-"}</td>
+                            <td>{bahan.warna || "-"}</td>
+                            <td>{qty || "-"}</td>
+                            <td>{bahan.berat ? `${bahan.berat} kg` : "-"}</td>
+                            <td>
+                              <div className="scan-stok-status-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {isSelected ? (
+                                  <span className="scan-stok-pill active">Dipilih</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="scan-stok-btn scan-stok-btn-secondary scan-stok-btn-sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedBahan(bahan);
+                                    }}
+                                  >
+                                    Pilih
+                                  </button>
+                                )}
+                                <span className={`scan-stok-pill ${isComplete ? "done" : "progress"}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  {isComplete ? <FiCheckCircle style={{ color: '#10b981' }} /> : <FiXCircle style={{ color: '#ef4444' }} />} 
+                                  <span>{progress}/{qty}</span>
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-              {selectedBahan &&
+              {(selectedBahan || spkCuttingDetail?.spk_cutting?.mode === "potong_kecil") &&
                 (() => {
-                  const currentProgress = scanProgress[selectedBahan.spk_cutting_bahan_id] || 0;
-                  const requiredQty = selectedBahan.qty || 0;
-                  const isComplete = currentProgress >= requiredQty && requiredQty > 0;
+                  const currentProgress = selectedBahan ? (scanProgress[selectedBahan.spk_cutting_bahan_id] || 0) : 0;
+                  const requiredQty = selectedBahan ? (selectedBahan.qty || 0) : 0;
+                  const isComplete = selectedBahan ? (currentProgress >= requiredQty && requiredQty > 0) : false;
                   const progressPercentage = requiredQty > 0 ? (currentProgress / requiredQty) * 100 : 0;
 
                   return (
                     <div className="scan-stok-scan-section">
-                      <div className="scan-stok-detail-grid compact">
-                        <div className="scan-stok-detail-item">
-                          <span>Bahan Dipilih</span>
-                          <strong>{selectedBahan.nama_bahan || "-"}</strong>
-                        </div>
-                        <div className="scan-stok-detail-item">
-                          <span>Warna</span>
-                          <strong>{selectedBahan.warna || "-"}</strong>
-                        </div>
-                        <div className="scan-stok-detail-item">
-                          <span>Progress Scan</span>
-                          <strong>
-                            {currentProgress} / {requiredQty} roll
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div className="scan-stok-progress">
-                        <div className="scan-stok-progress-meta">
-                          <span>Progress validasi barcode</span>
-                          <strong>
-                            {currentProgress} dari {requiredQty} roll
-                          </strong>
-                        </div>
-                        <div className="scan-stok-progress-track">
-                          <div className={`scan-stok-progress-fill ${isComplete ? "complete" : ""}`} style={{ width: `${Math.min(progressPercentage, 100)}%` }} />
-                        </div>
-                        {isComplete && <p className="scan-stok-progress-note">Semua roll untuk bahan ini sudah tervalidasi.</p>}
-                      </div>
-
-                      <div className="scan-stok-form-group">
-                        <label htmlFor="barcode-input">Scan Barcode Bahan</label>
-                        <form
-                          className="scan-stok-input-row"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            scanBarcode();
-                          }}
-                        >
-                          <div className="scan-stok-input-wrap">
-                            <FiSearch className="scan-stok-input-icon" />
-                            <input
-                              id="barcode-input"
-                              type="text"
-                              placeholder={isComplete ? "QTY sudah terpenuhi, scan ditutup" : "Scan barcode bahan"}
-                              value={barcode}
-                              onChange={(e) => handleBarcodeChange(e.target.value)}
-                              onKeyDown={handleScanBarcode}
-                              autoFocus={!isComplete}
-                              disabled={isComplete}
-                            />
+                      {selectedBahan && (
+                        <div className="scan-stok-detail-grid compact">
+                          <div className="scan-stok-detail-item">
+                            <span>Bahan Dipilih</span>
+                            <strong>{selectedBahan ? (selectedBahan.nama_bahan || "-") : "-"}</strong>
                           </div>
-                          <button type="submit" className="scan-stok-btn scan-stok-btn-primary" disabled={loading || !barcode.trim() || isComplete}>
-                            {loading ? "Memvalidasi..." : isComplete ? "Lengkap" : "Scan"}
-                          </button>
-                        </form>
+                          <div className="scan-stok-detail-item">
+                            <span>Warna</span>
+                            <strong>{selectedBahan ? (selectedBahan.warna || "-") : "-"}</strong>
+                          </div>
+                          <div className="scan-stok-detail-item">
+                            <span>Progress Scan</span>
+                            <strong>
+                              {selectedBahan ? `${currentProgress} / ${requiredQty} roll` : "-"}
+                            </strong>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedBahan && (
+                        <div className="scan-stok-progress">
+                          <div className="scan-stok-progress-meta">
+                            <span>Progress validasi barcode</span>
+                            <strong>
+                              {currentProgress} dari {requiredQty} roll
+                            </strong>
+                          </div>
+                          <div className="scan-stok-progress-track">
+                            <div className={`scan-stok-progress-fill ${isComplete ? "complete" : ""}`} style={{ width: `${Math.min(progressPercentage, 100)}%` }} />
+                          </div>
+                          {isComplete && <p className="scan-stok-progress-note">Semua roll untuk bahan ini sudah tervalidasi.</p>}
+                        </div>
+                      )}
+
+                      <div className="scan-stok-split-toggle-container">
+                        <label className="scan-stok-switch">
+                          <input
+                            type="checkbox"
+                            checked={isSplitMode}
+                            onChange={(e) => {
+                              setIsSplitMode(e.target.checked);
+                              setBarcode("");
+                              setCheckedRollInfo(null);
+                              setSplitWeight("");
+                            }}
+                            disabled={isComplete}
+                          />
+                          <span className="scan-stok-slider"></span>
+                        </label>
+                        <span className="scan-stok-toggle-label">Pecah / Potong Stok</span>
                       </div>
+
+                      {isSplitMode && checkedRollInfo && (
+                        <div className="scan-stok-roll-preview">
+                          <div className="scan-stok-roll-preview-title">
+                            <FiCheckCircle style={{ color: '#16a34a' }} /> Detail Roll Terdeteksi
+                          </div>
+                          <div className="scan-stok-roll-preview-grid">
+                            <div className="scan-stok-roll-preview-item">
+                              <span>Barcode</span>
+                              <strong>{checkedRollInfo.barcode}</strong>
+                            </div>
+                            <div className="scan-stok-roll-preview-item">
+                              <span>Nama Bahan</span>
+                              <strong>{checkedRollInfo.nama_bahan || "-"}</strong>
+                            </div>
+                            <div className="scan-stok-roll-preview-item">
+                              <span>Berat Saat Ini</span>
+                              <strong>{checkedRollInfo.berat} kg</strong>
+                            </div>
+                          </div>
+                          <div className="scan-stok-split-input-row">
+                            <div className="scan-stok-split-field">
+                              <label htmlFor="split-weight-input">Berat Potong (kg)</label>
+                              <input
+                                id="split-weight-input"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                max={checkedRollInfo.berat}
+                                placeholder="Contoh: 15"
+                                value={splitWeight}
+                                onChange={(e) => setSplitWeight(e.target.value)}
+                                autoFocus
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="scan-stok-btn scan-stok-btn-primary"
+                              disabled={loading || !splitWeight || parseFloat(splitWeight) <= 0 || parseFloat(splitWeight) > checkedRollInfo.berat}
+                              onClick={() => scanBarcode(checkedRollInfo.barcode, splitWeight)}
+                            >
+                              {loading ? "Memotong..." : "Potong & Scan Keluar"}
+                            </button>
+                            <button
+                              type="button"
+                              className="scan-stok-btn scan-stok-btn-secondary"
+                              onClick={() => {
+                                setCheckedRollInfo(null);
+                                setSplitWeight("");
+                                setBarcode("");
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {(!isSplitMode || !checkedRollInfo) && (
+                        <div className="scan-stok-form-group">
+                          <label htmlFor="barcode-input">Scan Barcode Bahan</label>
+                          <form
+                            className="scan-stok-input-row"
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              processBarcodeScan(barcode.trim());
+                            }}
+                          >
+                            <div className="scan-stok-input-wrap">
+                              <FiSearch className="scan-stok-input-icon" />
+                              <input
+                                id="barcode-input"
+                                type="text"
+                                placeholder={
+                                  isComplete
+                                    ? "QTY sudah terpenuhi, scan ditutup"
+                                    : isSplitMode
+                                    ? "Scan/input barcode untuk diperiksa"
+                                    : "Scan barcode bahan"
+                                }
+                                value={barcode}
+                                onChange={(e) => handleBarcodeChange(e.target.value)}
+                                onKeyDown={handleScanBarcode}
+                                autoFocus={!isComplete}
+                                disabled={isComplete}
+                              />
+                            </div>
+                            <button
+                              type="submit"
+                              className="scan-stok-btn scan-stok-btn-primary"
+                              disabled={loading || !barcode.trim() || isComplete}
+                            >
+                              {loading ? "Memvalidasi..." : isSplitMode ? "Periksa" : isComplete ? "Lengkap" : "Scan"}
+                            </button>
+                          </form>
+                        </div>
+                      )}
 
                       {scanResult && <div className={`scan-stok-alert ${scanResult.success ? "success" : "error"}`}>{scanResult.message}</div>}
                     </div>

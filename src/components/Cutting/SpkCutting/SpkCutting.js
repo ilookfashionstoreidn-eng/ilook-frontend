@@ -483,6 +483,94 @@ const SpkCutting = () => {
   const [skuList, setSkuList] = useState([]);
   const [selectedSkuIds, setSelectedSkuIds] = useState([]);
   const [editSelectedSkuIds, setEditSelectedSkuIds] = useState([]);
+  const [skuQuantities, setSkuQuantities] = useState({});
+
+  const getSkuQuantitiesFromBagian = (bagianList) => {
+    const quantities = {};
+    if (Array.isArray(bagianList)) {
+      bagianList.forEach(bagian => {
+        if (Array.isArray(bagian.bahan)) {
+          bagian.bahan.forEach(bahan => {
+            if (Array.isArray(bahan.skus)) {
+              bahan.skus.forEach(sku => {
+                const id = sku.sku_id || sku.id;
+                if (id) {
+                  quantities[id] = sku.qty || 0;
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+    return quantities;
+  };
+
+  const syncPotongKecilBagian = (quantities, isEdit = false) => {
+    const skusByColor = {};
+    Object.entries(quantities).forEach(([skuId, qty]) => {
+      const quantity = parseFloat(qty) || 0;
+      if (quantity <= 0) return;
+
+      const sku = skuList.find(s => String(s.id) === String(skuId));
+      if (!sku) return;
+
+      const color = (sku.product_colour || "Default").trim();
+      if (!skusByColor[color]) {
+        skusByColor[color] = [];
+      }
+      skusByColor[color].push({
+        sku_id: parseInt(skuId, 10),
+        qty: quantity
+      });
+    });
+
+    const bahanListForBagian = Object.entries(skusByColor).map(([color, skus]) => ({
+      sumber_komponen: "bahan",
+      bahan_id: null,
+      aksesoris_id: null,
+      warna: color === "Default" ? null : color,
+      qty: 99,
+      berat: null,
+      skus: skus
+    }));
+
+    const partsList = [];
+    if (bahanListForBagian.length > 0) {
+      partsList.push({
+        nama_bagian: "Potong Kecil",
+        bahan: bahanListForBagian
+      });
+    }
+
+    const totalPcs = Object.values(quantities).reduce((sum, q) => sum + (parseFloat(q) || 0), 0);
+
+    if (isEdit) {
+      setEditSpkCutting(prev => ({
+        ...prev,
+        bagian: partsList,
+        jumlah_asumsi_produk: totalPcs,
+        jumlah_asumsi_produkDisplay: formatRibuan(totalPcs.toString())
+      }));
+    } else {
+      setNewSpkCutting(prev => ({
+        ...prev,
+        bagian: partsList,
+        jumlah_asumsi_produk: totalPcs,
+        jumlah_asumsi_produkDisplay: formatRibuan(totalPcs.toString())
+      }));
+    }
+  };
+
+  const handleSkuQtyChange = (skuId, value, isEdit = false) => {
+    const qty = value === "" ? "" : parseFloat(value) || 0;
+    const updatedQuantities = {
+      ...skuQuantities,
+      [skuId]: qty
+    };
+    setSkuQuantities(updatedQuantities);
+    syncPotongKecilBagian(updatedQuantities, isEdit);
+  };
 
   const bahanOptions = useMemo(
     () => {
@@ -636,6 +724,7 @@ const SpkCutting = () => {
     tukang_cutting_id: "",
     tukang_pola_id: "",
     bagian: [],
+    mode: "biasa",
   });
 
   const [editSpkCutting, setEditSpkCutting] = useState({
@@ -655,6 +744,7 @@ const SpkCutting = () => {
     tukang_cutting_id: "",
     tukang_pola_id: "",
     bagian: [],
+    mode: "biasa",
   });
 
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1236,7 +1326,10 @@ const SpkCutting = () => {
     // Validasi frontend sebelum submit
 
     if (!newSpkCutting.bagian || newSpkCutting.bagian.length === 0) {
-      await showStatusAlert("warning", "Validasi Data", "Minimal harus ada 1 bagian!");
+      const errorMsg = newSpkCutting.mode === "potong_kecil"
+        ? "Minimal harus memilih 1 SKU dan memasukkan kuantitas target!"
+        : "Minimal harus ada 1 bagian!";
+      await showStatusAlert("warning", "Validasi Data", errorMsg);
 
       return;
     }
@@ -1268,7 +1361,7 @@ const SpkCutting = () => {
           return;
         }
 
-        if (!isAksesoris && (!bahan.bahan_id || bahan.bahan_id === "")) {
+        if (newSpkCutting.mode !== "potong_kecil" && !isAksesoris && (!bahan.bahan_id || bahan.bahan_id === "")) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Pilih bahan terlebih dahulu!`);
 
           return;
@@ -1276,14 +1369,9 @@ const SpkCutting = () => {
 
 
 
-        if (!bahan.qty || bahan.qty <= 0) {
+        if (newSpkCutting.mode !== "potong_kecil" && (!bahan.qty || bahan.qty <= 0)) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
 
-          return;
-        }
-
-        if (!isAksesoris && (!bahan.skus || bahan.skus.length === 0)) {
-          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Pilih alokasi SKU produk terlebih dahulu!`);
           return;
         }
 
@@ -1404,6 +1492,22 @@ const SpkCutting = () => {
       setNewSpkCutting((prev) => ({ ...prev, produk_id: value, ...autoFields }));
       await fetchSkuByProduk(value);
       setSelectedSkuIds([]);
+      setSkuQuantities({});
+      return;
+    }
+
+    if (name === "mode") {
+      setNewSpkCutting((prev) => {
+        const nextSpk = { ...prev, mode: value };
+        if (value === "potong_kecil") {
+          setTimeout(() => syncPotongKecilBagian(skuQuantities, false), 0);
+        } else {
+          nextSpk.bagian = [];
+          nextSpk.jumlah_asumsi_produk = "";
+          nextSpk.jumlah_asumsi_produkDisplay = "";
+        }
+        return nextSpk;
+      });
       return;
     }
 
@@ -2021,7 +2125,16 @@ const SpkCutting = () => {
         tukang_pola_id: data.tukang_pola_id?.toString() || "",
 
         bagian: bagianData.length > 0 ? bagianData : [{ nama_bagian: "", bahan: [] }],
+        mode: data.mode || "biasa",
       });
+
+      // Extract SKU quantities if mode is potong_kecil
+      if (data.mode === "potong_kecil") {
+        const quantities = getSkuQuantitiesFromBagian(bagianData);
+        setSkuQuantities(quantities);
+      } else {
+        setSkuQuantities({});
+      }
 
       setShowEditForm(true);
     } catch (error) {
@@ -2063,6 +2176,22 @@ const SpkCutting = () => {
       setEditSpkCutting((prev) => ({ ...prev, produk_id: value, ...autoFields }));
       await fetchSkuByProduk(value);
       setEditSelectedSkuIds([]);
+      setSkuQuantities({});
+      return;
+    }
+
+    if (name === "mode") {
+      setEditSpkCutting((prev) => {
+        const nextSpk = { ...prev, mode: value };
+        if (value === "potong_kecil") {
+          setTimeout(() => syncPotongKecilBagian(skuQuantities, true), 0);
+        } else {
+          nextSpk.bagian = [];
+          nextSpk.jumlah_asumsi_produk = "";
+          nextSpk.jumlah_asumsi_produkDisplay = "";
+        }
+        return nextSpk;
+      });
       return;
     }
 
@@ -2218,7 +2347,10 @@ const SpkCutting = () => {
     // Validasi
 
     if (editSpkCutting.bagian.length === 0) {
-      await showStatusAlert("warning", "Validasi Data", "Minimal harus ada 1 bagian!");
+      const errorMsg = editSpkCutting.mode === "potong_kecil"
+        ? "Minimal harus memilih 1 SKU dan memasukkan kuantitas target!"
+        : "Minimal harus ada 1 bagian!";
+      await showStatusAlert("warning", "Validasi Data", errorMsg);
 
       return;
     }
@@ -2248,7 +2380,7 @@ const SpkCutting = () => {
           return;
         }
 
-        if (!isAksesoris && !bahan.bahan_id) {
+        if (editSpkCutting.mode !== "potong_kecil" && !isAksesoris && !bahan.bahan_id) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Bahan harus dipilih!`);
 
           return;
@@ -2256,14 +2388,9 @@ const SpkCutting = () => {
 
 
 
-        if (!bahan.qty || bahan.qty <= 0) {
+        if (editSpkCutting.mode !== "potong_kecil" && (!bahan.qty || bahan.qty <= 0)) {
           await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Qty harus lebih dari 0!`);
 
-          return;
-        }
-
-        if (!isAksesoris && (!bahan.skus || bahan.skus.length === 0)) {
-          await showStatusAlert("warning", "Validasi Data", `Bagian ${i + 1}, Bahan ${j + 1}: Pilih alokasi SKU produk terlebih dahulu!`);
           return;
         }
 
@@ -2534,10 +2661,12 @@ const SpkCutting = () => {
                   tukang_pola_id: "",
 
                   bagian: [],
+                  mode: "biasa",
                 });
 
                 setSelectedSkuIds([]);
                 setSkuList([]);
+                setSkuQuantities({});
                 setShowForm(true);
               }}
             >
@@ -2909,7 +3038,42 @@ const SpkCutting = () => {
                       <span className="spk-cutting-create-section-number">01</span>
                       <h3>Informasi Cutting</h3>
                     </div>
-                    <span className="spk-cutting-create-section-pill">Identitas</span>
+                    <div style={{ display: "flex", background: "#f1f5f9", padding: "2px", border: "1px solid #cbd5e1", borderRadius: "4px" }}>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange(makeInputEvent("mode", "biasa"))}
+                        style={{
+                          padding: "4px 10px",
+                          border: "none",
+                          borderRadius: "3px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          background: (newSpkCutting.mode || "biasa") === "biasa" ? "#3b82f6" : "transparent",
+                          color: (newSpkCutting.mode || "biasa") === "biasa" ? "#fff" : "#64748b",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        Default
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange(makeInputEvent("mode", "potong_kecil"))}
+                        style={{
+                          padding: "4px 10px",
+                          border: "none",
+                          borderRadius: "3px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          background: newSpkCutting.mode === "potong_kecil" ? "#3b82f6" : "transparent",
+                          color: newSpkCutting.mode === "potong_kecil" ? "#fff" : "#64748b",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        Potong Kecil
+                      </button>
+                    </div>
                   </div>
 
                   <div className="spk-cutting-create-section-body spk-cutting-create-section-body-identity" style={{ gap: '16px', display: 'flex', flexDirection: 'column' }}>
@@ -2992,6 +3156,8 @@ const SpkCutting = () => {
                           </select>
                         </div>
 
+
+
                         <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
                           <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Tanggal Buat: <span className="spk-cutting-required">*</span></label>
                           <input type="date" name="tanggal_buat" value={newSpkCutting.tanggal_buat} onChange={handleInputChange} required style={{ flex: 1 }} />
@@ -3073,143 +3239,204 @@ const SpkCutting = () => {
                   </div>
 
                   <div className="spk-cutting-create-section-body">
-                    <div className="spk-cutting-bagian-toolbar">
-                      <h3>Daftar Bahan</h3>
-                      <button type="button" className="spk-cutting-btn-icon-circle add" onClick={addBagian} title="Tambah Bagian">
-                        <FaPlus />
-                      </button>
-                    </div>
-
-                    {newSpkCutting.bagian.map((bagian, bagianIndex) => (
-                      <div key={bagianIndex} className="spk-cutting-bagian-section">
-                        <div className="spk-cutting-bagian-header">
-                          <h4>Bagian {bagianIndex + 1}</h4>
-                          {!bagian.is_auto_bagian && (
-                            <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeBagian(bagianIndex)} title="Hapus Bagian">
-                              <FiMinus />
-                            </button>
-                          )}
+                    {newSpkCutting.mode === "potong_kecil" ? (
+                      <div className="spk-cutting-potong-kecil-grid" style={{ padding: "16px", background: "#fff", border: "1px solid #e2e8f0" }}>
+                        <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "16px" }}>Input Qty Potong per SKU</h3>
+                        {!newSpkCutting.produk_id ? (
+                          <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                            Silakan pilih Product terlebih dahulu untuk memuat daftar SKU.
+                          </div>
+                        ) : skuList.length === 0 ? (
+                          <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                            Tidak ada SKU ditemukan untuk Product ini.
+                          </div>
+                        ) : (
+                          <table className="spk-cutting-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead>
+                              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left" }}>
+                                <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>SKU</th>
+                                <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Warna</th>
+                                <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Size</th>
+                                <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569", width: "150px" }}>Target Qty (Pcs)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {skuList.map((sku) => (
+                                <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
+                                    {sku.sku_name || sku.sku || sku.sku_code || "-"}
+                                  </td>
+                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                    {sku.product_colour || "-"}
+                                  </td>
+                                  <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                                    {getSkuSizeGroup(sku)}
+                                  </td>
+                                  <td style={{ padding: "8px 12px" }}>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      placeholder="0"
+                                      value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
+                                      onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, false)}
+                                      style={{
+                                        width: "100%",
+                                        height: "36px",
+                                        padding: "6px 10px",
+                                        border: "1px solid #cbd5e1",
+                                        borderRadius: "0px",
+                                        boxSizing: "border-box",
+                                        fontSize: "13px",
+                                      }}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="spk-cutting-bagian-toolbar">
+                          <h3>Daftar Bahan</h3>
+                          <button type="button" className="spk-cutting-btn-icon-circle add" onClick={addBagian} title="Tambah Bagian">
+                            <FaPlus />
+                          </button>
                         </div>
-                                   {/* Table Header Row */}
-                        <div className="spk-cutting-bagian-columns-header" style={{ display: 'flex', flexDirection: 'row', gap: '8px', width: '100%', marginBottom: '6px', paddingBottom: '4px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#475569' }}>
-                          <div style={{ flex: '1 1 160px', minWidth: '130px' }}>Nama Bagian</div>
-                          <div style={{ flex: '1 1 220px', minWidth: '180px' }}>Nama Bahan</div>
-                          <div style={{ flex: '1 1 140px', minWidth: '110px' }}>Warna Bahan</div>
-                          <div style={{ flex: '0 0 auto', width: '200px' }}>Alokasi SKU</div>
-                          <div style={{ flex: '0 0 80px' }}>Qty (Rol)</div>
-                          <div style={{ flex: '0 0 36px', textAlign: 'center' }}></div>
-                        </div>
 
-                        <div className="spk-cutting-bagian-lines">
-                          {(bagian.bahan.length ? bagian.bahan : [null]).map((bahan, bahanIndex) => (
-                            <div key={bahan ? bahanIndex : "empty"} className="spk-cutting-bagian-line" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '8px', width: '100%', marginBottom: '6px' }}>
-                              
-                              {/* 1. Nama Bagian */}
-                              <div className="spk-cutting-form-group" style={{ flex: '1 1 160px', minWidth: '130px', marginBottom: 0 }}>
-                                {bahanIndex === 0 ? (
-                                  bagian.is_auto_bagian ? (
+                        {newSpkCutting.bagian.map((bagian, bagianIndex) => (
+                          <div key={bagianIndex} className="spk-cutting-bagian-section">
+                            <div className="spk-cutting-bagian-header">
+                              <h4>Bagian {bagianIndex + 1}</h4>
+                              {!bagian.is_auto_bagian && (
+                                <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeBagian(bagianIndex)} title="Hapus Bagian">
+                                  <FiMinus />
+                                </button>
+                              )}
+                            </div>
+                                       {/* Table Header Row */}
+                            <div className="spk-cutting-bagian-columns-header" style={{ display: 'flex', flexDirection: 'row', gap: '8px', width: '100%', marginBottom: '6px', paddingBottom: '4px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#475569' }}>
+                              <div style={{ flex: '1 1 160px', minWidth: '130px' }}>Nama Bagian</div>
+                              <div style={{ flex: '1 1 220px', minWidth: '180px' }}>Nama Bahan</div>
+                              <div style={{ flex: '1 1 140px', minWidth: '110px' }}>Warna Bahan</div>
+                              <div style={{ flex: '0 0 auto', width: '200px' }}>Alokasi SKU</div>
+                              <div style={{ flex: '0 0 80px' }}>Qty (Rol)</div>
+                              <div style={{ flex: '0 0 36px', textAlign: 'center' }}></div>
+                            </div>
+
+                            <div className="spk-cutting-bagian-lines">
+                              {(bagian.bahan.length ? bagian.bahan : [null]).map((bahan, bahanIndex) => (
+                                <div key={bahan ? bahanIndex : "empty"} className="spk-cutting-bagian-line" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '8px', width: '100%', marginBottom: '6px' }}>
+                                  
+                                  {/* 1. Nama Bagian */}
+                                  <div className="spk-cutting-form-group" style={{ flex: '1 1 160px', minWidth: '130px', marginBottom: 0 }}>
+                                    {bahanIndex === 0 ? (
+                                      bagian.is_auto_bagian ? (
+                                        <>
+                                          <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
+                                          {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
+                                        </>
+                                      ) : (
+                                        <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
+                                          <option value="">Pilih Bagian</option>
+                                          {NAMA_BAGIAN_OPTIONS.map((nama) => (
+                                            <option key={nama} value={nama}>{nama}</option>
+                                          ))}
+                                        </select>
+                                      )
+                                    ) : null}
+                                  </div>
+
+                                  {bahan ? (
                                     <>
-                                      <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
-                                      {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
+                                      {/* 2. Nama Bahan */}
+                                      <div className="spk-cutting-form-group" style={{ flex: '1 1 220px', minWidth: '180px', marginBottom: 0 }}>
+                                        {isAksesorisBagian(bagian.nama_bagian)
+                                          ? renderAksesorisSelect({
+                                              value: bahan.aksesoris_id,
+                                              onChange: (value) => handleAksesorisChange(bagianIndex, bahanIndex, value),
+                                            })
+                                          : renderBahanSelect({
+                                              value: bahan.bahan_id,
+                                              materialGroup: bahan.material_group || bagian.material_group,
+                                              onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
+                                            })}
+                                      </div>
+
+                                      {/* 3. Warna Bahan */}
+                                      <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
+                                        {isAksesorisBagian(bagian.nama_bagian) ? (
+                                          <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
+                                        ) : (
+                                          <>
+                                            <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
+                                              <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
+                                              {(bahan.warnaList || []).map((item, idx) => {
+                                                const warna = typeof item === "string" ? item : item.warna;
+                                                const stok = typeof item === "object" ? item.stok : 999;
+                                                const isDisabled = stok === 0;
+                                                return (
+                                                  <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                                    {warna} {stok !== 999 && `(Stok: ${stok})`}
+                                                  </option>
+                                                );
+                                              })}
+                                            </select>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      {/* 4. Alokasi SKU */}
+                                      <div style={{ flex: '0 0 auto', width: '200px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: 0, height: '40px' }}>
+                                        <button type="button" className="spk-cutting-btn spk-cutting-btn-primary" onClick={() => openSkuModal('create', bagianIndex, bahanIndex)} style={{ height: '40px', padding: '0 12px', margin: 0, flexShrink: 0 }}>
+                                          Pilih Alokasi SKU
+                                        </button>
+                                        {bahan.skus && bahan.skus.length > 0 ? (
+                                          <span style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', whiteSpace: 'nowrap' }}>{bahan.skus.length} Size</span>
+                                        ) : (
+                                          <span style={{ fontSize: '12px', color: '#ef4444', whiteSpace: 'nowrap' }}>Belum alokasi *</span>
+                                        )}
+                                      </div>
+
+                                      {/* 5. Qty */}
+                                      <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
+                                        <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
+                                      </div>
+
+                                      {/* 6. Aksi */}
+                                      <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 0 }}>
+                                        {!bagian.is_auto_bagian && (
+                                          <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeBahan(bagianIndex, bahanIndex)} title="Hapus Bahan" style={{ width: '32px', height: '32px' }}>
+                                            <FiTrash2 />
+                                          </button>
+                                        )}
+                                      </div>
                                     </>
                                   ) : (
-                                    <select value={bagian.nama_bagian || ""} onChange={(e) => handleBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
-                                      <option value="">Pilih Bagian</option>
-                                      {NAMA_BAGIAN_OPTIONS.map((nama) => (
-                                        <option key={nama} value={nama}>{nama}</option>
-                                      ))}
-                                    </select>
-                                  )
-                                ) : null}
-                              </div>
-
-                              {bahan ? (
-                                <>
-                                  {/* 2. Nama Bahan */}
-                                  <div className="spk-cutting-form-group" style={{ flex: '1 1 220px', minWidth: '180px', marginBottom: 0 }}>
-                                    {isAksesorisBagian(bagian.nama_bagian)
-                                      ? renderAksesorisSelect({
-                                          value: bahan.aksesoris_id,
-                                          onChange: (value) => handleAksesorisChange(bagianIndex, bahanIndex, value),
-                                        })
-                                      : renderBahanSelect({
-                                          value: bahan.bahan_id,
-                                          materialGroup: bahan.material_group || bagian.material_group,
-                                          onChange: (value) => handleBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
-                                        })}
-                                  </div>
-
-                                  {/* 3. Warna Bahan */}
-                                  <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
-                                    {isAksesorisBagian(bagian.nama_bagian) ? (
-                                      <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
-                                    ) : (
-                                      <>
-                                        <select value={bahan.warna || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
-                                          <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
-                                          {(bahan.warnaList || []).map((item, idx) => {
-                                            const warna = typeof item === "string" ? item : item.warna;
-                                            const stok = typeof item === "object" ? item.stok : 999;
-                                            const isDisabled = stok === 0;
-                                            return (
-                                              <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
-                                                {warna} {stok !== 999 && `(Stok: ${stok})`}
-                                              </option>
-                                            );
-                                          })}
-                                        </select>
-                                      </>
-                                    )}
-                                  </div>
-
-                                  {/* 4. Alokasi SKU */}
-                                  <div style={{ flex: '0 0 auto', width: '200px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: 0, height: '40px' }}>
-                                    <button type="button" className="spk-cutting-btn spk-cutting-btn-primary" onClick={() => openSkuModal('create', bagianIndex, bahanIndex)} style={{ height: '40px', padding: '0 12px', margin: 0, flexShrink: 0 }}>
-                                      Pilih Alokasi SKU
-                                    </button>
-                                    {bahan.skus && bahan.skus.length > 0 ? (
-                                      <span style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', whiteSpace: 'nowrap' }}>{bahan.skus.length} Size</span>
-                                    ) : (
-                                      <span style={{ fontSize: '12px', color: '#ef4444', whiteSpace: 'nowrap' }}>Belum alokasi *</span>
-                                    )}
-                                  </div>
-
-                                  {/* 5. Qty */}
-                                  <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
-                                    <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
-                                  </div>
-
-                                  {/* 6. Aksi */}
-                                  <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 0 }}>
-                                    {!bagian.is_auto_bagian && (
-                                      <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeBahan(bagianIndex, bahanIndex)} title="Hapus Bahan" style={{ width: '32px', height: '32px' }}>
-                                        <FiTrash2 />
-                                      </button>
-                                    )}
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="spk-cutting-bahan-empty-action" style={{ flex: '1 1 auto' }}>
-                                  {!bagian.is_auto_bagian && (
-                                    <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
-                                      <FaPlus /> Tambah Bahan
-                                    </button>
+                                    <div className="spk-cutting-bahan-empty-action" style={{ flex: '1 1 auto' }}>
+                                      {!bagian.is_auto_bagian && (
+                                        <button type="button" className="spk-cutting-btn spk-cutting-btn-success" onClick={() => addBahan(bagianIndex)}>
+                                          <FaPlus /> Tambah Bahan
+                                        </button>
+                                      )}
+                                    </div>
                                   )}
+                                </div>
+                              ))}
+
+                              {bagian.bahan.length > 0 && !bagian.is_auto_bagian && (
+                                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px', paddingLeft: '0' }}>
+                                  <button type="button" className="spk-cutting-btn-icon-circle add" onClick={() => addBahan(bagianIndex)} title="Tambah Bahan" style={{ width: '28px', height: '28px' }}>
+                                    <FaPlus style={{ fontSize: '10px' }} />
+                                  </button>
                                 </div>
                               )}
                             </div>
-                          ))}
-
-                          {bagian.bahan.length > 0 && !bagian.is_auto_bagian && (
-                            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px', paddingLeft: '0' }}>
-                              <button type="button" className="spk-cutting-btn-icon-circle add" onClick={() => addBahan(bagianIndex)} title="Tambah Bahan" style={{ width: '28px', height: '28px' }}>
-                                <FaPlus style={{ fontSize: '10px' }} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </section>
                 </div>
@@ -3397,7 +3624,45 @@ const SpkCutting = () => {
       {showEditForm && (
         <div className="spk-cutting-modal">
           <div className="spk-cutting-modal-content">
-            <h2>Edit SPK Cutting</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h2 style={{ margin: 0 }}>Edit SPK Cutting</h2>
+              <div style={{ display: "flex", background: "#f1f5f9", padding: "2px", border: "1px solid #cbd5e1", borderRadius: "4px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleEditInputChange(makeInputEvent("mode", "biasa"))}
+                  style={{
+                    padding: "4px 10px",
+                    border: "none",
+                    borderRadius: "3px",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    background: (editSpkCutting.mode || "biasa") === "biasa" ? "#3b82f6" : "transparent",
+                    color: (editSpkCutting.mode || "biasa") === "biasa" ? "#fff" : "#64748b",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Default
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEditInputChange(makeInputEvent("mode", "potong_kecil"))}
+                  style={{
+                    padding: "4px 10px",
+                    border: "none",
+                    borderRadius: "3px",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    background: editSpkCutting.mode === "potong_kecil" ? "#3b82f6" : "transparent",
+                    color: editSpkCutting.mode === "potong_kecil" ? "#fff" : "#64748b",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Potong Kecil
+                </button>
+              </div>
+            </div>
             <form onSubmit={handleFormUpdate} className="spk-cutting-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', alignItems: 'stretch' }}>
                 {/* Group 1: Tukang & Identitas SPK (Kiri / Left Column) */}
@@ -3478,6 +3743,8 @@ const SpkCutting = () => {
                     </select>
                   </div>
 
+
+
                   <div className="spk-cutting-form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
                     <label style={{ width: '130px', flexShrink: 0, marginBottom: 0 }}>Tanggal Buat: <span className="spk-cutting-required">*</span></label>
                     <input type="date" name="tanggal_buat" value={editSpkCutting.tanggal_buat} onChange={handleEditInputChange} required style={{ flex: 1 }} />
@@ -3548,133 +3815,186 @@ const SpkCutting = () => {
               </div>
 
               {/* Bagian dan Bahan */}
-              {editSpkCutting.bagian.map((bagian, bagianIndex) => (
-                <div key={bagianIndex} className="spk-cutting-bagian-section">
-                  <div className="spk-cutting-bagian-header">
-                    <h4>Bagian {bagianIndex + 1}</h4>
-                    {!bagian.is_auto_bagian && (
-                      <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeEditBagian(bagianIndex)} title="Hapus Bagian">
-                        <FiMinus />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Table Header Row */}
-                  <div className="spk-cutting-bagian-columns-header" style={{ display: 'flex', flexDirection: 'row', gap: '8px', width: '100%', marginBottom: '6px', paddingBottom: '4px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#475569' }}>
-                    <div style={{ flex: '1 1 160px', minWidth: '130px' }}>Nama Bagian</div>
-                    <div style={{ flex: '1 1 220px', minWidth: '180px' }}>Nama Bahan</div>
-                    <div style={{ flex: '1 1 140px', minWidth: '110px' }}>Warna Bahan</div>
-                    <div style={{ flex: '0 0 auto', width: '200px' }}>Alokasi SKU</div>
-                    <div style={{ flex: '0 0 80px' }}>Qty (Rol)</div>
-                    <div style={{ flex: '0 0 36px', textAlign: 'center' }}></div>
-                  </div>
-
-                  <div className="spk-cutting-bagian-lines">
-                    {bagian.bahan.map((bahan, bahanIndex) => (
-                      <div key={bahanIndex} className="spk-cutting-bagian-line" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '8px', width: '100%', marginBottom: '6px' }}>
-                        
-                        {/* 1. Nama Bagian */}
-                        <div className="spk-cutting-form-group" style={{ flex: '1 1 160px', minWidth: '130px', marginBottom: 0 }}>
-                          {bahanIndex === 0 ? (
-                            bagian.is_auto_bagian ? (
-                              <>
-                                <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
-                                {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
-                              </>
-                            ) : (
-                              <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
-                                <option value="">Pilih Bagian</option>
-                                {NAMA_BAGIAN_OPTIONS.map((nama) => (
-                                  <option key={nama} value={nama}>{nama}</option>
-                                ))}
-                              </select>
-                            )
-                          ) : null}
-                        </div>
-
-                        {/* 2. Nama Bahan */}
-                        <div className="spk-cutting-form-group" style={{ flex: '1 1 220px', minWidth: '180px', marginBottom: 0 }}>
-                          {isAksesorisBagian(bagian.nama_bagian) ? (
-                            renderAksesorisSelect({
-                              value: bahan.aksesoris_id,
-                              onChange: (value) => handleEditAksesorisChange(bagianIndex, bahanIndex, value),
-                            })
-                          ) : (
-                            renderBahanSelect({
-                              value: bahan.bahan_id,
-                              materialGroup: bahan.material_group || bagian.material_group,
-                              onChange: (value) => handleEditBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
-                            })
-                          )}
-                        </div>
-                        
-                        {/* 3. Warna Bahan */}
-                        <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
-                          {isAksesorisBagian(bagian.nama_bagian) ? (
-                            <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
-                          ) : (
-                            <>
-                              <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
-                                <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
-                                {(bahan.warnaList || []).map((item, idx) => {
-                                  const warna = typeof item === "string" ? item : item.warna;
-                                  const stok = typeof item === "object" ? item.stok : 999;
-                                  const isDisabled = stok === 0;
-                                  return (
-                                    <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
-                                      {warna} {stok !== 999 && `(Stok: ${stok})`}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            </>
-                          )}
-                        </div>
-                        
-                        {/* 4. Alokasi SKU */}
-                        <div style={{ flex: '0 0 auto', width: '200px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: 0, height: '40px' }}>
-                          <button type="button" className="spk-cutting-btn spk-cutting-btn-primary" onClick={() => openSkuModal('edit', bagianIndex, bahanIndex)} style={{ height: '40px', padding: '0 12px', margin: 0, flexShrink: 0 }}>
-                            Pilih Alokasi SKU
-                          </button>
-                          {bahan.skus && bahan.skus.length > 0 ? (
-                            <span style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', whiteSpace: 'nowrap' }}>{bahan.skus.length} Size</span>
-                          ) : (
-                            <span style={{ fontSize: '12px', color: '#ef4444', whiteSpace: 'nowrap' }}>Belum alokasi *</span>
-                          )}
-                        </div>
-                        
-                        {/* 5. Qty */}
-                        <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
-                          <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
-                        </div>
-                        
-                        {/* 6. Aksi */}
-                        <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 0 }}>
-                          {!bagian.is_auto_bagian && (
-                            <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeEditBahan(bagianIndex, bahanIndex)} title="Hapus Bahan" style={{ width: '32px', height: '32px' }}>
-                              <FiTrash2 />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {!bagian.is_auto_bagian && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
-                      <button type="button" className="spk-cutting-btn-icon-circle add" onClick={() => addEditBahan(bagianIndex)} title="Tambah Bahan" style={{ width: '28px', height: '28px' }}>
-                        <FaPlus style={{ fontSize: '10px' }} />
-                      </button>
+              {editSpkCutting.mode === "potong_kecil" ? (
+                <div className="spk-cutting-potong-kecil-grid" style={{ padding: "16px", background: "#fff", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "16px" }}>Input Qty Potong per SKU</h3>
+                  {!editSpkCutting.produk_id ? (
+                    <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                      Silakan pilih Product terlebih dahulu untuk memuat daftar SKU.
                     </div>
+                  ) : skuList.length === 0 ? (
+                    <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                      Tidak ada SKU ditemukan untuk Product ini.
+                    </div>
+                  ) : (
+                    <table className="spk-cutting-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left" }}>
+                          <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>SKU</th>
+                          <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Warna</th>
+                          <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>Size</th>
+                          <th style={{ padding: "10px 12px", fontSize: "12px", fontWeight: "600", color: "#475569", width: "150px" }}>Target Qty (Pcs)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {skuList.map((sku) => (
+                          <tr key={sku.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#1e293b", fontWeight: "500" }}>
+                              {sku.sku_name || sku.sku || sku.sku_code || "-"}
+                            </td>
+                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                              {sku.product_colour || "-"}
+                            </td>
+                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#475569" }}>
+                              {getSkuSizeGroup(sku)}
+                            </td>
+                            <td style={{ padding: "8px 12px" }}>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                value={skuQuantities[sku.id] === "" ? "" : skuQuantities[sku.id] || ""}
+                                onChange={(e) => handleSkuQtyChange(sku.id, e.target.value, true)}
+                                style={{
+                                  width: "100%",
+                                  height: "36px",
+                                  padding: "6px 10px",
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: "0px",
+                                  boxSizing: "border-box",
+                                  fontSize: "13px",
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
                 </div>
-              ))}
+              ) : (
+                <>
+                  {editSpkCutting.bagian.map((bagian, bagianIndex) => (
+                    <div key={bagianIndex} className="spk-cutting-bagian-section">
+                      <div className="spk-cutting-bagian-header">
+                        <h4>Bagian {bagianIndex + 1}</h4>
+                        {!bagian.is_auto_bagian && (
+                          <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeEditBagian(bagianIndex)} title="Hapus Bagian">
+                            <FiMinus />
+                          </button>
+                        )}
+                      </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '8px' }}>
-                <button type="button" className="spk-cutting-btn-icon-circle add" onClick={addEditBagian} title="Tambah Bagian">
-                  <FaPlus />
-                </button>
-              </div>
+                      {/* Table Header Row */}
+                      <div className="spk-cutting-bagian-columns-header" style={{ display: 'flex', flexDirection: 'row', gap: '8px', width: '100%', marginBottom: '6px', paddingBottom: '4px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#475569' }}>
+                        <div style={{ flex: '1 1 160px', minWidth: '130px' }}>Nama Bagian</div>
+                        <div style={{ flex: '1 1 220px', minWidth: '180px' }}>Nama Bahan</div>
+                        <div style={{ flex: '1 1 140px', minWidth: '110px' }}>Warna Bahan</div>
+                        <div style={{ flex: '0 0 auto', width: '200px' }}>Alokasi SKU</div>
+                        <div style={{ flex: '0 0 80px' }}>Qty (Rol)</div>
+                        <div style={{ flex: '0 0 36px', textAlign: 'center' }}></div>
+                      </div>
+
+                      <div className="spk-cutting-bagian-lines">
+                        {bagian.bahan.map((bahan, bahanIndex) => (
+                          <div key={bahanIndex} className="spk-cutting-bagian-line" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'flex-start', gap: '8px', width: '100%', marginBottom: '6px' }}>
+                            
+                            {/* 1. Nama Bagian */}
+                            <div className="spk-cutting-form-group" style={{ flex: '1 1 160px', minWidth: '130px', marginBottom: 0 }}>
+                              {bahanIndex === 0 ? (
+                                bagian.is_auto_bagian ? (
+                                  <>
+                                    <input type="text" value={bagian.nama_bagian || ""} readOnly style={{ background: '#f1f5f9', width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }} />
+                                    {bagian.material_group && <small className="spk-cutting-form-hint" style={{ marginTop: '2px' }}>Group: {bagian.material_group}</small>}
+                                  </>
+                                ) : (
+                                  <select value={bagian.nama_bagian || ""} onChange={(e) => handleEditBagianChange(bagianIndex, "nama_bagian", e.target.value)} required style={{ width: '100%', height: '40px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', boxSizing: 'border-box' }}>
+                                    <option value="">Pilih Bagian</option>
+                                    {NAMA_BAGIAN_OPTIONS.map((nama) => (
+                                      <option key={nama} value={nama}>{nama}</option>
+                                    ))}
+                                  </select>
+                                )
+                              ) : null}
+                            </div>
+
+                            {/* 2. Nama Bahan */}
+                            <div className="spk-cutting-form-group" style={{ flex: '1 1 220px', minWidth: '180px', marginBottom: 0 }}>
+                              {isAksesorisBagian(bagian.nama_bagian) ? (
+                                renderAksesorisSelect({
+                                  value: bahan.aksesoris_id,
+                                  onChange: (value) => handleEditAksesorisChange(bagianIndex, bahanIndex, value),
+                                })
+                              ) : (
+                                renderBahanSelect({
+                                  value: bahan.bahan_id,
+                                  materialGroup: bahan.material_group || bagian.material_group,
+                                  onChange: (value) => handleEditBahanChange(bagianIndex, bahanIndex, "bahan_id", value),
+                                })
+                              )}
+                            </div>
+                            
+                            {/* 3. Warna Bahan */}
+                            <div className="spk-cutting-form-group" style={{ flex: '1 1 140px', minWidth: '110px', marginBottom: 0 }}>
+                              {isAksesorisBagian(bagian.nama_bagian) ? (
+                                <input type="text" value="Aksesoris" readOnly style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box', background: '#f1f5f9' }} />
+                              ) : (
+                                <>
+                                  <select value={bahan.warna || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "warna", e.target.value)} disabled={!bahan.bahan_id} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', height: '40px', boxSizing: 'border-box' }}>
+                                    <option value="">{bahan.bahan_id ? "Pilih Warna" : "Pilih Bahan"}</option>
+                                    {(bahan.warnaList || []).map((item, idx) => {
+                                      const warna = typeof item === "string" ? item : item.warna;
+                                      const stok = typeof item === "object" ? item.stok : 999;
+                                      const isDisabled = stok === 0;
+                                      return (
+                                        <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                          {warna} {stok !== 999 && `(Stok: ${stok})`}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                </>
+                              )}
+                            </div>
+                            
+                            {/* 4. Alokasi SKU */}
+                            <div style={{ flex: '0 0 auto', width: '200px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: 0, height: '40px' }}>
+                              <button type="button" className="spk-cutting-btn spk-cutting-btn-primary" onClick={() => openSkuModal('edit', bagianIndex, bahanIndex)} style={{ height: '40px', padding: '0 12px', margin: 0, flexShrink: 0 }}>
+                                Pilih Alokasi SKU
+                              </button>
+                              {bahan.skus && bahan.skus.length > 0 ? (
+                                <span style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', whiteSpace: 'nowrap' }}>{bahan.skus.length} Size</span>
+                              ) : (
+                                <span style={{ fontSize: '12px', color: '#ef4444', whiteSpace: 'nowrap' }}>Belum alokasi *</span>
+                              )}
+                            </div>
+                            
+                            {/* 5. Qty */}
+                            <div className="spk-cutting-form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
+                              <input type="number" placeholder={isAksesorisBagian(bagian.nama_bagian) ? "Qty" : "Rol"} value={bahan.qty || ""} onChange={(e) => handleEditBahanChange(bagianIndex, bahanIndex, "qty", e.target.value)} required style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '0px', width: '100%', boxSizing: 'border-box', height: '40px' }} />
+                            </div>
+                            
+                            {/* 6. Aksi */}
+                            <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 0 }}>
+                              {!bagian.is_auto_bagian && (
+                                <button type="button" className="spk-cutting-btn-icon-circle remove" onClick={() => removeEditBahan(bagianIndex, bahanIndex)} title="Hapus Bahan" style={{ width: '32px', height: '32px' }}>
+                                  <FiTrash2 />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '8px' }}>
+                    <button type="button" className="spk-cutting-btn-icon-circle add" onClick={addEditBagian} title="Tambah Bagian">
+                      <FaPlus />
+                    </button>
+                  </div>
+                </>
+              )}
 
               <div className="spk-cutting-form-actions">
                 <button type="submit" className="spk-cutting-btn spk-cutting-btn-primary">
