@@ -33,6 +33,7 @@ import {
   FaLayerGroup,
   FaChartLine,
   FaUndo,
+  FaPrint,
 } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
 import API from "../../api";
@@ -783,8 +784,6 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-
-                    <div className="dropdown-group-label">Operasional</div>
                     {hasAccess("gudang_produk:scan_masuk") && (
                       <li>
                         <Link to="scan-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "scan-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("scan-produk-masuk-gudang")}>
@@ -882,13 +881,14 @@ const Layout = () => {
               <li>
                 <div
                   onClick={togglePackingMenu}
-                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri"].includes(activeMenu) ? "active" : ""}`}
+                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring", "packing-printed"].includes(activeMenu) ? "active" : ""}`}
                 >
                   <FaBoxOpen className="icon" /> Packing
                   <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isPackingOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    <div className="dropdown-group-label">Operasional</div>
                     {hasAccess("packing:packing") && (
                       <li>
                         <Link to="packing" className={`dropdown-link ${activeMenu === "packing" ? "active" : ""}`} onClick={() => handleMenuClick("packing")}>
@@ -931,17 +931,33 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("packing:logs") && (
-                      <li>
-                        <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History scan
-                        </Link>
-                      </li>
-                    )}
                     {hasAccess("packing:seri") && (
                       <li>
                         <Link to="seri" className={`dropdown-link ${activeMenu === "seri" ? "active" : ""}`} onClick={() => handleMenuClick("seri")}>
                           <FaQrcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Seri
+                        </Link>
+                      </li>
+                    )}
+
+                    <div className="dropdown-group-label">Monitoring &amp; Laporan</div>
+                    {hasAccess("packing:logs") && (
+                      <li>
+                        <Link to="monitoring" className={`dropdown-link ${activeMenu === "monitoring" ? "active" : ""}`} onClick={() => handleMenuClick("monitoring")}>
+                          <FaChartLine className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Monitoring Harian
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("packing:logs") && (
+                      <li>
+                        <Link to="packing-printed" className={`dropdown-link ${activeMenu === "packing-printed" ? "active" : ""}`} onClick={() => handleMenuClick("packing-printed")}>
+                          <FaPrint className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cetak vs Packing
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("packing:logs") && (
+                      <li>
+                        <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Scan
                         </Link>
                       </li>
                     )}
