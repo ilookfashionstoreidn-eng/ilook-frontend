@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTruck, faCheckCircle, faTimesCircle, faBoxOpen, faCalendarAlt, faCheckDouble, faPercent, faChartLine, faBolt, faCalendarDay, faSearch, faListUl } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line, Doughnut, Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
 import './PackingMonitoring.css';
 
@@ -181,35 +181,43 @@ const PackingMonitoring = () => {
         };
     }, [summary]);
 
-    const awaitingBarData = useMemo(() => {
+    const awaitingScatterData = useMemo(() => {
         if (!orders || orders.length === 0) return null;
 
-        const counts = { '0-1 Hr': 0, '>1 Hr': 0 };
+        const countsByDay = {};
+        let maxDay = 0;
         let hasData = false;
 
         orders.forEach(o => {
             if (o.status !== 'SHIPPING' && o.status !== 'DELIVERED' && o.status !== 'CANCELLED') {
                 const days = o.picked_at ? dayjs().diff(dayjs(o.picked_at), 'day') : 0;
-                if (days <= 1) counts['0-1 Hr']++;
-                else counts['>1 Hr']++;
+                countsByDay[days] = (countsByDay[days] || 0) + 1;
+                if (days > maxDay) maxDay = days;
                 hasData = true;
             }
         });
 
         if (!hasData) return null;
 
+        const data = [];
+        for (let i = 0; i <= maxDay; i++) {
+            if (countsByDay[i] > 0) {
+                data.push({ x: i, y: countsByDay[i] });
+            }
+        }
+
         return {
-            labels: ['0-1 Hr', '>1 Hr'],
             datasets: [{
-                label: 'Pesanan',
-                data: [counts['0-1 Hr'], counts['>1 Hr']],
-                backgroundColor: ['#fcd34d', '#f59e0b'],
-                borderRadius: 6,
+                label: 'Jumlah Pesanan',
+                data,
+                backgroundColor: '#f59e0b',
+                pointRadius: 6,
+                pointHoverRadius: 8
             }]
         };
     }, [orders]);
 
-    const shippingBarData = useMemo(() => {
+    const shippingScatterData = useMemo(() => {
         if (!orders || orders.length === 0) return null;
 
         const countsByDay = {};
@@ -227,32 +235,25 @@ const PackingMonitoring = () => {
 
         if (!hasData) return null;
 
-        const labels = [];
         const data = [];
-        const backgroundColors = [];
-        const colors = ['#38bdf8', '#0ea5e9', '#0284c7', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a'];
-
         for (let i = 1; i <= maxDay; i++) {
-            if (countsByDay[i] || i <= 3) {
-                labels.push(`${i} Hari`);
-                data.push(countsByDay[i] || 0);
-                backgroundColors.push(i <= colors.length ? colors[i - 1] : '#ef4444');
+            if (countsByDay[i] > 0) {
+                data.push({ x: i, y: countsByDay[i] });
             }
         }
 
         return {
-            labels,
             datasets: [{
-                label: 'Pesanan',
+                label: 'Jumlah Pesanan',
                 data,
-                backgroundColor: backgroundColors,
-                borderRadius: 4,
-                maxBarThickness: 24,
+                backgroundColor: '#0ea5e9',
+                pointRadius: 6,
+                pointHoverRadius: 8
             }]
         };
     }, [orders]);
 
-    const barOptions = useMemo(() => ({
+    const scatterOptions = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -263,11 +264,19 @@ const PackingMonitoring = () => {
                 titleFont: { size: 13 },
                 bodyFont: { size: 13 },
                 displayColors: false,
+                callbacks: {
+                    label: (ctx) => `${ctx.parsed.y} pesanan (${ctx.parsed.x} Hari)`
+                }
             }
         },
         scales: {
-            y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
-            x: { grid: { display: false } }
+            y: { beginAtZero: true, grid: { borderDash: [4, 4] }, title: { display: true, text: 'Jumlah Pesanan' } },
+            x: { 
+                type: 'linear', 
+                grid: { display: false }, 
+                title: { display: true, text: 'Durasi (Hari)' },
+                ticks: { stepSize: 1 } 
+            }
         }
     }), []);
 
@@ -525,12 +534,12 @@ const PackingMonitoring = () => {
                                 <span className="packing-card-label">Durasi Menunggu Kurir</span>
                             </div>
                             <div className="packing-chart-wrapper compact">
-                                {!awaitingBarData ? (
+                                {!awaitingScatterData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
                                         Semua pesanan sudah dibawa kurir
                                     </div>
                                 ) : (
-                                    <Bar data={awaitingBarData} options={barOptions} />
+                                    <Scatter data={awaitingScatterData} options={scatterOptions} />
                                 )}
                             </div>
                         </div>
@@ -540,12 +549,12 @@ const PackingMonitoring = () => {
                                 <span className="packing-card-label">Durasi Dalam Perjalanan</span>
                             </div>
                             <div className="packing-chart-wrapper compact">
-                                {!shippingBarData ? (
+                                {!shippingScatterData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
                                         Belum ada data pengiriman aktif
                                     </div>
                                 ) : (
-                                    <Bar data={shippingBarData} options={barOptions} />
+                                    <Scatter data={shippingScatterData} options={scatterOptions} />
                                 )}
                             </div>
                         </div>
