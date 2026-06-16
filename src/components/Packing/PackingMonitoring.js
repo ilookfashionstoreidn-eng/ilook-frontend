@@ -174,6 +174,7 @@ const PackingMonitoring = () => {
             completionRate: pct(delivered),
             inTransitRate: pct(shipping),
             cancelRate: pct(cancelled),
+            awaitingRate: pct(Number(summary.other) || 0),
             avgPerDay: activeDays > 0 ? total / activeDays : 0,
             activeDays,
             peak,
@@ -211,35 +212,42 @@ const PackingMonitoring = () => {
     const shippingBarData = useMemo(() => {
         if (!orders || orders.length === 0) return null;
 
-        const transitCounts = {
-            '1 Hari': 0,
-            '2 Hari': 0,
-            '3 Hari': 0,
-            '>3 Hr': 0
-        };
-
+        const countsByDay = {};
+        let maxDay = 0;
         let hasData = false;
 
         orders.forEach(o => {
             if (o.status === 'SHIPPING' && o.picked_at) {
-                const days = dayjs().diff(dayjs(o.picked_at), 'day');
-                if (days <= 1) transitCounts['1 Hari']++;
-                else if (days === 2) transitCounts['2 Hari']++;
-                else if (days === 3) transitCounts['3 Hari']++;
-                else transitCounts['>3 Hr']++;
+                const days = Math.max(1, dayjs().diff(dayjs(o.picked_at), 'day'));
+                countsByDay[days] = (countsByDay[days] || 0) + 1;
+                if (days > maxDay) maxDay = days;
                 hasData = true;
             }
         });
 
         if (!hasData) return null;
 
+        const labels = [];
+        const data = [];
+        const backgroundColors = [];
+        const colors = ['#38bdf8', '#0ea5e9', '#0284c7', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a'];
+
+        for (let i = 1; i <= maxDay; i++) {
+            if (countsByDay[i] || i <= 3) {
+                labels.push(`${i} Hari`);
+                data.push(countsByDay[i] || 0);
+                backgroundColors.push(i <= colors.length ? colors[i - 1] : '#ef4444');
+            }
+        }
+
         return {
-            labels: ['1 Hr', '2 Hr', '3 Hr', '>3 Hr'],
+            labels,
             datasets: [{
                 label: 'Pesanan',
-                data: [transitCounts['1 Hari'], transitCounts['2 Hari'], transitCounts['3 Hari'], transitCounts['>3 Hr']],
-                backgroundColor: ['#38bdf8', '#0ea5e9', '#0284c7', '#ef4444'],
-                borderRadius: 6,
+                data,
+                backgroundColor: backgroundColors,
+                borderRadius: 4,
+                maxBarThickness: 24,
             }]
         };
     }, [orders]);
@@ -446,6 +454,22 @@ const PackingMonitoring = () => {
                             </div>
                         </div>
                         <div className="packing-insight-chip">
+                            <div className="chip-icon bg-yellow-gradient"><FontAwesomeIcon icon={faBoxOpen} /></div>
+                            <div className="chip-body">
+                                <span className="chip-label">Tunggu Kurir</span>
+                                <span className="chip-value">{analytics.awaitingRate.toFixed(1)}%</span>
+                                <span className="chip-sub">{formatNum(summary.other)} blm dipickup</span>
+                            </div>
+                        </div>
+                        <div className="packing-insight-chip">
+                            <div className="chip-icon bg-green-gradient"><FontAwesomeIcon icon={faTruck} /></div>
+                            <div className="chip-body">
+                                <span className="chip-label">Dlm Perjalanan</span>
+                                <span className="chip-value">{analytics.inTransitRate.toFixed(1)}%</span>
+                                <span className="chip-sub">{formatNum(summary.shipping)} otw</span>
+                            </div>
+                        </div>
+                        <div className="packing-insight-chip">
                             <div className="chip-icon bg-teal-gradient"><FontAwesomeIcon icon={faChartLine} /></div>
                             <div className="chip-body">
                                 <span className="chip-label">Rata-rata / Hari</span>
@@ -454,7 +478,7 @@ const PackingMonitoring = () => {
                             </div>
                         </div>
                         <div className="packing-insight-chip">
-                            <div className="chip-icon bg-yellow-gradient"><FontAwesomeIcon icon={faBolt} /></div>
+                            <div className="chip-icon bg-blue-gradient"><FontAwesomeIcon icon={faBolt} /></div>
                             <div className="chip-body">
                                 <span className="chip-label">Hari Tertinggi</span>
                                 <span className="chip-value">{analytics.peak ? formatNum(analytics.peak.qty) : '-'}</span>
