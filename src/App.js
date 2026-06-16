@@ -60,6 +60,8 @@ import PackingInject from "./components/Packing/PackingInject";
 import Logs from "./components/Packing/LogsPage";
 import ReturnPage from "./components/Packing/Return";
 import ReturnLogs from "./components/Packing/ReturnLogs";
+import PackingMonitoring from "./components/Packing/PackingMonitoring";
+import PackingPrintedComparison from "./components/Packing/PackingPrintedComparison";
 import Bahan from "./components/Bahan/Bahan";
 import BahanList from "./components/Bahan/BahanList";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
@@ -210,6 +212,8 @@ const App = () => {
             <Route path="packing-inject" element={<MenuProtectedRoute menuKey="packing:inject"><PackingInject /></MenuProtectedRoute>} />
             <Route path="logs" element={<MenuProtectedRoute menuKey="packing:logs"><Logs /></MenuProtectedRoute>} />
             <Route path="seri" element={<MenuProtectedRoute menuKey="packing:seri"><Seri /></MenuProtectedRoute>} />
+            <Route path="monitoring" element={<MenuProtectedRoute menuKey="packing:logs"><PackingMonitoring /></MenuProtectedRoute>} />
+            <Route path="packing-printed" element={<MenuProtectedRoute menuKey="packing:logs"><PackingPrintedComparison /></MenuProtectedRoute>} />
           </Route>
 
           {/* Return Group */}
