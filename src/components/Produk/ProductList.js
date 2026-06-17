@@ -21,6 +21,7 @@ import {
   FaUpload,
 } from "react-icons/fa";
 import { FiCopy } from "react-icons/fi"; // [DUPLIKAT] - ditambahkan
+import GineeSkuAutocomplete from "./GineeSkuAutocomplete";
 
 const emptyMaterial = {
   material: "",
@@ -209,6 +210,34 @@ const parseProductFieldsFromSku = (value) => {
   };
 };
 const MAX_PRODUCT_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024;
+
+const parseGineeSku = (sku, size) => {
+  if (!sku) return { product: "", productGroup: "", productSource: "" };
+  
+  // Extract prefix before " - "
+  const parts = sku.split(" - ");
+  const prefix = parts[0] ? parts[0].trim() : sku.trim();
+  
+  // Product Group is exactly the prefix
+  const productGroup = prefix;
+  
+  // Product is prefix without "SET " or "DRESS " at the beginning (case insensitive)
+  let product = prefix;
+  const upperProduct = product.toUpperCase();
+  if (upperProduct.startsWith("SET ")) {
+    product = product.substring(4).trim();
+  } else if (upperProduct.startsWith("DRESS ")) {
+    product = product.substring(6).trim();
+  }
+  
+  // Product Source for this specific SKU
+  let productSource = prefix;
+  if (size && size.trim() !== "") {
+    productSource = `${prefix} ${size.trim()}`;
+  }
+  
+  return { product, productGroup, productSource };
+};
 
 const ProductList = () => {
   const [items, setItems] = useState([]);
@@ -1415,13 +1444,63 @@ const ProductList = () => {
 
           <div className="product-list-form-section">
             <h3>Informasi Produk {isMultiSkuMode && <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal', marginLeft: '8px' }}>(Kolom SKU dan Warna dikunci saat Multi-SKU aktif)</span>}</h3>
-            <div className="product-list-form-grid">
+              <div className="product-list-form-grid">
+                <GineeSkuAutocomplete
+                  value={isMultiSkuMode ? "" : form.sku_name}
+                  onChange={isMultiSkuMode ? () => {} : handleInputChange}
+                  onSelectProduct={async (gineeData) => {
+                    if (isMultiSkuMode) {
+                      try {
+                        const { data } = await API.get(`/ginee/products/variants?product_name=${encodeURIComponent(gineeData.product_name)}`);
+                        if (data && data.length > 0) {
+                          const parsedBase = parseGineeSku(data[0].sku, data[0].size);
+                          const newRows = data.map(variant => {
+                            const parsedVariant = parseGineeSku(variant.sku, variant.size);
+                            return {
+                              sku_name: variant.sku,
+                              product_size: variant.size || "",
+                              product_source: parsedVariant.productSource, 
+                              product_colour: variant.color || "",
+                              LD: "",
+                              material_colours: form.materials.map(() => "")
+                            };
+                          });
+                          setMultiSkuRows(newRows);
+                          setForm(prev => ({
+                            ...prev,
+                            product: parsedBase.product,
+                            product_group: parsedBase.productGroup,
+                            product_colour: "",
+                            product_size: ""
+                          }));
+                        }
+                      } catch (err) {
+                        console.error("Error fetching variants", err);
+                        alert("Gagal menarik varian dari Ginee.");
+                      }
+                    } else {
+                      const parsed = parseGineeSku(gineeData.sku, gineeData.size);
+                      setForm(prev => ({
+                        ...prev,
+                        sku_name: gineeData.sku || prev.sku_name,
+                        product: parsed.product || prev.product,
+                        product_group: parsed.productGroup || prev.product_group,
+                        product_source: parsed.productSource || prev.product_source,
+                        product_colour: gineeData.color || prev.product_colour,
+                        product_size: gineeData.size || prev.product_size
+                      }));
+                    }
+                  }}
+                  disabled={false}
+                  autoFocus={isDuplicate}
+                  customLabel={isMultiSkuMode ? "Tarik Semua Varian Ginee" : undefined}
+                  customPlaceholder={isMultiSkuMode ? "Ketik nama produk..." : undefined}
+                />
               <Field label="Product" name="product" value={form.product} onChange={handleInputChange} required />
-              <Field label="SKU Name" name="sku_name" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.sku_name} onChange={handleInputChange} inputRef={skuNameInputRef} autoFocus={isDuplicate} required={!isMultiSkuMode && modalMode !== "edit"} disabled={isMultiSkuMode} />
               <Field label="Product Group" name="product_group" value={form.product_group} onChange={handleInputChange} />
+              <Field label="Product Colour" name="product_colour" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_colour} onChange={handleInputChange} disabled={isMultiSkuMode} />
               <Field label="Product Size" name="product_size" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_size} onChange={handleInputChange} disabled={isMultiSkuMode} />
               <Field label="Product Source" name="product_source" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_source} disabled={true} onChange={handleInputChange} />
-              <Field label="Product Colour" name="product_colour" value={isMultiSkuMode ? "Diisi di tabel bawah" : form.product_colour} onChange={handleInputChange} disabled={isMultiSkuMode} />
             </div>
           </div>
 
@@ -1479,51 +1558,40 @@ const ProductList = () => {
             </div>
           </div>
 
+
           <div className="product-list-form-section">
-            <h3>Aksesoris, Estimasi, Ukuran, dan Price</h3>
+            <h3>Dimensi & Berat</h3>
             <div className="product-list-form-grid">
-              <Field
-                label="Product Accessories"
-                name="product_accecories"
-                value={form.product_accecories}
-                onChange={handleInputChange}
-              />
-              <Field
-                label="Product Accessories Colour"
-                name="product_accecories_colour"
-                value={form.product_accecories_colour}
-                onChange={handleInputChange}
-              />
-              <Field
-                label="Estimasi Cutting"
-                name="estimasi_cutting"
-                type="number"
-                value={form.estimasi_cutting}
-                onChange={handleInputChange}
-              />
-              <Field
-                label="Estimasi Combi"
-                name="estimasi_combi"
-                type="number"
-                value={form.estimasi_combi}
-                onChange={handleInputChange}
-              />
-              <Field label="Berat Panjang" name="berat_panjang" type="number" value={form.berat_panjang} onChange={handleInputChange} />
-              <Field label="Satuan Berat Panjang" name="satuan_berat_panjang" value={form.satuan_berat_panjang} onChange={handleInputChange} />
-              <Field label="Berat Panjang Combi" name="berat_panjang_combi" type="number" value={form.berat_panjang_combi} onChange={handleInputChange} />
-              <Field label="Satuan Berat Panjang Combi" name="satuan_berat_panjang_combi" value={form.satuan_berat_panjang_combi} onChange={handleInputChange} />
               <Field label="LD" name="LD" type={isMultiSkuMode ? "text" : "number"} value={isMultiSkuMode ? "Diisi di tabel" : form.LD} onChange={handleInputChange} disabled={isMultiSkuMode} />
               <Field label="PJ Dress" name="pj_dress" type="number" value={form.pj_dress} onChange={handleInputChange} />
               <Field label="PJ Celana" name="pj_celana" value={form.pj_celana} onChange={handleInputChange} />
               <Field label="PJ Baju" name="pj_baju" type="number" value={form.pj_baju} onChange={handleInputChange} />
+              <Field label="Berat Panjang" name="berat_panjang" type="number" value={form.berat_panjang} onChange={handleInputChange} />
+              <Field label="Satuan Berat Panjang" name="satuan_berat_panjang" value={form.satuan_berat_panjang} onChange={handleInputChange} />
+              <Field label="Berat Panjang Combi" name="berat_panjang_combi" type="number" value={form.berat_panjang_combi} onChange={handleInputChange} />
+              <Field label="Satuan Berat Panjang Combi" name="satuan_berat_panjang_combi" value={form.satuan_berat_panjang_combi} onChange={handleInputChange} />
+            </div>
+          </div>
+
+          <div className="product-list-form-section">
+            <h3>Harga & Estimasi</h3>
+            <div className="product-list-form-grid">
               <Field label="Price CMT" name="price_cmt" type="number" value={form.price_cmt} onChange={handleInputChange} />
-              <Field
-                label="Price Cutting"
-                name="price_cutting"
-                type="number"
-                value={form.price_cutting}
-                onChange={handleInputChange}
-              />
+              <Field label="Price Cutting" name="price_cutting" type="number" value={form.price_cutting} onChange={handleInputChange} />
+              <Field label="Estimasi Cutting" name="estimasi_cutting" type="number" value={form.estimasi_cutting} onChange={handleInputChange} />
+              <Field label="Estimasi Combi" name="estimasi_combi" type="number" value={form.estimasi_combi} onChange={handleInputChange} />
+            </div>
+          </div>
+
+          <div className="product-list-form-section">
+            <h3>Detail Tambahan (Gudang & Aksesoris)</h3>
+            <div className="product-list-form-grid">
+              <Field label="ID S" name="id_s" value={form.id_s} onChange={handleInputChange} />
+              <Field label="ID M" name="id_m" value={form.id_m} onChange={handleInputChange} />
+              <Field label="ID L" name="id_l" value={form.id_l} onChange={handleInputChange} />
+              <Field label="ID XL" name="id_xl" value={form.id_xl} onChange={handleInputChange} />
+              <Field label="Product Accecories" name="product_accecories" value={form.product_accecories} onChange={handleInputChange} />
+              <Field label="Product Accecories Colour" name="product_accecories_colour" value={form.product_accecories_colour} onChange={handleInputChange} />
             </div>
           </div>
 
@@ -1582,7 +1650,35 @@ const ProductList = () => {
                       <tr key={rowIndex} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ padding: "8px", color: "#64748b" }}>{rowIndex + 1}</td>
                         <td style={{ padding: "8px" }}>
-                          <input type="text" value={row.sku_name} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].sku_name = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "100%", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="SKU Varian" required />
+                          <GineeSkuAutocomplete
+                            hideLabel={true}
+                            value={row.sku_name}
+                            onChange={(e) => {
+                              setMultiSkuRows(prev => {
+                                const newRows = [...prev];
+                                newRows[rowIndex].sku_name = e.target.value;
+                                return newRows;
+                              });
+                            }}
+                            onSelectProduct={(gineeData) => {
+                              const parsed = parseGineeSku(gineeData.sku, gineeData.size);
+                              setMultiSkuRows(prev => {
+                                const newRows = [...prev];
+                                newRows[rowIndex].sku_name = gineeData.sku;
+                                newRows[rowIndex].product_size = gineeData.size || newRows[rowIndex].product_size;
+                                newRows[rowIndex].product_source = parsed.productSource || newRows[rowIndex].product_source;
+                                newRows[rowIndex].product_colour = gineeData.color || newRows[rowIndex].product_colour;
+                                return newRows;
+                              });
+                              setForm(prev => ({
+                                ...prev,
+                                product: prev.product || parsed.product,
+                                product_group: prev.product_group || parsed.productGroup,
+                                product_colour: prev.product_colour || gineeData.color,
+                                product_size: prev.product_size || gineeData.size
+                              }));
+                            }}
+                          />
                         </td>
                         <td style={{ padding: "8px" }}>
                           <input type="text" value={row.product_size} onChange={(e) => { const newRows = [...multiSkuRows]; newRows[rowIndex].product_size = e.target.value; setMultiSkuRows(newRows); }} style={{ width: "80px", padding: "8px", border: "1px solid #cbd5e1", borderRadius: "4px" }} placeholder="Size" />

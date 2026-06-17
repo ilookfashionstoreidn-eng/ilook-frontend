@@ -49,6 +49,7 @@ import PendapatanJasa from "./components/Jasa/PendapatanJasa";
 import HistoryPendapatanJasa from "./components/Jasa/HistoryPendapatanJasa";
 import HppProduk from "./components/Produk/HppProduk";
 import ProductList from "./components/Produk/ProductList";
+import GineeSkuList from "./components/Produk/GineeSkuList";
 import Packing from "./components/Packing/Packing";
 import PackingAccessGate from "./components/Packing/PackingAccessGate";
 import PackingBelumBarcode from "./components/Packing/PackingBelumBarcode";
@@ -199,6 +200,7 @@ const App = () => {
           <Route element={<MenuProtectedRoute menuKey="produk" />}>
             <Route path="hppProduk" element={<MenuProtectedRoute menuKey="produk:hpp"><HppProduk /></MenuProtectedRoute>} />
             <Route path="produk-list" element={<MenuProtectedRoute menuKey="produk:list"><ProductList /></MenuProtectedRoute>} />
+            <Route path="daftar-sku-ginee" element={<MenuProtectedRoute menuKey="produk:list"><GineeSkuList /></MenuProtectedRoute>} />
           </Route>
 
           {/* Packing Group */}

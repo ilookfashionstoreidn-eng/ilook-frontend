@@ -1129,7 +1129,7 @@
 
 .product-list-modal {
   position: relative;
-  width: min(1080px, calc(100vw - 36px));
+  width: min(1500px, calc(100vw - 36px));
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;

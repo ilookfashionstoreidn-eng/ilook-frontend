@@ -327,6 +327,13 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
+                    {hasAccess("produk:list") && (
+                      <li>
+                        <Link to="daftar-sku-ginee" className={`dropdown-link ${activeMenu === "daftar-sku-ginee" ? "active" : ""}`} onClick={() => handleMenuClick("daftar-sku-ginee")}>
+                          <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar SKU Ginee
+                        </Link>
+                      </li>
+                    )}
                   </ul>
                 )}
               </li>

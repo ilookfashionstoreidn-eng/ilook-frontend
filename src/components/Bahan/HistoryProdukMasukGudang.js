@@ -1,3 +1,6 @@
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import React, {
   startTransition,
   useDeferredValue,
@@ -13,6 +16,8 @@ import {
   FaSync,
   FaTimes,
   FaTrash,
+  FaFilePdf,
+  FaFileExcel,
 } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import { GudangStatCard } from "./GudangProdukSharedV2";
@@ -68,6 +73,8 @@ const formatDateTime = (value) => {
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
+const formatDateForFile = (value) => String(value || "").replace(/[^0-9]/g, "") || "semua";
+
 const HistoryProdukMasukGudang = () => {
   const today = getToday();
   const [rows, setRows] = useState([]);
@@ -88,6 +95,8 @@ const HistoryProdukMasukGudang = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -269,6 +278,223 @@ const HistoryProdukMasukGudang = () => {
     }
   };
 
+  const fetchAllExportRows = async () => {
+    const perPage = 200;
+    let page = 1;
+    let lastPage = 1;
+    const exportRows = [];
+
+    do {
+      const result = await fetchGudangProdukHistory({
+        page,
+        per_page: perPage,
+        search: query.search,
+        start_date: query.startDate,
+        end_date: query.endDate,
+        movement_type: "in",
+      });
+
+      exportRows.push(...result.data);
+      lastPage = Math.max(Number(result.pagination?.last_page) || 1, 1);
+      page += 1;
+    } while (page <= lastPage);
+
+    return exportRows;
+  };
+
+  const handleExportPdf = async () => {
+    if (isExportingPdf) return;
+    setIsExportingPdf(true);
+
+    try {
+      const exportRows = await fetchAllExportRows();
+      const generatedAt = new Date().toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const doc = new jsPDF("portrait", "mm", "a4");
+      const marginX = 10;
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(15, 23, 42);
+      doc.text("History Produk Masuk Gudang", marginX, 13);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Tanggal: ${query.startDate || "-"} s/d ${query.endDate || "-"}`, marginX, 19);
+      doc.text(`Search: ${query.search || "-"} | Export: ${generatedAt}`, marginX, 24);
+
+      const groupedMap = new Map();
+      exportRows.forEach(row => {
+        const dateObj = new Date(row.happenedAt || row.keluarPada);
+        const dateStr = Number.isNaN(dateObj.getTime()) ? (row.happenedAt || row.keluarPada || "-") : dateObj.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+        const sku = row.sku || "-";
+        const key = `${dateStr}___${sku}`;
+        
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            tgl: dateStr,
+            sku: sku,
+            qty: 0,
+            seriMap: new Map(),
+            sumberSet: new Set()
+          });
+        }
+        
+        const group = groupedMap.get(key);
+        const rowQty = Number(row.qty) || 0;
+        group.qty += rowQty;
+
+        const cleanSeri = (val) => {
+           let str = String(val || "").trim();
+           str = str.replace(/^Scan produk masuk\s*\|\s*Kode seri:\s*/i, "").trim();
+           str = str.replace(/\.\d+$/, "");
+           return str || "-";
+        };
+        
+        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => cleanSeri(s)).filter(Boolean);
+        if (rawSerials.length > 1 && rawSerials.length === rowQty) {
+            rawSerials.forEach(s => {
+                group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
+            });
+        } else {
+            const s = cleanSeri(row.kodeSeri);
+            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+        }
+
+        if (row.sourceLabel) {
+           group.sumberSet.add(row.sourceLabel);
+        }
+      });
+
+      const groupedRows = Array.from(groupedMap.values());
+      const totalQty = groupedRows.reduce((total, g) => total + g.qty, 0);
+      
+      doc.text(`Total baris unik: ${formatNumber(groupedRows.length)} | Total qty: ${formatNumber(totalQty)}`, marginX, 29);
+
+      const pdfBody = groupedRows.length > 0 ? groupedRows.map((g, index) => {
+        const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => `${s} (Qty ${count})`).join("\n");
+        const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+        
+        return [
+          index + 1,
+          g.tgl,
+          g.sku,
+          seriText,
+          formatNumber(g.qty),
+          sumberText,
+        ];
+      }) : [["-", "-", "Tidak ada data", "-", "-", "-"]];
+
+      doc.autoTable({
+        startY: 35,
+        head: [["No", "TGL", "SKU", "SERI", "QTY", "Sumber"]],
+        body: pdfBody,
+        theme: "grid",
+        margin: { left: marginX, right: marginX, top: 12, bottom: 12 },
+        styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak", valign: "middle", textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.15 },
+        headStyles: { fillColor: [36, 88, 206], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { cellWidth: 10, halign: "center" }, 1: { cellWidth: 25 }, 2: { cellWidth: 35 }, 3: { cellWidth: 50 }, 4: { cellWidth: 15, halign: "center" }, 5: { cellWidth: "auto" } },
+      });
+
+      const fileStart = formatDateForFile(query.startDate);
+      const fileEnd = formatDateForFile(query.endDate);
+      doc.save(`History_Produk_Masuk_${fileStart}_${fileEnd}.pdf`);
+    } catch (exportError) {
+      console.error(exportError);
+      setError(buildGudangWorkspaceErrorMessage(exportError, "Gagal export PDF history produk masuk."));
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (isExportingExcel) return;
+    setIsExportingExcel(true);
+
+    try {
+      const exportRows = await fetchAllExportRows();
+      
+      const groupedMap = new Map();
+      exportRows.forEach(row => {
+        const dateObj = new Date(row.happenedAt || row.keluarPada);
+        const dateStr = Number.isNaN(dateObj.getTime()) ? (row.happenedAt || row.keluarPada || "-") : dateObj.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+        const sku = row.sku || "-";
+        const key = `${dateStr}___${sku}`;
+        
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            tgl: dateStr,
+            sku: sku,
+            qty: 0,
+            seriMap: new Map(),
+            sumberSet: new Set()
+          });
+        }
+        
+        const group = groupedMap.get(key);
+        const rowQty = Number(row.qty) || 0;
+        group.qty += rowQty;
+        
+        const cleanSeri = (val) => {
+           let str = String(val || "").trim();
+           str = str.replace(/^Scan produk masuk\s*\|\s*Kode seri:\s*/i, "").trim();
+           str = str.replace(/\.\d+$/, "");
+           return str || "-";
+        };
+        
+        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => cleanSeri(s)).filter(Boolean);
+        if (rawSerials.length > 1 && rawSerials.length === rowQty) {
+            rawSerials.forEach(s => {
+                group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
+            });
+        } else {
+            const s = cleanSeri(row.kodeSeri);
+            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+        }
+
+        if (row.sourceLabel) {
+           group.sumberSet.add(row.sourceLabel);
+        }
+      });
+
+      const groupedRows = Array.from(groupedMap.values());
+      const excelData = groupedRows.length > 0 ? groupedRows.map((g, index) => {
+        const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => `${s} (Qty ${count})`).join("\n");
+        const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+        
+        return {
+          "No": index + 1,
+          "Tanggal": g.tgl,
+          "SKU": g.sku,
+          "Kode Seri": seriText,
+          "QTY": g.qty,
+          "Sumber": sumberText,
+        };
+      }) : [{
+        "No": "-",
+        "Tanggal": "-",
+        "SKU": "Tidak ada data",
+        "Kode Seri": "-",
+        "QTY": "-",
+        "Sumber": "-",
+      }];
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "History Produk Masuk");
+      
+      const fileStart = formatDateForFile(query.startDate);
+      const fileEnd = formatDateForFile(query.endDate);
+      XLSX.writeFile(workbook, `History_Produk_Masuk_${fileStart}_${fileEnd}.xlsx`);
+    } catch (exportError) {
+      console.error(exportError);
+      setError(buildGudangWorkspaceErrorMessage(exportError, "Gagal export Excel history produk masuk."));
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
   const isInitialLoading = isLoading && !hasLoadedOnce;
   const isRefreshing = isLoading && hasLoadedOnce;
   const activeSearch = query.search;
@@ -306,6 +532,20 @@ const HistoryProdukMasukGudang = () => {
       onSearchChange={setSearchInput}
       searchPlaceholder="Cari SKU atau kode seri..."
       headerActions={[
+        {
+          key: "export-history-produk-excel",
+          label: isExportingExcel ? "Menyiapkan Excel..." : "Export Excel",
+          icon: FaFileExcel,
+          onClick: handleExportExcel,
+          disabled: isExportingExcel || isInitialLoading,
+        },
+        {
+          key: "export-history-produk-pdf",
+          label: isExportingPdf ? "Menyiapkan PDF..." : "Export PDF",
+          icon: FaFilePdf,
+          onClick: handleExportPdf,
+          disabled: isExportingPdf || isInitialLoading,
+        },
         {
           key: "refresh-history-produk",
           label: "Refresh",
