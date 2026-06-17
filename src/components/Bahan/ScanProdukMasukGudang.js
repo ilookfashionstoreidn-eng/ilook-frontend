@@ -21,6 +21,26 @@ const formatTanggal = (value) => {
   });
 };
 
+const formatTanggalPendek = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const isOlderThan15Days = (value) => {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  return diffDays > 15;
+};
+
 const ScanProdukMasukGudang = () => {
   const scanInputRef = useRef(null);
   const barcodeTimeoutRef = useRef(null);
@@ -899,6 +919,13 @@ const ScanProdukMasukGudang = () => {
                             filteredSeriList.map((seriItem) => {
                               const isSelected = selectedSeriId === seriItem.id;
                               const scanned = seriItem.scanned_count ?? 0;
+                              const jumlah = seriItem.jumlah ?? 0;
+                              const isFullyScanned = jumlah > 0 && scanned >= jumlah;
+                              const isOld = isOlderThan15Days(seriItem.created_at);
+
+                              // Sembunyikan jika sudah fully scanned atau lebih dari 15 hari
+                              if (isFullyScanned || isOld) return null;
+
                               return (
                                 <button
                                   key={seriItem.id}
@@ -924,12 +951,22 @@ const ScanProdukMasukGudang = () => {
                                     {seriItem.nomor_seri}
                                   </div>
                                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                                    SKU: {seriItem.sku} &bull; Progress: {scanned} / {seriItem.jumlah} pcs
+                                    SKU: {seriItem.sku} &bull; Progress: {scanned} / {jumlah} pcs
+                                  </div>
+                                  <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>
+                                    Dibuat: {formatTanggalPendek(seriItem.created_at)}
                                   </div>
                                 </button>
                               );
                             })
-                          ) : (
+                          ) : null}
+                          {filteredSeriList.filter((seriItem) => {
+                            const scanned = seriItem.scanned_count ?? 0;
+                            const jumlah = seriItem.jumlah ?? 0;
+                            const isFullyScanned = jumlah > 0 && scanned >= jumlah;
+                            const isOld = isOlderThan15Days(seriItem.created_at);
+                            return !isFullyScanned && !isOld;
+                          }).length === 0 && (
                             <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>
                               Nomor seri tidak ditemukan.
                             </div>
@@ -1216,10 +1253,14 @@ const ScanProdukMasukGudang = () => {
                       const isCancelled = Boolean(print.is_cancelled);
                       const isScanned = Boolean(print.is_scanned);
                       const isCanceling = cancelingPrintKey === print.barcode_seri;
-                      const borderColor = isCancelled ? "#fecaca" : isScanned ? "#a7f3d0" : "#e2e8f0";
-                      const backgroundColor = isCancelled ? "#fff1f2" : isScanned ? "#f0fdf4" : "#ffffff";
-                      const textColor = isCancelled ? "#be123c" : isScanned ? "#15803d" : "#475569";
-                      const dotColor = isCancelled ? "#ef4444" : isScanned ? "#10b981" : "#94a3b8";
+
+                      // Sembunyikan card yang sudah di-scan
+                      if (isScanned) return null;
+
+                      const borderColor = isCancelled ? "#fecaca" : "#e2e8f0";
+                      const backgroundColor = isCancelled ? "#fff1f2" : "#ffffff";
+                      const textColor = isCancelled ? "#be123c" : "#475569";
+                      const dotColor = isCancelled ? "#ef4444" : "#94a3b8";
 
                       return (
                         <div
@@ -1248,24 +1289,11 @@ const ScanProdukMasukGudang = () => {
                             }} />
                           </div>
 
-                          <span style={{ fontFamily: "monospace", fontSize: "11px", color: isCancelled ? "#9f1239" : isScanned ? "#166534" : "#64748b" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: "11px", color: isCancelled ? "#9f1239" : "#64748b" }}>
                             {print.barcode_seri}
                           </span>
 
-                          {isScanned ? (
-                            <div style={{
-                              marginTop: "4px",
-                              fontSize: "10px",
-                              color: "#15803d",
-                              fontWeight: 600,
-                              background: "#d1fae5",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              width: "fit-content"
-                            }}>
-                              {print.slot_code}
-                            </div>
-                          ) : isCancelled ? (
+                          {isCancelled ? (
                             <div style={{
                               marginTop: "4px",
                               fontSize: "10px",
@@ -1317,6 +1345,21 @@ const ScanProdukMasukGudang = () => {
                         </div>
                       );
                     })}
+                    {orderedSeriPrints.every((p) => Boolean(p.is_scanned)) && orderedSeriPrints.length > 0 && (
+                      <div style={{
+                        gridColumn: "1 / -1",
+                        textAlign: "center",
+                        padding: "32px 16px",
+                        color: "#15803d",
+                        background: "#f0fdf4",
+                        borderRadius: "10px",
+                        border: "1px solid #a7f3d0"
+                      }}>
+                        <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>Semua kode seri sudah di-scan!</div>
+                        <div style={{ fontSize: 12, color: "#166534", marginTop: 4 }}>Nomor seri ini telah selesai diproses.</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
