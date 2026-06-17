@@ -1253,14 +1253,10 @@ const ScanProdukMasukGudang = () => {
                       const isCancelled = Boolean(print.is_cancelled);
                       const isScanned = Boolean(print.is_scanned);
                       const isCanceling = cancelingPrintKey === print.barcode_seri;
-
-                      // Sembunyikan card yang sudah di-scan
-                      if (isScanned) return null;
-
-                      const borderColor = isCancelled ? "#fecaca" : "#e2e8f0";
-                      const backgroundColor = isCancelled ? "#fff1f2" : "#ffffff";
-                      const textColor = isCancelled ? "#be123c" : "#475569";
-                      const dotColor = isCancelled ? "#ef4444" : "#94a3b8";
+                      const borderColor = isCancelled ? "#fecaca" : isScanned ? "#a7f3d0" : "#e2e8f0";
+                      const backgroundColor = isCancelled ? "#fff1f2" : isScanned ? "#f0fdf4" : "#ffffff";
+                      const textColor = isCancelled ? "#be123c" : isScanned ? "#15803d" : "#475569";
+                      const dotColor = isCancelled ? "#ef4444" : isScanned ? "#10b981" : "#94a3b8";
 
                       return (
                         <div
@@ -1289,11 +1285,24 @@ const ScanProdukMasukGudang = () => {
                             }} />
                           </div>
 
-                          <span style={{ fontFamily: "monospace", fontSize: "11px", color: isCancelled ? "#9f1239" : "#64748b" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: "11px", color: isCancelled ? "#9f1239" : isScanned ? "#166534" : "#64748b" }}>
                             {print.barcode_seri}
                           </span>
 
-                          {isCancelled ? (
+                          {isScanned ? (
+                            <div style={{
+                              marginTop: "4px",
+                              fontSize: "10px",
+                              color: "#15803d",
+                              fontWeight: 600,
+                              background: "#d1fae5",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              width: "fit-content"
+                            }}>
+                              {print.slot_code || selectedSlot?.slotCode || "✓ Scanned"}
+                            </div>
+                          ) : isCancelled ? (
                             <div style={{
                               marginTop: "4px",
                               fontSize: "10px",
