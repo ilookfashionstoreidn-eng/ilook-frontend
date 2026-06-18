@@ -2813,7 +2813,7 @@ const SpkCmt = () => {
                 <div className="spkcmt-detail-photo-panel">
                   <div className="spkcmt-detail-visual-card-full">
                     {selectedSpk.gambar_produk ? (
-                      <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${selectedSpk.gambar_produk}`} alt="Gambar Produk" className="spkcmt-detail-image-full" />
+                      <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${selectedSpk.gambar_produk}`} alt="Produk SPK" className="spkcmt-detail-image-full" />
                     ) : (
                       <div className="spkcmt-detail-image-placeholder-full">
                         <FaImage size={48} style={{ opacity: 0.5, marginBottom: 8 }} />

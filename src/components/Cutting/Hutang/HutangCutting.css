@@ -30,7 +30,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 24px;
-  background: #ffffff;
+  background: var(--surface);
   border-bottom: 1px solid #e4e9f0;
 }
 
@@ -131,12 +131,12 @@
 
 .hutang-cutting-erp-search-input:hover {
   border-color: #b6c2d6;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .hutang-cutting-erp-search-input:focus {
   border-color: #2458ce;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
@@ -166,7 +166,7 @@
   height: 38px;
   border: 1px solid #d1dbe8;
   border-radius: 9px;
-  background: #ffffff;
+  background: var(--surface);
   color: #334155;
   display: inline-flex;
   align-items: center;
@@ -220,7 +220,7 @@
 }
 
 .hutang-cutting-erp-stat-item {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid #e4e9f0;
   border-radius: 10px;
   padding: 12px 14px;
@@ -259,7 +259,7 @@
 }
 
 .hutang-cutting-erp-table-wrapper {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid #e4e9f0;
   border-radius: 16px;
   overflow: hidden;
@@ -291,7 +291,7 @@
 .hutang-cutting-erp-empty-state {
   text-align: center;
   padding: 44px 16px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .hutang-cutting-erp-loading.inline,
@@ -509,7 +509,7 @@
   width: min(96vw, 860px);
   max-height: 92vh;
   overflow-y: auto;
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid #dce5f1;
   border-radius: 14px;
   box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24);
@@ -546,7 +546,7 @@
   height: 34px;
   border: 1px solid #d4dce8;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   color: #64748b;
   cursor: pointer;
   display: inline-flex;
@@ -592,7 +592,7 @@
   width: 100%;
   border: 1px solid #d9e2ef;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   padding: 10px 12px;
   font-size: 14px;
@@ -690,7 +690,7 @@
 
 .hutang-cutting-erp-btn-secondary {
   border: 1px solid #d4dce8;
-  background: #ffffff;
+  background: var(--surface);
   color: #475569;
 }
 
@@ -708,7 +708,7 @@
 .hutang-cutting-erp-info-item {
   border: 1px solid #dde5f0;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 10px;
 }
 
@@ -732,7 +732,7 @@
   margin-top: 16px;
   border: 1px solid #dde5f0;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 12px;
 }
 
@@ -754,7 +754,7 @@
 .hutang-cutting-erp-history-header select {
   border: 1px solid #d9e2ef;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   padding: 7px 10px;
   font-size: 12px;

@@ -3,9 +3,9 @@
   justify-content: space-between; /* Pisahkan elemen ke kiri dan kanan */
   align-items: center; /* Ratakan elemen secara vertikal */
   padding: 10px 20px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   border-radius: 10px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border);
   margin-top: 10px;
 }
 
@@ -88,8 +88,8 @@ border-color: #356191;
 .filter-select1 option {
   font-size: 13px;
   padding: 10px; /* Atur padding agar lebih luas */
-  background-color: #f8f9fa; /* Warna background default */
-  color: #333; /* Warna teks */
+  background-color: var(--surface-2); /* Warna background default */
+  color: var(--text); /* Warna teks */
   font-weight: 500;
   transition: background 0.3s ease;
 }
@@ -139,15 +139,15 @@ border-color: #356191;
 .table-wrapper {
   max-height: 625px; /* Atur tinggi maksimum agar tabel bisa di-scroll */
   overflow-y: auto; /* Scroll hanya di dalam tabel */
-  border: 1px solid #ddd; /* Opsional: Tambahkan border untuk pembatas */
+  border: 1px solid var(--border); /* Opsional: Tambahkan border untuk pembatas */
   border-radius: 8px;
-  background: white;
+  background: var(--surface);
 }
 .table-container {
   padding: 7px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   border-radius: 10px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border);
   margin-top: 4px;
   overflow-x: auto;
   width: 100%;
@@ -161,7 +161,7 @@ border-color: #356191;
   width: 100%;
   border-collapse: collapse;
   margin: 0px 0;
-  background-color: #fff;
+  background-color: var(--surface);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -222,7 +222,7 @@ border-color: #356191;
 
 .btn1{
   background-color: #b9b9b9;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   padding: 5px 10px;
   cursor: pointer;
   border-radius: 5px;
@@ -301,9 +301,9 @@ border-color: #356191;
 
   .penjahit-table tr {
     margin-bottom: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: #ffffff;
+    background: var(--surface);
     padding: 0px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
    
@@ -383,7 +383,7 @@ border-color: #356191;
 }
   
   .modal-content {
-    background-color: #ffffff;
+    background-color: var(--surface);
     padding: 30px 30px; /* Atas-bawah: 20px, Kiri-kanan: 15px */
     border-radius:20px;
     width: 750px;
@@ -439,13 +439,13 @@ border-color: #356191;
     padding: 5px 10px;
     cursor: pointer;
     background-color: #f4f4f4;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 5px;
   }
   
   button[type="button"] {
     background-color: #b9b9b9;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     padding: 5px 10px;
     cursor: pointer;
     border-radius: 5px;
@@ -473,7 +473,7 @@ border-color: #356191;
   .modern-form textarea {
     width: 95%;
     padding: 12px 15px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 16px;
     background-color: #f5f7f8;
     color:#707274;
@@ -512,8 +512,8 @@ border-color: #356191;
   
   
   .btn-cancel {
-    background-color: #e0e0e0;
-    color: #555555;
+    background-color: var(--border);
+    color: var(--muted);
   }
   
   .btn-cancel:hover {
@@ -545,7 +545,7 @@ border-color: #356191;
   
   .spk-cmt-table th,
   .spk-cmt-table td {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     padding: 8px;
     text-align: center;
   }
@@ -557,8 +557,8 @@ border-color: #356191;
   .spk-form {
     margin-top: 20px;
     padding: 20px;
-    border: 1px solid #ddd;
-    background-color: #f9f9f9;
+    border: 1px solid var(--border);
+    background-color: var(--surface-2);
   }
   
   .spk-form div {
@@ -576,7 +576,7 @@ border-color: #356191;
   .spk-form select {
     width: 100%;                                             
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 4px;
   }
   
@@ -609,7 +609,7 @@ border-color: #356191;
   }
   
   .detail-card-content {
-    background-color: white;
+    background-color: var(--surface);
     padding: 20px;
     width: 80%;
     max-width: 600px;
@@ -630,7 +630,7 @@ border-color: #356191;
 
 /* Popup Card */
 .popup1-card {
-  background: #ffffff;
+  background: var(--surface);
   width: 100%;
   max-width: 500px;
   border-radius: 20px;
@@ -682,7 +682,7 @@ border-color: #356191;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 15px;
   padding: 10px;
   width: 180px;
@@ -720,9 +720,9 @@ border-color: #356191;
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
-  color: #333;
+  color: var(--text);
   max-width: 270px;
  
 }
@@ -749,7 +749,7 @@ border-color: #356191;
 
 .notif-icon {
   font-size: 24px;
-  color: #555;
+  color: var(--muted);
   transition: color 0.3s ease;
 }
 
@@ -782,7 +782,7 @@ border-color: #356191;
 }
 
 .popup-content1 {
-  background: white;
+  background: var(--surface);
   padding: 20px;
   width: 400px;
   max-width: 100%;
@@ -809,7 +809,7 @@ border-color: #356191;
 }
 
 .notif-item {
-  background: #f8f9fa;
+  background: var(--surface-2);
   padding: 10px;
   margin: 5px 0;
   border-radius: 6px;
@@ -820,12 +820,12 @@ border-color: #356191;
 }
 
 .notif-item:hover {
-  background: #e9ecef;
+  background: var(--border);
 }
 
 .notif-text {
   font-size: 14px;
-  color: #333;
+  color: var(--text);
 }
 
 .notif-time {
@@ -869,7 +869,7 @@ border-color: #356191;
   }
 }
   .modal-card {
-    background-color: #ffffff;
+    background-color: var(--surface);
   border-radius: 8px;
   width: 90%;
   max-width: 600px;
@@ -903,7 +903,7 @@ border-color: #356191;
   .modal-body {
     padding: 16px;
     font-size: 0.95rem;
-    color: #333;
+    color: var(--text);
   }
   
   .modal-body h4 {
@@ -912,8 +912,8 @@ border-color: #356191;
   }
   
   .log-item {
-    background: #f9f9f9;
-    border: 1px solid #ddd;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 8px;
     margin-bottom: 8px;
@@ -927,7 +927,7 @@ border-color: #356191;
   .modal-footer {
     padding: 16px;
     text-align: right;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--border);
   }
   
   .btn-close {
@@ -979,7 +979,7 @@ border-color: #356191;
 }
 
 .modal-bayar .modal-content {
-  background-color: #fff;
+  background-color: var(--surface);
   border-radius: 8px;
   padding: 30px;
   max-width: 500px;
@@ -1002,7 +1002,7 @@ border-color: #356191;
 /* Header */
 .modal-bayar h2 {
   font-size: 14PXx;
-  color: #333;
+  color: var(--text);
   text-align: center;
 }
 
@@ -1022,15 +1022,15 @@ border-color: #356191;
   width: 100%;
   padding: 10px;
   border-radius: 5px;
-  border: 1px solid #ddd;
-  background-color: #ffffff;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
   transition: border 0.3s ease;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   border-color: #007bff;
-  background-color: #fff;
+  background-color: var(--surface);
   outline: none;
 }
 
@@ -1130,7 +1130,7 @@ border-color: #356191;
 
 /* Modal content for Pendapatan */
 .modal-pendapatan-content {
-  background-color: #fff;
+  background-color: var(--surface);
   padding: 20px;
   border-radius: 10px;
   width: 80%;
@@ -1145,7 +1145,7 @@ border-color: #356191;
   background-color: transparent;
   border: none;
   font-size: 2rem;
-  color: #333;
+  color: var(--text);
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1156,7 +1156,7 @@ border-color: #356191;
 .modal-pendapatan h2 {
   font-size: 1.5rem;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text);
 }
 
 /* Table styling for Pendapatan */
@@ -1170,17 +1170,17 @@ border-color: #356191;
 .table-pendapatan td {
   padding: 15px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
 }
 
 .table-pendapatan th {
   background-color: #f4f4f4;
   font-weight: bold;
-  color: #333;
+  color: var(--text);
 }
 
 .table-pendapatan td {
-  background-color: #fafafa;
+  background-color: var(--surface-2);
 }
 
 .table-pendapatan tbody tr:hover {
@@ -1232,7 +1232,7 @@ border-color: #356191;
 }
 
 .modal-content-pengiriman {
-  background: white;
+  background: var(--surface);
   padding: 20px;
   border-radius: 15px;
   width: 700px;
@@ -1264,7 +1264,7 @@ border-color: #356191;
 
 .modal-content-pengiriman table th,
 .modal-content-pengiriman table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   padding: 8px;
   text-align: left;
 }
@@ -1272,11 +1272,11 @@ border-color: #356191;
 .modal-content-pengiriman table th {
   background-color: #f4f4f4;
   font-weight: bold;
-  color: #333;
+  color: var(--text);
 }
 
 .modal-content-pengiriman table tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: var(--surface-2);
 }
 
 .modal-content-pengiriman table tr:hover {
@@ -1307,7 +1307,7 @@ border-color: #356191;
 }
 
 .modal-content-pengiriman table td {
-  color: #555;
+  color: var(--muted);
 }
 .btn-pengiriman-detail1 {
   background-color: #e2e2e2; 
@@ -1382,7 +1382,7 @@ border-color: #356191;
 .pagination-info {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--text);
   padding: 5px 10px;
   background: #f3f4f6;
   border-radius: 6px;
@@ -1416,7 +1416,7 @@ border-color: #356191;
 
 /* Chat Popup Box */
 .chat-popup {
-  background: #ffffff;
+  background: var(--surface);
   width: 90%;  /* Ubah ke persentase agar fleksibel */
   max-width: 440px; /* Batasi maksimal 440px */
   min-width: 130px; /* Biarkan mengecil hingga 200px */
@@ -1470,7 +1470,7 @@ border-color: #356191;
   flex-grow: 1;
   overflow-y: auto;
   padding: 10px;
-  background: #f8f9fa;
+  background: var(--surface-2);
   display: flex;
   flex-direction: column;
   height: 505px;
@@ -1511,7 +1511,7 @@ border-color: #356191;
 }
 
 .partner-message {
-  background: #e9ecef;
+  background: var(--border);
   color: black;
   align-self: flex-start;
 }
@@ -1521,7 +1521,7 @@ border-color: #356191;
   display: flex;
   align-items: center;
   padding: 10px;
-  background: white;
+  background: var(--surface);
   border-top: 1px solid #99a5ca;
   position: sticky;
   gap: 5px;
@@ -1530,7 +1530,7 @@ border-color: #356191;
 .chat-input input {
   flex: 1;
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 10px;
   width: 100%;
 }
@@ -1545,11 +1545,11 @@ border-color: #356191;
   border: 1px solid #ffffff;
   transition: 0.3s;
   font-size: 14px;
-  color: #555;
+  color: var(--muted);
 }
 
 .image-upload-label:hover {
-  background: #e0e0e0;
+  background: var(--border);
 }
 
 .upload-icon {
@@ -1600,7 +1600,7 @@ border-color: #356191;
 
 /* Tombol Hapus VN */
 .delete-vn {
-  background-color: #ffffff;
+  background-color: var(--surface);
   color: white;
   border: none;
   padding: 6px 10px;
@@ -1647,7 +1647,7 @@ border-color: #356191;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--surface);
   padding: 10px;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -1672,7 +1672,7 @@ border-color: #356191;
   padding: 7px 8px;
   font-size: 14px;
   border-radius: 5px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
 }
 
 .modal-invite-content button {
@@ -1726,10 +1726,10 @@ border-color: #356191;
   justify-content: center;
   width: 100px;
   height: 100px;
-  border: 1px solid #ddd; /* Garis pinggir tipis */
+  border: 1px solid var(--border); /* Garis pinggir tipis */
   border-radius: 8px; /* Membuat sudut membulat */
   overflow: hidden; /* Menghindari gambar keluar batas */
-  background-color: #f9f9f9; /* Background abu-abu muda */
+  background-color: var(--surface-2); /* Background abu-abu muda */
 }
 
 .gambar-produk {
@@ -1761,7 +1761,7 @@ border-color: #356191;
 
 .log-table th, .log-table td {
   padding: 10px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
   text-align: left;
 }
 
@@ -1778,7 +1778,7 @@ border-color: #356191;
 .no-logs {
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: var(--muted);
   margin-top: 10px;
 }
 .status-text {
@@ -1892,10 +1892,10 @@ border-color: #356191;
 /* Select box */
 .filter-select {
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
-  background-color: #fff;
+  background-color: var(--surface);
   transition: border-color 0.3s;
 }
 
@@ -1915,18 +1915,18 @@ border-color: #356191;
 .date-field label {
   display: block;
   font-size: 12px;
-  color: #555;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
 /* Input tanggal */
 .date-input {
   padding: 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
   width: 150px;
-  background-color: #fff;
+  background-color: var(--surface);
   transition: border-color 0.3s;
 }
 
@@ -1982,7 +1982,7 @@ border-color: #356191;
 }
 
 .modal-content-hutang {
-  background: #fff;
+  background: var(--surface);
   padding: 20px 30px;
   border-radius: 20px;
   width: 600px;
@@ -2010,7 +2010,7 @@ border-color: #356191;
 .form-group-hutang input,
 .form-group-hutang select {
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 5px;
 }
 
@@ -2047,7 +2047,7 @@ border-color: #356191;
   text-align: center;
   margin-bottom: 20px;
   font-size: 24px;
-  color: #333;
+  color: var(--text);
 }
 
 
@@ -2056,7 +2056,7 @@ border-color: #356191;
 }
 
 .react-select__control {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 3px;
 }

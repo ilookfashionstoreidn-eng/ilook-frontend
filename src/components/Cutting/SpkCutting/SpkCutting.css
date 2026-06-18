@@ -292,7 +292,7 @@ select option:disabled {
 .spk-cutting-search-bar input {
   font-family: inherit;
   border: 1px solid #d7deea;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   border-radius: 8px;
   outline: none;
@@ -441,7 +441,7 @@ select option:disabled {
   font-weight: 600;
   color: #334155;
   border-color: var(--erp-border-strong);
-  background: #ffffff;
+  background: var(--surface);
   cursor: pointer;
 }
 
@@ -457,7 +457,7 @@ select option:disabled {
   height: 38px;
   padding: 0 36px 0 14px;
   font-size: 13px;
-  background: #ffffff;
+  background: var(--surface);
   border-color: #cfd8e3;
 }
 
@@ -536,7 +536,7 @@ select option:disabled {
 }
 
 .spk-cutting-table tbody tr:nth-child(odd) {
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .spk-cutting-table tbody tr:nth-child(even) {
@@ -664,7 +664,7 @@ select option:disabled {
 }
 
 .spk-cutting-status-select option {
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
 }
 
@@ -763,7 +763,7 @@ select option:disabled {
   height: 32px;
   border: 1px solid var(--erp-border-strong);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 0 12px;
   display: inline-flex;
   align-items: center;
@@ -788,7 +788,7 @@ select option:disabled {
 .spk-cutting-modal-content {
   border-radius: 14px;
   border: 1px solid #e4e9f0;
-  background: #ffffff;
+  background: var(--surface);
   padding: 24px;
   width: 100%;
   max-width: 1020px;
@@ -851,7 +851,7 @@ select option:disabled {
 
 .spk-cutting-create-header {
   border-bottom: 1px solid #dfe7f2;
-  background: #ffffff;
+  background: var(--surface);
   padding: 14px 26px 12px;
   display: flex;
   align-items: center;
@@ -862,7 +862,7 @@ select option:disabled {
 
 .spk-cutting-wizard-steps {
   border-bottom: 1px solid #dfe7f2;
-  background: #ffffff;
+  background: var(--surface);
   padding: 10px 28px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1029,7 +1029,7 @@ select option:disabled {
 .spk-cutting-create-section {
   border: 1px solid #dbe4f0;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -1100,7 +1100,7 @@ select option:disabled {
 
 
 .spk-cutting-form-group-section {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 16px;
@@ -1161,7 +1161,7 @@ select option:disabled {
   min-height: 36px;
   border-color: #cfd9e8;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .spk-cutting-modal-content-create .spk-cutting-form-group textarea {
@@ -1299,7 +1299,7 @@ select option:disabled {
 .spk-cutting-create-actions {
   margin-top: 0;
   border-top: 1px solid #dfe7f2;
-  background: #ffffff;
+  background: var(--surface);
   padding: 10px 26px;
   flex-shrink: 0;
   justify-content: space-between;
@@ -1409,7 +1409,7 @@ select option:disabled {
   padding: 8px;
   border: 1px solid #d5deeb;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -1427,7 +1427,7 @@ select option:disabled {
   overflow-y: visible;
   border: 1px solid #dbe5f4;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .spk-cutting-sku-table {
@@ -1468,7 +1468,7 @@ select option:disabled {
   margin-top: 4px;
   border: 1px solid #c7d8f1;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--surface);
   color: #2458ce;
   font-size: 10px;
   font-weight: 800;
@@ -1479,7 +1479,7 @@ select option:disabled {
 .spk-cutting-sku-table td {
   border-right: 1px solid #e4ebf6;
   border-bottom: 1px solid #edf2f8;
-  background: #ffffff;
+  background: var(--surface);
   padding: 4px 6px;
   vertical-align: top;
 }
@@ -1522,7 +1522,7 @@ select option:disabled {
 .spk-cutting-sku-size-header small {
   border: 1px solid #c7d8f1;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--surface);
   color: #2458ce;
   font-size: 11px;
   font-weight: 800;
@@ -1792,7 +1792,7 @@ select option:disabled {
 }
 
 .spk-cutting-btn-secondary {
-  background: #ffffff;
+  background: var(--surface);
   color: #334155;
   border: 1px solid #d1dbe8;
 }
@@ -1986,7 +1986,7 @@ select option:disabled {
 }
 
 .spk-swal-btn-cancel {
-  background: #ffffff !important;
+  background: var(--surface) !important;
   color: #334155 !important;
   border: 1px solid #d1dbe8 !important;
 }

@@ -36,7 +36,7 @@
 }
 
 .hasil-cutting-header-card {
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--hc-border);
   padding: 16px 24px;
   box-shadow: none;
@@ -236,12 +236,12 @@
 
 .hasil-cutting-target-filter-input:hover {
   border-color: #b6c2d6;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .hasil-cutting-target-filter-input:focus {
   border-color: #2458ce;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
@@ -317,7 +317,7 @@
   height: 38px;
   border: 1px solid #d3deea;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   font-size: 13px;
   font-weight: 500;
@@ -329,7 +329,7 @@
   outline: none;
   border-color: #2458ce;
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .hasil-cutting-table-search-clear {
@@ -400,7 +400,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: #fff;
+  background: var(--surface);
   border-radius: 0;
   overflow: hidden;
   box-shadow: none;
@@ -445,7 +445,7 @@
 .hasil-cutting-index-table tbody tr,
 .hasil-cutting-index-table tbody tr:nth-child(even),
 .hasil-cutting-index-table tbody tr:nth-child(odd) {
-  background: #ffffff !important;
+  background: var(--surface) !important;
   transform: none !important;
   box-shadow: none !important;
   display: table-row !important;
@@ -473,7 +473,7 @@
 }
 
 .hasil-cutting-index-table td {
-  background: #ffffff !important;
+  background: var(--surface) !important;
   color: #1e293b !important;
   border-bottom: 1px solid #edf2f7 !important;
   padding: 10px 14px !important;
@@ -647,7 +647,7 @@
 }
 
 .hasil-cutting-modal-content {
-  background-color: #fff;
+  background-color: var(--surface);
   border-radius: 14px;
   width: 100%;
   max-width: 1220px;
@@ -672,7 +672,7 @@
   align-items: center;
   margin-bottom: 0;
   padding: 18px 20px;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   border-radius: 14px 14px 0 0;
   border-bottom: 1px solid var(--hc-border);
@@ -694,7 +694,7 @@
   width: 34px;
   height: 34px;
   padding: 0;
-  background: #ffffff;
+  background: var(--surface);
   color: #64748b;
   border: 1px solid #d4dce8;
   border-radius: 8px;
@@ -819,7 +819,7 @@
 .hasil-cutting-modal-top-card {
   border: 1px solid #dde5f0;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 12px;
 }
 
@@ -847,7 +847,7 @@
   min-height: 42px;
   border: 1px solid #d7e0ea;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   color: #475569;
   font-size: 12px;
   font-weight: 700;
@@ -906,7 +906,7 @@
   min-height: 38px;
   border: 1px solid #d7e0ea;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   color: #334155;
   display: inline-flex;
   align-items: center;
@@ -963,7 +963,7 @@
 .hasil-cutting-intake-shell {
   border: 1px solid #e4e9f0;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 12px;
   margin-bottom: 0;
 }
@@ -1013,7 +1013,7 @@
 .hasil-cutting-original-reference-item {
   border: 1px solid #e3eaf3;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 10px;
 }
 
@@ -1049,7 +1049,7 @@
   margin-bottom: 16px;
   border: 1px solid #dde5f0;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 12px;
 }
 
@@ -1111,7 +1111,7 @@
   overflow-x: auto;
   border: 1px solid #dde5f0;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .hasil-cutting-entry-detail-table {
@@ -1177,7 +1177,7 @@
 }
 
 .hasil-cutting-modal-content-detail-erp .hasil-cutting-detail-table td {
-  background: #ffffff !important;
+  background: var(--surface) !important;
   color: #1e293b !important;
   border-bottom: 1px solid #eef2f7 !important;
 }
@@ -1480,7 +1480,7 @@
   border-radius: 8px;
   transition: all 0.2s ease;
   outline: none;
-  background: #fff;
+  background: var(--surface);
   color: #0f172a;
 }
 
@@ -1494,7 +1494,7 @@
   min-height: 38px;
   border: 1px solid #cfd8e3;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   font-size: 13px;
   font-weight: 500;
@@ -1508,7 +1508,7 @@
 
 .hasil-cutting-modal-body-form .hasil-cutting-input-erp:focus {
   border-color: #2458ce;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
@@ -1545,7 +1545,7 @@
   min-height: 34px;
   border: 1px solid #cfd8e3;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: none;
   display: flex;
   align-items: stretch;
@@ -1558,7 +1558,7 @@
 
 .hasil-cutting-cell-input-shell:focus-within {
   border-color: #2458ce;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
@@ -1711,7 +1711,7 @@
 
 .hasil-cutting-form-input-search:focus {
   border-color: #2458ce;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
 }
 
@@ -1729,7 +1729,7 @@
   margin-bottom: 22px;
   border: 1px solid #e4e9f0;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 12px;
   box-shadow: none;
 }
@@ -1761,7 +1761,7 @@
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   box-shadow: 0 20px 30px -20px rgba(15, 23, 42, 0.65);
   max-height: 300px;
@@ -1810,7 +1810,7 @@
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 20px 30px -20px rgba(15, 23, 42, 0.65);
@@ -1836,7 +1836,7 @@
 }
 
 .hasil-cutting-distribusi-panel {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid #dde5f0;
   border-radius: 12px;
   padding: 14px;

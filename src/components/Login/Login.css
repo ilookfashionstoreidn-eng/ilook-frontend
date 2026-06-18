@@ -75,7 +75,7 @@
 .login-right-content {
   width: 100%;
   max-width: 460px;
-  background: #ffffff;
+  background: var(--surface, #ffffff);
   border: 1px solid var(--border, #dde4ee);
   border-radius: 18px;
   box-shadow: 0 24px 50px -32px rgba(15, 23, 42, 0.35);
@@ -136,7 +136,7 @@
   height: 46px;
   border-radius: 10px;
   border: 1px solid var(--border-strong, #cfd8e6);
-  background: #ffffff;
+  background: var(--surface, #ffffff);
   color: var(--text, #0f172a);
   font-family: inherit;
   font-size: 14px;

@@ -54,7 +54,7 @@
 
 .cutting-date-filter {
   border: 1px solid rgba(148, 163, 184, 0.6);
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 999px;
   padding: 8px 16px;
   font-size: 14px;
@@ -120,7 +120,7 @@
 }
 
 .cutting-card {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
@@ -490,7 +490,7 @@
   position: absolute;
   top: 52px;
   right: 24px;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
   padding: 6px 0;
@@ -560,7 +560,7 @@
 }
 
 .performance-table tbody tr {
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .performance-table tbody tr + tr td {

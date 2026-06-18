@@ -130,7 +130,7 @@
   height: 42px;
   border-radius: 11px;
   border: 1px solid var(--ldp-border-soft);
-  background: #fff;
+  background: var(--surface);
   color: var(--ldp-text-muted);
   padding: 0 12px;
   display: inline-flex;
@@ -144,7 +144,7 @@
   height: 42px;
   border-radius: 50%;
   border: 1px solid var(--ldp-border-soft);
-  background: #fff;
+  background: var(--surface);
   color: #475569;
   display: inline-flex;
   align-items: center;
@@ -331,7 +331,7 @@
   height: 50px;
   border-radius: 12px;
   border: 1px solid #cfd8ea;
-  background: #ffffff;
+  background: var(--surface);
   color: #0f172a;
   font-size: 22px;
   font-weight: 800;
@@ -428,7 +428,7 @@
   width: 100%;
   border: 1px solid var(--ldp-border-soft);
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   padding: 12px;
   display: flex;
   align-items: center;
@@ -594,7 +594,7 @@
 
 .ldp-feedback-card {
   min-height: 300px;
-  background: #fff;
+  background: var(--surface);
   border-radius: 18px;
   border: 1px solid var(--ldp-border-soft);
   box-shadow: var(--ldp-shadow-card);
