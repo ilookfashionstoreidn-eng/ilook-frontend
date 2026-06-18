@@ -75,6 +75,13 @@ const getToday = () => new Date().toISOString().slice(0, 10);
 
 const formatDateForFile = (value) => String(value || "").replace(/[^0-9]/g, "") || "semua";
 
+const formatBaseKodeSeri = (val) => {
+  let str = String(val || "").trim();
+  str = str.replace(/^Scan produk masuk\s*\|\s*Kode seri:\s*/i, "").trim();
+  str = str.replace(/\.\d+$/, "");
+  return str || "-";
+};
+
 const HistoryProdukMasukGudang = () => {
   const today = getToday();
   const [rows, setRows] = useState([]);
@@ -97,6 +104,7 @@ const HistoryProdukMasukGudang = () => {
   const [error, setError] = useState("");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [viewMode, setViewMode] = useState("detail");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -336,33 +344,32 @@ const HistoryProdukMasukGudang = () => {
             sku: sku,
             qty: 0,
             seriMap: new Map(),
-            sumberSet: new Set()
+            sumberSet: new Set(),
+            tujuanSet: new Set()
           });
         }
         
         const group = groupedMap.get(key);
         const rowQty = Number(row.qty) || 0;
         group.qty += rowQty;
-
-        const cleanSeri = (val) => {
-           let str = String(val || "").trim();
-           str = str.replace(/^Scan produk masuk\s*\|\s*Kode seri:\s*/i, "").trim();
-           str = str.replace(/\.\d+$/, "");
-           return str || "-";
-        };
         
-        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => cleanSeri(s)).filter(Boolean);
+        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => formatBaseKodeSeri(s)).filter(Boolean);
         if (rawSerials.length > 1 && rawSerials.length === rowQty) {
             rawSerials.forEach(s => {
                 group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
             });
         } else {
-            const s = cleanSeri(row.kodeSeri);
-            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+            const s = formatBaseKodeSeri(row.kodeSeri);
+            if (s && s !== "-") {
+              group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+            }
         }
 
         if (row.sourceLabel) {
            group.sumberSet.add(row.sourceLabel);
+        }
+        if (row.destinationLabel) {
+           group.tujuanSet.add(row.destinationLabel);
         }
       });
 
@@ -374,6 +381,7 @@ const HistoryProdukMasukGudang = () => {
       const pdfBody = groupedRows.length > 0 ? groupedRows.map((g, index) => {
         const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => `${s} (Qty ${count})`).join("\n");
         const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+        const tujuanText = Array.from(g.tujuanSet).join(", ") || "-";
         
         return [
           index + 1,
@@ -382,19 +390,20 @@ const HistoryProdukMasukGudang = () => {
           seriText,
           formatNumber(g.qty),
           sumberText,
+          tujuanText,
         ];
-      }) : [["-", "-", "Tidak ada data", "-", "-", "-"]];
+      }) : [["-", "-", "Tidak ada data", "-", "-", "-", "-"]];
 
       doc.autoTable({
         startY: 35,
-        head: [["No", "TGL", "SKU", "SERI", "QTY", "Sumber"]],
+        head: [["No", "TGL", "SKU", "SERI", "QTY", "Sumber", "Gudang / Rak"]],
         body: pdfBody,
         theme: "grid",
         margin: { left: marginX, right: marginX, top: 12, bottom: 12 },
         styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak", valign: "middle", textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.15 },
         headStyles: { fillColor: [36, 88, 206], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: { 0: { cellWidth: 10, halign: "center" }, 1: { cellWidth: 25 }, 2: { cellWidth: 35 }, 3: { cellWidth: 50 }, 4: { cellWidth: 15, halign: "center" }, 5: { cellWidth: "auto" } },
+        columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 22 }, 2: { cellWidth: 32 }, 3: { cellWidth: 45 }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 35 }, 6: { cellWidth: "auto" } },
       });
 
       const fileStart = formatDateForFile(query.startDate);
@@ -428,7 +437,8 @@ const HistoryProdukMasukGudang = () => {
             sku: sku,
             qty: 0,
             seriMap: new Map(),
-            sumberSet: new Set()
+            sumberSet: new Set(),
+            tujuanSet: new Set()
           });
         }
         
@@ -436,25 +446,23 @@ const HistoryProdukMasukGudang = () => {
         const rowQty = Number(row.qty) || 0;
         group.qty += rowQty;
         
-        const cleanSeri = (val) => {
-           let str = String(val || "").trim();
-           str = str.replace(/^Scan produk masuk\s*\|\s*Kode seri:\s*/i, "").trim();
-           str = str.replace(/\.\d+$/, "");
-           return str || "-";
-        };
-        
-        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => cleanSeri(s)).filter(Boolean);
+        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => formatBaseKodeSeri(s)).filter(Boolean);
         if (rawSerials.length > 1 && rawSerials.length === rowQty) {
             rawSerials.forEach(s => {
                 group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
             });
         } else {
-            const s = cleanSeri(row.kodeSeri);
-            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+            const s = formatBaseKodeSeri(row.kodeSeri);
+            if (s && s !== "-") {
+              group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+            }
         }
 
         if (row.sourceLabel) {
            group.sumberSet.add(row.sourceLabel);
+        }
+        if (row.destinationLabel) {
+           group.tujuanSet.add(row.destinationLabel);
         }
       });
 
@@ -462,6 +470,7 @@ const HistoryProdukMasukGudang = () => {
       const excelData = groupedRows.length > 0 ? groupedRows.map((g, index) => {
         const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => `${s} (Qty ${count})`).join("\n");
         const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+        const tujuanText = Array.from(g.tujuanSet).join(", ") || "-";
         
         return {
           "No": index + 1,
@@ -470,6 +479,7 @@ const HistoryProdukMasukGudang = () => {
           "Kode Seri": seriText,
           "QTY": g.qty,
           "Sumber": sumberText,
+          "Gudang / Rak": tujuanText,
         };
       }) : [{
         "No": "-",
@@ -478,6 +488,7 @@ const HistoryProdukMasukGudang = () => {
         "Kode Seri": "-",
         "QTY": "-",
         "Sumber": "-",
+        "Gudang / Rak": "-",
       }];
 
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -512,9 +523,71 @@ const HistoryProdukMasukGudang = () => {
       rows.map((row, index) => ({
         ...row,
         rowNumber: resultFrom + index,
+        kodeSeri: formatBaseKodeSeri(row.kodeSeri),
       })),
     [resultFrom, rows]
   );
+
+  const summaryRows = useMemo(() => {
+    if (viewMode !== "summary") return [];
+
+    const groupedMap = new Map();
+    rows.forEach(row => {
+      const dateObj = new Date(row.happenedAt || row.keluarPada);
+      const dateStr = Number.isNaN(dateObj.getTime()) ? (row.happenedAt || row.keluarPada || "-") : dateObj.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+      const sku = row.sku || "-";
+      const key = `${dateStr}___${sku}`;
+      
+      if (!groupedMap.has(key)) {
+        groupedMap.set(key, {
+          id: key,
+          tgl: dateStr,
+          sku: sku,
+          qty: 0,
+          seriMap: new Map(),
+          sumberSet: new Set(),
+          tujuanSet: new Set()
+        });
+      }
+      
+      const group = groupedMap.get(key);
+      const rowQty = Number(row.qty) || 0;
+      group.qty += rowQty;
+      
+      const rawSerials = String(row.kodeSeri || "-").split(",").map(s => formatBaseKodeSeri(s)).filter(Boolean);
+      if (rawSerials.length > 1 && rawSerials.length === rowQty) {
+          rawSerials.forEach(s => {
+              group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
+          });
+      } else {
+          const s = formatBaseKodeSeri(row.kodeSeri);
+          if (s && s !== "-") {
+            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+          }
+      }
+
+      if (row.sourceLabel) {
+         group.sumberSet.add(row.sourceLabel);
+      }
+      if (row.destinationLabel) {
+         group.tujuanSet.add(row.destinationLabel);
+      }
+    });
+
+    return Array.from(groupedMap.values()).map((g, index) => {
+      const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => count > 1 ? `${s} (Qty ${count})` : s).join(", ") || "-";
+      const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+      const tujuanText = Array.from(g.tujuanSet).join(", ") || "-";
+      
+      return {
+        ...g,
+        rowNumber: index + 1,
+        seriText,
+        sumberText,
+        tujuanText,
+      };
+    });
+  }, [rows, viewMode]);
 
   return (
     <GudangProdukBaseShell
@@ -668,7 +741,7 @@ const HistoryProdukMasukGudang = () => {
       </section>
 
       <section className="gudang-ui-panel gudang-history-table-panel">
-        <div className="gudang-ui-panel-head">
+        <div className="gudang-ui-panel-head" style={{ marginBottom: "16px" }}>
           <div>
             <h2>Tabel History Produk Masuk</h2>
             <p>Data berisi arah pergerakan, SKU, qty, kode seri/catatan, dan waktu aktivitas.</p>
@@ -678,6 +751,23 @@ const HistoryProdukMasukGudang = () => {
               Memperbarui hasil...
             </span>
           ) : null}
+        </div>
+
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+          <button 
+            type="button"
+            className={viewMode === "detail" ? "gudang-ui-button" : "gudang-ui-button-secondary"}
+            onClick={() => setViewMode("detail")}
+          >
+            Data Detail
+          </button>
+          <button 
+            type="button"
+            className={viewMode === "summary" ? "gudang-ui-button" : "gudang-ui-button-secondary"}
+            onClick={() => setViewMode("summary")}
+          >
+            Summary per SKU & Tanggal
+          </button>
         </div>
 
         {isInitialLoading ? (
@@ -693,61 +783,98 @@ const HistoryProdukMasukGudang = () => {
 
               <div className="gudang-ui-table-shell">
                 <table className="gudang-ui-table gudang-history-table">
-                  <thead>
-                    <tr>
-                      <th>Jenis</th>
-                      <th>SKU</th>
-                      <th>Qty</th>
-                      <th>Kode Seri / Catatan</th>
-                      <th>Sumber</th>
-                      <th>Tanggal</th>
-                      <th style={{ textAlign: "center" }}>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <span
-                            className={`gudang-history-movement-badge ${
-                              row.movementType === "in" ? "is-in" : "is-out"
-                            }`}
-                          >
-                            {row.movementLabel ||
-                              (row.movementType === "in"
-                                ? "Barang Masuk"
-                                : "Barang Keluar")}
-                          </span>
-                        </td>
-                        <td>
-                          <strong>{row.sku || "-"}</strong>
-                        </td>
-                        <td>{formatNumber(row.qty || 0)}</td>
-                        <td>{row.kodeSeri || "-"}</td>
-                        <td>{row.sourceLabel || "-"}</td>
-                        <td>{formatDateTime(row.happenedAt || row.keluarPada)}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {row.id.startsWith("activity-") && (
-                            <button
-                              type="button"
-                              className="gudang-ui-button-danger"
-                              style={{
-                                padding: "6px 10px",
-                                borderRadius: "8px",
-                                fontSize: "11px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px"
-                              }}
-                              onClick={() => handleDeleteItem(row)}
-                            >
-                              <FaTrash size={10} /> Hapus
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  {viewMode === "summary" ? (
+                    <>
+                      <thead>
+                        <tr>
+                          <th>No</th>
+                          <th>Tanggal</th>
+                          <th>SKU</th>
+                          <th>Qty Total</th>
+                          <th>Kode Seri</th>
+                          <th>Sumber</th>
+                          <th>Gudang / Rak</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {summaryRows.length > 0 ? summaryRows.map((row) => (
+                          <tr key={row.id}>
+                            <td>{row.rowNumber}</td>
+                            <td>{row.tgl}</td>
+                            <td><strong>{row.sku}</strong></td>
+                            <td>{formatNumber(row.qty)}</td>
+                            <td style={{ whiteSpace: "pre-wrap", maxWidth: "300px" }}>{row.seriText}</td>
+                            <td>{row.sumberText}</td>
+                            <td>{row.tujuanText}</td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan={7} style={{ textAlign: "center" }}>Tidak ada data summary pada halaman ini.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </>
+                  ) : (
+                    <>
+                      <thead>
+                        <tr>
+                          <th>Jenis</th>
+                          <th>SKU</th>
+                          <th>Qty</th>
+                          <th>Kode Seri / Catatan</th>
+                          <th>Sumber</th>
+                          <th>Gudang / Rak</th>
+                          <th>Tanggal</th>
+                          <th style={{ textAlign: "center" }}>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleRows.map((row) => (
+                          <tr key={row.id}>
+                            <td>
+                              <span
+                                className={`gudang-history-movement-badge ${
+                                  row.movementType === "in" ? "is-in" : "is-out"
+                                }`}
+                              >
+                                {row.movementLabel ||
+                                  (row.movementType === "in"
+                                    ? "Barang Masuk"
+                                    : "Barang Keluar")}
+                              </span>
+                            </td>
+                            <td>
+                              <strong>{row.sku || "-"}</strong>
+                            </td>
+                            <td>{formatNumber(row.qty || 0)}</td>
+                            <td>{row.kodeSeri || "-"}</td>
+                            <td>{row.sourceLabel || "-"}</td>
+                            <td>{row.destinationLabel || "-"}</td>
+                            <td>{formatDateTime(row.happenedAt || row.keluarPada)}</td>
+                            <td style={{ textAlign: "center" }}>
+                              {row.id.startsWith("activity-") && (
+                                <button
+                                  type="button"
+                                  className="gudang-ui-button-danger"
+                                  style={{
+                                    padding: "6px 10px",
+                                    borderRadius: "8px",
+                                    fontSize: "11px",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px"
+                                  }}
+                                  onClick={() => handleDeleteItem(row)}
+                                >
+                                  <FaTrash size={10} /> Hapus
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </>
+                  )}
                 </table>
               </div>
             </div>

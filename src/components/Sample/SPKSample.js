@@ -24,42 +24,31 @@ import {
 } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Select from "react-select";
+import html2canvas from "html2canvas";
+import CreatableSelect from "react-select/creatable";
 
 const initialForm = {
   id: null,
   nama_sample: "",
-  kategori_sample: "SET CELANA PANJANG",
+  kategori_sample: "SET",
   detail: "",
-  status_spk: "Normal",
-  status_proses: "Belum Kerjain Pola",
-  tahap_proses: "Pola Sample",
   keterangan_sample: "",
+  bahan_utama: { bahan: "", qty: "", satuan: "" },
+  bahan_kombinasi: [],
+  aksesoris: [],
+  warna_yang_akan_dikeluarkan: [],
+  harga_potong: "",
+  harga_cmt: "",
 };
 
 const kategoriOptions = [
-  "SET CELANA PANJANG",
-  "SET CELANA PENDEK",
-  "SET ROK",
+  "SET",
   "DASTER",
   "DRESS",
-  "BLOUSE",
   "GAMIS",
+  "KOKO",
   "KAOS",
-];
-
-const statusOptions = ["Urgent", "Normal"];
-const statusProsesOptions = [
-  "Belum Kerjain Pola",
-  "Menunggu ACC",
-  "Revisi",
-  "ACC",
-];
-const tahapProsesOptions = [
-  "Pola Sample",
-  "Cutting",
-  "Cutting Sample",
-  "Jahit Sample",
-  "Pengiriman",
 ];
 
 const SPKSample = () => {
@@ -82,12 +71,21 @@ const SPKSample = () => {
   const [tukangList, setTukangList] = useState([]);
   const [selectedTukangId, setSelectedTukangId] = useState("");
   const [assigning, setAssigning] = useState(false);
-  const [updatingStatusId, setUpdatingStatusId] = useState(null);
-  const [updatingTahapId, setUpdatingTahapId] = useState(null);
+  const [bahanList, setBahanList] = useState([]);
 
   useEffect(() => {
     fetchData();
+    fetchBahans();
   }, []);
+
+  const fetchBahans = async () => {
+    try {
+      const res = await API.get("/bahan", { params: { all: 1 } });
+      setBahanList(res.data?.data || res.data || []);
+    } catch (err) {
+      toast.error("Gagal mengambil data bahan.");
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -116,7 +114,7 @@ const SPKSample = () => {
       const response = await API.get("/spk-sample");
       setData(response.data?.data || []);
     } catch (error) {
-      toast.error("Gagal mengambil data SPK Sample.");
+      toast.error("Gagal mengambil data Data Sample.");
     } finally {
       setLoading(false);
     }
@@ -146,17 +144,93 @@ const SPKSample = () => {
     return data.filter((item) => {
       const nama = item.nama_sample?.toLowerCase() || "";
       const kategori = item.kategori_sample?.toLowerCase() || "";
-      const status = item.status_spk?.toLowerCase() || "";
-      const statusProses = item.status_proses?.toLowerCase() || "";
 
       return (
         nama.includes(keyword) ||
-        kategori.includes(keyword) ||
-        status.includes(keyword) ||
-        statusProses.includes(keyword)
+        kategori.includes(keyword)
       );
     });
   }, [data, search]);
+
+  const bahanOptions = useMemo(() => {
+    const uniqueGroups = [...new Set(bahanList.map((b) => b.group_bahan).filter(Boolean))];
+    return uniqueGroups.map((group) => ({ value: group, label: group }));
+  }, [bahanList]);
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      border: state.isFocused ? '1px solid #6366f1' : '1px solid #cbd5e1',
+      boxShadow: state.isFocused ? '0 0 0 4px rgba(99, 102, 241, 0.14)' : 'none',
+      borderRadius: '12px',
+      padding: '5px 4px',
+      fontFamily: 'inherit',
+      fontSize: '14px',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
+      '&:hover': {
+        borderColor: state.isFocused ? '#6366f1' : '#cbd5e1'
+      }
+    }),
+    menu: (provided) => ({
+      ...provided,
+      borderRadius: '12px',
+      overflow: 'hidden',
+      zIndex: 10
+    }),
+    option: (provided) => ({
+      ...provided,
+      fontFamily: 'inherit',
+      fontSize: '14px',
+    }),
+  };
+
+  const handleBahanUtamaChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, bahan_utama: { ...prev.bahan_utama, [field]: value } }));
+  };
+
+  const addBahanKombinasi = () => {
+    setFormData((prev) => ({ ...prev, bahan_kombinasi: [...prev.bahan_kombinasi, { bahan: "", qty: "", satuan: "" }] }));
+  };
+  const removeBahanKombinasi = (index) => {
+    setFormData((prev) => {
+      const newArr = [...prev.bahan_kombinasi];
+      newArr.splice(index, 1);
+      return { ...prev, bahan_kombinasi: newArr };
+    });
+  };
+  const handleBahanKombinasiChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newArr = [...prev.bahan_kombinasi];
+      newArr[index] = { ...newArr[index], [field]: value };
+      return { ...prev, bahan_kombinasi: newArr };
+    });
+  };
+
+  const addAksesoris = () => {
+    setFormData((prev) => ({ ...prev, aksesoris: [...prev.aksesoris, { tipe: "umum", warna: "", nama: "" }] }));
+  };
+  const removeAksesoris = (index) => {
+    setFormData((prev) => {
+      const newArr = [...prev.aksesoris];
+      newArr.splice(index, 1);
+      return { ...prev, aksesoris: newArr };
+    });
+  };
+  const handleAksesorisChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newArr = [...prev.aksesoris];
+      newArr[index] = { ...newArr[index], [field]: value };
+      if (field === 'tipe' && value === 'umum') newArr[index].warna = "";
+      return { ...prev, aksesoris: newArr };
+    });
+  };
+
+  const handleWarnaChange = (selectedOptions) => {
+    setFormData((prev) => ({
+      ...prev,
+      warna_yang_akan_dikeluarkan: selectedOptions ? selectedOptions.map((o) => o.value) : []
+    }));
+  };
 
   const openAddModal = () => {
     setIsEdit(false);
@@ -168,15 +242,24 @@ const SPKSample = () => {
 
   const openEditModal = (item) => {
     setIsEdit(true);
+    let cat = item.kategori_sample || "SET";
+    let baseName = item.nama_sample || "";
+    if (baseName.toUpperCase().startsWith(cat.toUpperCase() + " ")) {
+      baseName = baseName.substring(cat.length).trim();
+    }
+    
     setFormData({
       id: item.id,
-      nama_sample: item.nama_sample || "",
-      kategori_sample: item.kategori_sample || "SET CELANA PANJANG",
+      nama_sample: baseName,
+      kategori_sample: cat,
       detail: item.detail || "",
-      status_spk: item.status_spk || "Normal",
-      status_proses: item.status_proses || "Belum Kerjain Pola",
-      tahap_proses: item.tahap_proses || "Pola Sample",
       keterangan_sample: item.keterangan_sample || "",
+      bahan_utama: typeof item.bahan_utama === 'object' && item.bahan_utama !== null ? item.bahan_utama : { bahan: item.bahan_utama || "", qty: "", satuan: "" },
+      bahan_kombinasi: Array.isArray(item.bahan_kombinasi) ? item.bahan_kombinasi : [],
+      aksesoris: Array.isArray(item.aksesoris) ? item.aksesoris : [],
+      warna_yang_akan_dikeluarkan: Array.isArray(item.warna_yang_akan_dikeluarkan) ? item.warna_yang_akan_dikeluarkan : [],
+      harga_potong: item.harga_potong || "",
+      harga_cmt: item.harga_cmt || "",
     });
     setFotoFile(null);
     setFotoPreview(getFotoUrl(item.foto));
@@ -225,13 +308,25 @@ const SPKSample = () => {
       setSubmitting(true);
 
       const payload = new FormData();
-      payload.append("nama_sample", formData.nama_sample);
+      let finalNama = formData.nama_sample.trim();
+      for (let cat of kategoriOptions) {
+        if (finalNama.toUpperCase().startsWith(cat.toUpperCase() + " ")) {
+          finalNama = finalNama.substring(cat.length).trim();
+          break;
+        }
+      }
+      finalNama = `${formData.kategori_sample} ${finalNama}`;
+
+      payload.append("nama_sample", finalNama);
       payload.append("kategori_sample", formData.kategori_sample);
       payload.append("detail", formData.detail || "");
-      payload.append("status_spk", formData.status_spk);
-      payload.append("status_proses", formData.status_proses || "");
-      payload.append("tahap_proses", formData.tahap_proses || "");
       payload.append("keterangan_sample", formData.keterangan_sample || "");
+      payload.append("bahan_utama", JSON.stringify(formData.bahan_utama));
+      payload.append("bahan_kombinasi", JSON.stringify(formData.bahan_kombinasi));
+      payload.append("aksesoris", JSON.stringify(formData.aksesoris));
+      payload.append("warna_yang_akan_dikeluarkan", JSON.stringify(formData.warna_yang_akan_dikeluarkan));
+      payload.append("harga_potong", formData.harga_potong || "");
+      payload.append("harga_cmt", formData.harga_cmt || "");
 
       if (fotoFile) {
         payload.append("foto", fotoFile);
@@ -242,18 +337,18 @@ const SPKSample = () => {
         await API.post(`/spk-sample/${formData.id}`, payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast.success("SPK Sample berhasil diperbarui.");
+        toast.success("Data Sample berhasil diperbarui.");
       } else {
         await API.post("/spk-sample", payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast.success("SPK Sample berhasil ditambahkan.");
+        toast.success("Data Sample berhasil ditambahkan.");
       }
 
       closeFormModal();
       fetchData();
     } catch (error) {
-      const message = error.response?.data?.message || "Gagal menyimpan data SPK Sample.";
+      const message = error.response?.data?.message || "Gagal menyimpan data Data Sample.";
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -321,31 +416,7 @@ const SPKSample = () => {
     }
   };
 
-  const handleStatusProsesChange = async (id, newStatus) => {
-    try {
-      setUpdatingStatusId(id);
-      const res = await API.patch(`/spk-sample/${id}/status-proses`, { status_proses: newStatus });
-      toast.success("Status proses berhasil diperbarui.");
-      setData((prev) => prev.map((item) => item.id === id ? res.data.data : item));
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Gagal memperbarui status proses.");
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  };
 
-  const handleTahapProsesChange = async (id, newTahap) => {
-    try {
-      setUpdatingTahapId(id);
-      const res = await API.patch(`/spk-sample/${id}/tahap-proses`, { tahap_proses: newTahap });
-      toast.success("Tahap proses berhasil diperbarui.");
-      setData((prev) => prev.map((item) => item.id === id ? res.data.data : item));
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Gagal memperbarui tahap proses.");
-    } finally {
-      setUpdatingTahapId(null);
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedItem) {
@@ -354,11 +425,49 @@ const SPKSample = () => {
 
     try {
       await API.delete(`/spk-sample/${selectedItem.id}`);
-      toast.success("SPK Sample berhasil dihapus.");
+      toast.success("Data Sample berhasil dihapus.");
       closeDeleteModal();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Gagal menghapus data SPK Sample.");
+      toast.error(error.response?.data?.message || "Gagal menghapus data Data Sample.");
+    }
+  };
+
+  const handleDownloadPng = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      setLoading(true);
+      toast.info("Sedang menyiapkan PNG...");
+      
+      const printArea = document.getElementById("spk-sample-printable-ticket");
+      if (!printArea) {
+        toast.error("Area print tidak ditemukan.");
+        setLoading(false);
+        return;
+      }
+
+      // We clone the node or just capture it directly
+      const canvas = await html2canvas(printArea, { 
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = imgData;
+      link.download = `Data_Sample_${selectedItem.nama_sample || "Download"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Berhasil mengunduh PNG.");
+    } catch (error) {
+      console.error("Gagal export PNG:", error);
+      toast.error("Terjadi kesalahan saat mengunduh PNG.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -374,8 +483,8 @@ const SPKSample = () => {
                 <FiLayers size={24} color="#fff" />
               </div>
               <div className="ts-brand-text">
-                <h1>SPK Sample</h1>
-                <p>Manajemen dan pencatatan document request SPK Sample</p>
+                <h1>Data Sample</h1>
+                <p>Manajemen dan pencatatan document request Data Sample</p>
               </div>
             </div>
 
@@ -384,7 +493,7 @@ const SPKSample = () => {
                 <FiSearch className="ts-search-icon-inside" />
                 <input
                   type="text"
-                  placeholder="Cari SPK sample..."
+                  placeholder="Cari Data sample..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -401,11 +510,11 @@ const SPKSample = () => {
             >
               <div className="ts-table-header">
                 <div>
-                  <h3>Daftar SPK Sample</h3>
+                  <h3>Daftar Data Sample</h3>
                   <p>Total SPK terdaftar: {filteredData.length}</p>
                 </div>
                 <button className="ts-btn-primary" onClick={openAddModal}>
-                  <FiPlus size={18} /> Tambah SPK Sample
+                  <FiPlus size={18} /> Tambah Data Sample
                 </button>
               </div>
 
@@ -417,9 +526,12 @@ const SPKSample = () => {
               <th style={{ minWidth: "60px", textAlign: "center" }}>No</th>
               <th style={{ minWidth: "200px", paddingLeft: "24px" }}>Nama Sample</th>
               <th style={{ minWidth: "100px" }}>Foto</th>
-              <th style={{ minWidth: "120px" }}>Urgensi</th>
-              <th style={{ minWidth: "220px" }}>Status Proses</th>
-              <th style={{ minWidth: "200px" }}>Tahap Proses</th>
+              <th style={{ minWidth: "140px" }}>Bahan Utama</th>
+              <th style={{ minWidth: "140px" }}>Bahan Kombinasi</th>
+              <th style={{ minWidth: "140px" }}>Aksesoris</th>
+              <th style={{ minWidth: "140px" }}>Warna</th>
+              <th style={{ minWidth: "120px" }}>Harga Potong</th>
+              <th style={{ minWidth: "120px" }}>Harga CMT</th>
               <th style={{ minWidth: "180px" }}>Lama Pengerjaan</th>
               <th style={{ minWidth: "160px" }}>Tgl SPK Turun</th>
               <th style={{ minWidth: "240px" }}>Nama Tukang Sample</th>
@@ -454,46 +566,12 @@ const SPKSample = () => {
                       <span className="spk-sample-muted">Tidak ada foto</span>
                     )}
                   </td>
-                  <td>
-                    <span className={`spk-sample-status ${item.status_spk?.toLowerCase() === "urgent" ? "urgent" : ""}`}>
-                      {item.status_spk || "-"}
-                    </span>
-                  </td>
-                  <td>
-                    <select 
-                      className="spk-sample-select-inline"
-                      value={item.status_proses || ""}
-                      onChange={(e) => handleStatusProsesChange(item.id, e.target.value)}
-                      disabled={updatingStatusId === item.id}
-                      title="Ubah Status Proses"
-                    >
-                      <option value="" disabled>Pilih Status</option>
-                      {statusProsesOptions.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    {item.status_proses === "ACC" ? (
-                      <select
-                        className="spk-sample-select-inline spk-sample-select-tahap"
-                        value={item.tahap_proses || ""}
-                        onChange={(e) => handleTahapProsesChange(item.id, e.target.value)}
-                        disabled={updatingTahapId === item.id}
-                        title="Ubah Tahap Proses"
-                      >
-                        <option value="" disabled>Pilih Tahap</option>
-                        {tahapProsesOptions.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="spk-sample-tahap-locked">
-                        <span className="spk-sample-badge-tahap">{item.tahap_proses || "-"}</span>
-                        <span className="spk-sample-lock-hint" title="ACC dahulu untuk mengubah tahap proses">🔒</span>
-                      </div>
-                    )}
-                  </td>
+                  <td>{item.bahan_utama ? `${item.bahan_utama.bahan} (${item.bahan_utama.qty} ${item.bahan_utama.satuan})` : "-"}</td>
+                  <td>{item.bahan_kombinasi && item.bahan_kombinasi.length > 0 ? `${item.bahan_kombinasi.length} Bahan` : "-"}</td>
+                  <td>{item.aksesoris && item.aksesoris.length > 0 ? `${item.aksesoris.length} Item` : "-"}</td>
+                  <td>{item.warna_yang_akan_dikeluarkan && item.warna_yang_akan_dikeluarkan.length > 0 ? `${item.warna_yang_akan_dikeluarkan.length} Warna` : "-"}</td>
+                  <td>{item.harga_potong ? `Rp ${item.harga_potong.toLocaleString("id-ID")}` : "-"}</td>
+                  <td>{item.harga_cmt ? `Rp ${item.harga_cmt.toLocaleString("id-ID")}` : "-"}</td>
                   <td>{calculateLamaPengerjaan(item.created_at)}</td>
                   <td>{formatDate(item.created_at)}</td>
                   <td>
@@ -530,7 +608,7 @@ const SPKSample = () => {
                   <div className="spk-sample-empty spk-sample-empty-content">
                     <FiImage style={{ fontSize: "2.5rem", marginBottom: "10px" }} />
                     <h3>Tidak ada data</h3>
-                    <p>Belum ada rekaman SPK Sample yang tersimpan.</p>
+                    <p>Belum ada rekaman Data Sample yang tersimpan.</p>
                   </div>
                 </td>
               </tr>
@@ -557,7 +635,7 @@ const SPKSample = () => {
           >
             <div className="ts-modal-top">
               <div>
-                <h2>{isEdit ? "Edit SPK Sample" : "Tambah SPK Sample"}</h2>
+                <h2>{isEdit ? "Edit Data Sample" : "Tambah Data Sample"}</h2>
                 <p>Isi informasi utama di sebelah kiri dan unggah foto referensi di panel kanan.</p>
               </div>
               <button className="close-btn" onClick={closeFormModal}>
@@ -570,7 +648,17 @@ const SPKSample = () => {
                 <div className="spk-sample-form-row-2">
                   <div className="spk-sample-form-group">
                     <label><FiTag /> Nama sample</label>
-                    <input name="nama_sample" value={formData.nama_sample} onChange={handleInputChange} required placeholder="Contoh: Dress Satin Merah" />
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '0 14px', background: '#ffffff', transition: 'border-color 0.2s', height: '42px' }}>
+                      <span style={{ fontWeight: 'bold', marginRight: '8px', color: '#6366f1', fontSize: '14px' }}>{formData.kategori_sample}</span>
+                      <input 
+                        name="nama_sample" 
+                        value={formData.nama_sample} 
+                        onChange={handleInputChange} 
+                        required 
+                        placeholder="Contoh: MIKASA" 
+                        style={{ border: 'none', padding: '0', outline: 'none', flex: 1, background: 'transparent', fontSize: '14px', color: '#0f172a' }}
+                      />
+                    </div>
                   </div>
 
                   <div className="spk-sample-form-group">
@@ -585,39 +673,116 @@ const SPKSample = () => {
                   </div>
                 </div>
 
-                <div className="spk-sample-form-row-2">
-                  <div className="spk-sample-form-group">
-                    <label><FiAlertCircle /> Status SPK</label>
-                    <select name="status_spk" value={formData.status_spk} onChange={handleInputChange}>
-                      {statusOptions.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="spk-sample-form-group">
-                    <label><FiActivity /> Tahap Proses</label>
-                    <select name="tahap_proses" value={formData.tahap_proses} onChange={handleInputChange}>
-                      {tahapProsesOptions.map((tahap) => (
-                        <option key={tahap} value={tahap}>
-                          {tahap}
-                        </option>
-                      ))}
-                    </select>
+                {/* Bahan Utama */}
+                <div className="spk-sample-form-group">
+                  <label><FiLayers /> Bahan Utama</label>
+                  <div className="spk-sample-dynamic-row">
+                    <div style={{ flex: 2, minWidth: '200px' }}>
+                      <Select
+                        options={bahanOptions}
+                        isClearable
+                        placeholder="Pilih Bahan Utama..."
+                        value={bahanOptions.find((opt) => opt.value === formData.bahan_utama?.bahan) || null}
+                        onChange={(selected) => handleBahanUtamaChange('bahan', selected ? selected.value : "")}
+                        styles={customSelectStyles}
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '100px' }}>
+                      <input type="number" placeholder="Qty" value={formData.bahan_utama?.qty || ""} onChange={(e) => handleBahanUtamaChange('qty', e.target.value)} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '120px' }}>
+                      <input type="text" placeholder="Satuan (KG/PCS)" value={formData.bahan_utama?.satuan || ""} onChange={(e) => handleBahanUtamaChange('satuan', e.target.value)} />
+                    </div>
                   </div>
                 </div>
 
+                {/* Bahan Kombinasi */}
                 <div className="spk-sample-form-group">
-                  <label><FiAlertCircle /> Status Proses</label>
-                  <select name="status_proses" value={formData.status_proses} onChange={handleInputChange}>
-                    {statusProsesOptions.map((statusProses) => (
-                      <option key={statusProses} value={statusProses}>
-                        {statusProses}
-                      </option>
-                    ))}
-                  </select>
+                  <label><FiLayers /> Bahan Kombinasi</label>
+                  {formData.bahan_kombinasi.map((item, index) => (
+                    <div key={index} className="spk-sample-dynamic-row">
+                      <div style={{ flex: 2, minWidth: '200px' }}>
+                        <Select
+                          options={bahanOptions}
+                          isClearable
+                          placeholder="Pilih Bahan..."
+                          value={bahanOptions.find((opt) => opt.value === item.bahan) || null}
+                          onChange={(selected) => handleBahanKombinasiChange(index, 'bahan', selected ? selected.value : "")}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+                      <div style={{ flex: 1, minWidth: '100px' }}>
+                        <input type="number" placeholder="Qty" value={item.qty} onChange={(e) => handleBahanKombinasiChange(index, 'qty', e.target.value)} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <input type="text" placeholder="Satuan (KG/PCS)" value={item.satuan} onChange={(e) => handleBahanKombinasiChange(index, 'satuan', e.target.value)} />
+                      </div>
+                      <button type="button" className="spk-sample-btn-remove" onClick={() => removeBahanKombinasi(index)}>
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" className="spk-sample-btn-add" onClick={addBahanKombinasi}>
+                    <FiPlus size={16} /> Tambah Bahan Kombinasi
+                  </button>
+                </div>
+
+                {/* Warna */}
+                <div className="spk-sample-form-group">
+                  <label><FiLayers /> Warna yang akan dikeluarkan</label>
+                  <CreatableSelect
+                    isMulti
+                    placeholder="Ketik lalu Enter untuk menambah warna..."
+                    options={[]} 
+                    value={(formData.warna_yang_akan_dikeluarkan || []).map(w => ({ label: w, value: w }))}
+                    onChange={handleWarnaChange}
+                    styles={customSelectStyles}
+                  />
+                </div>
+
+                {/* Aksesoris */}
+                <div className="spk-sample-form-group">
+                  <label><FiLayers /> Aksesoris</label>
+                  {formData.aksesoris.map((item, index) => (
+                    <div key={index} className="spk-sample-dynamic-row">
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <select value={item.tipe} onChange={(e) => handleAksesorisChange(index, 'tipe', e.target.value)}>
+                          <option value="umum">Umum</option>
+                          <option value="warna">Khusus Warna</option>
+                        </select>
+                      </div>
+                      {item.tipe === 'warna' && (
+                        <div style={{ flex: 1, minWidth: '150px' }}>
+                          <select value={item.warna} onChange={(e) => handleAksesorisChange(index, 'warna', e.target.value)}>
+                            <option value="">Pilih Warna...</option>
+                            {(formData.warna_yang_akan_dikeluarkan || []).map(w => (
+                              <option key={w} value={w}>{w}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div style={{ flex: 2, minWidth: '180px' }}>
+                        <input type="text" placeholder="Nama Aksesoris..." value={item.nama} onChange={(e) => handleAksesorisChange(index, 'nama', e.target.value)} />
+                      </div>
+                      <button type="button" className="spk-sample-btn-remove" onClick={() => removeAksesoris(index)}>
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" className="spk-sample-btn-add" onClick={addAksesoris}>
+                    <FiPlus size={16} /> Tambah Aksesoris
+                  </button>
+                </div>
+
+                <div className="spk-sample-form-row-2">
+                  <div className="spk-sample-form-group">
+                    <label><FiLayers /> Harga Potong</label>
+                    <input type="number" name="harga_potong" value={formData.harga_potong} onChange={handleInputChange} placeholder="Harga Potong" />
+                  </div>
+                  <div className="spk-sample-form-group">
+                    <label><FiLayers /> Harga CMT</label>
+                    <input type="number" name="harga_cmt" value={formData.harga_cmt} onChange={handleInputChange} placeholder="Harga CMT" />
+                  </div>
                 </div>
 
                 <div className="spk-sample-form-group">
@@ -689,7 +854,7 @@ const SPKSample = () => {
               <button className="close-btn absolute-right" onClick={closeDeleteModal}><FiX /></button>
             </div>
             <div className="ts-modal-form center-text pt-0">
-              <h2>Hapus SPK Sample?</h2>
+              <h2>Hapus Data Sample?</h2>
               <p className="delete-desc">
                 Yakin ingin menghapus <strong>{selectedItem.nama_sample}</strong>? Tindakan ini tidak dapat dibatalkan.
               </p>
@@ -716,13 +881,18 @@ const SPKSample = () => {
           >
             <div className="ts-modal-top">
               <div>
-                <h2>Detail SPK Sample</h2>
+                <h2>Detail Data Sample</h2>
                 <p>Informasi detail dan dokumentasi foto referensi.</p>
               </div>
-              <button className="close-btn" onClick={closeDetailModal}><FiX /></button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="ts-btn-primary" onClick={handleDownloadPng} disabled={loading}>
+                  {loading ? "Menyiapkan..." : "Print PNG"}
+                </button>
+                <button className="close-btn" onClick={closeDetailModal}><FiX /></button>
+              </div>
             </div>
 
-            <div className="spk-sample-detail-layout">
+            <div id="spk-sample-print-area" className="spk-sample-detail-layout" style={{ padding: '20px', background: '#fff' }}>
               <div className="spk-sample-detail-info">
                 <h4 className="spk-sample-detail-section-title">Informasi Data</h4>
                 <div className="spk-sample-detail-card">
@@ -741,28 +911,65 @@ const SPKSample = () => {
                     </div>
                   </div>
                   <div className="spk-sample-d-row">
-                    <div className={`spk-sample-d-icon-wrap ${selectedItem.status_spk?.toLowerCase() === "urgent" ? "bg-danger" : "bg-primary"}`}>
-                      <FiAlertCircle />
-                    </div>
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
                     <div className="spk-sample-d-content">
-                      <span>Status SPK</span>
-                      <strong className={selectedItem.status_spk?.toLowerCase() === "urgent" ? "text-urgent" : "text-normal"}>
-                        {selectedItem.status_spk || "-"}
-                      </strong>
-                    </div>
-                  </div>
-                  <div className="spk-sample-d-row">
-                    <div className="spk-sample-d-icon-wrap bg-primary"><FiTag /></div>
-                    <div className="spk-sample-d-content">
-                      <span>Tahap Proses</span>
-                      <strong>{selectedItem.tahap_proses || "-"}</strong>
+                      <span>Bahan Utama</span>
+                      {selectedItem.bahan_utama ? (
+                        <strong>{selectedItem.bahan_utama.bahan} ({selectedItem.bahan_utama.qty} {selectedItem.bahan_utama.satuan})</strong>
+                      ) : (
+                        <strong>-</strong>
+                      )}
                     </div>
                   </div>
                   <div className="spk-sample-d-row">
-                    <div className="spk-sample-d-icon-wrap"><FiAlignLeft /></div>
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
                     <div className="spk-sample-d-content">
-                      <span>Status Proses</span>
-                      <strong>{selectedItem.status_proses || "-"}</strong>
+                      <span>Bahan Kombinasi</span>
+                      {(selectedItem.bahan_kombinasi && selectedItem.bahan_kombinasi.length > 0) ? (
+                        <ul style={{ margin: '4px 0 0', paddingLeft: '20px' }}>
+                          {selectedItem.bahan_kombinasi.map((bk, i) => (
+                            <li key={i}>{bk.bahan} ({bk.qty} {bk.satuan})</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <strong>-</strong>
+                      )}
+                    </div>
+                  </div>
+                  <div className="spk-sample-d-row">
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
+                    <div className="spk-sample-d-content">
+                      <span>Aksesoris</span>
+                      {(selectedItem.aksesoris && selectedItem.aksesoris.length > 0) ? (
+                        <ul style={{ margin: '4px 0 0', paddingLeft: '20px' }}>
+                          {selectedItem.aksesoris.map((ak, i) => (
+                            <li key={i}>{ak.tipe === 'warna' ? `[${ak.warna}] ` : ""}{ak.nama}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <strong>-</strong>
+                      )}
+                    </div>
+                  </div>
+                  <div className="spk-sample-d-row">
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
+                    <div className="spk-sample-d-content">
+                      <span>Warna</span>
+                      <strong>{(selectedItem.warna_yang_akan_dikeluarkan && selectedItem.warna_yang_akan_dikeluarkan.length > 0) ? selectedItem.warna_yang_akan_dikeluarkan.join(", ") : "-"}</strong>
+                    </div>
+                  </div>
+                  <div className="spk-sample-d-row">
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
+                    <div className="spk-sample-d-content">
+                      <span>Harga Potong</span>
+                      <strong>{selectedItem.harga_potong ? `Rp ${selectedItem.harga_potong.toLocaleString("id-ID")}` : "-"}</strong>
+                    </div>
+                  </div>
+                  <div className="spk-sample-d-row">
+                    <div className="spk-sample-d-icon-wrap"><FiLayers /></div>
+                    <div className="spk-sample-d-content">
+                      <span>Harga CMT</span>
+                      <strong>{selectedItem.harga_cmt ? `Rp ${selectedItem.harga_cmt.toLocaleString("id-ID")}` : "-"}</strong>
                     </div>
                   </div>
                   <div className="spk-sample-d-row">
@@ -883,6 +1090,100 @@ const SPKSample = () => {
         </div>
       )}
       </AnimatePresence>
+
+      {/* Hidden Printable Ticket */}
+      {selectedItem && (
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -100 }}>
+          <div id="spk-sample-printable-ticket" style={{ width: '800px', background: '#fff', padding: '30px', color: '#000', fontFamily: 'sans-serif' }}>
+            <div style={{ display: 'flex', gap: '30px' }}>
+              <div style={{ flex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <strong style={{ marginBottom: '10px' }}>Foto Referensi Sample</strong>
+                {selectedItem.foto ? (
+                  <img src={getFotoUrl(selectedItem.foto)} alt="Sample" style={{ width: '100%', objectFit: 'contain', maxHeight: '450px' }} crossOrigin="anonymous" />
+                ) : (
+                  <div style={{ width: '100%', height: '300px', border: '1px dashed #000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>Tidak ada foto terlampir</div>
+                )}
+              </div>
+              
+              <div style={{ flex: 3 }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <h2 style={{ margin: '0', fontSize: '24px' }}>{selectedItem.nama_sample || "-"}</h2>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '6px 0', width: '35%', verticalAlign: 'top' }}>Bahan Utama</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>: {selectedItem.bahan_utama ? `${selectedItem.bahan_utama.bahan} (${selectedItem.bahan_utama.qty} ${selectedItem.bahan_utama.satuan})` : "-"}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>Bahan Kombinasi</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex' }}>
+                          <span>:</span>
+                          {selectedItem.bahan_kombinasi && selectedItem.bahan_kombinasi.length > 0 ? (
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              {selectedItem.bahan_kombinasi.map((bk, i) => <li key={i}>{bk.bahan} ({bk.qty} {bk.satuan})</li>)}
+                            </ul>
+                          ) : <span style={{ marginLeft: '4px' }}>-</span>}
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>Aksesoris</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex' }}>
+                          <span>:</span>
+                          {selectedItem.aksesoris && selectedItem.aksesoris.length > 0 ? (
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              {selectedItem.aksesoris.map((ak, i) => <li key={i}>{ak.nama} {ak.tipe === 'warna' ? `(${ak.warna})` : ''}</li>)}
+                            </ul>
+                          ) : <span style={{ marginLeft: '4px' }}>-</span>}
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>Warna</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex' }}>
+                          <span>:</span>
+                          {selectedItem.warna_yang_akan_dikeluarkan && selectedItem.warna_yang_akan_dikeluarkan.length > 0 ? (
+                            <span style={{ marginLeft: '4px' }}>{selectedItem.warna_yang_akan_dikeluarkan.join(", ")}</span>
+                          ) : <span style={{ marginLeft: '4px' }}>-</span>}
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>Harga Potong</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>: {selectedItem.harga_potong ? `Rp ${Number(selectedItem.harga_potong).toLocaleString('id-ID')}` : "-"}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>Harga CMT</td>
+                      <td style={{ padding: '6px 0', verticalAlign: 'top' }}>: {selectedItem.harga_cmt ? `Rp ${Number(selectedItem.harga_cmt).toLocaleString('id-ID')}` : "-"}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                {(selectedItem.detail || selectedItem.keterangan_sample) && (
+                  <div style={{ marginTop: '20px' }}>
+                    {selectedItem.detail && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>Detail Spesifikasi:</strong>
+                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '14px' }}>{selectedItem.detail}</p>
+                      </div>
+                    )}
+                    {selectedItem.keterangan_sample && (
+                      <div>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>Keterangan Tambahan:</strong>
+                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '14px' }}>{selectedItem.keterangan_sample}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

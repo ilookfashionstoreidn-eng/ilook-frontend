@@ -52,9 +52,7 @@ export const buildLayoutOptionLabel = (layout) =>
 export const buildSlotHeadline = (slot) => {
   if (!slot) return "-";
 
-  return `${slot.slotCode} | Lantai ${slot.floorNumber} / Blok ${slot.blockCode} / Rak ${String(
-    slot.rackNumber
-  ).padStart(2, "0")} / Baris ${slot.rowNumber}`;
+  return slot.slotCode;
 };
 
 export const getEmptyLayoutDraft = () => ({

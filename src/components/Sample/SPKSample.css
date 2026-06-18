@@ -131,9 +131,9 @@
   align-items: center;
   gap: 8px;
 }
-.spk-sample-form-group input,
-.spk-sample-form-group select,
-.spk-sample-form-group textarea {
+.spk-sample-form-group > input,
+.spk-sample-form-group > select,
+.spk-sample-form-group > textarea {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
@@ -144,14 +144,83 @@
   padding: 11px 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.spk-sample-form-group textarea { resize: vertical; min-height: 112px; }
-.spk-sample-form-group input:focus,
-.spk-sample-form-group select:focus,
-.spk-sample-form-group textarea:focus {
+.spk-sample-form-group > textarea { resize: vertical; min-height: 112px; }
+.spk-sample-form-group > input:focus,
+.spk-sample-form-group > select:focus,
+.spk-sample-form-group > textarea:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
 }
+
+/* Dynamic Field Styling */
+.spk-sample-dynamic-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.spk-sample-dynamic-row > * {
+  min-width: 0;
+}
+.spk-sample-dynamic-row > div > input,
+.spk-sample-dynamic-row > div > select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  height: 42px;
+}
+.spk-sample-dynamic-row > div > input:focus,
+.spk-sample-dynamic-row > div > select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+.spk-sample-btn-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366f1;
+  background: #e0e7ff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.spk-sample-btn-add:hover {
+  background: #c7d2fe;
+}
+.spk-sample-btn-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.spk-sample-btn-remove:hover {
+  background: #fca5a5;
+  color: #b91c1c;
+}
+
 
 .spk-sample-side-card { background: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; border: 1px dashed #cbd5e1; }
 .spk-sample-side-head { margin-bottom: 16px; font-weight: 600; color: #475569; display: flex; align-items: center; justify-content: center; gap: 8px; }
