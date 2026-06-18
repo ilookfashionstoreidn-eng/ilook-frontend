@@ -40,8 +40,13 @@ const ReturnPage = () => {
     setMessage(null);
 
     try {
+      let finalTrackingNumber = trackingNumber.trim();
+      if (finalTrackingNumber.toUpperCase().endsWith("-RET")) {
+        finalTrackingNumber = finalTrackingNumber.substring(0, finalTrackingNumber.length - 4);
+      }
+
       const response = await API.post("/returns/scan", {
-        tracking_number: trackingNumber.trim() || null,
+        tracking_number: finalTrackingNumber || null,
       });
       const payload = response.data?.data || {};
 
