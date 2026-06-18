@@ -58,21 +58,10 @@ const Layout = () => {
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
   const [isQcOpen, setIsQcOpen] = useState(false);
   const [isSampleOpen, setIsSampleOpen] = useState(false);
-  const [theme, setTheme] = useState(
-    () =>
-      (typeof document !== "undefined" &&
-        document.documentElement.getAttribute("data-theme")) ||
-      "light"
-  );
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("theme", next);
-    } catch (e) {}
-  };
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "light");
+    localStorage.setItem("theme", "light");
+  }, []);
 
   const navigate = useNavigate();
   const handleLogout = useCallback(async () => {
@@ -1027,12 +1016,7 @@ const Layout = () => {
               </li>
             )}
 
-            <li style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid var(--side-border)", display: "flex", justifyContent: "center" }}>
-              <button className="sidebar-collapse-btn" onClick={toggleTheme} title={theme === "dark" ? "Mode Terang" : "Mode Gelap"} style={{ padding: "10px", fontSize: "18px" }}>
-                {theme === "dark" ? <FaSun /> : <FaMoon />}
-              </button>
-            </li>
-            <li style={{ marginTop: "8px" }}>
+            <li style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid var(--side-border)" }}>
               <button className="sidebar-link" onClick={handleLogout} style={{ color: "#ff6b6b" }}>
                 <FaSignOutAlt className="icon" /> Logout
               </button>
