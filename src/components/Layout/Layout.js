@@ -177,7 +177,7 @@ const Layout = () => {
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", overflow: 'hidden' }}>
-            <div style={{ width: "24px", height: "24px", background: "#4f46e5", borderRadius: "6px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff", flexShrink: 0 }}>
+            <div style={{ width: "26px", height: "26px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: "7px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff", flexShrink: 0, boxShadow: "0 4px 10px -4px rgba(16,185,129,0.6)" }}>
               <FaLayerGroup size={12} />
             </div>
             <h3 className="sidebar-title">ILOOK SYSTEM</h3>

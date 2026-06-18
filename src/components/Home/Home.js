@@ -284,9 +284,164 @@ const Home = () => {
     : "N/A";
 
 
+  const totalSpk = spkData.length;
+
   return (
-    <div>
-      
+    <div className="page">
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">
+            {selectedCMTName && kategoriCMT !== "N/A"
+              ? `Penjahit ${selectedCMTName} — Kategori ${kategoriCMT}`
+              : "Ringkasan produksi CMT secara keseluruhan"}
+          </p>
+        </div>
+
+        <div className="page-actions">
+          <select
+            value={selectedCMT}
+            onChange={(e) => setSelectedCMT(e.target.value)}
+            className="form-select dash-filter"
+          >
+            <option value="">Semua CMT</option>
+            {cmtList.map((cmt) => (
+              <option key={cmt.id_penjahit} value={cmt.id_penjahit}>
+                {cmt.nama_penjahit}
+              </option>
+            ))}
+          </select>
+
+          <div className="dash-user">
+            <img
+              src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${localStorage.getItem("foto") || "user.png"}`}
+              alt="User"
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* Ringkasan status SPK */}
+      <section className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-icon is-info"><i className="fas fa-tasks"></i></div>
+          <div className="stat-meta">
+            <span className="stat-label">In Progress</span>
+            <span className="stat-value">{inProgressCount}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon is-warning"><i className="fas fa-clock"></i></div>
+          <div className="stat-meta">
+            <span className="stat-label">Pending</span>
+            <span className="stat-value">{pendingCount}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon is-success"><i className="fas fa-check-circle"></i></div>
+          <div className="stat-meta">
+            <span className="stat-label">Completed</span>
+            <span className="stat-value">{completedCount}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon"><i className="fas fa-layer-group"></i></div>
+          <div className="stat-meta">
+            <span className="stat-label">Total SPK</span>
+            <span className="stat-value">{totalSpk}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Charts */}
+      <section className="dash-charts">
+        <div className="card chart-card">
+          <div className="card-header"><h3>Breakdown In Progress</h3></div>
+          <div className="card-body">
+            <div className="chart-canvas">
+              <Doughnut data={donutData} options={donutOptions} />
+            </div>
+          </div>
+        </div>
+
+        {chartData && !selectedCMT && (
+          <div className="card chart-card">
+            <div className="card-header"><h3>Kinerja Penjahit</h3></div>
+            <div className="card-body">
+              <div className="chart-canvas">
+                <Pie data={chartData} options={chartOptionsKinerja} plugins={[ChartDataLabels]} />
+              </div>
+              <div className="chart-legend">
+                {categoryInfo.map((item) => (
+                  <div key={item.label} className="legend-row">
+                    <span
+                      className="legend-dot"
+                      style={{
+                        backgroundColor:
+                          chartData.datasets[0].backgroundColor[
+                            chartData.labels.indexOf(item.label)
+                          ],
+                      }}
+                    ></span>
+                    <span className="legend-label">Kategori {item.label}</span>
+                    <span className="legend-value">{item.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sisaProdukChart && !selectedCMT && (
+          <div className="card chart-card">
+            <div className="card-header"><h3>Sisa Produk CMT</h3></div>
+            <div className="card-body">
+              <div className="chart-canvas">
+                <Pie data={sisaProdukChart} options={chartOptions} plugins={[ChartDataLabels]} />
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Panel daftar */}
+      <section className="dash-side-grid">
+        <div className="card">
+          <div className="card-header"><h3>Kategori Produk</h3></div>
+          <div className="card-body">
+            {kategoriProduk.length > 0 ? (
+              kategoriProduk.map((item, index) => (
+                <div key={index} className="list-row">
+                  <span>{item.kategori_produk}</span>
+                  <strong>{item.total_produk} produk</strong>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">Tidak ada data kategori.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <h3>Produk Urgent</h3>
+            {urgentProducts.length > 0 && (
+              <span className="badge badge-danger">{urgentProducts.length}</span>
+            )}
+          </div>
+          <div className="card-body">
+            {urgentProducts.length > 0 ? (
+              urgentProducts.map((product, index) => (
+                <div key={index} className="list-row is-urgent">
+                  <span>{product.nama_produk}</span>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">Tidak ada produk urgent.</div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

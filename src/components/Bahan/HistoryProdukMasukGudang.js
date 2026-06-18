@@ -105,6 +105,9 @@ const HistoryProdukMasukGudang = () => {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [viewMode, setViewMode] = useState("detail");
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [allSummaryRows, setAllSummaryRows] = useState([]);
+  const [summaryFilterHash, setSummaryFilterHash] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -528,66 +531,86 @@ const HistoryProdukMasukGudang = () => {
     [resultFrom, rows]
   );
 
-  const summaryRows = useMemo(() => {
-    if (viewMode !== "summary") return [];
+  const loadSummaryData = async () => {
+    const currentHash = JSON.stringify({ search: query.search, start: query.startDate, end: query.endDate });
+    if (summaryFilterHash === currentHash && allSummaryRows.length > 0) return;
 
-    const groupedMap = new Map();
-    rows.forEach(row => {
-      const dateObj = new Date(row.happenedAt || row.keluarPada);
-      const dateStr = Number.isNaN(dateObj.getTime()) ? (row.happenedAt || row.keluarPada || "-") : dateObj.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-      const sku = row.sku || "-";
-      const key = `${dateStr}___${sku}`;
-      
-      if (!groupedMap.has(key)) {
-        groupedMap.set(key, {
-          id: key,
-          tgl: dateStr,
-          sku: sku,
-          qty: 0,
-          seriMap: new Map(),
-          sumberSet: new Set(),
-          tujuanSet: new Set()
-        });
-      }
-      
-      const group = groupedMap.get(key);
-      const rowQty = Number(row.qty) || 0;
-      group.qty += rowQty;
-      
-      const rawSerials = String(row.kodeSeri || "-").split(",").map(s => formatBaseKodeSeri(s)).filter(Boolean);
-      if (rawSerials.length > 1 && rawSerials.length === rowQty) {
-          rawSerials.forEach(s => {
-              group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
+    setIsSummaryLoading(true);
+    try {
+      const exportRows = await fetchAllExportRows();
+
+      const groupedMap = new Map();
+      exportRows.forEach(row => {
+        const dateObj = new Date(row.happenedAt || row.keluarPada);
+        const dateStr = Number.isNaN(dateObj.getTime()) ? (row.happenedAt || row.keluarPada || "-") : dateObj.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+        const sku = row.sku || "-";
+        const key = `${dateStr}___${sku}`;
+        
+        if (!groupedMap.has(key)) {
+          groupedMap.set(key, {
+            id: key,
+            tgl: dateStr,
+            sku: sku,
+            qty: 0,
+            seriMap: new Map(),
+            sumberSet: new Set(),
+            tujuanSet: new Set()
           });
-      } else {
-          const s = formatBaseKodeSeri(row.kodeSeri);
-          if (s && s !== "-") {
-            group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
-          }
-      }
+        }
+        
+        const group = groupedMap.get(key);
+        const rowQty = Number(row.qty) || 0;
+        group.qty += rowQty;
+        
+        const rawSerials = String(row.kodeSeri || "-").split(",").map(s => formatBaseKodeSeri(s)).filter(Boolean);
+        if (rawSerials.length > 1 && rawSerials.length === rowQty) {
+            rawSerials.forEach(s => {
+                group.seriMap.set(s, (group.seriMap.get(s) || 0) + 1);
+            });
+        } else {
+            const s = formatBaseKodeSeri(row.kodeSeri);
+            if (s && s !== "-") {
+              group.seriMap.set(s, (group.seriMap.get(s) || 0) + rowQty);
+            }
+        }
 
-      if (row.sourceLabel) {
-         group.sumberSet.add(row.sourceLabel);
-      }
-      if (row.destinationLabel) {
-         group.tujuanSet.add(row.destinationLabel);
-      }
-    });
+        if (row.sourceLabel) {
+           group.sumberSet.add(row.sourceLabel);
+        }
+        if (row.destinationLabel) {
+           group.tujuanSet.add(row.destinationLabel);
+        }
+      });
 
-    return Array.from(groupedMap.values()).map((g, index) => {
-      const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => count > 1 ? `${s} (Qty ${count})` : s).join(", ") || "-";
-      const sumberText = Array.from(g.sumberSet).join(", ") || "-";
-      const tujuanText = Array.from(g.tujuanSet).join(", ") || "-";
-      
-      return {
-        ...g,
-        rowNumber: index + 1,
-        seriText,
-        sumberText,
-        tujuanText,
-      };
-    });
-  }, [rows, viewMode]);
+      const grouped = Array.from(groupedMap.values()).map((g, index) => {
+        const seriText = Array.from(g.seriMap.entries()).map(([s, count]) => count > 1 ? `${s} (Qty ${count})` : s).join(", ") || "-";
+        const sumberText = Array.from(g.sumberSet).join(", ") || "-";
+        const tujuanText = Array.from(g.tujuanSet).join(", ") || "-";
+        
+        return {
+          ...g,
+          rowNumber: index + 1,
+          seriText,
+          sumberText,
+          tujuanText,
+        };
+      });
+
+      setAllSummaryRows(grouped);
+      setSummaryFilterHash(currentHash);
+    } catch (err) {
+      console.error("Gagal load summary data", err);
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === "summary") {
+      loadSummaryData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, query.search, query.startDate, query.endDate]);
 
   return (
     <GudangProdukBaseShell
@@ -770,12 +793,16 @@ const HistoryProdukMasukGudang = () => {
           </button>
         </div>
 
-        {isInitialLoading ? (
-          <div className="gudang-ui-empty-panel">Memuat history produk masuk...</div>
-        ) : hasRows ? (
+        {isInitialLoading || (viewMode === "summary" && isSummaryLoading) ? (
+          <div className="gudang-ui-empty-panel">
+            {viewMode === "summary" ? "Memuat summary data secara keseluruhan..." : "Memuat history produk masuk..."}
+          </div>
+        ) : viewMode === "summary" && allSummaryRows.length === 0 ? (
+          <div className="gudang-ui-empty-panel">Tidak ada data summary pada filter aktif.</div>
+        ) : hasRows || (viewMode === "summary" && allSummaryRows.length > 0) ? (
           <>
             <div className="gudang-history-table-stage">
-              {isRefreshing ? (
+              {isRefreshing && viewMode === "detail" ? (
                 <div className="gudang-liststok-loading-overlay">
                   Memperbarui data tanpa menutup hasil yang sedang dibaca...
                 </div>
@@ -797,7 +824,7 @@ const HistoryProdukMasukGudang = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {summaryRows.length > 0 ? summaryRows.map((row) => (
+                        {allSummaryRows.length > 0 ? allSummaryRows.map((row) => (
                           <tr key={row.id}>
                             <td>{row.rowNumber}</td>
                             <td>{row.tgl}</td>
@@ -879,7 +906,7 @@ const HistoryProdukMasukGudang = () => {
               </div>
             </div>
 
-            {pagination.last_page > 1 ? (
+            {pagination.last_page > 1 && viewMode === "detail" ? (
               <div className="gudang-liststok-pagination">
                 <div className="gudang-liststok-pagination-info">
                   Menampilkan <strong>{formatNumber(resultFrom)}</strong> sampai{" "}

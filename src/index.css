@@ -1,20 +1,12 @@
+/* Global design system (tokens, base, components) */
+@import url('./styles/theme.css');
+
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Poppins:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Poppins:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
 body {
-  font-family: 'Roboto', sans-serif;
   margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
-
-h1, h2, h3 {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700; 
-}
-
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
@@ -24,7 +16,7 @@ code {
 @tailwind components;
 @tailwind utilities;
 
-/* Global Data Table Layout Settings */
+/* Global Data Table Layout Settings (legacy tables not wrapped in .table-card) */
 table {
   width: max-content !important;
   min-width: 100% !important;
@@ -32,4 +24,12 @@ table {
 
 table th, table td {
   white-space: nowrap !important;
+}
+
+/* .table-card opts out of the legacy max-content sizing for a tidy full-width grid */
+.table-card table {
+  width: 100% !important;
+}
+.table-card th, .table-card td {
+  white-space: normal !important;
 }

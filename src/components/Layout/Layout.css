@@ -1,20 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* =====================================================================
+   LAYOUT SHELL — Dark Sidebar (iLook Refresh)
+   Token global didefinisikan di src/styles/theme.css
+   ===================================================================== */
 
 :root {
-  --erp-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  
-  --erp-sidebar-bg: #ffffff;
-  --erp-sidebar-border: #e2e8f0;
-  
-  --erp-text-main: #0f172a;
-  --erp-text-muted: #64748b;
-  --erp-text-soft: #94a3b8;
-  
-  --erp-accent: #4f46e5;
-  --erp-accent-soft: #eef2ff;
-  
-  --erp-hover-bg: #f8fafc;
-  --erp-active-bg: #f1f5f9;
+  /* Alias lama dipertahankan agar kompatibel, dipetakan ke token baru */
+  --erp-font: var(--font-sans);
+
+  --erp-sidebar-bg: var(--side-bg);
+  --erp-sidebar-border: var(--side-border);
+
+  --erp-text-main: #f8fafc;
+  --erp-text-muted: var(--side-text);
+  --erp-text-soft: var(--side-muted);
+
+  --erp-accent: var(--brand-400);
+  --erp-accent-soft: var(--side-active-bg);
+
+  --erp-hover-bg: rgba(148, 163, 184, 0.08);
+  --erp-active-bg: var(--side-active-bg);
 }
 
 .layout-container {
@@ -22,18 +26,18 @@
   min-height: 100vh;
   overflow: visible;
   align-items: flex-start;
-  font-family: var(--erp-font);
-  background-color: #f8fafc;
+  font-family: var(--font-sans);
+  background-color: var(--bg);
 }
 
 /* ===================================
-   SIDEBAR - ENTERPRISE ERP STYLE
+   SIDEBAR
    =================================== */
 
 .sidebar {
   width: 260px;
-  background-color: var(--erp-sidebar-bg);
-  border-right: 1px solid var(--erp-sidebar-border);
+  background-color: var(--side-bg);
+  border-right: 1px solid var(--side-border);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -41,7 +45,7 @@
   top: 0;
   align-self: flex-start;
   z-index: 100;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s ease;
 }
 
 .sidebar-header {
@@ -49,15 +53,15 @@
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px solid var(--erp-sidebar-border);
+  border-bottom: 1px solid var(--side-border);
   flex-shrink: 0;
 }
 
 .sidebar-header h3 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--erp-text-main);
-  letter-spacing: 0.5px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.06em;
   margin: 0;
 }
 
@@ -68,20 +72,11 @@
   padding: 16px 12px;
 }
 
-/* ERP Style Custom Scrollbar */
-.sidebar-menu::-webkit-scrollbar {
-  width: 4px;
-}
-.sidebar-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 4px;
-}
-.sidebar-menu:hover::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-}
+/* Custom Scrollbar */
+.sidebar-menu::-webkit-scrollbar { width: 4px; }
+.sidebar-menu::-webkit-scrollbar-track { background: transparent; }
+.sidebar-menu::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.sidebar-menu:hover::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); }
 
 .sidebar-menu ul {
   list-style: none;
@@ -96,13 +91,13 @@
 .sidebar-link {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  color: var(--erp-text-muted);
+  padding: 9px 12px;
+  color: var(--side-text);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
-  border-radius: 6px;
-  transition: all 0.1s ease-in-out;
+  border-radius: var(--r-sm);
+  transition: all 0.12s ease-in-out;
   cursor: pointer;
   background: transparent;
   border: none;
@@ -112,13 +107,13 @@
 }
 
 .sidebar-link:hover {
-  background-color: var(--erp-hover-bg);
-  color: var(--erp-text-main);
+  background-color: rgba(148, 163, 184, 0.10);
+  color: #f8fafc;
 }
 
 .sidebar-link.active {
-  background-color: var(--erp-active-bg);
-  color: var(--erp-accent);
+  background-color: var(--side-active-bg);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -127,48 +122,37 @@
   flex-shrink: 0;
   font-size: 14px;
   margin-right: 10px;
-  color: var(--erp-text-soft);
-  transition: color 0.1s ease;
+  color: var(--side-muted);
+  transition: color 0.12s ease;
   width: 16px;
   text-align: center;
 }
-
-.sidebar-link:hover .icon {
-  color: var(--erp-text-muted);
-}
-
-.sidebar-link.active .icon {
-  color: var(--erp-accent);
-}
+.sidebar-link:hover .icon { color: var(--side-text); }
+.sidebar-link.active .icon { color: var(--brand-400); }
 
 /* Dropdown Arrows */
-.dropdown-toggle {
-  justify-content: space-between;
-}
+.dropdown-toggle { justify-content: space-between; }
 .arrow {
   margin-left: auto;
   font-size: 10px;
-  color: var(--erp-text-soft);
+  color: var(--side-muted);
   transition: transform 0.2s ease;
 }
-.arrow.open {
-  transform: rotate(180deg);
-}
+.arrow.open { transform: rotate(180deg); }
 
 /* Dropdown Container */
 .dropdown-menu {
   list-style: none;
   padding: 0;
-  margin: 0 0 4px 23px; /* Indent to align with text */
-  border-left: 1px solid var(--erp-sidebar-border);
+  margin: 0 0 4px 23px;
+  border-left: 1px solid var(--side-border);
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease-in-out, opacity 0.2s ease;
   opacity: 0;
 }
-
 .dropdown-menu.show {
-  max-height: 800px;
+  max-height: 900px;
   padding: 4px 0;
   opacity: 1;
 }
@@ -177,19 +161,18 @@
 .dropdown-link {
   display: flex;
   align-items: center;
-  padding: 7px 12px 7px 16px;
-  color: var(--erp-text-muted);
+  padding: 8px 12px 8px 16px;
+  color: var(--side-muted);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.12s, color 0.12s;
   position: relative;
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
   margin: 1px 0;
   white-space: nowrap;
 }
 
-/* The clean connector line for submenus like ERPs (Stripe / Stripe Dashboard) */
 .dropdown-link::before {
   content: "";
   position: absolute;
@@ -197,43 +180,31 @@
   top: 50%;
   width: 8px;
   height: 1px;
-  background-color: var(--erp-sidebar-border);
-  transition: width 0.1s;
+  background-color: var(--side-border);
+  transition: width 0.12s, background-color 0.12s;
 }
 
 .dropdown-link:hover {
-  color: var(--erp-text-main);
-  background-color: var(--erp-hover-bg);
+  color: #f8fafc;
+  background-color: rgba(148, 163, 184, 0.08);
 }
-
-.dropdown-link:hover::before {
-  width: 12px;
-  background-color: var(--erp-text-soft);
-}
+.dropdown-link:hover::before { width: 12px; background-color: var(--side-muted); }
 
 .dropdown-link.active {
-  color: var(--erp-accent);
-  background-color: var(--erp-accent-soft);
+  color: var(--brand-400);
+  background-color: var(--side-active-bg);
   font-weight: 600;
 }
+.dropdown-link.active::before { background-color: var(--brand-400); }
 
-.dropdown-link.active::before {
-  background-color: var(--erp-accent);
-}
-
-.dropdown-link .icon {
-  display: none; /* Hide FontAwesome mini icons in submenu for a much cleaner ERP text look */
-}
-
-/* Submenu layout overrides for icons embedded inline */
-.dropdown-link svg {
-  display: none !important;
-}
+/* Hide mini submenu icons for a clean text-only look */
+.dropdown-link .icon { display: none; }
+.dropdown-link svg { display: none !important; }
 
 /* Main Content Wrapper */
 .main-content {
   flex: 1;
-  background-color: #f8fafc;
+  background-color: var(--bg);
   overflow: visible;
   position: relative;
   display: flex;
@@ -242,133 +213,93 @@
   min-width: 0;
 }
 
-/* Specific styling for the Logout button element */
+/* Logout element */
 li[style*="marginTop"] {
   margin-top: 16px !important;
   padding-top: 12px !important;
-  border-top: 1px solid var(--erp-sidebar-border) !important;
+  border-top: 1px solid var(--side-border) !important;
 }
-.sidebar-link[style*="color: #ff6b6b"] {
-  color: #ef4444 !important;
-}
-.sidebar-link[style*="color: #ff6b6b"] .icon {
-  color: #ef4444 !important;
-  opacity: 0.8;
-}
-.sidebar-link[style*="color: #ff6b6b"]:hover {
-  background-color: #fef2f2 !important;
-}
+.sidebar-link[style*="color: #ff6b6b"] { color: #f87171 !important; }
+.sidebar-link[style*="color: #ff6b6b"] .icon { color: #f87171 !important; opacity: 0.9; }
+.sidebar-link[style*="color: #ff6b6b"]:hover { background-color: rgba(248, 113, 113, 0.12) !important; }
 
 /* Mobile Toggle Button */
-.menu-button {
-  display: none;
-}
+.menu-button { display: none; }
+.sidebar-overlay { display: none; }
 
-.sidebar-overlay {
-  display: none;
-}
-
-/* Mobile Responsiveness */
 @media (max-width: 900px) {
   .sidebar {
     position: fixed;
     left: -260px;
     z-index: 1000;
   }
-  
   .sidebar.open {
     left: 0;
-    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.08); /* Only shadow on mobile drawer */
+    box-shadow: 4px 0 28px rgba(2, 6, 23, 0.45);
   }
-
   .menu-button {
     display: flex;
     position: fixed;
     top: 12px;
     left: 16px;
     z-index: 998;
-    background-color: #ffffff;
-    border: 1px solid var(--erp-sidebar-border);
-    color: var(--erp-text-main);
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
+    background-color: var(--side-bg);
+    border: 1px solid var(--side-border);
+    color: #f8fafc;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--r-sm);
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow);
   }
-
   .sidebar-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background-color: rgba(15, 23, 42, 0.4);
+    background-color: rgba(2, 6, 23, 0.55);
     z-index: 999;
     backdrop-filter: blur(2px);
   }
-
-  .sidebar-overlay.active {
-    display: block;
-  }
+  .sidebar-overlay.active { display: block; }
 }
 
-/* Layout Grouped Menu */
+/* Grouped Menu Labels */
 .dropdown-group-label {
   font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--side-muted);
   padding: 12px 14px 4px 20px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
 }
-.dropdown-menu-grouped li {
-  margin-bottom: 2px;
-}
-.dropdown-menu-grouped .dropdown-link {
-  padding: 8px 14px 8px 24px;
-}
+.dropdown-menu-grouped li { margin-bottom: 2px; }
+.dropdown-menu-grouped .dropdown-link { padding: 8px 14px 8px 24px; }
 
 /* ===================================
    COLLAPSED SIDEBAR
    =================================== */
-.sidebar.collapsed {
-  width: 68px;
-}
-
-.sidebar.collapsed .sidebar-title {
-  display: none;
-}
-
-.sidebar.collapsed .sidebar-header {
-  padding: 0 16px;
-  justify-content: center !important;
-}
-
-.sidebar.collapsed .sidebar-header > div {
-  display: none !important;
-}
+.sidebar.collapsed { width: 68px; }
+.sidebar.collapsed .sidebar-title { display: none; }
+.sidebar.collapsed .sidebar-header { padding: 0 16px; justify-content: center !important; }
+.sidebar.collapsed .sidebar-header > div { display: none !important; }
 
 .sidebar-collapse-btn {
   background: transparent;
   border: none;
-  color: var(--erp-text-soft);
+  color: var(--side-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 6px;
+  border-radius: var(--r-sm);
+  transition: background 0.12s, color 0.12s;
 }
-.sidebar-collapse-btn:hover {
-  background: var(--erp-hover-bg);
-  color: var(--erp-text-main);
-}
-
-.sidebar.collapsed .sidebar-collapse-btn {
-  font-size: 18px;
-}
+.sidebar-collapse-btn:hover { background: rgba(148, 163, 184, 0.12); color: #f8fafc; }
+.sidebar.collapsed .sidebar-collapse-btn { font-size: 18px; }
 
 .sidebar.collapsed .sidebar-link {
   padding: 12px 0;
@@ -376,29 +307,13 @@ li[style*="marginTop"] {
   font-size: 0;
   color: transparent;
 }
-
 .sidebar.collapsed .sidebar-link .icon {
   margin-right: 0;
   font-size: 18px;
-  color: var(--erp-text-soft);
+  color: var(--side-muted);
 }
-
-.sidebar.collapsed .sidebar-link:hover .icon {
-  color: var(--erp-text-main);
-}
-
-.sidebar.collapsed .sidebar-link.active .icon {
-  color: var(--erp-accent);
-}
-
-.sidebar.collapsed .arrow {
-  display: none;
-}
-
-.sidebar.collapsed .dropdown-menu {
-  display: none !important;
-}
-
-.sidebar.collapsed .dropdown-group-label {
-  display: none;
-}
+.sidebar.collapsed .sidebar-link:hover .icon { color: #f8fafc; }
+.sidebar.collapsed .sidebar-link.active .icon { color: var(--brand-400); }
+.sidebar.collapsed .arrow { display: none; }
+.sidebar.collapsed .dropdown-menu { display: none !important; }
+.sidebar.collapsed .dropdown-group-label { display: none; }
