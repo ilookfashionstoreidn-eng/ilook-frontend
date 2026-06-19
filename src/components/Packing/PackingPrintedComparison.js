@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Spinner, Form, Table } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faPrint, faBoxOpen, faHourglassHalf, faSearch, faPercent, faStopwatch, faTriangleExclamation, faTruckFast } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
@@ -20,13 +20,12 @@ const formatDuration = (minutes) => {
     if (total < 60) return `${total}m`;
     const h = Math.floor(total / 60);
     const m = total % 60;
-    return m > 0 ? `${h}j ${m}m` : `${h}j`;
+    return `${h}j ${m > 0 ? m + 'm' : ''}`;
 };
 
-const getCourier = (trackingNumber) => {
-    if (!trackingNumber) return '-';
+const getCourierName = (trackingNumber) => {
+    if (!trackingNumber) return 'Lainnya';
     const num = trackingNumber.toUpperCase();
-    if (num.startsWith('SPX')) return 'Shopee Xpress';
     if (num.startsWith('JT')) return 'J&T Express';
     if (num.startsWith('JX')) return 'J&T Cargo';
     if (num.startsWith('ID')) return 'ID Express';
@@ -39,8 +38,10 @@ const getCourier = (trackingNumber) => {
 
 const PackingPrintedComparison = () => {
     const navigate = useNavigate();
-    const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
-    const [endDate, setEndDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const [searchParams] = useSearchParams();
+    const initialDate = searchParams.get('date') || dayjs().format('YYYY-MM-DD');
+    const [startDate, setStartDate] = useState(initialDate);
+    const [endDate, setEndDate] = useState(initialDate);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState('semua');
@@ -275,6 +276,7 @@ const PackingPrintedComparison = () => {
                                     <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '60px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10 }}>Qty</th>
                                     <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '140px', position: 'sticky', top: 0, zIndex: 10 }}>Waktu Order</th>
                                     <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '140px', position: 'sticky', top: 0, zIndex: 10 }}>Waktu Cetak</th>
+                                    <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '140px', position: 'sticky', top: 0, zIndex: 10 }}>Batas Kirim</th>
                                     <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '130px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10 }}>Status Order</th>
                                     <th style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '14px 12px', borderBottom: '1px solid #e2e8f0', width: '140px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10 }}>Status Packing</th>
                                 </tr>
@@ -282,7 +284,7 @@ const PackingPrintedComparison = () => {
                             <tbody>
                                 {orders.length === 0 ? (
                                     <tr>
-                                        <td colSpan="8" className="text-center" style={{ padding: '24px', color: '#94a3b8' }}>
+                                        <td colSpan="9" className="text-center" style={{ padding: '24px', color: '#94a3b8' }}>
                                             Tidak ada data pesanan yang dicetak pada rentang tanggal ini.
                                         </td>
                                     </tr>
@@ -290,15 +292,20 @@ const PackingPrintedComparison = () => {
                                     orders.map((order, idx) => (
                                         <tr key={idx} style={{ transition: 'background-color 0.2s ease' }}>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' }}>
-                                                <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px', letterSpacing: '0.5px' }}>{order.order_number}</div>
-                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>{order.tracking_number || '-'}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px', letterSpacing: '0.5px' }}>{order.order_number}</span>
+                                                    {order.order_type === 'PRE_ORDER' && (
+                                                        <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', letterSpacing: '0.5px' }}>PO</span>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', fontFamily: 'monospace' }}>{order.tracking_number || '-'}</div>
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#334155', fontSize: '13px', fontWeight: '500' }}>
                                                 {order.sku || '-'}
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center' }}>
                                                 <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#475569' }}>
-                                                    {getCourier(order.tracking_number)}
+                                                    {getCourierName(order.tracking_number)}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontWeight: '600', textAlign: 'center', fontSize: '13px' }}>
@@ -309,6 +316,18 @@ const PackingPrintedComparison = () => {
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontSize: '12.5px' }}>
                                                 {order.label_print_time ? dayjs(order.label_print_time).format('DD MMM, HH:mm') : '-'}
+                                            </td>
+                                            <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontSize: '12.5px' }}>
+                                                {order.shipping_deadline ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ color: dayjs(order.shipping_deadline).isBefore(dayjs()) ? '#ef4444' : '#475569', fontWeight: dayjs(order.shipping_deadline).isBefore(dayjs()) ? '700' : '500' }}>
+                                                            {dayjs(order.shipping_deadline).format('DD MMM, HH:mm')}
+                                                        </span>
+                                                        <span style={{ fontSize: '11px', color: dayjs(order.shipping_deadline).isBefore(dayjs()) ? '#ef4444' : '#d97706', fontWeight: '600', marginTop: '2px' }}>
+                                                            {dayjs(order.shipping_deadline).isBefore(dayjs()) ? 'Lewat batas' : dayjs(order.shipping_deadline).fromNow(true) + ' lagi'}
+                                                        </span>
+                                                    </div>
+                                                ) : '-'}
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center' }}>
                                                 <span style={{ backgroundColor: order.status === 'CANCELLED' ? '#fee2e2' : '#e0f2fe', color: order.status === 'CANCELLED' ? '#991b1b' : '#0369a1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap' }}>

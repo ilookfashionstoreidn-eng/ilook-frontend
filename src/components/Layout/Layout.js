@@ -894,7 +894,7 @@ const Layout = () => {
               <li>
                 <div
                   onClick={togglePackingMenu}
-                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring", "packing-printed"].includes(activeMenu) ? "active" : ""}`}
+                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring", "packing-printed", "packing-daily-report"].includes(activeMenu) ? "active" : ""}`}
                 >
                   <FaBoxOpen className="icon" /> Packing
                   <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
@@ -964,6 +964,13 @@ const Layout = () => {
                       <li>
                         <Link to="packing-printed" className={`dropdown-link ${activeMenu === "packing-printed" ? "active" : ""}`} onClick={() => handleMenuClick("packing-printed")}>
                           <FaPrint className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cetak vs Packing
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("packing:logs") && (
+                      <li>
+                        <Link to="packing-daily-report" className={`dropdown-link ${activeMenu === "packing-daily-report" ? "active" : ""}`} onClick={() => handleMenuClick("packing-daily-report")}>
+                          <FaCalendarAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Cetak Harian
                         </Link>
                       </li>
                     )}

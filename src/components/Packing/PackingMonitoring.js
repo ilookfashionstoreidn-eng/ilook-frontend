@@ -608,7 +608,14 @@ const PackingMonitoring = () => {
                                     ) : (
                                         filteredOrders.map((order) => (
                                             <tr key={order.id}>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>{order.order_number || '-'}</td>
+                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <span>{order.order_number || '-'}</span>
+                                                        {order.order_type === 'PRE_ORDER' && (
+                                                            <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', letterSpacing: '0.5px' }}>PO</span>
+                                                        )}
+                                                    </div>
+                                                </td>
                                                 <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontFamily: 'monospace', fontSize: '12.5px', color: '#334155' }}>{order.tracking_number || '-'}</td>
                                                 <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center' }}>
                                                     <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#475569', whiteSpace: 'nowrap' }}>{getCourier(order.tracking_number)}</span>
