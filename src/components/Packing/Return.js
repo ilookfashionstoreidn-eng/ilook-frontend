@@ -4,6 +4,7 @@ import "./Return.css";
 import API from "../../api";
 import { FaBarcode, FaCheck, FaUndo } from "react-icons/fa";
 import { FiPackage, FiSearch, FiUser } from "react-icons/fi";
+import SkuHover from "../SkuHover";
 
 const getErrorMessage = (error, fallback) => {
   if (error.response?.data?.errors) {
@@ -183,15 +184,7 @@ const ReturnPage = () => {
                             <td>{item.product_name}</td>
                             <td className="qty-cell ordered">{item.quantity}</td>
                             <td>
-                              {item.image ? (
-                                <img
-                                  src={item.image}
-                                  alt={item.product_name}
-                                  className="return-product-image"
-                                />
-                              ) : (
-                                <span className="return-no-image">No Image</span>
-                              )}
+                              <SkuHover img={item.image} name={item.product_name || item.sku} label="" />
                             </td>
                             <td>
                               <span className="status-ok">

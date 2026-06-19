@@ -3,6 +3,7 @@ import API from "../../api";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { FaSyncAlt, FaLayerGroup } from "react-icons/fa";
+import SkuHover from "../SkuHover";
 
 const GineeSkuList = () => {
   const [data, setData] = useState([]);
@@ -133,11 +134,7 @@ const GineeSkuList = () => {
                   <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                     <td style={{ padding: "12px 16px", color: "#64748b" }}>{index + 1}</td>
                     <td style={{ padding: "12px 16px" }}>
-                      {item.image_url ? (
-                        <img src={item.image_url} alt="product" style={{ width: "40px", height: "40px", borderRadius: "4px", objectFit: "cover" }} />
-                      ) : (
-                        <span style={{ color: "#cbd5e1" }}>No Image</span>
-                      )}
+                      <SkuHover img={item.image_url} name={item.product_name || item.sku} label="" />
                     </td>
                     <td style={{ padding: "12px 16px", fontWeight: "600", color: "#334155" }}>{item.sku}</td>
                     <td style={{ padding: "12px 16px", color: "#64748b" }}>{item.category || "-"}</td>
