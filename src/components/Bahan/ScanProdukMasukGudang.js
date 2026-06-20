@@ -193,8 +193,8 @@ const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSessi
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <strong style={{ fontSize: 13, color: "#5b21b6", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {skuLabel}
+          <strong style={{ fontSize: 13, color: "#5b21b6", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={session.skuCode && session.skuCode !== skuLabel ? `${skuLabel} (${session.skuCode})` : skuLabel}>
+            {skuLabel} {session.skuCode && session.skuCode !== skuLabel ? `(${session.skuCode})` : ""}
           </strong>
           <span style={{ fontSize: 11, color: "#7c3aed" }}>
             Seri: <strong>{seriLabel}</strong> · {barcodeCount} barcode
