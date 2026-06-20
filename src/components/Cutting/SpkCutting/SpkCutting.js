@@ -1021,29 +1021,32 @@ const SpkCutting = () => {
         params: { bahan_id: bahanId },
       });
 
-      return response.data || [];
+      const data = response.data || [];
+      if (data.length > 0) {
+        return data;
+      }
     } catch (error) {
       console.error("Gagal mengambil data warna:", error);
-
-      // Fallback ke list warna default jika API error
-      return [
-        { warna: "Putih", stok: 0 },
-        { warna: "Hitam", stok: 0 },
-        { warna: "Merah", stok: 0 },
-        { warna: "Biru", stok: 0 },
-        { warna: "Hijau", stok: 0 },
-        { warna: "Kuning", stok: 0 },
-        { warna: "Abu-abu", stok: 0 },
-        { warna: "Coklat", stok: 0 },
-        { warna: "Pink", stok: 0 },
-        { warna: "Ungu", stok: 0 },
-        { warna: "Orange", stok: 0 },
-        { warna: "Navy", stok: 0 },
-        { warna: "Maroon", stok: 0 },
-        { warna: "Beige", stok: 0 },
-        { warna: "Khaki", stok: 0 },
-      ];
     }
+
+    // Fallback ke list warna default jika API error atau data kosong
+    return [
+      { warna: "Putih", stok: 0 },
+      { warna: "Hitam", stok: 0 },
+      { warna: "Merah", stok: 0 },
+      { warna: "Biru", stok: 0 },
+      { warna: "Hijau", stok: 0 },
+      { warna: "Kuning", stok: 0 },
+      { warna: "Abu-abu", stok: 0 },
+      { warna: "Coklat", stok: 0 },
+      { warna: "Pink", stok: 0 },
+      { warna: "Ungu", stok: 0 },
+      { warna: "Orange", stok: 0 },
+      { warna: "Navy", stok: 0 },
+      { warna: "Maroon", stok: 0 },
+      { warna: "Beige", stok: 0 },
+      { warna: "Khaki", stok: 0 },
+    ];
   };
 
   const resolveBahanSelectionWithWarna = async (bahanId) => {
