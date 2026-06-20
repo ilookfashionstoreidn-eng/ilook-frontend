@@ -3458,9 +3458,8 @@ const SpkCutting = () => {
                                               {(bahan.warnaList || []).map((item, idx) => {
                                                 const warna = typeof item === "string" ? item : item.warna;
                                                 const stok = typeof item === "object" ? item.stok : 999;
-                                                const isDisabled = stok === 0;
                                                 return (
-                                                  <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                                  <option key={idx} value={warna}>
                                                     {warna} {stok !== 999 && `(Stok: ${stok})`}
                                                   </option>
                                                 );
@@ -4099,9 +4098,8 @@ const SpkCutting = () => {
                                     {(bahan.warnaList || []).map((item, idx) => {
                                       const warna = typeof item === "string" ? item : item.warna;
                                       const stok = typeof item === "object" ? item.stok : 999;
-                                      const isDisabled = stok === 0;
                                       return (
-                                        <option key={idx} value={warna} disabled={isDisabled} style={isDisabled ? { color: "#999", opacity: 0.5 } : {}}>
+                                        <option key={idx} value={warna}>
                                           {warna} {stok !== 999 && `(Stok: ${stok})`}
                                         </option>
                                       );
