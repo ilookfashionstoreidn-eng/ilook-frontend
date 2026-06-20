@@ -220,8 +220,11 @@ const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSessi
         </div>
       ) : null}
 
-      <div style={{ fontSize: 10, color: "#64748b" }}>
-        {formatTanggal(session.createdAt)}
+      <div style={{ fontSize: 10, color: "#64748b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>{formatTanggal(session.createdAt)}</span>
+        {session.creatorName && (
+          <span>Scanner: <strong>{session.creatorName}</strong></span>
+        )}
       </div>
 
       {/* Barcode preview */}
@@ -1115,6 +1118,7 @@ const ScanProdukMasukGudang = () => {
           scanned_at: log.createdAt,
           status: "success",
           activity_id: log.id,
+          creator_name: log.creatorName || "System",
         };
       })
       .filter((item) => {
@@ -1730,6 +1734,7 @@ const ScanProdukMasukGudang = () => {
                         <th>Gudang</th>
                         <th>Slot</th>
                         <th>Qty</th>
+                        <th>Petugas</th>
                         <th>Waktu Penempatan</th>
                         <th>Status</th>
                         <th style={{ textAlign: "center" }}>Aksi</th>
@@ -1746,6 +1751,7 @@ const ScanProdukMasukGudang = () => {
                           <td>{item.gudang}</td>
                           <td>{item.slot}</td>
                           <td>{item.qty} pcs</td>
+                          <td>{item.creator_name}</td>
                           <td>{formatTanggal(item.scanned_at)}</td>
                           <td>
                             <span className="spm-gudang-pill spm-gudang-pill-success">
