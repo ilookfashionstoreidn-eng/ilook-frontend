@@ -114,8 +114,23 @@ const findSkuMatch = (skus, seriSku) => {
   found = skus.find(s => {
     const normCode = String(s.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     const normLabel = String(s.label || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    return normCode.includes(normSeriSku) || normSeriSku.includes(normCode) ||
-           normLabel.includes(normSeriSku) || normSeriSku.includes(normLabel);
+    if (!normCode || !normSeriSku) return false;
+
+    const minLenCode = Math.min(normCode.length, normSeriSku.length);
+    const maxLenCode = Math.max(normCode.length, normSeriSku.length);
+    if (minLenCode >= 4 && (minLenCode / maxLenCode) >= 0.5) {
+      if (normCode.includes(normSeriSku) || normSeriSku.includes(normCode)) return true;
+    }
+
+    if (normLabel) {
+      const minLenLabel = Math.min(normLabel.length, normSeriSku.length);
+      const maxLenLabel = Math.max(normLabel.length, normSeriSku.length);
+      if (minLenLabel >= 4 && (minLenLabel / maxLenLabel) >= 0.5) {
+        if (normLabel.includes(normSeriSku) || normSeriSku.includes(normLabel)) return true;
+      }
+    }
+
+    return false;
   });
   return found || null;
 };
@@ -177,7 +192,8 @@ const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSessi
   const barcodeCount = Array.isArray(session.barcodes) ? session.barcodes.length : 0;
   const resolved = resolveSkuLabel(session.skuId);
   const skuLabel = String(resolved) === String(session.skuId) && session.skuCode ? session.skuCode : resolved;
-  const seriLabel = resolveSeriLabel(session.seriId);
+  const resolvedSeri = resolveSeriLabel(session.seriId);
+  const seriLabel = String(resolvedSeri) === String(session.seriId) && session.seriNumber ? session.seriNumber : resolvedSeri;
 
   return (
     <div
