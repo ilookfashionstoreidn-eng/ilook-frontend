@@ -89,6 +89,37 @@ const getScanKey = (barcode) => {
   return isSerialBarcode ? `serial:${serial}` : `barcode:${barcode}`;
 };
 
+const findSkuMatch = (skus, seriSku) => {
+  if (!seriSku) return null;
+  const cleanSeriSku = String(seriSku).trim();
+  const normSeriSku = cleanSeriSku.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  // 1. Exact match code
+  let found = skus.find(s => s.code === cleanSeriSku);
+  if (found) return found;
+
+  // 2. Exact match label
+  found = skus.find(s => s.label === cleanSeriSku);
+  if (found) return found;
+
+  // 3. Normalized alphanumeric match
+  found = skus.find(s => {
+    const normCode = String(s.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const normLabel = String(s.label || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return normCode === normSeriSku || normLabel === normSeriSku;
+  });
+  if (found) return found;
+
+  // 4. Loose contains match
+  found = skus.find(s => {
+    const normCode = String(s.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const normLabel = String(s.label || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return normCode.includes(normSeriSku) || normSeriSku.includes(normCode) ||
+           normLabel.includes(normSeriSku) || normSeriSku.includes(normLabel);
+  });
+  return found || null;
+};
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const WizardButton = ({ isActive, scene, onClick }) => (
@@ -371,7 +402,11 @@ const ScanProdukMasukGudang = () => {
       const response = await API.get("/gudang-produk-workspace/seri-details", {
         params: { seri_id: seriId, nomor_seri: nomorSeri },
       });
-      setSeriDetails(response.data?.data || null);
+      const details = response.data?.data || null;
+      setSeriDetails(details);
+      if (details) {
+        setSelectedSeriItem(details);
+      }
     } catch (err) {
       console.error("Gagal mengambil detail seri", err);
       if (!silent) {
@@ -601,16 +636,15 @@ const ScanProdukMasukGudang = () => {
         setScanStatus("loading");
         setScanMessage(`Menyimpan sesi ${activeSeriNumber} secara otomatis...`);
         try {
-          const matchedSku = state.skus.find(
-            (sku) => sku.code === activeSeriItem?.sku || sku.label === activeSeriItem?.sku
-          );
-          if (!matchedSku) {
-            throw new Error(`SKU "${activeSeriItem?.sku}" tidak ditemukan di database.`);
+          const skuId = activeSeriItem?.sku_id || activeSeriDetails?.sku_id || findSkuMatch(state.skus, activeSeriItem?.sku)?.id;
+          if (!skuId) {
+            const availableSkusStr = state.skus.slice(0, 15).map(s => s.code || s.label).join(", ");
+            throw new Error(`SKU "${activeSeriItem?.sku}" tidak ditemukan di database. (SKU tersedia: ${availableSkusStr || "kosong"})`);
           }
 
           await storePlacementSession({
             seriId: activeSeriId,
-            skuId: matchedSku.id,
+            skuId: skuId,
             barcodes: scannedBarcodes,
             notes: sessionNotes.trim() || null,
           });
@@ -878,17 +912,18 @@ const ScanProdukMasukGudang = () => {
       setIsSavingSession(true);
       
       // Get SKU id matching the seri sku
-      const matchedSku = state.skus.find(
-        (sku) => sku.code === selectedSeriItem?.sku || sku.label === selectedSeriItem?.sku
-      );
+      const skuId = selectedSeriItem?.sku_id || seriDetails?.sku_id || findSkuMatch(state.skus, selectedSeriItem?.sku)?.id;
 
-      if (!matchedSku) {
-        throw new Error(`SKU "${selectedSeriItem?.sku}" tidak ditemukan di database.`);
+      if (!skuId) {
+        const availableSkusStr = state.skus.slice(0, 15).map(s => s.code || s.label).join(", ");
+        throw new Error(
+          `SKU "${selectedSeriItem?.sku}" tidak ditemukan di database. (SKU tersedia: ${availableSkusStr || "kosong"})`
+        );
       }
 
       await storePlacementSession({
         seriId: selectedSeriId,
-        skuId: matchedSku.id,
+        skuId: skuId,
         barcodes: scannedBarcodes,
         notes: sessionNotes.trim() || null,
       });
