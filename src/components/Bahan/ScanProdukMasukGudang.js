@@ -175,7 +175,8 @@ const WizardButton = ({ isActive, scene, onClick }) => (
 
 const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSession, onDeleteSession, isDeleting }) => {
   const barcodeCount = Array.isArray(session.barcodes) ? session.barcodes.length : 0;
-  const skuLabel = resolveSkuLabel(session.skuId);
+  const resolved = resolveSkuLabel(session.skuId);
+  const skuLabel = String(resolved) === String(session.skuId) && session.skuCode ? session.skuCode : resolved;
   const seriLabel = resolveSeriLabel(session.seriId);
 
   return (
@@ -656,6 +657,7 @@ const ScanProdukMasukGudang = () => {
           playSound("success");
           await loadSessions();
           fetchSeriList();
+          refresh({ silent: true });
 
           setScanMessage(`Sesi ${activeSeriNumber} disimpan otomatis. Memulai sesi baru untuk ${parsedKodeSeri}.`);
 
@@ -949,6 +951,7 @@ const ScanProdukMasukGudang = () => {
       // Reload sessions list
       await loadSessions();
       fetchSeriList();
+      refresh({ silent: true });
 
       if (savedSeriId && savedSeriNumber) {
         fetchSeriDetails(savedSeriId, savedSeriNumber, { silent: true });
