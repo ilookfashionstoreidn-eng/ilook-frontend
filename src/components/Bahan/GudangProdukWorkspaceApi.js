@@ -784,6 +784,74 @@ export const revertMutationSession = async (id) => {
   };
 };
 
+// ─── Placement Sessions ────────────────────────────────────────────────────────
+
+/**
+ * Ambil daftar sesi scan masuk yang masih pending.
+ */
+export const fetchPlacementSessions = async () => {
+  const response = await API.get("/gudang-produk-workspace/placement-sessions");
+  return Array.isArray(response?.data?.data) ? response.data.data : [];
+};
+
+/**
+ * Simpan sesi scan masuk baru.
+ * @param {{ seriId, skuId, barcodes, notes? }} payload
+ */
+export const storePlacementSession = async (payload) => {
+  const response = await API.post(
+    "/gudang-produk-workspace/placement-sessions",
+    payload
+  );
+  return {
+    data: response?.data?.data || null,
+    message: response?.data?.message || "Sesi scan masuk berhasil disimpan.",
+  };
+};
+
+/**
+ * Batalkan / hapus sesi scan masuk yang masih pending.
+ * @param {number|string} id
+ */
+export const deletePlacementSession = async (id) => {
+  const response = await API.delete(
+    `/gudang-produk-workspace/placement-sessions/${id}`
+  );
+  return {
+    message: response?.data?.message || "Sesi scan masuk dibatalkan.",
+  };
+};
+
+/**
+ * Eksekusi sesi scan masuk — tempatkan stok ke slot tujuan.
+ * @param {number|string} id
+ * @param {{ layoutId: string, slotId: string, notes?: string }} payload
+ */
+export const executePlacementSession = async (id, payload) => {
+  const response = await API.post(
+    `/gudang-produk-workspace/placement-sessions/${id}/execute`,
+    payload
+  );
+  return {
+    workspace: normalizeWorkspaceState(response?.data?.data),
+    message: response?.data?.message || "Penempatan dari sesi berhasil dieksekusi.",
+  };
+};
+
+/**
+ * Membatalkan eksekusi sesi scan masuk — kembalikan status ke pending.
+ * @param {number|string} id
+ */
+export const revertPlacementSession = async (id) => {
+  const response = await API.post(
+    `/gudang-produk-workspace/placement-sessions/${id}/revert`
+  );
+  return {
+    workspace: normalizeWorkspaceState(response?.data?.data),
+    message: response?.data?.message || "Penempatan berhasil dibatalkan.",
+  };
+};
+
 
 export const fetchGudangProdukMutationHistory = async (params = {}) => {
   const response = await API.get("/gudang-produk/history-mutations", { params });
