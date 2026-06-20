@@ -588,6 +588,7 @@ const ScanProdukMasukGudang = () => {
 
   const processScan = async (barcodeValue = null) => {
     let barcodeToScan = (barcodeValue || scanInput).trim();
+    let autoSavedMsg = "";
 
     if (!barcodeToScan) {
       setScanMessage("Barcode tidak boleh kosong.");
@@ -617,90 +618,73 @@ const ScanProdukMasukGudang = () => {
     const currentSerial = getSerialFromBarcode(barcodeToScan);
     const parsedKodeSeri = getKodeSeriFromSerial(currentSerial);
 
+    const lastDot = currentSerial.lastIndexOf(".");
+    const parsedSeq = lastDot !== -1 ? parseInt(currentSerial.slice(lastDot + 1), 10) : null;
+
     // If selectedSeriNumber is already set, validate it or handle auto-saving/auto-switching
     let activeSeriId = selectedSeriId;
     let activeSeriNumber = selectedSeriNumber;
     let activeSeriItem = selectedSeriItem;
     let activeSeriDetails = seriDetails;
 
-    if (activeSeriNumber && parsedKodeSeri !== activeSeriNumber) {
-      if (scannedBarcodes.length === 0) {
-        // Automatically switch series since current scan list is empty
-        activeSeriId = "";
-        activeSeriNumber = "";
-        activeSeriItem = null;
-        activeSeriDetails = null;
+    // Check if the current serial actually belongs to the active series details.
+    // If the active series details doesn't have this print barcode (e.g. scanning 700.4 when active series only has 700.1-700.3),
+    // we should treat it as a different series and auto-switch.
+    const hasActivePrints = activeSeriDetails && Array.isArray(activeSeriDetails.prints);
+    const currentSerialBelongsToActive = hasActivePrints 
+      ? activeSeriDetails.prints.some((p) => p.barcode_seri === currentSerial)
+      : false;
 
-        setSelectedSeriId("");
-        setSelectedSeriNumber("");
-        setSelectedSeriItem(null);
-        setSeriDetails(null);
-      } else {
-        // Automatically save the current session draft first, then switch to the new series
-        setScanStatus("loading");
-        setScanMessage(`Menyimpan sesi ${activeSeriNumber} secara otomatis...`);
-        try {
-          const skuId = activeSeriItem?.sku_id || activeSeriDetails?.sku_id || findSkuMatch(state.skus, activeSeriItem?.sku)?.id;
-          if (!skuId) {
-            const availableSkusStr = state.skus.slice(0, 15).map(s => s.code || s.label).join(", ");
-            throw new Error(`SKU "${activeSeriItem?.sku}" tidak ditemukan di database. (SKU tersedia: ${availableSkusStr || "kosong"})`);
-          }
+    const needsLoad = !activeSeriNumber || parsedKodeSeri !== activeSeriNumber || !currentSerialBelongsToActive;
 
-          await storePlacementSession({
-            seriId: activeSeriId,
-            skuId: skuId,
-            barcodes: scannedBarcodes,
-            notes: sessionNotes.trim() || null,
-          });
-
-          // Play success sound and reload pending sessions list
-          playSound("success");
-          await loadSessions();
-          fetchSeriList();
-          refresh({ silent: true });
-
-          setScanMessage(`Sesi ${activeSeriNumber} disimpan otomatis. Memulai sesi baru untuk ${parsedKodeSeri}.`);
-
-          // Reset scan list and clear active series state locally to prepare for loading the new series
-          setScannedBarcodes([]);
-          setSessionNotes("");
-
-          activeSeriId = "";
-          activeSeriNumber = "";
-          activeSeriItem = null;
-          activeSeriDetails = null;
-
-          setSelectedSeriId("");
-          setSelectedSeriNumber("");
-          setSelectedSeriItem(null);
-          setSeriDetails(null);
-        } catch (err) {
-          const errMsg = buildGudangWorkspaceErrorMessage(err, "Gagal auto-simpan sesi.");
-          setScanMessage(`ERROR: ${errMsg}`);
-          setScanStatus("error");
-          if (scanInputRef.current) {
-            scanInputRef.current.value = "";
-          }
-          setScanInput("");
-          playSound("error");
-          setTimeout(() => focusScanInput(), 100);
-          return;
-        }
-      }
-    }
-
-    // If no Nomor Seri is selected yet (or if we just auto-switched), fetch details dynamically
-    if (!activeSeriNumber) {
+    if (needsLoad) {
       setScanStatus("loading");
       setScanMessage("Mencari data nomor seri...");
       try {
         const response = await API.get("/gudang-produk-workspace/seri-details", {
-          params: { nomor_seri: parsedKodeSeri },
+          params: { nomor_seri: parsedKodeSeri, sequence: parsedSeq },
         });
         const data = response.data?.data;
         if (!data) {
           throw new Error(`Nomor seri "${parsedKodeSeri}" tidak terdaftar di sistem.`);
         }
+
+        // If we are switching to a different series record, auto-save the old session
+        if (activeSeriId && data.id !== activeSeriId) {
+          if (scannedBarcodes.length === 0) {
+            // Automatically switch series since current scan list is empty
+            setScannedBarcodes([]);
+            setSessionNotes("");
+          } else {
+            // Automatically save the current session draft first, then switch to the new series
+            setScanMessage(`Menyimpan sesi ${activeSeriNumber} secara otomatis...`);
+            const skuId = activeSeriItem?.sku_id || activeSeriDetails?.sku_id || findSkuMatch(state.skus, activeSeriItem?.sku)?.id;
+            if (!skuId) {
+              const availableSkusStr = state.skus.slice(0, 15).map(s => s.code || s.label).join(", ");
+              throw new Error(`SKU "${activeSeriItem?.sku}" tidak ditemukan di database. (SKU tersedia: ${availableSkusStr || "kosong"})`);
+            }
+
+            await storePlacementSession({
+              seriId: activeSeriId,
+              skuId: skuId,
+              barcodes: scannedBarcodes,
+              notes: sessionNotes.trim() || null,
+            });
+
+            // Play success sound and reload pending sessions list
+            playSound("success");
+            await loadSessions();
+            fetchSeriList();
+            refresh({ silent: true });
+
+            autoSavedMsg = `Sesi ${activeSeriNumber} disimpan otomatis. Memulai sesi baru untuk ${parsedKodeSeri}. `;
+
+            // Reset scan list and clear active series state locally to prepare for loading the new series
+            setScannedBarcodes([]);
+            setSessionNotes("");
+          }
+        }
+
         setSelectedSeriId(data.id);
         setSelectedSeriNumber(data.nomor_seri);
         setSelectedSeriItem(data);
@@ -819,7 +803,7 @@ const ScanProdukMasukGudang = () => {
     };
 
     setScannedBarcodes((prev) => [...prev, newItem]);
-    setScanMessage(`Barcode ${currentSerial} masuk daftar penempatan.`);
+    setScanMessage(`${autoSavedMsg}Barcode ${currentSerial} masuk daftar penempatan.`);
     setScanStatus("success");
     playSound("success");
 
@@ -1269,12 +1253,42 @@ const ScanProdukMasukGudang = () => {
           {/* ── Scene 1: Scan & Simpan Sesi ── */}
           {activeScene === 1 && (
             <section className="gudang-ui-panel">
-              <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+              <div className="gudang-ui-panel-head" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <h2>Scan Barcode Produk Masuk</h2>
                   <p>
                     Silakan langsung scan barcode. System otomatis mendeteksi Nomor Seri aktif pada scan pertama.
                   </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {scannedBarcodes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScannedBarcodes([]);
+                        setSelectedSeriId("");
+                        setSelectedSeriNumber("");
+                        setSelectedSeriItem(null);
+                        setSeriDetails(null);
+                        setScanMessage("");
+                      }}
+                      style={{ border: "1px solid #dbe4ef", borderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "9px 16px", cursor: "pointer", height: "40px", display: "inline-flex", alignItems: "center" }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="gudang-ui-button"
+                    style={{ background: "#7c3aed", color: "#fff", display: "inline-flex", alignItems: "center", gap: 8, height: "40px" }}
+                    disabled={isSavingSession || !scannedBarcodes.length}
+                    onClick={handleSaveSession}
+                  >
+                    {isSavingSession ? <FaSpinner className="gudang-ui-spin" /> : <FaSave />}
+                    {isSavingSession ? "Menyimpan..." : `Simpan Sesi (${scannedBarcodes.length})`}
+                  </button>
                 </div>
               </div>
 
@@ -1474,35 +1488,7 @@ const ScanProdukMasukGudang = () => {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                {scannedBarcodes.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScannedBarcodes([]);
-                      setSelectedSeriId("");
-                      setSelectedSeriNumber("");
-                      setSelectedSeriItem(null);
-                      setSeriDetails(null);
-                      setScanMessage("");
-                    }}
-                    style={{ border: "1px solid #dbe4ef", borderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "9px 16px", cursor: "pointer" }}
-                  >
-                    Reset
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="gudang-ui-button"
-                  style={{ background: "#7c3aed", color: "#fff", display: "inline-flex", alignItems: "center", gap: 8 }}
-                  disabled={isSavingSession || !scannedBarcodes.length}
-                  onClick={handleSaveSession}
-                >
-                  {isSavingSession ? <FaSpinner className="gudang-ui-spin" /> : <FaSave />}
-                  {isSavingSession ? "Menyimpan..." : `Simpan Sesi (${scannedBarcodes.length})`}
-                </button>
-              </div>
+
             </section>
           )}
 
