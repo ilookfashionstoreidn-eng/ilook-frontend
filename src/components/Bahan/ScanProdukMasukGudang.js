@@ -658,7 +658,7 @@ const ScanProdukMasukGudang = () => {
       setScanMessage("Mencari data nomor seri...");
       try {
         const response = await API.get("/gudang-produk-workspace/seri-details", {
-          params: { nomor_seri: parsedKodeSeri, sequence: parsedSeq },
+          params: { nomor_seri: parsedKodeSeri, sequence: parsedSeq, barcode: barcodeToScan },
         });
         const data = response.data?.data;
         if (!data) {
