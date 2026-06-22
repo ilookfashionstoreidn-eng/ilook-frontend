@@ -188,7 +188,7 @@ const WizardButton = ({ isActive, scene, onClick }) => (
   </button>
 );
 
-const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSession, onDeleteSession, isDeleting }) => {
+const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSession, onDeleteSession, isDeleting, isSelected, onToggleSelect }) => {
   const barcodeCount = Array.isArray(session.barcodes) ? session.barcodes.length : 0;
   const resolved = resolveSkuLabel(session.skuId);
   const skuLabel = String(resolved) === String(session.skuId) && session.skuCode ? session.skuCode : resolved;
@@ -198,37 +198,54 @@ const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSessi
   return (
     <div
       style={{
-        border: "1px solid #ddd6fe",
+        border: isSelected ? "2px solid #7c3aed" : "1px solid #ddd6fe",
         borderRadius: 12,
-        padding: "12px 14px",
-        backgroundColor: "#f5f3ff",
+        padding: isSelected ? "11px 13px" : "12px 14px",
+        backgroundColor: isSelected ? "#f5f3ff" : "#ffffff",
         display: "flex",
         flexDirection: "column",
         gap: 8,
+        transition: "all 0.2s ease",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <div style={{ minWidth: 0 }}>
-          <strong style={{ fontSize: 13, color: "#5b21b6", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={session.skuCode && session.skuCode !== skuLabel ? `${skuLabel} (${session.skuCode})` : skuLabel}>
-            {skuLabel} {session.skuCode && session.skuCode !== skuLabel ? `(${session.skuCode})` : ""}
-          </strong>
-          <span style={{ fontSize: 11, color: "#7c3aed" }}>
-            Seri: <strong>{seriLabel}</strong> · {barcodeCount} barcode
-          </span>
-        </div>
-        <span
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
           style={{
-            fontSize: 10,
-            background: "#ede9fe",
-            color: "#6d28d9",
-            padding: "2px 7px",
-            borderRadius: 20,
-            fontWeight: 700,
-            flexShrink: 0,
+            width: 17,
+            height: 17,
+            marginTop: 2,
+            cursor: "pointer",
+            accentColor: "#7c3aed",
           }}
-        >
-          PENDING
-        </span>
+        />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ minWidth: 0 }}>
+              <strong style={{ fontSize: 13, color: "#5b21b6", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={session.skuCode && session.skuCode !== skuLabel ? `${skuLabel} (${session.skuCode})` : skuLabel}>
+                {skuLabel} {session.skuCode && session.skuCode !== skuLabel ? `(${session.skuCode})` : ""}
+              </strong>
+              <span style={{ fontSize: 11, color: "#7c3aed" }}>
+                Seri: <strong>{seriLabel}</strong> · {barcodeCount} barcode
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 10,
+                background: "#ede9fe",
+                color: "#6d28d9",
+                padding: "2px 7px",
+                borderRadius: 20,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              PENDING
+            </span>
+          </div>
+        </div>
       </div>
 
       {session.notes ? (
@@ -337,7 +354,8 @@ const ScanProdukMasukGudang = () => {
   const [cancelingPrintKey, setCancelingPrintKey] = useState("");
 
   // Destination selection – for executing a session (Scene 2)
-  const [activeSession, setActiveSession] = useState(null);
+  const [activeSessions, setActiveSessions] = useState([]);
+  const [selectedSessionIds, setSelectedSessionIds] = useState([]);
   const [layoutId, setLayoutId] = useState("");
   const [slotId, setSlotId] = useState("");
   const [execNotes, setExecNotes] = useState("");
@@ -969,7 +987,7 @@ const ScanProdukMasukGudang = () => {
   // ── Session Actions ──────────────────────────────────────────────────────────
 
   const handleSelectSession = (session) => {
-    setActiveSession(session);
+    setActiveSessions([session]);
     setSlotId("");
     setExecNotes("");
     if (state.layouts.length && !layoutId) {
@@ -978,11 +996,40 @@ const ScanProdukMasukGudang = () => {
     setActiveScene(2);
   };
 
+  const handleSelectBulkSessions = () => {
+    const selected = sessions.filter((s) => selectedSessionIds.includes(s.id));
+    if (selected.length === 0) return;
+    setActiveSessions(selected);
+    setSlotId("");
+    setExecNotes("");
+    if (state.layouts.length && !layoutId) {
+      setLayoutId(String(state.layouts[0].id));
+    }
+    setActiveScene(2);
+  };
+
+  const handleToggleSelectSession = (sessionId) => {
+    setSelectedSessionIds((prev) =>
+      prev.includes(sessionId)
+        ? prev.filter((id) => id !== sessionId)
+        : [...prev, sessionId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedSessionIds.length === sessions.length) {
+      setSelectedSessionIds([]);
+    } else {
+      setSelectedSessionIds(sessions.map((s) => s.id));
+    }
+  };
+
   const handleDeleteSession = async (sessionId) => {
     setDeletingId(sessionId);
     try {
       await deletePlacementSession(sessionId);
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      setSelectedSessionIds((prev) => prev.filter((id) => id !== sessionId));
       await showGudangSuccess("Sesi dibatalkan", "Sesi scan masuk telah dihapus.");
     } catch (err) {
       await showGudangError(
@@ -999,7 +1046,7 @@ const ScanProdukMasukGudang = () => {
   const handleExecuteSession = async (event) => {
     event.preventDefault();
 
-    if (!activeSession || !slotId) {
+    if (activeSessions.length === 0 || !slotId) {
       await showGudangWarning(
         "Tujuan belum dipilih",
         "Pilih slot tujuan terlebih dahulu."
@@ -1009,25 +1056,38 @@ const ScanProdukMasukGudang = () => {
 
     try {
       setIsExecuting(true);
-      await executePlacementSession(activeSession.id, {
-        layoutId,
-        slotId,
-        notes: execNotes.trim() || null,
-      });
+      
+      // Eksekusi semua sesi yang dipilih secara berurutan
+      for (const session of activeSessions) {
+        await executePlacementSession(session.id, {
+          layoutId,
+          slotId,
+          notes: execNotes.trim() || null,
+        });
+      }
 
       // Refresh workspace state
       refresh({ silent: true });
 
-      const sku = state.skus.find((s) => String(s.id) === String(activeSession.skuId));
-      const skuLabel = sku?.label || sku?.code || activeSession.skuId;
+      const totalQty = activeSessions.reduce((sum, s) => sum + (s.barcodes?.length || 0), 0);
+      
+      let successMsg = "";
+      if (activeSessions.length === 1) {
+        const sku = state.skus.find((s) => String(s.id) === String(activeSessions[0].skuId));
+        const skuLabel = sku?.label || sku?.code || activeSessions[0].skuId;
+        successMsg = `${totalQty} barcode "${skuLabel}" berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`;
+      } else {
+        successMsg = `${activeSessions.length} sesi (${totalQty} barcode) berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`;
+      }
 
       await showGudangSuccess(
         "Penempatan berhasil",
-        `${activeSession.barcodes?.length || 0} barcode "${skuLabel}" berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`
+        successMsg
       );
 
       // Clean up
-      setActiveSession(null);
+      setActiveSessions([]);
+      setSelectedSessionIds([]);
       setSlotId("");
       setExecNotes("");
       setActiveScene(1);
@@ -1164,10 +1224,12 @@ const ScanProdukMasukGudang = () => {
     {
       id: 2,
       title: "Tentukan Tujuan Sesi",
-      helper: activeSession
-        ? `Sesi #${activeSession.id} · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`
+      helper: activeSessions.length > 0
+        ? (activeSessions.length === 1
+            ? `Sesi #${activeSessions[0].id} · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`
+            : `${activeSessions.length} Sesi · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`)
         : "Pilih sesi dari daftar",
-      complete: Boolean(activeSession && slotId),
+      complete: Boolean(activeSessions.length > 0 && slotId),
     },
   ];
 
@@ -1509,14 +1571,20 @@ const ScanProdukMasukGudang = () => {
           )}
 
           {/* ── Scene 2: Tentukan Lokasi Tujuan ── */}
-          {activeScene === 2 && activeSession && (
+          {activeScene === 2 && activeSessions.length > 0 && (
             <section className="gudang-ui-panel">
               <div className="gudang-ui-panel-head" style={{ marginBottom: 12, alignItems: "flex-start" }}>
                 <div>
                   <h2>Scene 2: Tentukan Lokasi Tujuan</h2>
-                  <p>
-                    Sesi <strong>#{activeSession.id}</strong> &bull; {resolveSkuLabel(activeSession.skuId)} &bull; {activeSession.barcodes?.length} pcs
-                  </p>
+                  {activeSessions.length === 1 ? (
+                    <p>
+                      Sesi <strong>#{activeSessions[0].id}</strong> &bull; {resolveSkuLabel(activeSessions[0].skuId)} &bull; {activeSessions[0].barcodes?.length} pcs
+                    </p>
+                  ) : (
+                    <p>
+                      Menempatkan <strong>{activeSessions.length} sesi</strong> sekaligus &bull; Total <strong>{activeSessions.reduce((sum, s) => sum + (s.barcodes?.length || 0), 0)} pcs</strong>
+                    </p>
+                  )}
                 </div>
                 <div style={{ minWidth: 220 }}>
                   <select
@@ -1611,10 +1679,10 @@ const ScanProdukMasukGudang = () => {
                   type="button"
                   onClick={() => {
                     setActiveScene(1);
-                    setActiveSession(null);
+                    setActiveSessions([]);
                     setSlotId("");
                   }}
-                  style={{ border: "1px solid #dbe4ef", andBorderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "9px 16px", cursor: "pointer", borderRadius: 8 }}
+                  style={{ border: "1px solid #dbe4ef", borderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "9px 16px", cursor: "pointer" }}
                 >
                   Batal
                 </button>
@@ -1634,7 +1702,7 @@ const ScanProdukMasukGudang = () => {
 
           {/* ── Daftar Sesi Pending ── */}
           <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+            <div className="gudang-ui-panel-head" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2>Sesi Scan Pending</h2>
                 <p>
@@ -1643,27 +1711,70 @@ const ScanProdukMasukGudang = () => {
                     : "Belum ada sesi scan masuk pending."}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={loadSessions}
-                disabled={isLoadingSessions}
-                style={{
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 8,
-                  background: "#f8fafc",
-                  color: "#475569",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                {isLoadingSessions ? <FaSpinner className="gudang-ui-spin" /> : null}
-                Refresh
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {sessions.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleToggleSelectAll}
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 8,
+                        background: "#f8fafc",
+                        color: "#475569",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {selectedSessionIds.length === sessions.length ? "Batal Pilih Semua" : "Pilih Semua"}
+                    </button>
+                    {selectedSessionIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleSelectBulkSessions}
+                        style={{
+                          border: "none",
+                          borderRadius: 8,
+                          background: "#7c3aed",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          padding: "6px 14px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <FaMapMarkerAlt size={11} /> Tentukan Tujuan Masal ({selectedSessionIds.length})
+                      </button>
+                    )}
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={loadSessions}
+                  disabled={isLoadingSessions}
+                  style={{
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    background: "#f8fafc",
+                    color: "#475569",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  {isLoadingSessions ? <FaSpinner className="gudang-ui-spin" /> : null}
+                  Refresh
+                </button>
+              </div>
             </div>
 
             {sessions.length === 0 ? (
@@ -1691,6 +1802,8 @@ const ScanProdukMasukGudang = () => {
                     onSelectSession={handleSelectSession}
                     onDeleteSession={handleDeleteSession}
                     isDeleting={deletingId === session.id}
+                    isSelected={selectedSessionIds.includes(session.id)}
+                    onToggleSelect={() => handleToggleSelectSession(session.id)}
                   />
                 ))}
               </div>
@@ -1833,14 +1946,16 @@ const ScanProdukMasukGudang = () => {
             </div>
 
             {/* Target Slot */}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: activeSession && slotId ? "#ecfdf5" : activeSession ? "#fffbeb" : "#f8fafc" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: activeSessions.length > 0 && slotId ? "#ecfdf5" : activeSessions.length > 0 ? "#fffbeb" : "#f8fafc" }}>
               <strong style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase" }}>
                 Lokasi Penempatan
               </strong>
-              {activeSession ? (
+              {activeSessions.length > 0 ? (
                 <>
                   <div style={{ fontSize: 11, color: "#92400e", marginBottom: 4 }}>
-                    Sesi #{activeSession.id} terpilih
+                    {activeSessions.length === 1
+                      ? `Sesi #${activeSessions[0].id} terpilih`
+                      : `${activeSessions.length} sesi terpilih`}
                   </div>
                   {slotId ? (
                     <>
