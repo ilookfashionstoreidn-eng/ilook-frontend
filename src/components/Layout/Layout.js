@@ -770,6 +770,7 @@ const Layout = () => {
                     "history-produk-masuk-gudang",
                     "history-out-check-gudang",
                     "stok-opname-gudang",
+                    "pencarian-seri-gudang",
                   ].includes(activeMenu)
                     ? "active"
                     : ""
@@ -882,6 +883,13 @@ const Layout = () => {
                       <li>
                         <Link to="history-out-check-gudang" className={`dropdown-link ${activeMenu === "history-out-check-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-out-check-gudang")}>
                           <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Keluar - Cek Masuk
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("gudang_produk:pencarian_seri") && (
+                      <li>
+                        <Link to="pencarian-seri-gudang" className={`dropdown-link ${activeMenu === "pencarian-seri-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("pencarian-seri-gudang")}>
+                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pencarian Seri
                         </Link>
                       </li>
                     )}

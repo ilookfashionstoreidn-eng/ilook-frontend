@@ -877,3 +877,10 @@ export const deleteGudangProdukStokAwal = async ({ sku_id, slot_id }) => {
   });
   return response?.data;
 };
+
+export const fetchPencarianSeriGudang = async (params) => {
+  const response = await API.get("/gudang-produk-workspace/pencarian-seri", {
+    params,
+  });
+  return response?.data;
+};
