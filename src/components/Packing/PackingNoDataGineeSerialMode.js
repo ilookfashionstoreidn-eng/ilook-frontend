@@ -8,7 +8,10 @@ const normalizeTrackingNumber = (value = "") => value.trim();
 const normalizeSku = (value = "") => value.trim().replace(/\s+/g, " ").toUpperCase();
 const normalizeSerialNumber = (value = "") => value.trim();
 const normalizeSerialLookup = (value = "") => value.trim().toUpperCase();
-const hasSerialBarcodeSeparator = (value = "") => String(value || "").includes("|");
+const hasSerialBarcodeSeparator = (value = "") => {
+  const str = String(value || "");
+  return str.includes("|") || str.includes(".");
+};
 
 const getMessageTone = (value = "") => {
   const normalizedValue = String(value || "").trim().toUpperCase();
@@ -42,13 +45,23 @@ const parseSerialBarcodeValue = (value = "") => {
   const rawValue = String(value || "").trim();
 
   if (!rawValue) {
-    return { error: "Format barcode tidak valid. Format harus: SKU | NOMOR_SERI" };
+    return { error: "Format barcode tidak valid. Format harus: SKU | NOMOR_SERI atau SKU.NOMOR_SERI" };
   }
 
-  const parts = rawValue.split("|").map((part) => part.trim());
-
-  if (parts.length !== 2) {
-    return { error: "Format barcode tidak valid. Format harus: SKU | NOMOR_SERI" };
+  let parts = [];
+  if (rawValue.includes("|")) {
+    parts = rawValue.split("|").map((part) => part.trim());
+    if (parts.length !== 2) {
+      return { error: "Format barcode tidak valid. Format harus: SKU | NOMOR_SERI" };
+    }
+  } else if (rawValue.includes(".")) {
+    const lastDotIndex = rawValue.lastIndexOf(".");
+    parts = [
+      rawValue.slice(0, lastDotIndex).trim(),
+      rawValue.slice(lastDotIndex + 1).trim()
+    ];
+  } else {
+    return { error: "Format barcode tidak valid. Format harus: SKU | NOMOR_SERI atau SKU.NOMOR_SERI" };
   }
 
   const actualSku = normalizeSku(parts[0]);
@@ -306,8 +319,8 @@ const PackingNoDataGineeSerialMode = ({
       );
       const nextOrderPreview = response.data?.order || null;
 
-      if (nextOrderPreview) {
-        const nextMessage = `WARNING: Tracking number ${normalizedTracking} sudah memiliki data order Ginee (#${nextOrderPreview.order_number}) dan tidak bisa diproses lewat No Data Ginee. Gunakan alur packing normal.`;
+      if (nextOrderPreview && nextOrderPreview.is_packed) {
+        const nextMessage = `WARNING: Tracking number ${normalizedTracking} sudah memiliki data order Ginee (#${nextOrderPreview.order_number}) dan sudah dipacking.`;
         playSound("error");
         setTrackingNumber(normalizedTracking);
         setMessage(nextMessage);
@@ -315,7 +328,9 @@ const PackingNoDataGineeSerialMode = ({
         return { success: false, message: nextMessage };
       }
 
-      const nextMessage = "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk.";
+      const nextMessage = nextOrderPreview
+        ? `INFO: Order #${nextOrderPreview.order_number} ditemukan dan belum dipacking. Lanjutkan scan SKU | nomor seri.`
+        : "INFO: Data order belum ada di Ginee. Scan SKU | nomor seri tetap bisa dilakukan, lalu status akan menyesuaikan saat order masuk.";
 
       setTrackingNumber(normalizedTracking);
       setActiveTrackingNumber(normalizedTracking);
