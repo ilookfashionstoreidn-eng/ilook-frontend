@@ -211,7 +211,8 @@ const PembelianBahan = () => {
   }, [showForm, showEditForm, showDetail, showScanBarcode, showReturnForm]);
 
   // === PAGINATION ===
-  const filtered = items.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase()));
+  const itemsWithoutOpname = items.filter((b) => !(b.no_surat_jalan && b.no_surat_jalan.startsWith("OPNAME-")));
+  const filtered = itemsWithoutOpname.filter((b) => (b.keterangan || "").toLowerCase().includes(searchTerm.toLowerCase()) || (b.sku || "").toLowerCase().includes(searchTerm.toLowerCase()));
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
@@ -221,6 +222,24 @@ const PembelianBahan = () => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+
+  const getPaginationGroup = () => {
+    let pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 4) {
+        pages = [1, 2, 3, 4, 5, "...", totalPages];
+      } else if (currentPage >= totalPages - 3) {
+        pages = [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      } else {
+        pages = [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+      }
+    }
+    return pages;
   };
 
   // === HELPER ===
@@ -1256,8 +1275,14 @@ const PembelianBahan = () => {
                     Previous
                   </button>
 
-                  {[...Array(totalPages)].map((_, i) => {
-                    const page = i + 1;
+                  {getPaginationGroup().map((page, index) => {
+                    if (page === "...") {
+                      return (
+                        <span key={`ellipsis-${index}`} style={{ padding: "8px 12px", color: "#64748b", fontWeight: "bold" }}>
+                          ...
+                        </span>
+                      );
+                    }
                     return (
                       <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
                         {page}

@@ -322,10 +322,10 @@ const KodeSeriBelumDikerjakanPage = () => {
               </div>
             </div>
             <div className="kode-seri-topbar-actions">
-              <button type="button" className="kode-seri-refresh-btn" onClick={handleExportPDF} disabled={loading || flattenedRows.length === 0}>
+              <button type="button" className="kode-seri-refresh-btn is-secondary" onClick={handleExportPDF} disabled={loading || flattenedRows.length === 0}>
                 <FiDownload size={14} /> PDF
               </button>
-              <button type="button" className="kode-seri-refresh-btn" onClick={handleExportPNG} disabled={loading || flattenedRows.length === 0}>
+              <button type="button" className="kode-seri-refresh-btn is-secondary" onClick={handleExportPNG} disabled={loading || flattenedRows.length === 0}>
                 <FiDownload size={14} /> PNG
               </button>
               <button type="button" className="kode-seri-refresh-btn" onClick={loadData} disabled={loading}>

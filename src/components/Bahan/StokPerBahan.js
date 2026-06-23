@@ -622,18 +622,6 @@ const StokPerBahan = () => {
         key={group.id}
       >
         <section className="stok-bahan-group-container">
-          <div className="stok-bahan-report-heading">
-          <div>
-            <p className="stok-bahan-report-kicker">Laporan bahan</p>
-            <h1>Stok Per Bahan</h1>
-          </div>
-          <div className="stok-bahan-report-meta">
-            <span>Tanggal: {formatDate(lastSyncAt || new Date())}</span>
-            <span>Total varian: {formatNumber(reportRows.length)} item</span>
-            <span>Page: {pageNumber}</span>
-          </div>
-          </div>
-
           <div className="stok-bahan-variant-section">
             <div className="stok-bahan-group-line">
               <strong>Grup: {group.nama_bahan}</strong>
@@ -745,6 +733,18 @@ const StokPerBahan = () => {
             <span>Download PDF</span>
           </button>
         </header>
+
+        <div className="stok-bahan-page-header">
+          <div>
+            <p className="stok-bahan-report-kicker">Laporan bahan</p>
+            <h1>Stok Per Bahan</h1>
+          </div>
+          <div className="stok-bahan-report-meta">
+            <span>Tanggal: {formatDate(lastSyncAt || new Date())}</span>
+            <span>Total varian: {formatNumber(reportRows.length)} item</span>
+            <span>Halaman {currentPage} dari {totalPages || 1}</span>
+          </div>
+        </div>
 
         <section className="stok-bahan-report-filters">
           <label className="stok-bahan-select-group">

@@ -352,7 +352,8 @@ const Layout = () => {
                   <span className={`arrow ${isGudangOpen ? "open" : ""}`}>{isGudangOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isGudangOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    <div className="dropdown-group-label">Master Data</div>
                     {hasAccess("gudang_bahan:pabrik") && (
                       <li>
                         <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
@@ -381,6 +382,8 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
+
+                    <div className="dropdown-group-label">Operasional</div>
                     {hasAccess("gudang_bahan:pemesanan") && (
                       <li>
                         <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
@@ -395,13 +398,6 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("gudang_bahan:opname") && (
-                      <li>
-                        <Link to="stok-opname-bahan" className={`dropdown-link ${activeMenu === "stok-opname-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-opname-bahan")}>
-                          <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Stok Opname Bahan
-                        </Link>
-                      </li>
-                    )}
                     {hasAccess("gudang_bahan:return") && (
                       <li>
                         <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
@@ -409,17 +405,26 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("gudang_bahan:scan_masuk") && (
+                    {hasAccess("gudang_bahan:opname") && (
                       <li>
-                        <Link to="scan-bahan" className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("scan-bahan")}>
-                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Bahan Masuk
+                        <Link to="stok-opname-bahan" className={`dropdown-link ${activeMenu === "stok-opname-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-opname-bahan")}>
+                          <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Stok Opname Bahan
                         </Link>
                       </li>
                     )}
+
+                    <div className="dropdown-group-label">Inventory</div>
                     {hasAccess("gudang_bahan:stok") && (
                       <li>
                         <Link to="stok-per-bahan" className={`dropdown-link ${activeMenu === "stok-per-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-per-bahan")}>
                           <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Stok Bahan
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("gudang_bahan:scan_masuk") && (
+                      <li>
+                        <Link to="scan-bahan" className={`dropdown-link ${activeMenu === "scan-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("scan-bahan")}>
+                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Bahan Masuk
                         </Link>
                       </li>
                     )}
@@ -433,10 +438,12 @@ const Layout = () => {
                     {hasAccess("gudang_bahan:history_keluar") && (
                       <li>
                         <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Stok Bahan Keluar
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Stok Keluar
                         </Link>
                       </li>
                     )}
+
+                    <div className="dropdown-group-label">Keuangan</div>
                     {hasAccess("gudang_bahan:hutang_pabrik") && (
                       <li>
                         <Link to="pendapatan-pabrik" className={`dropdown-link ${activeMenu === "pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan-pabrik")}>
@@ -481,20 +488,7 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("cutting:pola") && (
-                      <li>
-                        <Link to="tukangPola" className={`dropdown-link ${activeMenu === "tukangPola" ? "active" : ""}`} onClick={() => handleMenuClick("tukangPola")}>
-                          <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Pola
-                        </Link>
-                      </li>
-                    )}
-                    {hasAccess("cutting:marker") && (
-                      <li>
-                        <Link to="markeran" className={`dropdown-link ${activeMenu === "markeran" ? "active" : ""}`} onClick={() => handleMenuClick("markeran")}>
-                          <FaRuler className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Marker Produk
-                        </Link>
-                      </li>
-                    )}
+
 
                     <div className="dropdown-group-label">Operasional</div>
                     {hasAccess("cutting:spk") && (
