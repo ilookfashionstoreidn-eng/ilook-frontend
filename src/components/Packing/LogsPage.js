@@ -62,6 +62,7 @@ const LogsPage = () => {
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [status, setStatus] = useState("");
+  const [serial, setSerial] = useState("");
   const [selectedModes, setSelectedModes] = useState([]);
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
@@ -124,7 +125,8 @@ const LogsPage = () => {
     track = tracking,
     performed = performedBy,
     modeFilters = selectedModes,
-    pageSize = perPage
+    pageSize = perPage,
+    seri = serial
   ) => {
     try {
       setLoading(true);
@@ -140,6 +142,7 @@ const LogsPage = () => {
           ...(stat && { status: stat }),
           ...(modeFilters.length > 0 && { mode: modeFilters }),
           ...(track && { tracking_number: track }),
+          ...(seri && { serial: seri }),
         },
       });
 
@@ -162,7 +165,8 @@ const LogsPage = () => {
     stat = status,
     performed = performedBy,
     track = tracking,
-    modeFilters = selectedModes
+    modeFilters = selectedModes,
+    seri = serial
   ) => {
     try {
       setLoadingSummary(true);
@@ -175,6 +179,7 @@ const LogsPage = () => {
         ...(modeFilters.length > 0 && { mode: modeFilters }),
         ...(performed && { performed_by: performed }),
         ...(track && { tracking_number: track }),
+        ...(seri && { serial: seri }),
       });
 
       if (response.data.data.length > 0) {
@@ -243,8 +248,8 @@ const LogsPage = () => {
       return;
     }
 
-    fetchSummary(startDate, endDate, status, performedBy, tracking, selectedModes);
-    fetchLogs(startDate, endDate, status, null, tracking, performedBy, selectedModes, perPage);
+    fetchSummary(startDate, endDate, status, performedBy, tracking, selectedModes, serial);
+    fetchLogs(startDate, endDate, status, null, tracking, performedBy, selectedModes, perPage, serial);
   };
 
   const handleTrackingKeyDown = (event) => {
@@ -268,7 +273,8 @@ const LogsPage = () => {
       tracking,
       performedBy,
       selectedModes,
-      nextPerPage
+      nextPerPage,
+      serial
     );
   };
 
@@ -284,6 +290,7 @@ const LogsPage = () => {
         ...(selectedModes.length > 0 && { mode: selectedModes }),
         ...(tracking && { tracking_number: tracking }),
         ...(performedBy && { performed_by: performedBy }),
+        ...(serial && { serial: serial }),
       });
 
       const exportData = response.data?.data;
@@ -467,12 +474,20 @@ const LogsPage = () => {
                   />
                 </div>
 
-                <div className="pklog-filter-search">
+                <div className="pklog-filter-search" style={{ display: 'flex', gap: '10px' }}>
                   <input
                     type="text"
                     placeholder="Cari Tracking Number..."
                     value={tracking}
                     onChange={(event) => setTracking(event.target.value)}
+                    onKeyDown={handleTrackingKeyDown}
+                    className="pklog-input-tracking"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari Seri Produk..."
+                    value={serial}
+                    onChange={(event) => setSerial(event.target.value)}
                     onKeyDown={handleTrackingKeyDown}
                     className="pklog-input-tracking"
                   />
@@ -761,7 +776,8 @@ const LogsPage = () => {
                         tracking,
                         performedBy,
                         selectedModes,
-                        perPage
+                        perPage,
+                        serial
                       )
                     }
                   >
@@ -781,7 +797,8 @@ const LogsPage = () => {
                         tracking,
                         performedBy,
                         selectedModes,
-                        perPage
+                        perPage,
+                        serial
                       )
                     }
                   >

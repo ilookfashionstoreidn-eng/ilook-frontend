@@ -97,6 +97,7 @@ import HistoryProdukGudang from "./components/Bahan/HistoryProdukGudang";
 import HistoryMutasiGudang from "./components/Bahan/HistoryMutasiGudang";
 import StokOpnameGudang from "./components/Bahan/StokOpnameGudang";
 import HistoryStokAwalGudang from "./components/Bahan/HistoryStokAwalGudang";
+import PencarianSeriGudang from "./components/Bahan/PencarianSeriGudang";
 import DashboardCutting from "./components/Cutting/SpkCutting/DashboardCutting";
 import DashboardJasa from "./components/Jasa/DashboardJasa";
 import QCLolos from "./components/QC/QCLolos";
@@ -260,6 +261,7 @@ const App = () => {
             <Route path="history-produk-masuk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk_masuk"><HistoryProdukMasukGudang /></MenuProtectedRoute>} />
             <Route path="history-out-check-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_out_check"><HistoryOutCheckGudang /></MenuProtectedRoute>} />
             <Route path="picking-queue" element={<MenuProtectedRoute menuKey="gudang_produk:picking_queue"><PickingQueue /></MenuProtectedRoute>} />
+            <Route path="pencarian-seri-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:pencarian_seri"><PencarianSeriGudang /></MenuProtectedRoute>} />
           </Route>
 
           {/* Quality Control Group */}
