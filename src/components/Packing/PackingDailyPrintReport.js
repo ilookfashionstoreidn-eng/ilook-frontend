@@ -62,29 +62,25 @@ const PackingDailyPrintReport = () => {
     const rateColor = (pct) => (pct >= 90 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444');
 
     const chartData = useMemo(() => {
+        const isSingleDay = dayjs(startDate).isSame(dayjs(endDate), 'day');
         const filledData = [];
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
-        const isSingleDay = start.isSame(end, 'day');
         
-        let currentDate = start;
-        while (currentDate.isBefore(end) || currentDate.isSame(end, 'day')) {
-            const dateStr = currentDate.format('YYYY-MM-DD');
-            for (let h = 0; h < 24; h++) {
-                const existing = hourlyData.find(d => d.date === dateStr && parseInt(d.hour) === h);
-                filledData.push({
-                    label: isSingleDay ? `${h.toString().padStart(2, '0')}:00` : `${currentDate.format('DD MMM')} ${h.toString().padStart(2, '0')}:00`,
-                    total: existing ? parseInt(existing.total_packed) : 0
-                });
-            }
-            currentDate = currentDate.add(1, 'day');
+        for (let h = 0; h < 24; h++) {
+            const totalForHour = hourlyData
+                .filter(d => parseInt(d.hour) === h)
+                .reduce((sum, d) => sum + parseInt(d.total_packed || 0), 0);
+                
+            filledData.push({
+                label: `${h.toString().padStart(2, '0')}:00`,
+                total: totalForHour
+            });
         }
 
         return {
             labels: filledData.map(d => d.label),
             datasets: [
                 {
-                    label: 'Pesanan Dipacking',
+                    label: isSingleDay ? 'Pesanan Dipacking' : `Total Pesanan Dipacking (${dayjs(startDate).format('DD/MM')} - ${dayjs(endDate).format('DD/MM')})`,
                     data: filledData.map(d => d.total),
                     backgroundColor: 'rgba(16, 185, 129, 0.15)',
                     borderColor: '#10b981',
