@@ -198,12 +198,15 @@ const PackingDailyPackingReport = () => {
                                     <tr>
                                         <th>Tanggal Packing</th>
                                         <th style={{ textAlign: 'center' }}>Total Pesanan Dipacking</th>
+                                        <th style={{ textAlign: 'center' }}>Ready to Ship</th>
+                                        <th style={{ textAlign: 'center' }}>Delivered</th>
+                                        <th style={{ textAlign: 'center' }}>Cancelled</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportData.length === 0 ? (
                                         <tr>
-                                            <td colSpan="2">
+                                            <td colSpan="5">
                                                 <div className="pdr-empty">
                                                     <FontAwesomeIcon icon={faInbox} className="fa-icon" />
                                                     {loading ? 'Memuat data…' : 'Tidak ada data packing pada rentang tanggal ini.'}
@@ -219,6 +222,15 @@ const PackingDailyPackingReport = () => {
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className="pdr-num green">{nf(row.total_packed)}</span>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <span className="pdr-num" style={{ color: '#eab308' }}>{nf(row.total_ready_to_ship)}</span>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <span className="pdr-num" style={{ color: '#3b82f6' }}>{nf(row.total_delivered)}</span>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <span className="pdr-num red">{nf(row.total_cancelled)}</span>
                                                 </td>
                                             </tr>
                                         ))
