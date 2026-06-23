@@ -64,6 +64,7 @@ import ReturnLogs from "./components/Packing/ReturnLogs";
 import PackingMonitoring from "./components/Packing/PackingMonitoring";
 import PackingPrintedComparison from "./components/Packing/PackingPrintedComparison";
 import PackingDailyPrintReport from "./components/Packing/PackingDailyPrintReport";
+import PackingDailyPackingReport from "./components/Packing/PackingDailyPackingReport";
 import Bahan from "./components/Bahan/Bahan";
 import BahanList from "./components/Bahan/BahanList";
 import PembelianBahan from "./components/Bahan/PembelianBahan";
@@ -219,6 +220,7 @@ const App = () => {
             <Route path="monitoring" element={<MenuProtectedRoute menuKey="packing:logs"><PackingMonitoring /></MenuProtectedRoute>} />
             <Route path="packing-printed" element={<MenuProtectedRoute menuKey="packing:logs"><PackingPrintedComparison /></MenuProtectedRoute>} />
             <Route path="packing-daily-report" element={<MenuProtectedRoute menuKey="packing:logs"><PackingDailyPrintReport /></MenuProtectedRoute>} />
+            <Route path="packing-daily-packing-report" element={<MenuProtectedRoute menuKey="packing:logs"><PackingDailyPackingReport /></MenuProtectedRoute>} />
           </Route>
 
           {/* Return Group */}
