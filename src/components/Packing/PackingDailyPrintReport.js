@@ -4,11 +4,11 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faPrint, faBoxOpen, faBoxesStacked, faClock, faPercent, faCalendarAlt, faInbox, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faPrint, faBoxOpen, faBoxesStacked, faClock, faPercent, faCalendarAlt, faInbox, faChartBar, faChartLine } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/id';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import './PackingMonitoring.css';
 import './PackingDailyPrintReport.css';
@@ -62,26 +62,57 @@ const PackingDailyPrintReport = () => {
     const rateColor = (pct) => (pct >= 90 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444');
 
     const chartData = useMemo(() => {
+        const filledData = [];
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+        const isSingleDay = start.isSame(end, 'day');
+        
+        let currentDate = start;
+        while (currentDate.isBefore(end) || currentDate.isSame(end, 'day')) {
+            const dateStr = currentDate.format('YYYY-MM-DD');
+            for (let h = 0; h < 24; h++) {
+                const existing = hourlyData.find(d => d.date === dateStr && parseInt(d.hour) === h);
+                filledData.push({
+                    label: isSingleDay ? `${h.toString().padStart(2, '0')}:00` : `${currentDate.format('DD MMM')} ${h.toString().padStart(2, '0')}:00`,
+                    total: existing ? parseInt(existing.total_packed) : 0
+                });
+            }
+            currentDate = currentDate.add(1, 'day');
+        }
+
         return {
-            labels: hourlyData.map(d => `${dayjs(d.date).format('DD MMM')} ${d.hour.toString().padStart(2, '0')}:00`),
+            labels: filledData.map(d => d.label),
             datasets: [
                 {
                     label: 'Pesanan Dipacking',
-                    data: hourlyData.map(d => d.total_packed),
-                    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                    data: filledData.map(d => d.total),
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
                     borderColor: '#10b981',
-                    borderWidth: 1,
-                    borderRadius: 4,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }
             ]
         };
-    }, [hourlyData]);
+    }, [hourlyData, startDate, endDate]);
 
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: { display: false },
+            datalabels: {
+                display: function(context) {
+                    return context.dataset.data[context.dataIndex] > 0;
+                },
+                color: '#fff',
+                font: { weight: 'bold', size: 10 }
+            },
             tooltip: {
                 mode: 'index',
                 intersect: false,
@@ -93,7 +124,10 @@ const PackingDailyPrintReport = () => {
             }
         },
         scales: {
-            x: { grid: { display: false } },
+            x: { 
+                grid: { display: false },
+                ticks: { maxRotation: 45, minRotation: 0 }
+            },
             y: { beginAtZero: true, ticks: { precision: 0 } }
         }
     };
@@ -175,13 +209,13 @@ const PackingDailyPrintReport = () => {
                     <div className="packing-card" style={{ padding: 20, flexShrink: 0, height: '240px', display: 'flex', flexDirection: 'column', marginBottom: 0 }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <span className="packing-card-label">
-                                <FontAwesomeIcon icon={faChartBar} className="me-2" style={{ color: '#0ea5e9' }} />
+                                <FontAwesomeIcon icon={faChartLine} className="me-2" style={{ color: '#0ea5e9' }} />
                                 Aktivitas Packing per Jam
                             </span>
                         </div>
                         <div style={{ flex: 1, position: 'relative' }}>
                             {hourlyData.length > 0 ? (
-                                <Bar data={chartData} options={chartOptions} />
+                                <Line data={chartData} options={chartOptions} />
                             ) : (
                                 <div className="pdr-empty" style={{ padding: '20px' }}>
                                     {loading ? 'Memuat grafik...' : 'Tidak ada aktivitas packing.'}
