@@ -4,10 +4,12 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faPrint, faBoxOpen, faBoxesStacked, faClock, faPercent, faCalendarAlt, faInbox } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faPrint, faBoxOpen, faBoxesStacked, faClock, faPercent, faCalendarAlt, faInbox, faChartBar } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/id';
+import { Bar } from 'react-chartjs-2';
+import 'chart.js/auto';
 import './PackingMonitoring.css';
 import './PackingDailyPrintReport.css';
 
@@ -19,6 +21,7 @@ const PackingDailyPrintReport = () => {
     const [endDate, setEndDate] = useState(dayjs().format('YYYY-MM-DD'));
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState([]);
+    const [hourlyData, setHourlyData] = useState([]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -31,7 +34,8 @@ const PackingDailyPrintReport = () => {
                 },
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setReportData(res.data.data);
+            setReportData(res.data.data || []);
+            setHourlyData(res.data.hourly_chart || []);
         } catch (error) {
             console.error(error);
             toast.error('Gagal mengambil laporan cetak harian');
@@ -56,6 +60,43 @@ const PackingDailyPrintReport = () => {
     const nf = (n) => Number(n || 0).toLocaleString('id-ID');
 
     const rateColor = (pct) => (pct >= 90 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444');
+
+    const chartData = useMemo(() => {
+        return {
+            labels: hourlyData.map(d => `${dayjs(d.date).format('DD MMM')} ${d.hour.toString().padStart(2, '0')}:00`),
+            datasets: [
+                {
+                    label: 'Pesanan Dipacking',
+                    data: hourlyData.map(d => d.total_packed),
+                    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
+        };
+    }, [hourlyData]);
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return `${context.parsed.y} pesanan`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+    };
 
     return (
         <div className="packing-dashboard-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingBottom: 0 }}>
@@ -129,7 +170,26 @@ const PackingDailyPrintReport = () => {
                     </div>
                 </div>
 
-                <div className="packing-dashboard-bottom-grid" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="packing-dashboard-bottom-grid" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '16px' }}>
+                    {/* CHART CARD */}
+                    <div className="packing-card" style={{ padding: 20, flexShrink: 0, height: '240px', display: 'flex', flexDirection: 'column', marginBottom: 0 }}>
+                        <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                            <span className="packing-card-label">
+                                <FontAwesomeIcon icon={faChartBar} className="me-2" style={{ color: '#0ea5e9' }} />
+                                Aktivitas Packing per Jam
+                            </span>
+                        </div>
+                        <div style={{ flex: 1, position: 'relative' }}>
+                            {hourlyData.length > 0 ? (
+                                <Bar data={chartData} options={chartOptions} />
+                            ) : (
+                                <div className="pdr-empty" style={{ padding: '20px' }}>
+                                    {loading ? 'Memuat grafik...' : 'Tidak ada aktivitas packing.'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="packing-card" style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: 0 }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 14 }}>
                             <span className="packing-card-label">Breakdown Harian ({reportData.length} Hari)</span>
