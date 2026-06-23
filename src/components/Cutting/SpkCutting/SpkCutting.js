@@ -734,7 +734,7 @@ const SpkCutting = () => {
     id_spk_cutting: "",
     pic: "",
     produk_id: "",
-    tanggal_buat: "",
+    tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
     tanggal_batas_kirim: "",
     harga_jasa: "",
     harga_jasaDisplay: "",
@@ -2458,7 +2458,7 @@ const SpkCutting = () => {
         id_spk_cutting: "",
         pic: "",
         produk_id: "",
-        tanggal_buat: "",
+        tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
         tanggal_batas_kirim: "",
         harga_jasa: "",
         harga_jasaDisplay: "",
@@ -2657,7 +2657,7 @@ const SpkCutting = () => {
                   pic: "",
 
                   produk_id: "",
-                  tanggal_buat: "",
+                  tanggal_buat: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); })(),
                   tanggal_batas_kirim: "",
 
                   harga_jasa: "",

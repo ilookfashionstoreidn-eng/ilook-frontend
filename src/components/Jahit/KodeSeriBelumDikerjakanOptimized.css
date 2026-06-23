@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 /* ═══════════════════════════════════════════
    Kode Seri Belum Dikerjakan — Redesigned
    Consistent with SpkCmt layout system
@@ -12,7 +14,13 @@
   padding: 0;
   background: #f4f6f9;
   color: #0f172a;
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.kode-seri-page *,
+.kode-seri-page *::before,
+.kode-seri-page *::after {
+  box-sizing: border-box;
 }
 
 .kode-seri-page::before {
@@ -141,6 +149,19 @@
   opacity: 0.6;
 }
 
+.kode-seri-refresh-btn.is-secondary {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cfd8e3;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.kode-seri-refresh-btn.is-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #aebbd0;
+  box-shadow: 0 8px 18px -14px rgba(15, 23, 42, 0.35);
+}
+
 .is-spinning,
 .kode-seri-empty-icon.is-loading svg {
   animation: kode-seri-spin 1s linear infinite;
@@ -165,17 +186,22 @@
 .kode-seri-stat-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
+  gap: 1px;
+  background: #e4e9f0;
+  border: 1px solid #e4e9f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
 }
 
 .kode-seri-stat-card {
   background: #ffffff;
-  border: 1px solid #e4e9f0;
-  border-radius: 10px;
-  padding: 12px 14px;
+  border: none;
+  border-radius: 0;
+  padding: 13px 15px;
   display: flex;
   flex-direction: row;
-  gap: 12px;
+  gap: 11px;
   align-items: center;
   box-shadow: none;
 }
@@ -295,80 +321,71 @@
   padding: 0;
 }
 
+/* Segmented control track */
 .kode-seri-filter-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid #e4e9f0;
+  background: #f1f5f9;
 }
 
 .kode-seri-filter-tab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 7px 14px;
+  gap: 7px;
+  padding: 6px 13px;
   border-radius: 999px;
-  border: 1px solid #dde3ed;
-  background: #f8fafc;
+  border: 1px solid transparent;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
   min-width: 0;
 }
 
 .kode-seri-filter-tab span {
   font-size: 12px;
-  font-weight: 600;
-  color: #475569;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
 }
 
 .kode-seri-filter-tab strong {
-  font-size: 12px;
-  font-weight: 700;
-  color: #0f172a;
-  background: #e8edf3;
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  background: #e2e8f0;
   border-radius: 999px;
   padding: 1px 8px;
-  min-width: 26px;
+  min-width: 24px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-.kode-seri-filter-tab:hover {
-  border-color: #b6c2d6;
+.kode-seri-filter-tab:hover:not(.is-active) span {
+  color: #0f172a;
+}
+
+/* Active = lifted white segment with tone accent */
+.kode-seri-filter-tab.is-active {
   background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 4px 8px -4px rgba(15, 23, 42, 0.14);
 }
 
-/* Active states */
-.kode-seri-filter-tab.is-active.tone-all {
-  background: linear-gradient(135deg, #2458ce 0%, #2f6ff1 100%);
-  border-color: #2458ce;
-  box-shadow: 0 4px 12px rgba(36, 88, 206, 0.25);
-}
-.kode-seri-filter-tab.is-active.tone-all span { color: #ffffff; }
-.kode-seri-filter-tab.is-active.tone-all strong { color: #2458ce; background: rgba(255,255,255,0.9); }
+.kode-seri-filter-tab.is-active.tone-all span { color: #2458ce; }
+.kode-seri-filter-tab.is-active.tone-all strong { color: #ffffff; background: #2458ce; }
 
-.kode-seri-filter-tab.is-active.tone-cutting {
-  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-  border-color: #d97706;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
-}
-.kode-seri-filter-tab.is-active.tone-cutting span { color: #ffffff; }
-.kode-seri-filter-tab.is-active.tone-cutting strong { color: #92400e; background: rgba(255,255,255,0.9); }
+.kode-seri-filter-tab.is-active.tone-cutting span { color: #c2410c; }
+.kode-seri-filter-tab.is-active.tone-cutting strong { color: #ffffff; background: #ea580c; }
 
-.kode-seri-filter-tab.is-active.tone-jasa {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  border-color: #059669;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
-}
-.kode-seri-filter-tab.is-active.tone-jasa span { color: #ffffff; }
-.kode-seri-filter-tab.is-active.tone-jasa strong { color: #065f46; background: rgba(255,255,255,0.9); }
+.kode-seri-filter-tab.is-active.tone-jasa span { color: #047857; }
+.kode-seri-filter-tab.is-active.tone-jasa strong { color: #ffffff; background: #059669; }
 
 .kode-seri-separator {
-  width: 1px !important;
-  height: 24px !important;
-  background-color: #dde3ed !important;
-  margin: 0 4px !important;
-  flex-shrink: 0;
+  display: none;
 }
 
 /* ── Search Box ─────────────────────────── */
@@ -441,26 +458,28 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #eef3fa;
+  background: #f4f7fa;
 }
 
 .kode-seri-normal-table th {
   text-align: left;
-  border-bottom: 1px solid #ebf0f6;
-  padding: 11px 12px;
+  border-bottom: 1px solid #d8e0ec;
+  border-right: 1px solid #e6ebf3;
+  padding: 12px 14px;
   font-size: 12px;
   color: #475569;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: #eef3fa;
+  letter-spacing: 0.06em;
+  background: #f4f7fa;
   white-space: nowrap;
 }
 
 .kode-seri-normal-table td {
   text-align: left;
-  border-bottom: 1px solid #ebf0f6;
-  padding: 10px 12px;
+  border-bottom: 1px solid #edf1f6;
+  border-right: 1px solid #f0f3f8;
+  padding: 11px 14px;
   font-size: 12px;
   color: #0f172a;
   font-weight: 500;
@@ -468,12 +487,13 @@
   vertical-align: middle;
 }
 
-.kode-seri-normal-table tbody tr:nth-child(even) td {
-  background: #fbfcff;
+.kode-seri-normal-table th:last-child,
+.kode-seri-normal-table td:last-child {
+  border-right: none;
 }
 
 .kode-seri-normal-table tbody tr:hover td {
-  background: #f7fbff;
+  background: #f5f9ff;
 }
 
 .kode-seri-normal-table tbody tr:last-child td {
