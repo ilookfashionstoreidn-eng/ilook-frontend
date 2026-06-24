@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FaEdit, FaLayerGroup, FaPlus, FaSave, FaSyncAlt, FaTrash } from "react-icons/fa";
+import { FaCheck, FaEdit, FaLayerGroup, FaPen, FaPlus, FaSave, FaSyncAlt, FaTimes, FaTrash } from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
 import {
   DEFAULT_BLOCK_CANVAS,
@@ -66,6 +66,15 @@ const MasterGudangProduk = () => {
   const [slotAliasDraft, setSlotAliasDraft] = useState("");
   const [isLayoutEditorOpen, setIsLayoutEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Inline editing state
+  const [editingLayout, setEditingLayout] = useState(null); // { name, address, pic, description }
+  const [editingFloorId, setEditingFloorId] = useState(null);
+  const [editingFloorLabel, setEditingFloorLabel] = useState("");
+  const [editingBlockId, setEditingBlockId] = useState(null);
+  const [editingBlockLabel, setEditingBlockLabel] = useState("");
+  const [editingRackId, setEditingRackId] = useState(null);
+  const [editingRackLabel, setEditingRackLabel] = useState("");
 
   useEffect(() => {
     if (!selectedLayoutId && state.layouts.length) {
@@ -452,6 +461,138 @@ const MasterGudangProduk = () => {
     }), "Alias slot berhasil disimpan.");
   };
 
+  // ── Edit Handlers ───────────────────────────────────────────────────────────
+
+  const startEditLayout = () => {
+    if (!selectedLayout) return;
+    setEditingLayout({
+      name: selectedLayout.name || "",
+      address: selectedLayout.address || "",
+      pic: selectedLayout.pic || "",
+      description: selectedLayout.description || "",
+    });
+  };
+
+  const cancelEditLayout = () => setEditingLayout(null);
+
+  const saveEditLayout = async () => {
+    if (!editingLayout || !selectedLayout) return;
+    if (!editingLayout.name.trim()) {
+      await showGudangWarning("Nama gudang tidak boleh kosong");
+      return;
+    }
+    await persistSelectedLayout((layout) => ({
+      ...layout,
+      name: editingLayout.name.trim(),
+      address: editingLayout.address.trim(),
+      pic: editingLayout.pic.trim(),
+      description: editingLayout.description.trim(),
+    }), "Informasi gudang berhasil diperbarui.");
+    setEditingLayout(null);
+  };
+
+  const startEditFloor = (floor) => {
+    setEditingFloorId(floor.id);
+    setEditingFloorLabel(floor.label || "");
+  };
+
+  const cancelEditFloor = () => {
+    setEditingFloorId(null);
+    setEditingFloorLabel("");
+  };
+
+  const saveEditFloor = async () => {
+    if (!editingFloorId || !selectedLayout) return;
+    if (!editingFloorLabel.trim()) {
+      await showGudangWarning("Label lantai tidak boleh kosong");
+      return;
+    }
+    await persistSelectedLayout((layout) => ({
+      ...layout,
+      floors: layout.floors.map((floor) =>
+        floor.id === editingFloorId
+          ? { ...floor, label: editingFloorLabel.trim() }
+          : floor
+      ),
+    }), "Label lantai berhasil diperbarui.");
+    cancelEditFloor();
+  };
+
+  const startEditBlock = (block) => {
+    setEditingBlockId(block.id);
+    setEditingBlockLabel(block.label || "");
+  };
+
+  const cancelEditBlock = () => {
+    setEditingBlockId(null);
+    setEditingBlockLabel("");
+  };
+
+  const saveEditBlock = async () => {
+    if (!editingBlockId || !selectedLayout || !selectedFloor) return;
+    if (!editingBlockLabel.trim()) {
+      await showGudangWarning("Label blok tidak boleh kosong");
+      return;
+    }
+    await persistSelectedLayout((layout) => ({
+      ...layout,
+      floors: layout.floors.map((floor) =>
+        floor.id === selectedFloor.id
+          ? {
+              ...floor,
+              blocks: floor.blocks.map((block) =>
+                block.id === editingBlockId
+                  ? { ...block, label: editingBlockLabel.trim() }
+                  : block
+              ),
+            }
+          : floor
+      ),
+    }), "Label blok berhasil diperbarui.");
+    cancelEditBlock();
+  };
+
+  const startEditRack = (rack) => {
+    setEditingRackId(rack.id);
+    setEditingRackLabel(rack.label || "");
+  };
+
+  const cancelEditRack = () => {
+    setEditingRackId(null);
+    setEditingRackLabel("");
+  };
+
+  const saveEditRack = async () => {
+    if (!editingRackId || !selectedLayout || !selectedFloor || !selectedBlock) return;
+    if (!editingRackLabel.trim()) {
+      await showGudangWarning("Label rak tidak boleh kosong");
+      return;
+    }
+    await persistSelectedLayout((layout) => ({
+      ...layout,
+      floors: layout.floors.map((floor) =>
+        floor.id === selectedFloor.id
+          ? {
+              ...floor,
+              blocks: floor.blocks.map((block) =>
+                block.id === selectedBlock.id
+                  ? {
+                      ...block,
+                      racks: block.racks.map((rack) =>
+                        rack.id === editingRackId
+                          ? { ...rack, label: editingRackLabel.trim() }
+                          : rack
+                      ),
+                    }
+                  : block
+              ),
+            }
+          : floor
+      ),
+    }), "Label rak berhasil diperbarui.");
+    cancelEditRack();
+  };
+
   const reloadWorkspace = async () => {
     try {
       setIsLayoutEditorOpen(false);
@@ -619,18 +760,69 @@ const MasterGudangProduk = () => {
               <>
                 <div className="gudang-master-overview">
                   <div className="gudang-master-overview-main">
-                    <span className="gudang-master-kicker">Gudang Aktif</span>
-                    <h2>{selectedLayout.name}</h2>
-                    <p>
-                      {selectedLayout.description || selectedLayout.address || "Struktur gudang siap dikelola dari panel operasional di bawah."}
-                    </p>
-
-                    <div className="gudang-master-meta-row">
-                      <span>Alamat: {selectedLayout.address || "-"}</span>
-                      <span>PIC: {selectedLayout.pic || "-"}</span>
-                      <span>Lantai aktif: {selectedFloor?.label || "-"}</span>
-                      <span>Blok aktif: {selectedBlock?.label || "-"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span className="gudang-master-kicker">Gudang Aktif</span>
+                      {!editingLayout && (
+                        <button type="button" className="gudang-ui-icon-button" onClick={startEditLayout} title="Edit Gudang">
+                          <FaPen size={12} />
+                        </button>
+                      )}
                     </div>
+                    {editingLayout ? (
+                      <div className="gudang-ui-form-grid" style={{ marginTop: 12, marginBottom: 12, background: "#f8fafc", padding: 16, borderRadius: 8, border: "1px dashed #cbd5e1" }}>
+                        <div className="gudang-ui-field" style={{ gridColumn: "span 2" }}>
+                          <label>Nama Gudang</label>
+                          <input
+                            value={editingLayout.name}
+                            onChange={(e) => setEditingLayout(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="gudang-ui-field">
+                          <label>Alamat</label>
+                          <input
+                            value={editingLayout.address}
+                            onChange={(e) => setEditingLayout(prev => ({ ...prev, address: e.target.value }))}
+                          />
+                        </div>
+                        <div className="gudang-ui-field">
+                          <label>PIC</label>
+                          <input
+                            value={editingLayout.pic}
+                            onChange={(e) => setEditingLayout(prev => ({ ...prev, pic: e.target.value }))}
+                          />
+                        </div>
+                        <div className="gudang-ui-field" style={{ gridColumn: "span 2" }}>
+                          <label>Deskripsi</label>
+                          <textarea
+                            value={editingLayout.description}
+                            onChange={(e) => setEditingLayout(prev => ({ ...prev, description: e.target.value }))}
+                            rows={2}
+                          />
+                        </div>
+                        <div className="gudang-ui-form-actions" style={{ gridColumn: "span 2", marginTop: 8 }}>
+                          <button type="button" className="gudang-ui-button" onClick={saveEditLayout} style={{ background: "#10b981" }}>
+                            <FaCheck /> Simpan
+                          </button>
+                          <button type="button" className="gudang-ui-button-secondary" onClick={cancelEditLayout}>
+                            <FaTimes /> Batal
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2>{selectedLayout.name}</h2>
+                        <p>
+                          {selectedLayout.description || selectedLayout.address || "Struktur gudang siap dikelola dari panel operasional di bawah."}
+                        </p>
+
+                        <div className="gudang-master-meta-row">
+                          <span>Alamat: {selectedLayout.address || "-"}</span>
+                          <span>PIC: {selectedLayout.pic || "-"}</span>
+                          <span>Lantai aktif: {selectedFloor?.label || "-"}</span>
+                          <span>Blok aktif: {selectedBlock?.label || "-"}</span>
+                        </div>
+                      </>
+                    )}
 
                     <div className="gudang-ui-chip-row gudang-master-chip-row">
                       <span className="gudang-ui-chip">{selectedLayout.floors.length} lantai</span>
@@ -719,21 +911,54 @@ const MasterGudangProduk = () => {
                             className={`gudang-ui-list-item ${floor.id === selectedFloor?.id ? "active" : ""}`}
                           >
                             <div className="gudang-ui-list-item-head">
-                              <button
-                                type="button"
-                                className="gudang-ui-button-secondary"
-                                onClick={() => setSelectedFloorId(floor.id)}
-                              >
-                                {floor.label}
-                              </button>
-                              <button
-                                type="button"
-                                className="gudang-ui-icon-button"
-                                onClick={() => deleteFloor(floor.id)}
-                                title="Hapus lantai"
-                              >
-                                <FaTrash />
-                              </button>
+                              {editingFloorId === floor.id ? (
+                                <div style={{ display: "flex", gap: 6, flex: 1 }}>
+                                  <input
+                                    value={editingFloorLabel}
+                                    onChange={(e) => setEditingFloorLabel(e.target.value)}
+                                    style={{ flex: 1, padding: "4px 8px", fontSize: 13, borderRadius: 4, border: "1px solid #cbd5e1" }}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") saveEditFloor();
+                                      if (e.key === "Escape") cancelEditFloor();
+                                    }}
+                                  />
+                                  <button type="button" className="gudang-ui-icon-button" onClick={saveEditFloor} style={{ color: "#10b981" }} title="Simpan">
+                                    <FaCheck size={12} />
+                                  </button>
+                                  <button type="button" className="gudang-ui-icon-button" onClick={cancelEditFloor} title="Batal">
+                                    <FaTimes size={12} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="gudang-ui-button-secondary"
+                                    onClick={() => setSelectedFloorId(floor.id)}
+                                  >
+                                    {floor.label}
+                                  </button>
+                                  <div style={{ display: "flex", gap: 4 }}>
+                                    <button
+                                      type="button"
+                                      className="gudang-ui-icon-button"
+                                      onClick={() => startEditFloor(floor)}
+                                      title="Edit nama lantai"
+                                    >
+                                      <FaPen size={11} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="gudang-ui-icon-button"
+                                      onClick={() => deleteFloor(floor.id)}
+                                      title="Hapus lantai"
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                             <small>{(floor.blocks || []).length} blok aktif</small>
                           </div>
@@ -856,20 +1081,54 @@ const MasterGudangProduk = () => {
                               className={`gudang-ui-list-item ${block.id === selectedBlock?.id ? "active" : ""}`}
                             >
                               <div className="gudang-ui-list-item-head">
-                                <button
-                                  type="button"
-                                  className="gudang-ui-button-secondary"
-                                  onClick={() => setSelectedBlockId(block.id)}
-                                >
-                                  {block.label}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="gudang-ui-icon-button"
-                                  onClick={() => deleteBlock(block.id)}
-                                >
-                                  <FaTrash />
-                                </button>
+                                {editingBlockId === block.id ? (
+                                  <div style={{ display: "flex", gap: 6, flex: 1 }}>
+                                    <input
+                                      value={editingBlockLabel}
+                                      onChange={(e) => setEditingBlockLabel(e.target.value)}
+                                      style={{ flex: 1, padding: "4px 8px", fontSize: 13, borderRadius: 4, border: "1px solid #cbd5e1" }}
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") saveEditBlock();
+                                        if (e.key === "Escape") cancelEditBlock();
+                                      }}
+                                    />
+                                    <button type="button" className="gudang-ui-icon-button" onClick={saveEditBlock} style={{ color: "#10b981" }} title="Simpan">
+                                      <FaCheck size={12} />
+                                    </button>
+                                    <button type="button" className="gudang-ui-icon-button" onClick={cancelEditBlock} title="Batal">
+                                      <FaTimes size={12} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="gudang-ui-button-secondary"
+                                      onClick={() => setSelectedBlockId(block.id)}
+                                    >
+                                      {block.label}
+                                    </button>
+                                    <div style={{ display: "flex", gap: 4 }}>
+                                      <button
+                                        type="button"
+                                        className="gudang-ui-icon-button"
+                                        onClick={() => startEditBlock(block)}
+                                        title="Edit nama blok"
+                                      >
+                                        <FaPen size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="gudang-ui-icon-button"
+                                        onClick={() => deleteBlock(block.id)}
+                                        title="Hapus blok"
+                                      >
+                                        <FaTrash />
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                               <div className="gudang-ui-block-summary">
                                 <small>{(block.racks || []).length} rak</small>
@@ -897,18 +1156,53 @@ const MasterGudangProduk = () => {
                                         .map((rack) => (
                                           <div key={rack.id} className="gudang-ui-rack-compact-card">
                                             <div className="gudang-ui-rack-compact-top">
-                                              <div className="gudang-ui-rack-compact-main">
-                                                <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
-                                                <span>{rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}</span>
-                                              </div>
-                                              <button
-                                                type="button"
-                                                className="gudang-ui-icon-button gudang-ui-rack-delete-button"
-                                                onClick={() => deleteRack(rack.id)}
-                                                title={`Hapus Rak ${String(rack.number).padStart(2, "0")}`}
-                                              >
-                                                <FaTrash />
-                                              </button>
+                                              {editingRackId === rack.id ? (
+                                                <div style={{ display: "flex", gap: 4, flex: 1 }}>
+                                                  <input
+                                                    value={editingRackLabel}
+                                                    onChange={(e) => setEditingRackLabel(e.target.value)}
+                                                    style={{ flex: 1, padding: "2px 6px", fontSize: 12, borderRadius: 4, border: "1px solid #cbd5e1" }}
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === "Enter") saveEditRack();
+                                                      if (e.key === "Escape") cancelEditRack();
+                                                    }}
+                                                  />
+                                                  <button type="button" className="gudang-ui-icon-button" onClick={saveEditRack} style={{ color: "#10b981", padding: 4 }} title="Simpan">
+                                                    <FaCheck size={10} />
+                                                  </button>
+                                                  <button type="button" className="gudang-ui-icon-button" onClick={cancelEditRack} style={{ padding: 4 }} title="Batal">
+                                                    <FaTimes size={10} />
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  <div className="gudang-ui-rack-compact-main">
+                                                    <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
+                                                    <span>{rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}</span>
+                                                  </div>
+                                                  <div style={{ display: "flex", gap: 2 }}>
+                                                    <button
+                                                      type="button"
+                                                      className="gudang-ui-icon-button"
+                                                      onClick={() => startEditRack(rack)}
+                                                      title="Edit nama rak"
+                                                      style={{ width: 24, height: 24 }}
+                                                    >
+                                                      <FaPen size={10} />
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      className="gudang-ui-icon-button gudang-ui-rack-delete-button"
+                                                      onClick={() => deleteRack(rack.id)}
+                                                      title={`Hapus Rak ${String(rack.number).padStart(2, "0")}`}
+                                                      style={{ width: 24, height: 24 }}
+                                                    >
+                                                      <FaTrash size={10} />
+                                                    </button>
+                                                  </div>
+                                                </>
+                                              )}
                                             </div>
 
                                             <div className="gudang-ui-rack-compact-meta">

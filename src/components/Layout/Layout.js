@@ -114,6 +114,19 @@ const Layout = () => {
     };
   }, [handleLogout]);
 
+  // Auto collapse sidebar after 10 seconds of inactivity
+  useEffect(() => {
+    let timer;
+    if (!isSidebarCollapsed) {
+      timer = setTimeout(() => {
+        setIsSidebarCollapsed(true);
+      }, 10000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isSidebarCollapsed]);
+
   const hasAccess = (menuKey) => {
     if (role === "super-admin") return true;
     if (menuKey.includes(":")) {

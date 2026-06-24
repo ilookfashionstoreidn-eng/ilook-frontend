@@ -121,7 +121,7 @@ const PackingDailyPackingReport = () => {
     };
 
     return (
-        <div className="packing-dashboard-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingBottom: 0 }}>
+        <div className="packing-dashboard-page">
             <div className="packing-dashboard-header" style={{ flexShrink: 0 }}>
                 <div className="packing-title-row">
                     <button className="packing-back-btn" onClick={() => navigate('/packing')} title="Kembali">
@@ -155,8 +155,8 @@ const PackingDailyPackingReport = () => {
                 </div>
             </div>
 
-            <div className="packing-dashboard-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingBottom: 24 }}>
-                <div className="pdr-stats-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)', maxWidth: '400px', marginBottom: '16px' }}>
+            <div className="packing-dashboard-content">
+                <div className="pdr-stats-grid" style={{ gridTemplateColumns: '1fr', maxWidth: '320px', marginBottom: '16px' }}>
                     <div className="pdr-stat-card">
                         <div className="pdr-stat-icon bg-green-gradient"><FontAwesomeIcon icon={faBoxOpen} /></div>
                         <div className="pdr-stat-body">
@@ -167,8 +167,8 @@ const PackingDailyPackingReport = () => {
                     </div>
                 </div>
 
-                <div className="packing-dashboard-bottom-grid" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '16px' }}>
-                    <div className="packing-card" style={{ padding: 20, flexShrink: 0, height: '240px', display: 'flex', flexDirection: 'column', marginBottom: 0 }}>
+                <div className="packing-dashboard-bottom-grid">
+                    <div className="packing-card" style={{ padding: 20, height: '280px', display: 'flex', flexDirection: 'column' }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <span className="packing-card-label">
                                 <FontAwesomeIcon icon={faChartLine} className="me-2" style={{ color: '#0ea5e9' }} />
@@ -186,7 +186,7 @@ const PackingDailyPackingReport = () => {
                         </div>
                     </div>
 
-                    <div className="packing-card" style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: 0 }}>
+                    <div className="packing-card" style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 14 }}>
                             <span className="packing-card-label">Breakdown Harian ({reportData.length} Hari)</span>
                             {loading && <Spinner animation="border" size="sm" style={{ color: '#0ea5e9' }} />}
@@ -199,6 +199,7 @@ const PackingDailyPackingReport = () => {
                                         <th>Tanggal Packing</th>
                                         <th style={{ textAlign: 'center' }}>Total Pesanan Dipacking</th>
                                         <th style={{ textAlign: 'center' }}>Ready to Ship</th>
+                                        <th style={{ textAlign: 'center' }}>Shipping</th>
                                         <th style={{ textAlign: 'center' }}>Delivered</th>
                                         <th style={{ textAlign: 'center' }}>Cancelled</th>
                                     </tr>
@@ -206,7 +207,7 @@ const PackingDailyPackingReport = () => {
                                 <tbody>
                                     {reportData.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5">
+                                            <td colSpan="6">
                                                 <div className="pdr-empty">
                                                     <FontAwesomeIcon icon={faInbox} className="fa-icon" />
                                                     {loading ? 'Memuat data…' : 'Tidak ada data packing pada rentang tanggal ini.'}
@@ -225,6 +226,9 @@ const PackingDailyPackingReport = () => {
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className="pdr-num" style={{ color: '#eab308' }}>{nf(row.total_ready_to_ship)}</span>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <span className="pdr-num" style={{ color: '#0ea5e9' }}>{nf(row.total_shipping)}</span>
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className="pdr-num" style={{ color: '#3b82f6' }}>{nf(row.total_delivered)}</span>

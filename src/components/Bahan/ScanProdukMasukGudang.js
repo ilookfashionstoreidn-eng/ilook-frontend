@@ -188,7 +188,7 @@ const WizardButton = ({ isActive, scene, onClick }) => (
   </button>
 );
 
-const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSession, onDeleteSession, isDeleting, isSelected, onToggleSelect }) => {
+const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, isSelected, onToggleSelection, onDeleteSession, isDeleting }) => {
   const barcodeCount = Array.isArray(session.barcodes) ? session.barcodes.length : 0;
   const resolved = resolveSkuLabel(session.skuId);
   const skuLabel = String(resolved) === String(session.skuId) && session.skuCode ? session.skuCode : resolved;
@@ -197,123 +197,53 @@ const SessionCard = ({ session, resolveSkuLabel, resolveSeriLabel, onSelectSessi
 
   return (
     <div
+      onClick={() => onToggleSelection(session.id)}
       style={{
         border: isSelected ? "2px solid #7c3aed" : "1px solid #ddd6fe",
-        borderRadius: 12,
-        padding: isSelected ? "11px 13px" : "12px 14px",
-        backgroundColor: isSelected ? "#f5f3ff" : "#ffffff",
+        borderRadius: 8,
+        padding: "10px",
+        backgroundColor: isSelected ? "#f3e8ff" : "#f5f3ff",
         display: "flex",
         flexDirection: "column",
-        gap: 8,
-        transition: "all 0.2s ease",
+        gap: 6,
+        cursor: "pointer",
+        transition: "all 0.2s"
       }}
     >
-      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onToggleSelect}
-          style={{
-            width: 17,
-            height: 17,
-            marginTop: 2,
-            cursor: "pointer",
-            accentColor: "#7c3aed",
-          }}
-        />
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            <div style={{ minWidth: 0 }}>
-              <strong style={{ fontSize: 13, color: "#5b21b6", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={session.skuCode && session.skuCode !== skuLabel ? `${skuLabel} (${session.skuCode})` : skuLabel}>
-                {skuLabel} {session.skuCode && session.skuCode !== skuLabel ? `(${session.skuCode})` : ""}
-              </strong>
-              <span style={{ fontSize: 11, color: "#7c3aed" }}>
-                Seri: <strong>{seriLabel}</strong> · {barcodeCount} barcode
-              </span>
-            </div>
-            <span
-              style={{
-                fontSize: 10,
-                background: "#ede9fe",
-                color: "#6d28d9",
-                padding: "2px 7px",
-                borderRadius: 20,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              PENDING
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
+          <input 
+            type="checkbox" 
+            checked={isSelected} 
+            readOnly 
+            style={{ marginTop: 2, width: 14, height: 14, accentColor: "#7c3aed", cursor: "pointer", flexShrink: 0 }} 
+          />
+          <div style={{ minWidth: 0, lineHeight: 1.3 }}>
+            <strong style={{ fontSize: 13, color: "#1e293b", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={session.skuCode && session.skuCode !== skuLabel ? `${skuLabel} (${session.skuCode})` : skuLabel}>
+              {skuLabel} {session.skuCode && session.skuCode !== skuLabel ? `(${session.skuCode})` : ""}
+            </strong>
+            <span style={{ fontSize: 11, color: "#64748b" }}>
+              Seri: <strong style={{ color: "#7c3aed" }}>{seriLabel}</strong> &bull; QTY: <strong>{barcodeCount}</strong> pcs
             </span>
           </div>
         </div>
+        <span style={{ fontSize: 10, background: "#ede9fe", color: "#6d28d9", padding: "2px 6px", borderRadius: 12, fontWeight: 700, flexShrink: 0 }}>PENDING</span>
       </div>
 
-      {session.notes ? (
-        <div style={{ fontSize: 11, color: "#475569", fontStyle: "italic", borderTop: "1px solid #ddd6fe", paddingTop: 6 }}>
-          {session.notes}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: 22 }}>
+        <div style={{ fontSize: 10, color: "#94a3b8", display: "flex", gap: 12 }}>
+          <span>{formatTanggal(session.createdAt)}</span>
+          {session.creatorName && <span>Oleh: <strong>{session.creatorName}</strong></span>}
         </div>
-      ) : null}
-
-      <div style={{ fontSize: 10, color: "#64748b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span>{formatTanggal(session.createdAt)}</span>
-        {session.creatorName && (
-          <span>Scanner: <strong>{session.creatorName}</strong></span>
-        )}
-      </div>
-
-      {/* Barcode preview */}
-      {barcodeCount > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {(session.barcodes || []).slice(0, 6).map((b, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: 10,
-                background: "#fff",
-                border: "1px solid #ddd6fe",
-                borderRadius: 4,
-                padding: "1px 5px",
-                color: "#6d28d9",
-                fontWeight: 600,
-              }}
-            >
-              {b.serialCode}
-            </span>
-          ))}
-          {barcodeCount > 6 && (
-            <span style={{ fontSize: 10, color: "#64748b" }}>+{barcodeCount - 6} lagi</span>
-          )}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+        
         <button
           type="button"
-          className="gudang-ui-button"
-          onClick={() => onSelectSession(session)}
-          style={{ flex: 1, justifyContent: "center", fontSize: 12, background: "#7c3aed", color: "#fff" }}
-        >
-          <FaMapMarkerAlt size={11} /> Tentukan Tujuan
-        </button>
-        <button
-          type="button"
+          onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
           disabled={isDeleting}
-          onClick={() => onDeleteSession(session.id)}
-          style={{
-            width: 36,
-            height: 36,
-            border: "1px solid #fee2e2",
-            borderRadius: 8,
-            background: "#fff5f5",
-            color: "#dc2626",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          title="Batalkan sesi"
+          style={{ background: "none", border: "none", color: "#ef4444", cursor: isDeleting ? "not-allowed" : "pointer", padding: "4px", fontSize: 13, opacity: 0.7 }}
+          title="Hapus Sesi"
         >
-          {isDeleting ? <FaSpinner size={12} /> : <FaTrash size={12} />}
+          {isDeleting ? <FaSpinner className="gudang-ui-spin" /> : <FaTrash />}
         </button>
       </div>
     </div>
@@ -330,8 +260,8 @@ const ScanProdukMasukGudang = () => {
   // Workspace state (layouts, slots, etc.)
   const { state, setState, isLoading: workspaceLoading, error: workspaceError, refresh } = useGudangProdukWorkspace();
 
-  // Wizard state
-  const [activeScene, setActiveScene] = useState(1);
+  // Main Tab state
+  const [activeMainTab, setActiveMainTab] = useState("scan"); // "scan" | "putaway" | "history"
 
   // Seri list & selection (Scene 1 - optional search selector)
   const [seriList, setSeriList] = useState([]);
@@ -354,9 +284,10 @@ const ScanProdukMasukGudang = () => {
   const [cancelingPrintKey, setCancelingPrintKey] = useState("");
 
   // Destination selection – for executing a session (Scene 2)
-  const [activeSessions, setActiveSessions] = useState([]);
   const [selectedSessionIds, setSelectedSessionIds] = useState([]);
   const [layoutId, setLayoutId] = useState("");
+  const [filterFloor, setFilterFloor] = useState("");
+  const [filterBlock, setFilterBlock] = useState("");
   const [slotId, setSlotId] = useState("");
   const [execNotes, setExecNotes] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -368,6 +299,9 @@ const ScanProdukMasukGudang = () => {
 
   // Search filter for history
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Search filter for pending sessions
+  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
 
   // ── Session Loading ─────────────────────────────────────────────────────────
 
@@ -520,6 +454,47 @@ const ScanProdukMasukGudang = () => {
     [allSlots, selectedLayout]
   );
 
+  const layoutFloors = useMemo(() => {
+    const map = new Map();
+    layoutSlots.forEach((s) => map.set(String(s.floorId), s.floorLabel || s.floorNumber));
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [layoutSlots]);
+
+  const layoutBlocks = useMemo(() => {
+    const map = new Map();
+    layoutSlots
+      .filter((s) => !filterFloor || String(s.floorId) === String(filterFloor))
+      .forEach((s) => map.set(String(s.blockId), s.blockLabel || s.blockCode));
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [layoutSlots, filterFloor]);
+
+  const filteredSlots = useMemo(() => {
+    return layoutSlots.filter((s) => {
+      if (filterFloor && String(s.floorId) !== String(filterFloor)) return false;
+      if (filterBlock && String(s.blockId) !== String(filterBlock)) return false;
+      return true;
+    });
+  }, [layoutSlots, filterFloor, filterBlock]);
+
+  const filteredLayout = useMemo(() => {
+    if (!selectedLayout) return null;
+    if (!filterFloor && !filterBlock) return selectedLayout;
+
+    return {
+      ...selectedLayout,
+      floors: selectedLayout.floors
+        .filter(floor => !filterFloor || String(floor.id) === String(filterFloor))
+        .map(floor => {
+          if (!filterBlock) return floor;
+          return {
+            ...floor,
+            blocks: floor.blocks.filter(block => String(block.id) === String(filterBlock))
+          };
+        })
+        .filter(floor => floor.blocks.length > 0)
+    };
+  }, [selectedLayout, filterFloor, filterBlock]);
+
   const selectedSlot = useMemo(
     () => (slotId ? allSlots.find((slot) => String(slot.id) === String(slotId)) : null),
     [allSlots, slotId]
@@ -527,7 +502,7 @@ const ScanProdukMasukGudang = () => {
 
   const selectedSlotSummary = selectedSlot ? stockSummaryBySlot[selectedSlot.id] : null;
 
-  const canScan = activeScene === 1;
+  const canScan = activeMainTab === "scan";
 
   const orderedSeriPrints = useMemo(() => {
     if (!seriDetails?.prints) return [];
@@ -574,21 +549,12 @@ const ScanProdukMasukGudang = () => {
   };
 
   useEffect(() => {
-    if (activeScene === 1) {
+    if (activeMainTab === "scan") {
       focusScanInput();
     }
-  }, [activeScene]);
+  }, [activeMainTab]);
 
-  const handleGoToScene = async (nextScene) => {
-    if (nextScene > 1 && !scannedBarcodes.length) {
-      await showGudangWarning(
-        "Barcode belum discan",
-        "Scan minimal satu barcode produk sebelum menyimpan sesi."
-      );
-      return;
-    }
-    setActiveScene(nextScene);
-  };
+
 
   // Barcode handling: Enter scans instantly, with a tiny fallback for scanners without Enter.
   const handleBarcodeChange = (value) => {
@@ -876,7 +842,7 @@ const ScanProdukMasukGudang = () => {
     }
 
     if (!window.confirm(`Batalkan kode seri "${print.barcode_seri}" karena kelebihan cetak?`)) {
-      if (activeScene === 1) focusScanInput();
+      if (activeMainTab === "scan") focusScanInput();
       return;
     }
 
@@ -916,7 +882,7 @@ const ScanProdukMasukGudang = () => {
     } finally {
       setCancelingPrintKey("");
       setTimeout(() => setScanStatus(""), 3000);
-      if (activeScene === 1) setTimeout(() => focusScanInput(), 20);
+      if (activeMainTab === "scan") setTimeout(() => focusScanInput(), 20);
     }
   };
 
@@ -964,7 +930,7 @@ const ScanProdukMasukGudang = () => {
       setSessionNotes("");
       setScanMessage("");
       setScanInput("");
-      setActiveScene(1);
+      setActiveMainTab("putaway"); // Move to putaway tab to place it
 
       // Reload sessions list
       await loadSessions();
@@ -986,14 +952,20 @@ const ScanProdukMasukGudang = () => {
 
   // ── Session Actions ──────────────────────────────────────────────────────────
 
-  const handleSelectSession = (session) => {
-    setActiveSessions([session]);
-    setSlotId("");
-    setExecNotes("");
-    if (state.layouts.length && !layoutId) {
-      setLayoutId(String(state.layouts[0].id));
+  const toggleSessionSelection = (sessionId) => {
+    setSelectedSessionIds((prev) => 
+      prev.includes(sessionId) 
+        ? prev.filter((id) => id !== sessionId)
+        : [...prev, sessionId]
+    );
+  };
+
+  const toggleSelectAllSessions = (filteredSessions) => {
+    if (selectedSessionIds.length === filteredSessions.length && filteredSessions.length > 0) {
+      setSelectedSessionIds([]);
+    } else {
+      setSelectedSessionIds(filteredSessions.map((s) => s.id));
     }
-    setActiveScene(2);
   };
 
   const handleSelectBulkSessions = () => {
@@ -1029,6 +1001,7 @@ const ScanProdukMasukGudang = () => {
     try {
       await deletePlacementSession(sessionId);
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      // Remove from selected list if it's there
       setSelectedSessionIds((prev) => prev.filter((id) => id !== sessionId));
       await showGudangSuccess("Sesi dibatalkan", "Sesi scan masuk telah dihapus.");
     } catch (err) {
@@ -1041,15 +1014,13 @@ const ScanProdukMasukGudang = () => {
     }
   };
 
-  // ── Execute Session (Scene 2) ────────────────────────────────────────────────
-
   const handleExecuteSession = async (event) => {
     event.preventDefault();
 
-    if (activeSessions.length === 0 || !slotId) {
+    if (!selectedSessionIds.length || !slotId) {
       await showGudangWarning(
         "Tujuan belum dipilih",
-        "Pilih slot tujuan terlebih dahulu."
+        "Pilih minimal satu sesi dan slot tujuan terlebih dahulu."
       );
       return;
     }
@@ -1057,40 +1028,29 @@ const ScanProdukMasukGudang = () => {
     try {
       setIsExecuting(true);
       
-      // Eksekusi semua sesi yang dipilih secara berurutan
-      for (const session of activeSessions) {
-        await executePlacementSession(session.id, {
+      const promises = selectedSessionIds.map(id => 
+        executePlacementSession(id, {
           layoutId,
           slotId,
           notes: execNotes.trim() || null,
-        });
-      }
+        })
+      );
+
+      await Promise.all(promises);
 
       // Refresh workspace state
       refresh({ silent: true });
 
-      const totalQty = activeSessions.reduce((sum, s) => sum + (s.barcodes?.length || 0), 0);
-      
-      let successMsg = "";
-      if (activeSessions.length === 1) {
-        const sku = state.skus.find((s) => String(s.id) === String(activeSessions[0].skuId));
-        const skuLabel = sku?.label || sku?.code || activeSessions[0].skuId;
-        successMsg = `${totalQty} barcode "${skuLabel}" berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`;
-      } else {
-        successMsg = `${activeSessions.length} sesi (${totalQty} barcode) berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`;
-      }
-
       await showGudangSuccess(
         "Penempatan berhasil",
-        successMsg
+        `${selectedSessionIds.length} sesi berhasil dimasukkan ke ${selectedSlot?.slotCode || slotId}.`
       );
 
       // Clean up
-      setActiveSessions([]);
       setSelectedSessionIds([]);
       setSlotId("");
       setExecNotes("");
-      setActiveScene(1);
+      setActiveMainTab("scan");
       await loadSessions();
       fetchSeriList();
     } catch (err) {
@@ -1210,6 +1170,39 @@ const ScanProdukMasukGudang = () => {
   const resolveSeriLabel = (seriId) =>
     seriList.find((s) => String(s.id) === String(seriId))?.nomor_seri || String(seriId);
 
+  // Filter pending sessions by multi-keyword search
+  const filteredSessions = useMemo(() => {
+    const raw = pendingSearchTerm.trim().toLowerCase();
+    if (!raw) return sessions;
+
+    const keywords = raw.split(/\s+/).filter(Boolean);
+
+    return sessions.filter((session) => {
+      // Build a searchable string from all session fields
+      const skuLabel = resolveSkuLabel(session.skuId);
+      const seriLabel = resolveSeriLabel(session.seriId);
+      const barcodes = Array.isArray(session.barcodes)
+        ? session.barcodes.map((b) => b.serialCode || b.barcode || "").join(" ")
+        : "";
+      const haystack = [
+        skuLabel,
+        seriLabel,
+        session.skuCode || "",
+        session.seriNumber || "",
+        session.notes || "",
+        session.creatorName || "",
+        barcodes,
+        String(session.id),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      // All keywords must match (AND logic)
+      return keywords.every((kw) => haystack.includes(kw));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions, pendingSearchTerm, state.skus, seriList]);
+
   // ── Wizard Config ───────────────────────────────────────────────────────────
 
   const wizardScenes = [
@@ -1224,12 +1217,10 @@ const ScanProdukMasukGudang = () => {
     {
       id: 2,
       title: "Tentukan Tujuan Sesi",
-      helper: activeSessions.length > 0
-        ? (activeSessions.length === 1
-            ? `Sesi #${activeSessions[0].id} · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`
-            : `${activeSessions.length} Sesi · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`)
+      helper: selectedSessionIds.length > 0
+        ? `${selectedSessionIds.length} Sesi Terpilih · ${selectedSlot ? selectedSlot.slotCode : "pilih slot"}`
         : "Pilih sesi dari daftar",
-      complete: Boolean(activeSessions.length > 0 && slotId),
+      complete: Boolean(selectedSessionIds.length > 0 && slotId),
     },
   ];
 
@@ -1285,51 +1276,67 @@ const ScanProdukMasukGudang = () => {
         </div>
       ) : null}
 
-      {/* KPI Cards */}
-      <div className="gudang-ui-stat-grid">
-        <GudangStatCard
-          label="Sesi Pending"
-          value={summary.pendingSessions}
-          helper="menunggu lokasi"
-        />
-        <GudangStatCard
-          label="Barcode Discan"
-          value={summary.scannedQty}
-          helper="aktif di sesi ini"
-        />
-        <GudangStatCard
-          label="Total Cetakan Seri"
-          value={summary.totalPrints}
-          helper="nomor seri aktif"
-        />
-        <GudangStatCard
-          label="Riwayat Masuk"
-          value={summary.successCount}
-          helper="placement terbaru"
-        />
+
+      {/* Main Tabs Navigation */}
+      <div className="gudang-ui-tabs" style={{ marginBottom: 20, display: "flex", gap: 8, borderBottom: "1px solid #e2e8f0", paddingBottom: 8 }}>
+        <button
+          type="button"
+          onClick={() => { setActiveMainTab("scan"); setSelectedSessionIds([]); setSlotId(""); }}
+          style={{
+            padding: "8px 16px",
+            background: activeMainTab === "scan" ? "#7c3aed" : "transparent",
+            color: activeMainTab === "scan" ? "#fff" : "#64748b",
+            border: activeMainTab === "scan" ? "none" : "1px solid transparent",
+            borderRadius: 8,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 14,
+            transition: "all 0.2s ease",
+          }}
+        >
+          Scan Barcode Masuk
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMainTab("putaway")}
+          style={{
+            padding: "8px 16px",
+            background: activeMainTab === "putaway" ? "#7c3aed" : "transparent",
+            color: activeMainTab === "putaway" ? "#fff" : "#64748b",
+            border: activeMainTab === "putaway" ? "none" : "1px solid transparent",
+            borderRadius: 8,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 14,
+            transition: "all 0.2s ease",
+          }}
+        >
+          Penempatan Sesi
+        </button>
+        <button
+          type="button"
+          onClick={() => { setActiveMainTab("history"); setSelectedSessionIds([]); setSlotId(""); }}
+          style={{
+            padding: "8px 16px",
+            background: activeMainTab === "history" ? "#7c3aed" : "transparent",
+            color: activeMainTab === "history" ? "#fff" : "#64748b",
+            border: activeMainTab === "history" ? "none" : "1px solid transparent",
+            borderRadius: 8,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 14,
+            transition: "all 0.2s ease",
+          }}
+        >
+          Riwayat Penempatan
+        </button>
       </div>
 
-      {/* Wizard steps */}
-      <section className="gudang-ui-panel" style={{ marginBottom: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-          {wizardScenes.map((scene) => (
-            <WizardButton
-              key={scene.id}
-              scene={scene}
-              isActive={activeScene === scene.id}
-              onClick={() => {
-                if (scene.id === 1) handleGoToScene(1);
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="gudang-master-workspace-grid">
+      <div className="gudang-master-workspace-grid" style={{ gridTemplateColumns: activeMainTab !== "scan" ? "1fr" : undefined }}>
         <div className="gudang-master-main" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* ── Scene 1: Scan & Simpan Sesi ── */}
-          {activeScene === 1 && (
+          {activeMainTab === "scan" && (
             <section className="gudang-ui-panel">
               <div className="gudang-ui-panel-head" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -1370,147 +1377,13 @@ const ScanProdukMasukGudang = () => {
                 </div>
               </div>
 
-              {/* Optional Search / Manual Dropdown */}
-              <div className="gudang-ui-field" style={{ position: "relative", marginBottom: 20 }} ref={seriComboboxRef}>
-                <label>Pilih Nomor Seri Tujuan (Opsional - Otomatis terisi saat scan)</label>
-                <div style={{ position: "relative" }}>
-                  <FiSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
-                  <input
-                    type="text"
-                    disabled={scannedBarcodes.length > 0}
-                    className="spm-gudang-select"
-                    style={{ paddingLeft: 38, paddingRight: 38, background: scannedBarcodes.length > 0 ? "#f1f5f9" : "#fff", border: "1px solid #cbd5e1", borderRadius: 10, width: "100%", padding: "12px 14px 12px 38px", cursor: scannedBarcodes.length > 0 ? "not-allowed" : "pointer" }}
-                    value={seriQuery}
-                    onChange={(e) => {
-                      setSeriQuery(e.target.value);
-                      setIsSeriDropdownOpen(true);
-                      if (selectedSeriNumber) {
-                        setSelectedSeriNumber("");
-                        setSelectedSeriId("");
-                        setSelectedSeriItem(null);
-                        setSeriDetails(null);
-                      }
-                    }}
-                    onFocus={() => {
-                      if (scannedBarcodes.length === 0) {
-                        setIsSeriDropdownOpen(true);
-                      }
-                    }}
-                    placeholder={selectedSeriLabel || "Cari dan pilih Nomor Seri secara manual..."}
-                  />
-                  {selectedSeriId && !seriQuery && scannedBarcodes.length === 0 ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSeriId("");
-                        setSelectedSeriNumber("");
-                        setSelectedSeriItem(null);
-                        setSeriDetails(null);
-                        setSeriQuery("");
-                      }}
-                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
-                    >
-                      <FaTimes />
-                    </button>
-                  ) : null}
-                </div>
-
-                {isSeriDropdownOpen && (
-                  <div style={{
-                    position: "absolute",
-                    top: "calc(100% + 4px)",
-                    left: 0,
-                    right: 0,
-                    zIndex: 50,
-                    background: "#fff",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 10,
-                    padding: 8,
-                    maxHeight: 280,
-                    overflowY: "auto",
-                    boxShadow: "0 10px 25px rgba(15,23,42,0.15)"
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedSeriId("");
-                        setSelectedSeriNumber("");
-                        setSelectedSeriItem(null);
-                        setSeriDetails(null);
-                        setSeriQuery("");
-                        setIsSeriDropdownOpen(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        display: "block",
-                        textAlign: "left",
-                        border: "none",
-                        background: selectedSeriId === "" ? "#f0fdf4" : "transparent",
-                        color: selectedSeriId === "" ? "#166534" : "#0f172a",
-                        borderRadius: 6,
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        marginBottom: 2,
-                        fontWeight: selectedSeriId === "" ? 700 : 500,
-                        fontSize: 13
-                      }}
-                    >
-                      -- Pilih Nomor Seri --
-                    </button>
-                    {filteredSeriList.length ? (
-                      filteredSeriList.map((seriItem) => {
-                        const isSelected = selectedSeriId === seriItem.id;
-                        const scanned = seriItem.scanned_count ?? 0;
-                        const jumlah = seriItem.jumlah ?? 0;
-                        const isFullyScanned = jumlah > 0 && scanned >= jumlah;
-                        const isOld = isOlderThan15Days(seriItem.created_at);
-
-                        if (isFullyScanned || isOld) return null;
-
-                        return (
-                          <button
-                            key={seriItem.id}
-                            type="button"
-                            onClick={() => {
-                              handleSeriChange(seriItem);
-                              setSeriQuery("");
-                              setIsSeriDropdownOpen(false);
-                            }}
-                            style={{
-                              width: "100%",
-                              display: "block",
-                              textAlign: "left",
-                              border: "none",
-                              background: isSelected ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent",
-                              borderRadius: 6,
-                              padding: "8px 12px",
-                              cursor: "pointer",
-                              marginBottom: 2
-                            }}
-                          >
-                            <div style={{ fontWeight: isSelected ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
-                              {seriItem.nomor_seri}
-                            </div>
-                            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                              SKU: {seriItem.sku} &bull; Progress: {scanned} / {jumlah} pcs
-                            </div>
-                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>
-                              Dibuat: {formatTanggalPendek(seriItem.created_at)}
-                            </div>
-                          </button>
-                        );
-                      })
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              {/* Barcode scan input */}
-              <div style={{ marginBottom: 16 }}>
-                <div className="gudang-ui-field" style={{ marginBottom: 10 }}>
-                  <label>Arahkan Kursor & Scan Barcode</label>
-                  <div style={{ display: "flex", gap: 8 }}>
+              {/* Barcode scan input - Moved to top & Made Huge */}
+              <div style={{ marginBottom: 24, padding: "20px", background: scannedBarcodes.length > 0 ? "#faf5ff" : "#f8fafc", borderRadius: "16px", border: `2px dashed ${scannedBarcodes.length > 0 ? "#c084fc" : "#cbd5e1"}`, transition: "all 0.3s ease" }}>
+                <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 13, color: "#6d28d9", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                    <FaBarcode size={16} /> Arahkan Kursor & Scan Barcode
+                  </label>
+                  <div style={{ display: "flex", gap: 12 }}>
                     <input
                       ref={scanInputRef}
                       value={scanInput}
@@ -1519,28 +1392,180 @@ const ScanProdukMasukGudang = () => {
                       placeholder={
                         selectedSeriNumber
                           ? `Scan barcode untuk seri ${selectedSeriNumber}...`
-                          : "Scan barcode kode seri produk langsung di sini..."
+                          : "Scan barcode kode seri di sini..."
                       }
                       autoComplete="off"
-                      style={{ flex: 1, fontSize: 14, fontWeight: 700, padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: 8 }}
+                      autoFocus
+                      style={{ flex: 1, fontSize: 24, fontWeight: 800, padding: "16px 20px", border: "2px solid #a855f7", borderRadius: 12, outline: "none", color: "#3b0764", background: "#fff", boxShadow: "0 4px 14px -4px rgba(168, 85, 247, 0.4)" }}
                     />
                     <button
                       type="button"
                       className="gudang-ui-button"
                       disabled={!scanInput.trim()}
                       onClick={() => processScan()}
-                      style={{ minWidth: 46, justifyContent: "center", padding: "0 12px", background: "#7c3aed", color: "#fff" }}
+                      style={{ minWidth: 64, justifyContent: "center", padding: "0 20px", background: "#7c3aed", color: "#fff", borderRadius: 12, border: "none" }}
                     >
-                      <FaBarcode />
+                      <FaArrowRight size={20} />
                     </button>
                   </div>
                 </div>
                 {scanMessage && (
-                  <div className={`spm-gudang-alert ${scanStatus === "error" ? "error" : "success"}`} style={{ padding: "8px 12px", borderRadius: 8, fontSize: 12 }}>
+                  <div className={`spm-gudang-alert ${scanStatus === "error" ? "error" : "success"}`} style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
                     {scanMessage}
                   </div>
                 )}
               </div>
+
+              {/* Optional Search / Manual Dropdown */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                <div className="gudang-ui-field" style={{ position: "relative", marginBottom: 0 }} ref={seriComboboxRef}>
+                  <label>Pilih Nomor Seri (Otomatis terisi saat scan)</label>
+                  <div style={{ position: "relative" }}>
+                    <FiSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+                    <input
+                      type="text"
+                      disabled={scannedBarcodes.length > 0}
+                      className="spm-gudang-select"
+                      style={{ paddingLeft: 38, paddingRight: 38, background: scannedBarcodes.length > 0 ? "#f1f5f9" : "#fff", border: "1px solid #cbd5e1", borderRadius: 10, width: "100%", padding: "12px 14px 12px 38px", cursor: scannedBarcodes.length > 0 ? "not-allowed" : "pointer", fontSize: 13 }}
+                      value={seriQuery}
+                      onChange={(e) => {
+                        setSeriQuery(e.target.value);
+                        setIsSeriDropdownOpen(true);
+                        if (selectedSeriNumber) {
+                          setSelectedSeriNumber("");
+                          setSelectedSeriId("");
+                          setSelectedSeriItem(null);
+                          setSeriDetails(null);
+                        }
+                      }}
+                      onFocus={() => {
+                        if (scannedBarcodes.length === 0) {
+                          setIsSeriDropdownOpen(true);
+                        }
+                      }}
+                      placeholder={selectedSeriLabel || "Cari manual..."}
+                    />
+                    {selectedSeriId && !seriQuery && scannedBarcodes.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSeriId("");
+                          setSelectedSeriNumber("");
+                          setSelectedSeriItem(null);
+                          setSeriDetails(null);
+                          setSeriQuery("");
+                        }}
+                        style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
+                      >
+                        <FaTimes />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {isSeriDropdownOpen && (
+                    <div style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      left: 0,
+                      right: 0,
+                      zIndex: 50,
+                      background: "#fff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 10,
+                      padding: 8,
+                      maxHeight: 280,
+                      overflowY: "auto",
+                      boxShadow: "0 10px 25px rgba(15,23,42,0.15)"
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSeriId("");
+                          setSelectedSeriNumber("");
+                          setSelectedSeriItem(null);
+                          setSeriDetails(null);
+                          setSeriQuery("");
+                          setIsSeriDropdownOpen(false);
+                        }}
+                        style={{
+                          width: "100%",
+                          display: "block",
+                          textAlign: "left",
+                          border: "none",
+                          background: selectedSeriId === "" ? "#f0fdf4" : "transparent",
+                          color: selectedSeriId === "" ? "#166534" : "#0f172a",
+                          borderRadius: 6,
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          marginBottom: 2,
+                          fontWeight: selectedSeriId === "" ? 700 : 500,
+                          fontSize: 13
+                        }}
+                      >
+                        -- Pilih Nomor Seri --
+                      </button>
+                      {filteredSeriList.length ? (
+                        filteredSeriList.map((seriItem) => {
+                          const isSelected = selectedSeriId === seriItem.id;
+                          const scanned = seriItem.scanned_count ?? 0;
+                          const jumlah = seriItem.jumlah ?? 0;
+                          const isFullyScanned = jumlah > 0 && scanned >= jumlah;
+                          const isOld = isOlderThan15Days(seriItem.created_at);
+
+                          if (isFullyScanned || isOld) return null;
+
+                          return (
+                            <button
+                              key={seriItem.id}
+                              type="button"
+                              onClick={() => {
+                                handleSeriChange(seriItem);
+                                setSeriQuery("");
+                                setIsSeriDropdownOpen(false);
+                              }}
+                              style={{
+                                width: "100%",
+                                display: "block",
+                                textAlign: "left",
+                                border: "none",
+                                background: isSelected ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent",
+                                borderRadius: 6,
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                marginBottom: 2
+                              }}
+                            >
+                              <div style={{ fontWeight: isSelected ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
+                                {seriItem.nomor_seri}
+                              </div>
+                              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                                SKU: {seriItem.sku} &bull; Progress: {scanned} / {jumlah} pcs
+                              </div>
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>
+                                Dibuat: {formatTanggalPendek(seriItem.created_at)}
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes for session */}
+                <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                  <label>Catatan Sesi (opsional)</label>
+                  <input
+                    value={sessionNotes}
+                    onChange={(e) => setSessionNotes(e.target.value)}
+                    placeholder="Catatan tambahan..."
+                    style={{ fontSize: 13, padding: "12px 14px", border: "1px solid #cbd5e1", borderRadius: 10, width: "100%" }}
+                  />
+                </div>
+              </div>
+
+
 
               {/* Scanned items local list */}
               <div style={{ marginBottom: 16 }}>
@@ -1555,63 +1580,201 @@ const ScanProdukMasukGudang = () => {
                 {scannedList}
               </div>
 
-              {/* Notes for session */}
-              <div className="gudang-ui-field" style={{ marginBottom: 16 }}>
-                <label>Catatan Sesi (opsional)</label>
-                <input
-                  value={sessionNotes}
-                  onChange={(e) => setSessionNotes(e.target.value)}
-                  placeholder="Catatan untuk sesi scan ini..."
-                  style={{ fontSize: 13, padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8, width: "100%" }}
-                />
-              </div>
+
 
 
             </section>
           )}
 
-          {/* ── Scene 2: Tentukan Lokasi Tujuan ── */}
-          {activeScene === 2 && activeSessions.length > 0 && (
-            <section className="gudang-ui-panel">
-              <div className="gudang-ui-panel-head" style={{ marginBottom: 12, alignItems: "flex-start" }}>
-                <div>
-                  <h2>Scene 2: Tentukan Lokasi Tujuan</h2>
-                  {activeSessions.length === 1 ? (
+          {/* ── Tab Penempatan Sesi (3 Kolom) ── */}
+          {activeMainTab === "putaway" && (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: 20, height: "calc(100vh - 200px)" }}>
+              
+              {/* Kolom 1: Daftar Sesi Pending */}
+              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+                  <div>
+                    <h2>Sesi Scan Pending</h2>
                     <p>
-                      Sesi <strong>#{activeSessions[0].id}</strong> &bull; {resolveSkuLabel(activeSessions[0].skuId)} &bull; {activeSessions[0].barcodes?.length} pcs
+                      {sessions.length
+                        ? `${sessions.length} sesi menunggu penempatan.`
+                        : "Belum ada sesi scan masuk pending."}
                     </p>
-                  ) : (
-                    <p>
-                      Menempatkan <strong>{activeSessions.length} sesi</strong> sekaligus &bull; Total <strong>{activeSessions.reduce((sum, s) => sum + (s.barcodes?.length || 0), 0)} pcs</strong>
-                    </p>
-                  )}
-                </div>
-                <div style={{ minWidth: 220 }}>
-                  <select
-                    className="gudang-ui-field"
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadSessions}
+                    disabled={isLoadingSessions}
                     style={{
-                      width: "100%",
-                      margin: 0,
-                      padding: "8px 12px",
                       border: "1px solid #cbd5e1",
                       borderRadius: 8,
-                      fontSize: 13,
-                      backgroundColor: "#f8fafc",
+                      background: "#f8fafc",
+                      color: "#475569",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
-                    value={layoutId}
-                    onChange={(e) => setLayoutId(e.target.value)}
                   >
-                    {state.layouts.map((layout) => (
-                      <option key={layout.id} value={layout.id}>
-                        {layout.name}
-                      </option>
-                    ))}
-                  </select>
+                    {isLoadingSessions ? <FaSpinner className="gudang-ui-spin" /> : null}
+                    Refresh
+                  </button>
                 </div>
-              </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <div className="gudang-ui-field" style={{ marginBottom: 10 }}>
+                {/* Search bar for pending sessions */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <FiSearch style={{ position: "absolute", left: 12, color: "#94a3b8", pointerEvents: "none" }} size={15} />
+                    <input
+                      type="text"
+                      value={pendingSearchTerm}
+                      onChange={(e) => setPendingSearchTerm(e.target.value)}
+                      placeholder="Cari sesi... (multi-search)"
+                      style={{
+                        width: "100%",
+                        padding: "9px 14px 9px 36px",
+                        border: "1px solid #ddd6fe",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontFamily: "inherit",
+                        background: "#faf5ff",
+                        color: "#1e293b",
+                        outline: "none",
+                        transition: "border-color 0.2s, box-shadow 0.2s",
+                      }}
+                      onFocus={(e) => { e.target.style.borderColor = "#7c3aed"; e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)"; }}
+                      onBlur={(e) => { e.target.style.borderColor = "#ddd6fe"; e.target.style.boxShadow = "none"; }}
+                    />
+                    {pendingSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingSearchTerm("")}
+                        style={{ position: "absolute", right: 10, background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}
+                      >
+                        <FaTimes size={12} />
+                      </button>
+                    )}
+                  </div>
+                  {pendingSearchTerm.trim() && (
+                    <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 6, fontWeight: 600 }}>
+                      Menampilkan {filteredSessions.length} dari {sessions.length} sesi
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ flex: 1, overflowY: "auto", minHeight: 0, paddingRight: 4 }}>
+                  {sessions.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "28px 20px", color: "#94a3b8", fontSize: 13, background: "#f8fafc", borderRadius: 10, border: "1px dashed #e2e8f0" }}>
+                      Silakan lakukan scan masuk di Scene 1, lalu simpan untuk memproses penempatan.
+                    </div>
+                  ) : filteredSessions.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "28px 20px", color: "#94a3b8", fontSize: 13, background: "#f8fafc", borderRadius: 10, border: "1px dashed #e2e8f0" }}>
+                      Tidak ada sesi yang cocok dengan pencarian "{pendingSearchTerm}".
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", backgroundColor: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#475569" }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedSessionIds.length === filteredSessions.length && filteredSessions.length > 0}
+                            onChange={() => toggleSelectAllSessions(filteredSessions)}
+                            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#7c3aed" }}
+                          />
+                          Pilih Semua ({filteredSessions.length})
+                        </label>
+                        <div style={{ fontSize: 12, color: "#64748b" }}>{selectedSessionIds.length} terpilih</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        {filteredSessions.map((session) => (
+                          <SessionCard
+                            key={session.id}
+                            session={session}
+                            resolveSkuLabel={resolveSkuLabel}
+                            resolveSeriLabel={resolveSeriLabel}
+                            isSelected={selectedSessionIds.includes(session.id)}
+                            onToggleSelection={toggleSessionSelection}
+                            onDeleteSession={handleDeleteSession}
+                            isDeleting={deletingId === session.id}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              {/* Kolom 2: Lokasi Penempatan & Map */}
+              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
+                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+                  <h2>Pilih Lokasi Tujuan</h2>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                    <label>Gudang / Layout</label>
+                    <select
+                      className="gudang-ui-field"
+                      style={{ width: "100%", margin: 0, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, backgroundColor: "#f8fafc" }}
+                      value={layoutId}
+                      onChange={(e) => {
+                        setLayoutId(e.target.value);
+                        setFilterFloor("");
+                        setFilterBlock("");
+                        setSlotId("");
+                      }}
+                    >
+                      <option value="">-- Pilih Gudang --</option>
+                      {state.layouts.map((layout) => (
+                        <option key={layout.id} value={layout.id}>{layout.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                    <label>Lantai</label>
+                    <select
+                      className="gudang-ui-field"
+                      style={{ width: "100%", margin: 0, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, backgroundColor: "#f8fafc" }}
+                      value={filterFloor}
+                      onChange={(e) => {
+                        setFilterFloor(e.target.value);
+                        setFilterBlock("");
+                        setSlotId("");
+                      }}
+                      disabled={!layoutId}
+                    >
+                      <option value="">Semua Lantai</option>
+                      {layoutFloors.map((floor) => (
+                        <option key={floor.id} value={floor.id}>{floor.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="gudang-ui-field" style={{ marginBottom: 0 }}>
+                    <label>Blok</label>
+                    <select
+                      className="gudang-ui-field"
+                      style={{ width: "100%", margin: 0, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, backgroundColor: "#f8fafc" }}
+                      value={filterBlock}
+                      onChange={(e) => {
+                        setFilterBlock(e.target.value);
+                        setSlotId("");
+                      }}
+                      disabled={!layoutId}
+                    >
+                      <option value="">Semua Blok</option>
+                      {layoutBlocks.map((block) => (
+                        <option key={block.id} value={block.id}>{block.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="gudang-ui-field" style={{ marginBottom: 16 }}>
                   <label>Slot / Rak Tujuan</label>
                   <select
                     className="spm-gudang-select"
@@ -1619,199 +1782,104 @@ const ScanProdukMasukGudang = () => {
                     onChange={(e) => setSlotId(e.target.value)}
                     disabled={!layoutId}
                   >
-                    <option value="">
-                      {layoutId ? "-- Pilih Slot --" : "Pilih gudang terlebih dahulu"}
-                    </option>
-                    {layoutSlots.map((slot) => {
+                    <option value="">{layoutId ? "-- Pilih Slot --" : "Pilih gudang terlebih dahulu"}</option>
+                    {filteredSlots.map((slot) => {
                       const slotSummary = stockSummaryBySlot[slot.id];
-                      const label = `${slot.slotCode}${
-                        slotSummary ? ` (${slotSummary.qty} pcs, ${slotSummary.skuCount} SKU)` : " (Kosong)"
-                      }`;
-                      return (
-                        <option key={slot.id} value={slot.id}>
-                          {label}
-                        </option>
-                      );
+                      const label = `${slot.slotCode}${slotSummary ? ` (${slotSummary.qty} pcs, ${slotSummary.skuCount} SKU)` : " (Kosong)"}`;
+                      return <option key={slot.id} value={slot.id}>{label}</option>;
                     })}
                   </select>
+                  {selectedSlot && (
+                    <div className="spm-gudang-slot-status" style={{ marginTop: 8 }}>
+                      <FaMapMarkerAlt />
+                      <span>
+                        Lokasi: <strong>{buildSlotHeadline(selectedSlot)}</strong>
+                        <br/>
+                        {selectedSlotSummary ? `${selectedSlotSummary.qty} pcs tersimpan dengan ${selectedSlotSummary.skuCount} SKU` : "Slot kosong, siap digunakan"}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {selectedSlot && (
-                  <div className="spm-gudang-slot-status">
-                    <FaMapMarkerAlt />
-                    <span>
-                      Lokasi terpilih: <strong>{buildSlotHeadline(selectedSlot)}</strong>
-                      {selectedSlotSummary
-                        ? ` — ${selectedSlotSummary.qty} pcs tersimpan dengan ${selectedSlotSummary.skuCount} SKU`
-                        : " — Slot kosong, siap digunakan"}
-                    </span>
+
+                {selectedLayout && (
+                  <div style={{ flex: 1, minHeight: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "auto", background: "#f8fafc" }}>
+                    <GudangLayoutMap
+                      layout={filteredLayout}
+                      selectedSlotId={slotId}
+                      onSelectSlot={(slot) => { if (slot && slot.id) setSlotId(slot.id); }}
+                      stockSummaryBySlot={stockSummaryBySlot}
+                      interactive={true}
+                    />
                   </div>
                 )}
-              </div>
+              </section>
 
-              {selectedLayout && (
-                <div style={{ marginBottom: 20 }}>
-                  <GudangLayoutMap
-                    layout={selectedLayout}
-                    selectedSlotId={slotId}
-                    onSelectSlot={(slot) => {
-                      if (slot && slot.id) {
-                        setSlotId(slot.id);
-                      }
-                    }}
-                    stockSummaryBySlot={stockSummaryBySlot}
-                    interactive={true}
+              {/* Kolom 3: Eksekusi */}
+              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
+                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+                  <h2>Eksekusi Penempatan</h2>
+                </div>
+
+                <div style={{ marginBottom: 20, padding: 16, background: "#f5f3ff", borderRadius: 12, border: "1px solid #ddd6fe" }}>
+                  <h4 style={{ fontSize: 12, color: "#6d28d9", textTransform: "uppercase", marginBottom: 8 }}>Ringkasan Penempatan</h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, color: "#475569" }}>Sesi Terpilih:</span>
+                    <strong style={{ fontSize: 13, color: "#1e293b" }}>{selectedSessionIds.length} Sesi</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, paddingBottom: 12, borderBottom: "1px dashed #c4b5fd" }}>
+                    <span style={{ fontSize: 13, color: "#475569" }}>Total Item:</span>
+                    <strong style={{ fontSize: 13, color: "#7c3aed" }}>
+                      {sessions.filter(s => selectedSessionIds.includes(s.id)).reduce((sum, s) => sum + (s.barcodes?.length || 0), 0)} pcs
+                    </strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: "#475569" }}>Tujuan:</span>
+                    <strong style={{ fontSize: 13, color: slotId ? "#059669" : "#dc2626" }}>
+                      {slotId ? selectedSlot?.slotCode : "Belum Dipilih"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="gudang-ui-field" style={{ marginBottom: 20, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  <label>Catatan Tambahan (opsional)</label>
+                  <textarea
+                    value={execNotes}
+                    onChange={(e) => setExecNotes(e.target.value)}
+                    placeholder="Catatan penempatan ke slot..."
+                    style={{ fontSize: 13, height: "100%", minHeight: 120, width: "100%", padding: "12px", border: "1px solid #cbd5e1", borderRadius: 8, resize: "none" }}
                   />
                 </div>
-              )}
 
-              <div className="gudang-ui-field" style={{ marginBottom: 20 }}>
-                <label>Catatan Tambahan (opsional)</label>
-                <textarea
-                  value={execNotes}
-                  onChange={(e) => setExecNotes(e.target.value)}
-                  placeholder="Catatan penempatan ke slot..."
-                  style={{ fontSize: 13, minHeight: 60, width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
-                />
-              </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button
+                    type="button"
+                    className="gudang-ui-button"
+                    style={{ background: "#7c3aed", color: "#fff", display: "flex", justifyContent: "center", alignItems: "center", gap: 8, padding: "12px", fontSize: 14 }}
+                    disabled={isExecuting || !slotId || !selectedSessionIds.length}
+                    onClick={handleExecuteSession}
+                  >
+                    {isExecuting ? <FaSpinner className="gudang-ui-spin" /> : <FaExchangeAlt />}
+                    {isExecuting ? "Mengeksekusi..." : "Eksekusi Penempatan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSessionIds([]);
+                      setSlotId("");
+                    }}
+                    style={{ border: "1px solid #dbe4ef", borderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "10px", cursor: "pointer", textAlign: "center", fontSize: 13 }}
+                  >
+                    Batalkan Pilihan
+                  </button>
+                </div>
+              </section>
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveScene(1);
-                    setActiveSessions([]);
-                    setSlotId("");
-                  }}
-                  style={{ border: "1px solid #dbe4ef", borderRadius: 8, background: "#fff", color: "#64748b", fontWeight: 700, padding: "9px 16px", cursor: "pointer" }}
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  className="gudang-ui-button"
-                  style={{ background: "#7c3aed", color: "#fff", display: "inline-flex", alignItems: "center", gap: 8 }}
-                  disabled={isExecuting || !slotId}
-                  onClick={handleExecuteSession}
-                >
-                  {isExecuting ? <FaSpinner className="gudang-ui-spin" /> : <FaExchangeAlt />}
-                  {isExecuting ? "Menyimpan..." : "Eksekusi Penempatan"}
-                </button>
-              </div>
-            </section>
+            </div>
           )}
 
-          {/* ── Daftar Sesi Pending ── */}
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <h2>Sesi Scan Pending</h2>
-                <p>
-                  {sessions.length
-                    ? `${sessions.length} sesi menunggu penentuan lokasi penempatan.`
-                    : "Belum ada sesi scan masuk pending."}
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {sessions.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleToggleSelectAll}
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 8,
-                        background: "#f8fafc",
-                        color: "#475569",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        padding: "6px 12px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {selectedSessionIds.length === sessions.length ? "Batal Pilih Semua" : "Pilih Semua"}
-                    </button>
-                    {selectedSessionIds.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleSelectBulkSessions}
-                        style={{
-                          border: "none",
-                          borderRadius: 8,
-                          background: "#7c3aed",
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          padding: "6px 14px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <FaMapMarkerAlt size={11} /> Tentukan Tujuan Masal ({selectedSessionIds.length})
-                      </button>
-                    )}
-                  </>
-                )}
-                <button
-                  type="button"
-                  onClick={loadSessions}
-                  disabled={isLoadingSessions}
-                  style={{
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 8,
-                    background: "#f8fafc",
-                    color: "#475569",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  {isLoadingSessions ? <FaSpinner className="gudang-ui-spin" /> : null}
-                  Refresh
-                </button>
-              </div>
-            </div>
-
-            {sessions.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "28px 20px",
-                  color: "#94a3b8",
-                  fontSize: 13,
-                  background: "#f8fafc",
-                  borderRadius: 10,
-                  border: "1px dashed #e2e8f0",
-                }}
-              >
-                Silakan lakukan scan masuk di Scene 1, lalu simpan untuk memproses penempatan.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
-                {sessions.map((session) => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    resolveSkuLabel={resolveSkuLabel}
-                    resolveSeriLabel={resolveSeriLabel}
-                    onSelectSession={handleSelectSession}
-                    onDeleteSession={handleDeleteSession}
-                    isDeleting={deletingId === session.id}
-                    isSelected={selectedSessionIds.includes(session.id)}
-                    onToggleSelect={() => handleToggleSelectSession(session.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
           {/* ── Riwayat Hasil Scan ── */}
-          <section className="spm-gudang-card">
+          {activeMainTab === "history" && (
+            <section className="spm-gudang-card">
             <div className="spm-gudang-toolbar">
               <div className="spm-gudang-card-title">
                 <FaBoxOpen />
@@ -1899,11 +1967,13 @@ const ScanProdukMasukGudang = () => {
                 </div>
               </>
             )}
-          </section>
+            </section>
+          )}
         </div>
 
         {/* ── Sidebar: Monitoring Cetakan Nomor Seri & Tiket ── */}
-        <div className="spm-gudang-right-col" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {activeMainTab === "scan" && (
+          <div className="spm-gudang-right-col" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Tiket Penempatan */}
           <aside className="gudang-ui-panel">
             <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
@@ -1946,16 +2016,14 @@ const ScanProdukMasukGudang = () => {
             </div>
 
             {/* Target Slot */}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: activeSessions.length > 0 && slotId ? "#ecfdf5" : activeSessions.length > 0 ? "#fffbeb" : "#f8fafc" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, backgroundColor: selectedSessionIds.length > 0 && slotId ? "#ecfdf5" : selectedSessionIds.length > 0 ? "#fffbeb" : "#f8fafc" }}>
               <strong style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase" }}>
                 Lokasi Penempatan
               </strong>
-              {activeSessions.length > 0 ? (
+              {selectedSessionIds.length > 0 ? (
                 <>
                   <div style={{ fontSize: 11, color: "#92400e", marginBottom: 4 }}>
-                    {activeSessions.length === 1
-                      ? `Sesi #${activeSessions[0].id} terpilih`
-                      : `${activeSessions.length} sesi terpilih`}
+                    {selectedSessionIds.length} Sesi terpilih
                   </div>
                   {slotId ? (
                     <>
@@ -2171,6 +2239,7 @@ const ScanProdukMasukGudang = () => {
             )}
           </section>
         </div>
+        )}
       </div>
     </GudangProdukBaseShell>
   );
