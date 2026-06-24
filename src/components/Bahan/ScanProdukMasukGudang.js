@@ -302,6 +302,7 @@ const ScanProdukMasukGudang = () => {
 
   // Search filter for pending sessions
   const [pendingSearchTerm, setPendingSearchTerm] = useState("");
+  const [pendingSizeFilter, setPendingSizeFilter] = useState("");
 
   // ── Session Loading ─────────────────────────────────────────────────────────
 
@@ -1160,38 +1161,72 @@ const ScanProdukMasukGudang = () => {
   const resolveSeriLabel = (seriId) =>
     seriList.find((s) => String(s.id) === String(seriId))?.nomor_seri || String(seriId);
 
-  // Filter pending sessions by multi-keyword search
-  const filteredSessions = useMemo(() => {
-    const raw = pendingSearchTerm.trim().toLowerCase();
-    if (!raw) return sessions;
-
-    const keywords = raw.split(/\s+/).filter(Boolean);
-
-    return sessions.filter((session) => {
-      // Build a searchable string from all session fields
-      const skuLabel = resolveSkuLabel(session.skuId);
-      const seriLabel = resolveSeriLabel(session.seriId);
-      const barcodes = Array.isArray(session.barcodes)
-        ? session.barcodes.map((b) => b.serialCode || b.barcode || "").join(" ")
-        : "";
-      const haystack = [
-        skuLabel,
-        seriLabel,
-        session.skuCode || "",
-        session.seriNumber || "",
-        session.notes || "",
-        session.creatorName || "",
-        barcodes,
-        String(session.id),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      // All keywords must match (AND logic)
-      return keywords.every((kw) => haystack.includes(kw));
+  // Extract all available sizes from pending sessions
+  const availableSizes = useMemo(() => {
+    const sizeSet = new Set();
+    sessions.forEach((session) => {
+      const skuLabel = resolveSkuLabel(session.skuId) || "";
+      const parts = skuLabel.trim().split(/[\s-]+/);
+      let size = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "Lainnya";
+      if (skuLabel.toUpperCase().endsWith("ALL SIZE")) {
+        size = "ALL SIZE";
+      } else if (size.length > 8) {
+        size = "Lainnya";
+      }
+      sizeSet.add(size);
     });
+    return Array.from(sizeSet).sort();
+  }, [sessions, state.skus]);
+
+  // Filter pending sessions by multi-keyword search & size
+  const filteredSessions = useMemo(() => {
+    let result = sessions;
+    const raw = pendingSearchTerm.trim().toLowerCase();
+    
+    // 1. Text filter
+    if (raw) {
+      const keywords = raw.split(/\s+/).filter(Boolean);
+      result = result.filter((session) => {
+        const skuLabel = resolveSkuLabel(session.skuId);
+        const seriLabel = resolveSeriLabel(session.seriId);
+        const barcodes = Array.isArray(session.barcodes)
+          ? session.barcodes.map((b) => b.serialCode || b.barcode || "").join(" ")
+          : "";
+        const haystack = [
+          skuLabel,
+          seriLabel,
+          session.skuCode || "",
+          session.seriNumber || "",
+          session.notes || "",
+          session.creatorName || "",
+          barcodes,
+          String(session.id),
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return keywords.every((kw) => haystack.includes(kw));
+      });
+    }
+
+    // 2. Size filter
+    if (pendingSizeFilter) {
+      result = result.filter((session) => {
+        const skuLabel = resolveSkuLabel(session.skuId) || "";
+        const parts = skuLabel.trim().split(/[\s-]+/);
+        let size = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "Lainnya";
+        if (skuLabel.toUpperCase().endsWith("ALL SIZE")) {
+          size = "ALL SIZE";
+        } else if (size.length > 8) {
+          size = "Lainnya";
+        }
+        return size === pendingSizeFilter;
+      });
+    }
+
+    return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions, pendingSearchTerm, state.skus, seriList]);
+  }, [sessions, pendingSearchTerm, pendingSizeFilter, state.skus, seriList]);
 
   // ── Wizard Config ───────────────────────────────────────────────────────────
 
@@ -1666,6 +1701,50 @@ const ScanProdukMasukGudang = () => {
                     </div>
                   ) : (
                     <>
+                      {availableSizes.length > 0 && (
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                          <button
+                            type="button"
+                            onClick={() => setPendingSizeFilter("")}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: 20,
+                              border: "1px solid",
+                              borderColor: pendingSizeFilter === "" ? "#7c3aed" : "#cbd5e1",
+                              background: pendingSizeFilter === "" ? "#f3e8ff" : "#f8fafc",
+                              color: pendingSizeFilter === "" ? "#7c3aed" : "#64748b",
+                              fontWeight: 700,
+                              fontSize: 12,
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            Semua Ukuran
+                          </button>
+                          {availableSizes.map(sz => (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => setPendingSizeFilter(sz)}
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: 20,
+                                border: "1px solid",
+                                borderColor: pendingSizeFilter === sz ? "#7c3aed" : "#cbd5e1",
+                                background: pendingSizeFilter === sz ? "#f3e8ff" : "#f8fafc",
+                                color: pendingSizeFilter === sz ? "#7c3aed" : "#64748b",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              {sz}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", backgroundColor: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                         <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#475569" }}>
                           <input
