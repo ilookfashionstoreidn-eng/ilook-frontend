@@ -1161,22 +1161,35 @@ const ScanProdukMasukGudang = () => {
   const resolveSeriLabel = (seriId) =>
     seriList.find((s) => String(s.id) === String(seriId))?.nomor_seri || String(seriId);
 
+  // Helper to extract size
+  const extractSize = useCallback((skuLabel) => {
+    const skuUpper = (skuLabel || "").trim().toUpperCase();
+    let size = "ALL SIZE";
+    
+    if (skuUpper.endsWith("ALL SIZE") || skuUpper.endsWith("ALLSIZE")) {
+      size = "ALL SIZE";
+    } else {
+      const parts = skuUpper.split(/[\s-]+/);
+      const lastPart = parts.length > 0 ? parts[parts.length - 1] : "";
+      const validSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "3XL", "4XL", "5XL"];
+      if (validSizes.includes(lastPart)) {
+        size = lastPart;
+      } else if (!isNaN(parseInt(lastPart)) && parseInt(lastPart) > 0 && parseInt(lastPart) < 100) {
+        size = lastPart;
+      }
+    }
+    return size;
+  }, []);
+
   // Extract all available sizes from pending sessions
   const availableSizes = useMemo(() => {
     const sizeSet = new Set();
     sessions.forEach((session) => {
-      const skuLabel = resolveSkuLabel(session.skuId) || "";
-      const parts = skuLabel.trim().split(/[\s-]+/);
-      let size = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "Lainnya";
-      if (skuLabel.toUpperCase().endsWith("ALL SIZE")) {
-        size = "ALL SIZE";
-      } else if (size.length > 8) {
-        size = "Lainnya";
-      }
-      sizeSet.add(size);
+      const skuLabel = resolveSkuLabel(session.skuId);
+      sizeSet.add(extractSize(skuLabel));
     });
     return Array.from(sizeSet).sort();
-  }, [sessions, state.skus]);
+  }, [sessions, state.skus, extractSize]);
 
   // Filter pending sessions by multi-keyword search & size
   const filteredSessions = useMemo(() => {
@@ -1212,15 +1225,8 @@ const ScanProdukMasukGudang = () => {
     // 2. Size filter
     if (pendingSizeFilter) {
       result = result.filter((session) => {
-        const skuLabel = resolveSkuLabel(session.skuId) || "";
-        const parts = skuLabel.trim().split(/[\s-]+/);
-        let size = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : "Lainnya";
-        if (skuLabel.toUpperCase().endsWith("ALL SIZE")) {
-          size = "ALL SIZE";
-        } else if (size.length > 8) {
-          size = "Lainnya";
-        }
-        return size === pendingSizeFilter;
+        const skuLabel = resolveSkuLabel(session.skuId);
+        return extractSize(skuLabel) === pendingSizeFilter;
       });
     }
 
