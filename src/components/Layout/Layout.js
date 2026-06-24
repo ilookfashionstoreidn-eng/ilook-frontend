@@ -222,7 +222,7 @@ const Layout = () => {
             {hasAccess("dashboard") && (
               <li>
                 <Link to="/home" className={`sidebar-link ${activeMenu === "home" ? "active" : ""}`} onClick={() => handleMenuClick("home")}>
-                  <FaHome className="icon" /> DASHBOARD
+                  <FaHome className="icon" /> Dashboard
                 </Link>
               </li>
             )}
@@ -230,7 +230,7 @@ const Layout = () => {
             {hasAccess("laporan_daily_produksi") && (
               <li>
                 <Link to="/laporan-daily-produksi" className={`sidebar-link ${activeMenu === "laporan-daily-produksi" ? "active" : ""}`} onClick={() => handleMenuClick("laporan-daily-produksi")}>
-                  <FaChartLine className="icon" /> Laporan Daily Produksi
+                  <FaChartLine className="icon" /> Laporan Produksi Harian
                 </Link>
               </li>
             )}
@@ -267,7 +267,7 @@ const Layout = () => {
             {hasAccess("sample") && (
               <li>
                 <div onClick={toggleSampleMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "tukang-sample" || activeMenu === "spk-sample" || activeMenu === "summary-spk-sample") ? "active" : ""}`}>
-                  <FaLayerGroup className="icon" /> Management Sample
+                  <FaLayerGroup className="icon" /> Manajemen Sample
                   <span className={`arrow ${isSampleOpen ? "open" : ""}`}>{isSampleOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isSampleOpen && (
@@ -344,14 +344,14 @@ const Layout = () => {
                     {hasAccess("produk:list") && (
                       <li>
                         <Link to="produk-list" className={`dropdown-link ${activeMenu === "produk-list" ? "active" : ""}`} onClick={() => handleMenuClick("produk-list")}>
-                          <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Produk List
+                          <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Produk
                         </Link>
                       </li>
                     )}
                     {hasAccess("produk:hpp") && (
                       <li>
                         <Link to="hppProduk" className={`dropdown-link ${activeMenu === "hppProduk" ? "active" : ""}`} onClick={() => handleMenuClick("hppProduk")}>
-                          <FaShoppingBag className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hpp Produk
+                          <FaShoppingBag className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> HPP Produk
                         </Link>
                       </li>
                     )}
@@ -400,7 +400,7 @@ const Layout = () => {
                     {hasAccess("gudang_bahan:list_bahan") && (
                       <li>
                         <Link to="bahan-list" className={`dropdown-link ${activeMenu === "bahan-list" ? "active" : ""}`} onClick={() => handleMenuClick("bahan-list")}>
-                          <FaListUl className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> List Bahan
+                          <FaListUl className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Bahan
                         </Link>
                       </li>
                     )}
@@ -423,7 +423,7 @@ const Layout = () => {
                     {hasAccess("gudang_bahan:return") && (
                       <li>
                         <Link to="refund-bahan" className={`dropdown-link ${activeMenu === "refund-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("refund-bahan")}>
-                          <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Return Bahan
+                          <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Retur Bahan
                         </Link>
                       </li>
                     )}
@@ -460,7 +460,7 @@ const Layout = () => {
                     {hasAccess("gudang_bahan:history_keluar") && (
                       <li>
                         <Link to="riwayat-stok-bahan-keluar" className={`dropdown-link ${activeMenu === "riwayat-stok-bahan-keluar" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-bahan-keluar")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Stok Keluar
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Stok Keluar
                         </Link>
                       </li>
                     )}
@@ -476,7 +476,7 @@ const Layout = () => {
                     {hasAccess("gudang_bahan:history_hutang_pabrik") && (
                       <li>
                         <Link to="history-pendapatan-pabrik" className={`dropdown-link ${activeMenu === "history-pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("history-pendapatan-pabrik")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hutang Pabrik
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Hutang Pabrik
                         </Link>
                       </li>
                     )}
@@ -516,7 +516,7 @@ const Layout = () => {
                     {hasAccess("cutting:spk") && (
                       <li>
                         <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
-                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Surat Perintah Cutting
+                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Cutting
                         </Link>
                       </li>
                     )}
@@ -544,14 +544,14 @@ const Layout = () => {
                     {hasAccess("cutting:history_hasil") && (
                       <li>
                         <Link to="historyhasilcutting" className={`dropdown-link ${activeMenu === "historyhasilcutting" ? "active" : ""}`} onClick={() => handleMenuClick("historyhasilcutting")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Hasil Cutting
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Hasil Cutting
                         </Link>
                       </li>
                     )}
                     {hasAccess("cutting:history_distribusi") && (
                       <li>
                         <Link to="historydistribusispk" className={`dropdown-link ${activeMenu === "historydistribusispk" ? "active" : ""}`} onClick={() => handleMenuClick("historydistribusispk")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Distribusi SPK
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Distribusi SPK
                         </Link>
                       </li>
                     )}
@@ -567,7 +567,7 @@ const Layout = () => {
                     {hasAccess("cutting:cashbon") && (
                       <li>
                         <Link to="cashboanc" className={`dropdown-link ${activeMenu === "cashboanc" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanc")}>
-                          <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashbon Tukang Cutting
+                          <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Kasbon Tukang Cutting
                         </Link>
                       </li>
                     )}
@@ -581,7 +581,7 @@ const Layout = () => {
                     {hasAccess("cutting:history_pembayaran") && (
                       <li>
                         <Link to="pendapatanhistory" className={`dropdown-link ${activeMenu === "pendapatanhistory" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistory")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pembayaran
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Pembayaran
                         </Link>
                       </li>
                     )}
@@ -615,7 +615,7 @@ const Layout = () => {
                     {hasAccess("jasa:spk") && (
                       <li>
                         <Link to="spkjasa" className={`dropdown-link ${activeMenu === "spkjasa" ? "active" : ""}`} onClick={() => handleMenuClick("spkjasa")}>
-                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Spk Jasa
+                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK Jasa
                         </Link>
                       </li>
                     )}
@@ -629,7 +629,7 @@ const Layout = () => {
                     {hasAccess("jasa:cashbon") && (
                       <li>
                         <Link to="cashboanjasa" className={`dropdown-link ${activeMenu === "cashboanjasa" ? "active" : ""}`} onClick={() => handleMenuClick("cashboanjasa")}>
-                          <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cashboan
+                          <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Kasbon
                         </Link>
                       </li>
                     )}
@@ -650,7 +650,7 @@ const Layout = () => {
                     {hasAccess("jasa:history_pendapatan") && (
                       <li>
                         <Link to="pendapatanhistoryjasa" className={`dropdown-link ${activeMenu === "pendapatanhistoryjasa" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatanhistoryjasa")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Pendapatan
                         </Link>
                       </li>
                     )}
@@ -691,7 +691,7 @@ const Layout = () => {
                     {hasAccess("cmt:spk") && (
                       <li>
                         <Link to="spkcmt" className={`dropdown-link ${activeMenu === "spk" ? "active" : ""}`} onClick={() => handleMenuClick("spk")}>
-                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Surat Perintah Kerja CMT
+                          <FaFileAlt className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SPK CMT
                         </Link>
                       </li>
                     )}
@@ -722,7 +722,7 @@ const Layout = () => {
                         {hasAccess("cmt:cashbon") && (
                           <li>
                             <Link to="cashbon" className={`dropdown-link ${activeMenu === "cashbon" ? "active" : ""}`} onClick={() => handleMenuClick("casbon")}>
-                              <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Casbon
+                              <FaMoneyBillWave className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Kasbon
                             </Link>
                           </li>
                         )}
@@ -736,7 +736,7 @@ const Layout = () => {
                         {hasAccess("cmt:history_pendapatan") && (
                           <li>
                             <Link to="historyPendapatan" className={`dropdown-link ${activeMenu === "historyPendapatan" ? "active" : ""}`} onClick={() => handleMenuClick("historyPendapatan")}>
-                              <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Pendapatan
+                              <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Pendapatan
                             </Link>
                           </li>
                         )}
@@ -801,7 +801,7 @@ const Layout = () => {
                     {hasAccess("gudang_produk:master_layout") && (
                       <li>
                         <Link to="master-gudang-produk" className={`dropdown-link ${activeMenu === "master-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("master-gudang-produk")}>
-                          <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Master Layout
+                          <FaWarehouse className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Layout Gudang
                         </Link>
                       </li>
                     )}
@@ -861,7 +861,7 @@ const Layout = () => {
                     {hasAccess("gudang_produk:list_stok") && (
                       <li>
                         <Link to="list-stok-product" className={`dropdown-link ${activeMenu === "list-stok-product" ? "active" : ""}`} onClick={() => handleMenuClick("list-stok-product")}>
-                          <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> List Stok Product
+                          <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Stok Produk
                         </Link>
                       </li>
                     )}
@@ -870,35 +870,35 @@ const Layout = () => {
                     {hasAccess("gudang_produk:history_mutasi") && (
                       <li>
                         <Link to="history-mutasi-gudang" className={`dropdown-link ${activeMenu === "history-mutasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-mutasi-gudang")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Mutasi
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Mutasi
                         </Link>
                       </li>
                     )}
                     {hasAccess("gudang_produk:history_produk") && (
                       <li>
                         <Link to="history-produk-gudang" className={`dropdown-link ${activeMenu === "history-produk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-gudang")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Produk
                         </Link>
                       </li>
                     )}
                     {hasAccess("gudang_produk:history_stok_awal") && (
                       <li>
                         <Link to="history-stok-awal-gudang" className={`dropdown-link ${activeMenu === "history-stok-awal-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-stok-awal-gudang")}>
-                          <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> History Stok Awal
+                          <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Riwayat Stok Awal
                         </Link>
                       </li>
                     )}
                     {hasAccess("gudang_produk:history_produk_masuk") && (
                       <li>
                         <Link to="history-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "history-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-produk-masuk-gudang")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Produk Masuk
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Produk Masuk
                         </Link>
                       </li>
                     )}
                     {hasAccess("gudang_produk:history_out_check") && (
                       <li>
                         <Link to="history-out-check-gudang" className={`dropdown-link ${activeMenu === "history-out-check-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-out-check-gudang")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Keluar - Cek Masuk
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Keluar Masuk
                         </Link>
                       </li>
                     )}
@@ -943,7 +943,7 @@ const Layout = () => {
                     {hasAccess("packing:pendingan") && (
                       <li>
                         <Link to="packing-pendingan" className={`dropdown-link ${activeMenu === "packing-pendingan" ? "active" : ""}`} onClick={() => handleMenuClick("packing-pendingan")}>
-                          <FaClock className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pendingan
+                          <FaClock className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Barang Pending
                         </Link>
                       </li>
                     )}
@@ -1008,7 +1008,7 @@ const Layout = () => {
                     {hasAccess("packing:logs") && (
                       <li>
                         <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> History Scan
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Scan
                         </Link>
                       </li>
                     )}
@@ -1023,7 +1023,7 @@ const Layout = () => {
                   onClick={toggleReturnMenu}
                   className={`sidebar-link dropdown-toggle ${["return", "return-logs"].includes(activeMenu) ? "active" : ""}`}
                 >
-                  <FaUndo className="icon" /> Return
+                  <FaUndo className="icon" /> Retur
                   <span className={`arrow ${isReturnOpen ? "open" : ""}`}>{isReturnOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isReturnOpen && (
@@ -1031,14 +1031,14 @@ const Layout = () => {
                     {hasAccess("return:return") && (
                       <li>
                         <Link to="return" className={`dropdown-link ${activeMenu === "return" ? "active" : ""}`} onClick={() => handleMenuClick("return")}>
-                          <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Return
+                          <FaUndo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Retur
                         </Link>
                       </li>
                     )}
                     {hasAccess("return:logs") && (
                       <li>
                         <Link to="return-logs" className={`dropdown-link ${activeMenu === "return-logs" ? "active" : ""}`} onClick={() => handleMenuClick("return-logs")}>
-                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Logs Return
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Log Retur
                         </Link>
                       </li>
                     )}
