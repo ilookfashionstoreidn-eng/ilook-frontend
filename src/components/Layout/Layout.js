@@ -684,7 +684,7 @@ const Layout = () => {
                     {hasAccess("cmt:pekerjaan_tersedia") && (
                       <li>
                         <Link to="kode-seri-belum-dikerjakan" className={`dropdown-link ${activeMenu === "kodeSeri" ? "active" : ""}`} onClick={() => handleMenuClick("kodeSeri")}>
-                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Pekerjaan Tersedia
+                          <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pekerjaan Tersedia
                         </Link>
                       </li>
                     )}

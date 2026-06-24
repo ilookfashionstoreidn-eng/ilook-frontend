@@ -1,22 +1,16 @@
 import React, { startTransition, useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import {
   FiAlertTriangle,
   FiArrowDown,
   FiArrowUp,
-  FiBox,
-  FiCheckCircle,
   FiChevronLeft,
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
-  FiClipboard,
-  FiPackage,
   FiRefreshCw,
-  FiScissors,
   FiSearch,
-  FiTool,
-  FiDownload
+  FiDownload,
+  FiInbox,
 } from "react-icons/fi";
 import "./KodeSeriBelumDikerjakanOptimized.css";
 import API from "../../api";
@@ -54,94 +48,94 @@ const formatNumber = (value) => new Intl.NumberFormat("id-ID").format(Number(val
 const formatTanggal = (tanggal) => {
   if (!tanggal) return "-";
   const date = new Date(tanggal);
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(date);
 };
+
+const getRunningDays = (deadline) => {
+  if (!deadline) return null;
+  return Math.floor((Date.now() - new Date(deadline)) / 86400000);
+};
+
+// Urgency derived from how far past (or before) the deadline a row is.
+const getUrgency = (days) => {
+  if (days === null) return "none";
+  if (days > 0) return "overdue";
+  if (days >= -3) return "warning";
+  return "safe";
+};
+
+const URGENCY_LABEL = { overdue: "Overdue", warning: "Mendekati", safe: "Aman", none: "—" };
 
 const useDebouncedValue = (value, delay = 450) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
-
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      startTransition(() => {
-        setDebouncedValue(value.trim());
-      });
+      startTransition(() => setDebouncedValue(value.trim()));
     }, delay);
     return () => window.clearTimeout(timeoutId);
   }, [value, delay]);
-
   return debouncedValue;
 };
 
-const SortHeaderButton = ({ id, label, sortBy, sortDirection, onSort, align = "left" }) => {
+const SortHead = ({ id, label, sortBy, sortDirection, onSort, align = "left" }) => {
   const isActive = sortBy === id;
   const Icon = isActive && sortDirection === "asc" ? FiArrowUp : FiArrowDown;
   return (
     <button
       type="button"
-      className={`kode-seri-sort-btn ${isActive ? "is-active" : ""} ${align === "right" ? "align-right" : ""}`}
+      className={`ks-th-btn ${isActive ? "is-active" : ""} ${align === "right" ? "align-right" : ""}`}
       onClick={() => onSort(id)}
     >
       <span>{label}</span>
-      <Icon size={13} />
+      {isActive && <Icon size={12} />}
     </button>
   );
 };
 
 const QueueTable = ({ rows, sortBy, sortDirection, onSort }) => (
-  <div className="kode-seri-normal-table-container">
-    <table className="kode-seri-normal-table">
+  <div className="ks-grid-scroll">
+    <table className="ks-grid">
       <thead>
         <tr>
-          <th><SortHeaderButton id="created_at" label="Tanggal Buat" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
-          <th><SortHeaderButton id="kode_seri" label="Kode Seri" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
-          <th><SortHeaderButton id="deadline" label="Deadline" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
-          <th><div className="kode-seri-sort-placeholder">Running Days</div></th>
-          <th><SortHeaderButton id="nama_produk" label="Nama Produk" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
-          <th><div className="kode-seri-sort-placeholder">Size</div></th>
-          <th className="align-right"><SortHeaderButton id="jumlah" label="Qty" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} align="right" /></th>
-          <th><div className="kode-seri-sort-placeholder">Potong</div></th>
-          <th><div className="kode-seri-sort-placeholder">Status</div></th>
+          <th className="ks-col-dot" aria-label="Status" />
+          <th><SortHead id="kode_seri" label="Kode Seri" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
+          <th><SortHead id="nama_produk" label="Produk" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
+          <th className="ks-col-size">Size</th>
+          <th className="align-right"><SortHead id="jumlah" label="Qty" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} align="right" /></th>
+          <th><SortHead id="created_at" label="Dibuat" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
+          <th><SortHead id="deadline" label="Deadline" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} /></th>
+          <th className="align-right ks-col-run">Run</th>
+          <th className="ks-col-potong">Potong</th>
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => (
-          <tr key={row.key} className={row.isContinuation ? "is-continuation" : ""}>
-            <td className={row.isContinuation ? "is-repeated" : ""}>{formatTanggal(row.createdAt)}</td>
-            <td className={row.isContinuation ? "is-repeated" : ""} style={{ fontWeight: 700, color: '#1e40af' }}>{row.kodeSeri}</td>
-            <td className={row.isContinuation ? "is-repeated" : ""}>{formatTanggal(row.deadline)}</td>
-            <td className={row.isContinuation ? "is-repeated" : ""}>
-              {row.deadline ? (() => {
-                const days = Math.floor((new Date() - new Date(row.deadline)) / (1000 * 60 * 60 * 24));
-                return (
-                  <span style={{ color: days > 0 ? '#b91c1c' : '#166534', fontWeight: 600 }}>{days}</span>
-                );
-              })() : '-'}
-            </td>
-            <td className={`kode-seri-truncate ${row.isContinuation ? "is-repeated" : ""}`} title={row.namaProduk}>
-              <strong style={{ fontSize: '12px', color: '#0f172a' }}>{row.namaProduk}</strong>
-            </td>
-            <td className={row.isContinuation ? "is-repeated" : ""}>{row.productSize || '-'}</td>
-            <td className={`align-right ${row.isContinuation ? "is-repeated" : ""}`}>
-              <span className="kode-seri-qty-inline">{formatNumber(row.totalQty)}</span>
-            </td>
-            <td className={row.isContinuation ? "is-repeated" : ""}>
-              <span className={`kode-seri-status-pill ${row.hasilCuttingId ? "is-sudah-potong" : "is-belum-potong"}`}>
-                {row.hasilCuttingId ? <FiCheckCircle size={12} /> : <FiScissors size={12} />}
-                {row.hasilCuttingId ? "Sudah Potong" : "Belum Potong"}
-              </span>
-            </td>
-            <td className={row.isContinuation ? "is-repeated" : ""}>
-              <span className={`kode-seri-status-pill ${row.overDeadline ? "is-overdue" : "is-safe"}`}>
-                {row.overDeadline ? <FiAlertTriangle size={12} /> : <FiCheckCircle size={12} />}
-                {row.overDeadline ? "Overdue" : "Aman"}
-              </span>
-            </td>
-          </tr>
-        ))}
+        {rows.map((row) => {
+          const days = getRunningDays(row.deadline);
+          const urgency = getUrgency(days);
+          return (
+            <tr key={row.key} className={row.isContinuation ? "is-continuation" : ""}>
+              <td className="ks-col-dot">
+                <span className={`ks-dot tone-${urgency}`} title={URGENCY_LABEL[urgency]} />
+              </td>
+              <td className={`ks-cell-code ${row.isContinuation ? "is-repeated" : ""}`}>{row.kodeSeri}</td>
+              <td className={`ks-cell-product ${row.isContinuation ? "is-repeated" : ""}`} title={row.namaProduk}>{row.namaProduk}</td>
+              <td className={`ks-col-size ks-muted ${row.isContinuation ? "is-repeated" : ""}`}>{row.productSize || "-"}</td>
+              <td className={`align-right ks-cell-num ${row.isContinuation ? "is-repeated" : ""}`}>{formatNumber(row.totalQty)}</td>
+              <td className={`ks-muted ${row.isContinuation ? "is-repeated" : ""}`}>{formatTanggal(row.createdAt)}</td>
+              <td className={row.isContinuation ? "is-repeated" : ""}>{formatTanggal(row.deadline)}</td>
+              <td className={`align-right ks-cell-num ${row.isContinuation ? "is-repeated" : ""}`}>
+                {days === null ? <span className="ks-muted">-</span> : (
+                  <span className={`ks-run tone-${urgency}`}>{days > 0 ? `+${days}` : days}d</span>
+                )}
+              </td>
+              <td className={row.isContinuation ? "is-repeated" : ""}>
+                <span className={`ks-tag ${row.hasilCuttingId ? "is-sudah" : "is-belum"}`}>
+                  {row.hasilCuttingId ? "Sudah" : "Belum"}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   </div>
@@ -169,7 +163,6 @@ const KodeSeriBelumDikerjakanPage = () => {
     try {
       setLoading(true);
       setErrorMessage("");
-
       const response = await API.get("/kode-seri-belum-dikerjakan", {
         params: {
           page,
@@ -181,9 +174,7 @@ const KodeSeriBelumDikerjakanPage = () => {
           sort_direction: sortDirection,
         },
       });
-
       const payload = response.data || {};
-
       setItems(payload.data || []);
       setStatistics({ ...initialStatistics, ...(payload.statistics || {}) });
       setFilterCounts({
@@ -209,6 +200,7 @@ const KodeSeriBelumDikerjakanPage = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, typeFilter, potongFilter, sortBy, sortDirection, page, perPage]);
 
   const flattenedRows = [];
@@ -238,29 +230,29 @@ const KodeSeriBelumDikerjakanPage = () => {
   });
 
   const handleExportPDF = () => {
-    const doc = new jsPDF('landscape');
+    const doc = new jsPDF("landscape");
     doc.text("Laporan Kode Seri Belum Dikerjakan", 14, 15);
-    const tableColumn = ["Tanggal Buat", "Kode Seri", "Deadline", "Running Days", "Nama Produk", "Size", "Qty", "Potong", "Status"];
-    const tableRows = flattenedRows.map(row => {
-      const runningDays = row.deadline ? Math.floor((new Date() - new Date(row.deadline)) / (1000 * 60 * 60 * 24)) : '-';
+    const tableColumn = ["Kode Seri", "Produk", "Size", "Qty", "Dibuat", "Deadline", "Run (hari)", "Potong", "Status"];
+    const tableRows = flattenedRows.map((row) => {
+      const days = getRunningDays(row.deadline);
       return [
-        formatTanggal(row.createdAt), row.kodeSeri, formatTanggal(row.deadline), runningDays.toString(),
-        row.namaProduk, row.productSize || '-', formatNumber(row.totalQty),
-        row.hasilCuttingId ? "Sudah" : "Belum", row.overDeadline ? "Overdue" : "Aman"
+        row.kodeSeri, row.namaProduk, row.productSize || "-", formatNumber(row.totalQty),
+        formatTanggal(row.createdAt), formatTanggal(row.deadline),
+        days === null ? "-" : days.toString(),
+        row.hasilCuttingId ? "Sudah" : "Belum", URGENCY_LABEL[getUrgency(days)],
       ];
     });
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20, theme: 'grid' });
+    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20, theme: "grid", styles: { fontSize: 8 } });
     doc.save("Laporan_Kode_Seri_Belum_Dikerjakan.pdf");
   };
 
   const handleExportPNG = async () => {
-    const tableElement = document.querySelector(".kode-seri-table-card");
+    const tableElement = document.querySelector(".ks-board");
     if (!tableElement) return;
     try {
       const canvas = await html2canvas(tableElement, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.href = imgData;
+      link.href = canvas.toDataURL("image/png");
       link.download = "Laporan_Kode_Seri_Belum_Dikerjakan.png";
       link.click();
     } catch (err) {
@@ -269,26 +261,27 @@ const KodeSeriBelumDikerjakanPage = () => {
     }
   };
 
-  const statCards = [
-    { label: "Total SPK", value: formatNumber(statistics.jumlah_spk), tone: "slate", icon: FiClipboard },
-    { label: "Produk Pending", value: formatNumber(statistics.jumlah_produk), tone: "blue", icon: FiBox },
-    { label: "Qty Pending", value: formatNumber(statistics.jumlah_qty), tone: "cyan", icon: FiPackage },
-    { label: "Over Deadline", value: formatNumber(statistics.jumlah_over_deadline), tone: "rose", icon: FiAlertTriangle },
-    { label: "Warning", value: formatNumber(statistics.jumlah_warning_deadline), tone: "amber", icon: FiAlertTriangle },
-    { label: "Proses Cutting", value: formatNumber(statistics.count_cutting), tone: "indigo", icon: FiScissors },
-    { label: "Proses Jasa", value: formatNumber(statistics.count_jasa), tone: "teal", icon: FiTool },
+  const statRail = [
+    { label: "Seri", value: statistics.jumlah_spk },
+    { label: "Produk", value: statistics.jumlah_produk },
+    { label: "Qty", value: statistics.jumlah_qty },
+    { label: "Overdue", value: statistics.jumlah_over_deadline, tone: "overdue" },
+    { label: "Mendekati", value: statistics.jumlah_warning_deadline, tone: "warning" },
+    { label: "Aman", value: statistics.jumlah_belum_deadline, tone: "safe" },
+    { label: "Cutting", value: statistics.count_cutting },
+    { label: "Jasa", value: statistics.count_jasa },
   ];
 
   const filterOptions = [
-    { value: "all", label: "Semua Proses", count: filterCounts.all, tone: "all" },
-    { value: "cutting", label: "Cutting", count: filterCounts.cutting, tone: "cutting" },
-    { value: "jasa", label: "Jasa", count: filterCounts.jasa, tone: "jasa" },
+    { value: "all", label: "Semua", count: filterCounts.all },
+    { value: "cutting", label: "Cutting", count: filterCounts.cutting },
+    { value: "jasa", label: "Jasa", count: filterCounts.jasa },
   ];
 
   const potongOptions = [
-    { value: "belum", label: "Belum Potong", count: potongCounts.belum, tone: "cutting" },
-    { value: "sudah", label: "Sudah Potong", count: potongCounts.sudah, tone: "jasa" },
-    { value: "all", label: "Semua", count: potongCounts.all, tone: "all" },
+    { value: "belum", label: "Belum Potong", count: potongCounts.belum },
+    { value: "sudah", label: "Sudah Potong", count: potongCounts.sudah },
+    { value: "all", label: "Semua", count: potongCounts.all },
   ];
 
   const handleSort = (nextSortBy) => {
@@ -307,171 +300,119 @@ const KodeSeriBelumDikerjakanPage = () => {
   for (let i = pageStart; i <= pageEnd; i++) pageNumbers.push(i);
 
   return (
-    <div className="kode-seri-page">
-      <div className="kode-seri-shell">
-        <section className="kode-seri-content">
-          {/* ── Topbar ── */}
-          <header className="kode-seri-topbar">
-            <div className="kode-seri-title-group">
-              <div className="kode-seri-brand-icon">
-                <FiPackage size={20} />
-              </div>
-              <div className="kode-seri-brand-copy">
-                <span className="kode-seri-eyebrow">Laporan Pekerjaan Tersedia</span>
-                <h1>Kode Seri Belum Dikerjakan</h1>
-              </div>
-            </div>
-            <div className="kode-seri-topbar-actions">
-              <button type="button" className="kode-seri-refresh-btn is-secondary" onClick={handleExportPDF} disabled={loading || flattenedRows.length === 0}>
-                <FiDownload size={14} /> PDF
-              </button>
-              <button type="button" className="kode-seri-refresh-btn is-secondary" onClick={handleExportPNG} disabled={loading || flattenedRows.length === 0}>
-                <FiDownload size={14} /> PNG
-              </button>
-              <button type="button" className="kode-seri-refresh-btn" onClick={loadData} disabled={loading}>
-                <FiRefreshCw size={14} className={loading ? "is-spinning" : ""} />
-                {loading ? "Memuat..." : "Muat Ulang"}
-              </button>
-            </div>
-          </header>
+    <div className="ks-page">
+      {/* ── Header ── */}
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Kode Seri Belum Dikerjakan</h1>
+          <span className="ks-header-sub">Antrean seri yang belum diambil penjahit</span>
+        </div>
+        <div className="ks-header-actions">
+          <button type="button" className="ks-btn" onClick={handleExportPDF} disabled={loading || flattenedRows.length === 0}>
+            <FiDownload size={13} /> PDF
+          </button>
+          <button type="button" className="ks-btn" onClick={handleExportPNG} disabled={loading || flattenedRows.length === 0}>
+            <FiDownload size={13} /> PNG
+          </button>
+          <button type="button" className="ks-btn is-primary" onClick={loadData} disabled={loading}>
+            <FiRefreshCw size={13} className={loading ? "is-spinning" : ""} />
+            {loading ? "Memuat" : "Muat Ulang"}
+          </button>
+        </div>
+      </header>
 
-          {/* ── Main ── */}
-          <main className="kode-seri-main">
-            {/* Stats */}
-            <motion.section
-              className="kode-seri-overview-grid"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              <div className="kode-seri-stat-grid">
-                {statCards.map((card, i) => {
-                  const Icon = card.icon;
-                  return (
-                    <motion.article
-                      key={card.label}
-                      className="kode-seri-stat-card"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.05 + i * 0.03 }}
-                    >
-                      <div className={`kode-seri-stat-icon tone-${card.tone}`}>
-                        <Icon size={20} />
-                      </div>
-                      <div className="kode-seri-stat-copy">
-                        <span>{card.label}</span>
-                        <strong>{card.value}</strong>
-                      </div>
-                    </motion.article>
-                  );
-                })}
-              </div>
-            </motion.section>
-
-            {/* Table Card */}
-            <motion.section
-              className="kode-seri-table-card"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.1 }}
-            >
-              <div className="kode-seri-table-head">
-                <div>
-                  <div>
-                    <span className="kode-seri-section-label">Daftar Pekerjaan</span>
-                    <h3>Seri Yang Belum Di Ambil Penjahit</h3>
-                  </div>
-                </div>
-                <div className="kode-seri-table-actions">
-                  <div className="kode-seri-filter-tabs" role="tablist">
-                    {potongOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        className={`kode-seri-filter-tab tone-${opt.tone} ${potongFilter === opt.value ? "is-active" : ""}`}
-                        onClick={() => { setPotongFilter(opt.value); setPage(1); }}
-                      >
-                        <span>{opt.label}</span>
-                        <strong>{formatNumber(opt.count)}</strong>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="kode-seri-separator" />
-
-                  <div className="kode-seri-filter-tabs" role="tablist">
-                    {filterOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        className={`kode-seri-filter-tab tone-${opt.tone} ${typeFilter === opt.value ? "is-active" : ""}`}
-                        onClick={() => { setTypeFilter(opt.value); setPage(1); }}
-                      >
-                        <span>{opt.label}</span>
-                        <strong>{formatNumber(opt.count)}</strong>
-                      </button>
-                    ))}
-                  </div>
-
-                  <label className="kode-seri-searchbox">
-                    <FiSearch className="kode-seri-search-icon" />
-                    <input
-                      type="text"
-                      placeholder="Cari kode seri atau nama produk..."
-                      value={searchInput}
-                      onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="kode-seri-empty-state">
-                  <div className="kode-seri-empty-icon is-loading"><FiRefreshCw size={18} /></div>
-                  <h4>Data antrean sedang disiapkan</h4>
-                  <p>Mengambil data terbaru, mohon tunggu sebentar...</p>
-                </div>
-              ) : errorMessage ? (
-                <div className="kode-seri-empty-state">
-                  <div className="kode-seri-empty-icon"><FiAlertTriangle size={18} /></div>
-                  <h4>Daftar belum bisa dimunculkan</h4>
-                  <p>{errorMessage}</p>
-                </div>
-              ) : flattenedRows.length === 0 ? (
-                <div className="kode-seri-empty-state">
-                  <div className="kode-seri-empty-icon"><FiSearch size={18} /></div>
-                  <h4>Belum ada data yang cocok</h4>
-                  <p>{debouncedSearch ? `Tidak ditemukan seri dengan kata kunci "${debouncedSearch}".` : "Belum ada kode seri yang sedang menunggu proses."}</p>
-                </div>
-              ) : (
-                <>
-                  <QueueTable rows={flattenedRows} sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                  <div className="kode-seri-pagination">
-                    <div className="kode-seri-pagination-info">
-                      <span>Halaman {formatNumber(meta.current_page)} dari {formatNumber(meta.last_page)}</span>
-                      <label className="kode-seri-page-size">
-                        <span>Tampil</span>
-                        <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}>
-                          {[25, 50, 100, 200].map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="kode-seri-pagination-actions">
-                      <button type="button" className="kode-seri-page-btn" onClick={() => setPage(1)} disabled={meta.current_page <= 1}><FiChevronsLeft size={15} /></button>
-                      <button type="button" className="kode-seri-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={meta.current_page <= 1}><FiChevronLeft size={15} /></button>
-                      {pageNumbers.map((n) => (
-                        <button key={n} type="button" className={`kode-seri-page-btn ${meta.current_page === n ? "is-active" : ""}`} onClick={() => setPage(n)}>{n}</button>
-                      ))}
-                      <button type="button" className="kode-seri-page-btn" onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))} disabled={meta.current_page >= meta.last_page}><FiChevronRight size={15} /></button>
-                      <button type="button" className="kode-seri-page-btn" onClick={() => setPage(meta.last_page)} disabled={meta.current_page >= meta.last_page}><FiChevronsRight size={15} /></button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </motion.section>
-          </main>
-        </section>
+      {/* ── Stat rail ── */}
+      <div className="ks-statrail">
+        {statRail.map((s) => (
+          <div className="ks-stat" key={s.label}>
+            <span className="ks-stat-label">{s.label}</span>
+            <span className={`ks-stat-value ${s.tone ? `tone-${s.tone}` : ""}`}>
+              {s.tone && <span className={`ks-dot tone-${s.tone}`} />}
+              {formatNumber(s.value)}
+            </span>
+          </div>
+        ))}
       </div>
+
+      {/* ── Board ── */}
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div className="ks-segment" role="tablist">
+            {potongOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`ks-seg-btn ${potongFilter === opt.value ? "is-active" : ""}`}
+                onClick={() => { setPotongFilter(opt.value); setPage(1); }}
+              >
+                {opt.label}<em>{formatNumber(opt.count)}</em>
+              </button>
+            ))}
+          </div>
+          <div className="ks-segment" role="tablist">
+            {filterOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`ks-seg-btn ${typeFilter === opt.value ? "is-active" : ""}`}
+                onClick={() => { setTypeFilter(opt.value); setPage(1); }}
+              >
+                {opt.label}<em>{formatNumber(opt.count)}</em>
+              </button>
+            ))}
+          </div>
+          <label className="ks-search">
+            <FiSearch className="ks-search-icon" size={14} />
+            <input
+              type="text"
+              placeholder="Cari kode seri / produk…"
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+            />
+          </label>
+        </div>
+
+        {loading ? (
+          <div className="ks-empty">
+            <FiRefreshCw className="is-spinning" size={20} />
+            <p>Memuat antrean…</p>
+          </div>
+        ) : errorMessage ? (
+          <div className="ks-empty">
+            <FiAlertTriangle size={20} />
+            <p>{errorMessage}</p>
+          </div>
+        ) : flattenedRows.length === 0 ? (
+          <div className="ks-empty">
+            <FiInbox size={20} />
+            <p>{debouncedSearch ? `Tidak ada hasil untuk "${debouncedSearch}".` : "Belum ada kode seri menunggu proses."}</p>
+          </div>
+        ) : (
+          <>
+            <QueueTable rows={flattenedRows} sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+            <div className="ks-footer">
+              <div className="ks-footer-info">
+                <span>Hal. {formatNumber(meta.current_page)}/{formatNumber(meta.last_page)} · {formatNumber(meta.total)} baris</span>
+                <label className="ks-pagesize">
+                  Tampil
+                  <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}>
+                    {[25, 50, 100, 200].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="ks-pager">
+                <button type="button" className="ks-pg-btn" onClick={() => setPage(1)} disabled={meta.current_page <= 1}><FiChevronsLeft size={14} /></button>
+                <button type="button" className="ks-pg-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={meta.current_page <= 1}><FiChevronLeft size={14} /></button>
+                {pageNumbers.map((n) => (
+                  <button key={n} type="button" className={`ks-pg-btn ${meta.current_page === n ? "is-active" : ""}`} onClick={() => setPage(n)}>{n}</button>
+                ))}
+                <button type="button" className="ks-pg-btn" onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))} disabled={meta.current_page >= meta.last_page}><FiChevronRight size={14} /></button>
+                <button type="button" className="ks-pg-btn" onClick={() => setPage(meta.last_page)} disabled={meta.current_page >= meta.last_page}><FiChevronsRight size={14} /></button>
+              </div>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 };

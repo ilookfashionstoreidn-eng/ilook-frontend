@@ -188,7 +188,7 @@
   border-radius: 5px;
 }
 
-button[type="button"] {
+.hasil-cutting-container button[type="button"] {
   background-color: #b9b9b9;
   border: 1px solid var(--border);
   padding: 5px 10px;
@@ -200,7 +200,7 @@ button[type="button"] {
 }
 
 /* Mengatur jarak antara tombol "Tambah Warna" dan input */
-button[type="button"] .icon {
+.hasil-cutting-container button[type="button"] .icon {
   margin-right: 5px;
 }
 

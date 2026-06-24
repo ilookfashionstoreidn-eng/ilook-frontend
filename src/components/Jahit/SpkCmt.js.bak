@@ -2,8 +2,6 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useSearchParams, useLocation } from "react-router-dom";
 import "./Penjahit.css";
 import "./SpkCmt.css";
-import "./KodeSeriBelumDikerjakanOptimized.css";
-import { FiSearch } from "react-icons/fi";
 import axios from "axios";
 import Pusher from "pusher-js";
 import { toast } from "react-toastify";
@@ -86,17 +84,6 @@ const formatRupiahDisplay = (value) => {
   const cleaned = stringValue.replace(/\D/g, "");
   const numValue = parseFloat(cleaned) || 0;
   return `Rp ${Number(numValue).toLocaleString("id-ID")}`;
-};
-
-const formatNumber = (value) => new Intl.NumberFormat("id-ID").format(Number(value) || 0);
-
-const getDeadlineTone = (sisaHari) => {
-  if (sisaHari === null || sisaHari === undefined || sisaHari === "") return "tone-none";
-  const num = Number(sisaHari);
-  if (isNaN(num)) return "tone-none";
-  if (num < 0) return "tone-overdue";
-  if (num <= 3) return "tone-warning";
-  return "tone-safe";
 };
 
 const SpkCmt = () => {
@@ -2055,48 +2042,39 @@ const SpkCmt = () => {
     return `${diffDays} Hari`;
   }, [selectedSpk?.deadline, selectedSpk?.tanggal_ambil]);
 
-  const pageNumbers = [];
-  const pageStart = Math.max(1, currentPage - 2);
-  const pageEnd = Math.min(lastPage, currentPage + 2);
-  for (let i = pageStart; i <= pageEnd; i++) {
-    pageNumbers.push(i);
-  }
-
   return (
-    <div className="ks-page">
-      {!showForm ? (
-        <>
-        <header className="ks-header">
-          <div className="ks-header-id">
-            <h1>Data SPK CMT</h1>
-            <span className="ks-header-sub">Manajemen SPK CMT, deadline produksi, pengiriman, dan dokumen kerja</span>
+    <div className="spkcmt-page">
+      <div className="spkcmt-shell">
+        <header className="spkcmt-topbar">
+          <div className="spkcmt-title-group">
+            <div className="spkcmt-brand-icon">
+              <FaBarcode />
+            </div>
+            <div className="spkcmt-title-wrap">
+              <div className="spkcmt-module-pill">CMT Module</div>
+              <h1>Data SPK CMT</h1>
+              <p className="spkcmt-header-subtitle">Manajemen SPK CMT, deadline produksi, pengiriman, dan dokumen kerja</p>
+            </div>
           </div>
 
-          <div className="ks-header-actions">
-            <div className="ks-search">
-              <FiSearch className="ks-search-icon" />
+          <div className="spkcmt-header-actions">
+            <div className="spkcmt-search-wrap">
               <input
                 type="text"
-                placeholder="Cari produk, nomor seri, penjahit..."
+                className="spkcmt-search-input"
+                placeholder="Cari nama produk, nomor seri, atau penjahit..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
-                <button
-                  type="button"
-                  className="spkcmt-search-clear"
-                  onClick={() => setSearchTerm("")}
-                  title="Hapus pencarian"
-                  style={{ right: "8px", border: "none", background: "transparent", cursor: "pointer", color: "#9a9aa3" }}
-                >
+                <button type="button" className="spkcmt-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
                   x
                 </button>
               )}
             </div>
             <button
               type="button"
-              className="ks-btn"
-              style={{ position: "relative", height: "30px", width: "30px", padding: 0, justifyContent: "center" }}
+              className="notif-wrapper"
               onClick={() => {
                 setShowNotifPopup((prev) => !prev);
                 if (!showNotifPopup) {
@@ -2104,175 +2082,76 @@ const SpkCmt = () => {
                 }
               }}
             >
-              <FaBell />
-              {unreadCount > 0 && (
-                <span
-                  className="notif-badge"
-                  style={{
-                    position: "absolute",
-                    top: "-4px",
-                    right: "-4px",
-                    background: "#e5484d",
-                    color: "white",
-                    borderRadius: "50%",
-                    width: "16px",
-                    height: "16px",
-                    fontSize: "9px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "2px solid #fff"
-                  }}
-                >
-                  {unreadCount}
-                </span>
-              )}
+              <FaBell className="notif-icon" />
+              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
             </button>
-            {showNotifPopup && (
-              <div className="spkcmt-notif-popup" onClick={(e) => e.stopPropagation()} style={{ top: "45px", right: "10px", zIndex: 100 }}>
-                <div className="spkcmt-notif-popup-header">
-                  <div>
-                    <span className="spkcmt-panel-eyebrow">Notification Center</span>
-                    <h3>Aktivitas Terbaru</h3>
-                  </div>
+          </div>
+
+          {showNotifPopup && (
+            <div className="spkcmt-notif-popup" onClick={(e) => e.stopPropagation()}>
+              <div className="spkcmt-notif-popup-header">
+                <div>
+                  <span className="spkcmt-panel-eyebrow">Notification Center</span>
+                  <h3>Aktivitas Terbaru</h3>
                 </div>
-                {notifications.length > 0 ? (
-                  <ul className="spkcmt-notif-list">
-                    {notifications.map((notif) => (
-                      <li key={notif.id} className="spkcmt-notif-item">
-                        <div className="spkcmt-notif-text">
-                          <strong>SPK #{notif.spk_id}</strong>
-                          <span>{notif.text}</span>
-                          <small>User ID: {notif.user_id}</small>
-                        </div>
-                        <span className="spkcmt-notif-time">{notif.time}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="spkcmt-empty-inline">Belum ada notifikasi baru.</div>
-                )}
-
-                <button
-                  type="button"
-                  className="spkcmt-notif-clear-btn"
-                  onClick={() => {
-                    setNotifications([]);
-                    localStorage.removeItem("notifications");
-                  }}
-                >
-                  Hapus Notifikasi
-                </button>
               </div>
-            )}
-          </div>
+              {notifications.length > 0 ? (
+                <ul className="spkcmt-notif-list">
+                  {notifications.map((notif) => (
+                    <li key={notif.id} className="spkcmt-notif-item">
+                      <div className="spkcmt-notif-text">
+                        <strong>SPK #{notif.spk_id}</strong>
+                        <span>{notif.text}</span>
+                        <small>User ID: {notif.user_id}</small>
+                      </div>
+                      <span className="spkcmt-notif-time">{notif.time}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="spkcmt-empty-inline">Belum ada notifikasi baru.</div>
+              )}
+
+              <button
+                type="button"
+                className="spkcmt-notif-clear-btn"
+                onClick={() => {
+                  setNotifications([]);
+                  localStorage.removeItem("notifications");
+                }}
+              >
+                Hapus Notifikasi
+              </button>
+            </div>
+          )}
         </header>
+        <main className="spkcmt-main">
+          <section className="spkcmt-stats">
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Total SPK</div>
+              <div className="spkcmt-stat-value">{totalSpkOverview}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Belum Diambil</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-warning">{statusCount.belum_diambil || 0}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Pending</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-danger">{statusCount.pending || 0}</div>
+            </article>
+            <article className="spkcmt-stat-item">
+              <div className="spkcmt-stat-label">Completed</div>
+              <div className="spkcmt-stat-value spkcmt-stat-value-success">{statusCount.completed || 0}</div>
+            </article>
+          </section>
 
-        <div className="ks-statrail">
-          <div className="ks-stat">
-            <span className="ks-stat-label">Total SPK</span>
-            <span className="ks-stat-value">{totalSpkOverview}</span>
-          </div>
-          <div className="ks-stat">
-            <span className="ks-stat-label">Belum Diambil</span>
-            <span className="ks-stat-value tone-warning">
-              <span className="ks-dot tone-warning" />
-              {statusCount.belum_diambil || 0}
-            </span>
-          </div>
-          <div className="ks-stat">
-            <span className="ks-stat-label">Pending</span>
-            <span className="ks-stat-value tone-overdue">
-              <span className="ks-dot tone-overdue" />
-              {statusCount.pending || 0}
-            </span>
-          </div>
-          <div className="ks-stat">
-            <span className="ks-stat-label">Completed</span>
-            <span className="ks-stat-value tone-safe">
-              <span className="ks-dot tone-safe" />
-              {statusCount.completed || 0}
-            </span>
-          </div>
-        </div>
-
-        <main className="spkcmt-main" style={{ padding: 0, gap: 0 }}>
-          <section className="ks-board">
-            <div className="ks-toolbar" style={{ justifyContent: "space-between" }}>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="ks-pagesize"
-                  style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px" }}
-                >
-                  <option value="">Semua Status SPK</option>
-                  <option value="belum_diambil">Belum Diambil</option>
-                  <option value="sudah_diambil">Sudah Diambil</option>
-                  <option value="pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                </select>
-
-                <select
-                  value={selectedPenjahit}
-                  onChange={(e) => setSelectedPenjahit(e.target.value)}
-                  className="ks-pagesize"
-                  style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px", maxWidth: "150px" }}
-                >
-                  <option value="">Semua Penjahit</option>
-                  {penjahitList.map((penjahit) => (
-                    <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                      {penjahit.nama_penjahit}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedProduk}
-                  onChange={(e) => setSelectedProduk(e.target.value)}
-                  className="ks-pagesize"
-                  style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px", maxWidth: "150px" }}
-                >
-                  <option value="">Semua Produk</option>
-                  {produkList.map((produk) => (
-                    <option key={produk.id} value={produk.id}>
-                      {produk.nama_produk}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedKategori}
-                  onChange={(e) => setSelectedKategori(e.target.value)}
-                  className="ks-pagesize"
-                  style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px" }}
-                >
-                  <option value="">Semua Kategori</option>
-                  {kategoriList.map((kategori, index) => (
-                    <option key={index} value={kategori}>
-                      {kategori}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className="ks-pagesize"
-                  style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px" }}
-                >
-                  <option value="desc">Urutan Terbaru</option>
-                  <option value="asc">Urutan Terlama</option>
-                </select>
-
-                {activeFilterCount > 0 && (
-                  <button type="button" className="ks-btn" onClick={resetFilters}>
-                    Reset Filter
-                  </button>
-                )}
+          <section className="spkcmt-table-wrapper">
+            <div className="spkcmt-table-header">
+              <div>
+                <h3>Semua Data SPK CMT</h3>
+                <p>{activeFilterCount > 0 ? `Menampilkan ${filteredSpk.length} data sesuai filter` : `Menampilkan ${filteredSpk.length} data pada halaman ini`}</p>
               </div>
-
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div className="spkcmt-header-buttons" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <input
                   ref={importInputRef}
                   type="file"
@@ -2281,83 +2160,151 @@ const SpkCmt = () => {
                   style={{ display: "none" }}
                 />
 
-                <button type="button" className="ks-btn" onClick={() => importInputRef.current?.click()}>
-                  Import Excel
-                </button>
-                <button type="button" className="ks-btn" onClick={handleExportExcel}>
-                  Export Excel
-                </button>
-
-                <button type="button" className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+                <button type="button" className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
                   <FaPlus /> Tambah SPK CMT
                 </button>
               </div>
             </div>
 
+            <div className="spkcmt-filter-section">
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Status SPK</option>
+                  <option value="belum_diambil">Belum Diambil</option>
+                  <option value="sudah_diambil">Sudah Diambil</option>
+                  <option value="pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                {selectedStatus && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
+                    {getStatusLabel(selectedStatus)} x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedPenjahit} onChange={(e) => setSelectedPenjahit(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Penjahit</option>
+                  {penjahitList.map((penjahit) => (
+                    <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                      {penjahit.nama_penjahit}
+                    </option>
+                  ))}
+                </select>
+                {selectedPenjahit && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedPenjahit("")} title="Hapus filter">
+                    CMT x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedProduk} onChange={(e) => setSelectedProduk(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Produk</option>
+                  {produkList.map((produk) => (
+                    <option key={produk.id} value={produk.id}>
+                      {produk.nama_produk}
+                    </option>
+                  ))}
+                </select>
+                {selectedProduk && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedProduk("")} title="Hapus filter">
+                    Produk x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="spkcmt-filter-select">
+                  <option value="">Semua Kategori</option>
+                  {kategoriList.map((kategori, index) => (
+                    <option key={index} value={kategori}>
+                      {kategori}
+                    </option>
+                  ))}
+                </select>
+                {selectedKategori && (
+                  <span className="spkcmt-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
+                    Kategori x
+                  </span>
+                )}
+              </div>
+
+              <div className="spkcmt-filter-wrap">
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="spkcmt-filter-select">
+                  <option value="desc">Urutan Terbaru</option>
+                  <option value="asc">Urutan Terlama</option>
+                </select>
+              </div>
+
+              {activeFilterCount > 0 && (
+                <button type="button" className="spkcmt-btn-secondary" onClick={resetFilters}>
+                  Reset Filter
+                </button>
+              )}
+            </div>
+
             {loading ? (
-              <div className="ks-empty">
-                <div className="is-spinning" style={{ fontSize: "20px" }}><FiSearch /></div>
-                <h4>Memuat data SPK CMT</h4>
-                <p>Data SPK sedang disinkronkan dari server.</p>
+              <div className="spkcmt-loading">
+                <div className="spkcmt-spinner"></div>
+                <div className="spkcmt-loading-title">Memuat data SPK CMT...</div>
+                <div className="spkcmt-loading-subtitle">Mohon tunggu sebentar</div>
               </div>
             ) : error ? (
-              <div className="ks-empty">
-                <h4>Terjadi Kesalahan</h4>
-                <p>{error}</p>
-                <button type="button" className="ks-btn is-primary" onClick={() => window.location.reload()}>
+              <div className="spkcmt-empty-state spkcmt-empty-block">
+                <div className="spkcmt-empty-icon">!</div>
+                <h3 className="spkcmt-empty-title error">Terjadi Kesalahan</h3>
+                <p className="spkcmt-empty-text">{error}</p>
+                <button type="button" className="spkcmt-btn-primary" onClick={() => window.location.reload()}>
                   Muat Ulang Halaman
                 </button>
               </div>
             ) : filteredSpk.length === 0 ? (
-              <div className="ks-empty">
-                <h4>Data Tidak Ditemukan</h4>
-                <p>
+              <div className="spkcmt-empty-state spkcmt-empty-block">
+                <div className="spkcmt-empty-icon">-</div>
+                <h3 className="spkcmt-empty-title">Belum Ada Data SPK CMT</h3>
+                <p className="spkcmt-empty-text">
                   {searchTerm || selectedStatus || selectedPenjahit || selectedProduk || selectedKategori
                     ? "Tidak ada SPK yang sesuai dengan filter yang Anda pilih"
                     : "Mulai dengan menambahkan SPK CMT pertama Anda"}
                 </p>
                 {activeFilterCount > 0 && (
-                  <button type="button" className="ks-btn" onClick={resetFilters}>
+                  <button type="button" className="spkcmt-btn-secondary" onClick={resetFilters}>
                     Hapus Filter
                   </button>
                 )}
                 {activeFilterCount === 0 && (
-                  <button type="button" className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+                  <button type="button" className="spkcmt-btn-primary" onClick={() => setShowForm(true)}>
                     <FaPlus /> Tambah SPK Pertama
                   </button>
                 )}
               </div>
             ) : (
               <>
-                <div className="ks-grid-scroll">
-                  <table className="ks-grid">
+                <div className="spkcmt-table-scroll">
+                  <table className="spkcmt-table spkcmt-table-responsive">
                     <thead>
                       <tr>
-                        <th>No</th>
-                        <th>Nomor Seri</th>
-                        <th>Created At</th>
-                        <th>Deadline</th>
-                        <th style={{ textAlign: "center" }}>
-                          <button
-                            type="button"
-                            className="ks-th-btn"
-                            onClick={handleOrderChange}
-                            style={{ margin: "0 auto" }}
-                          >
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>No</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Nomor Seri</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Created At</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Deadline</th>
+                        <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                          <button type="button" className="spkcmt-sort-trigger" onClick={handleOrderChange} style={{ margin: "0 auto" }}>
                             <span>Sisa Hari</span>
-                            {sortOrder === "asc" ? <FaArrowDown size={10} /> : <FaArrowUp size={10} />}
+                            {sortOrder === "asc" ? <FaArrowDown size={11} /> : <FaArrowUp size={11} />}
                           </button>
                         </th>
-                        <th>Penjahit</th>
-                        <th>Tanggal Ambil</th>
-                        <th>Sisa Waktu</th>
-                        <th>Nama Baju</th>
-                        <th>Size</th>
-                        <th>Warna</th>
-                        <th style={{ textAlign: "right" }}>Jml Produk</th>
-                        <th style={{ textAlign: "right" }}>Jml Kirim</th>
-                        <th style={{ textAlign: "right" }}>Jml Sisa</th>
-                        <th style={{ textAlign: "center" }}>Aksi</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Penjahit</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Tanggal Ambil</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Sisa Waktu</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Nama Baju</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Size</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Warna</th>
+                        <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Jml Produk</th>
+                        <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Jml Kirim</th>
+                        <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Jml Sisa</th>
+                        <th style={{ textAlign: "left", whiteSpace: "nowrap" }}>Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2376,47 +2323,41 @@ const SpkCmt = () => {
                             const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
                             return (
                               <tr key={`${spk.id_spk}-none`}>
-                                <td>
-                                  <span className="ks-cell-num" style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + rowCounter}</span>
+                                <td style={{ whiteSpace: "nowrap" }}>
+                                  <strong className="spkcmt-row-id">{(currentPage - 1) * itemsPerPage + rowCounter}</strong>
                                 </td>
-                                <td>
-                                  <span className="ks-cell-code">{spk.nomor_seri || "-"}</span>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.nomor_seri || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{spk.sisa_hari ?? "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.penjahit?.nama_penjahit || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{calculateWaktuPengerjaan(spk)}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>
+                                  <strong>{spk.nama_produk || "-"}</strong>
                                 </td>
-                                <td>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
-                                <td>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
-                                <td style={{ textAlign: "center" }}>
-                                  <span className={`ks-run ${getDeadlineTone(spk.sisa_hari)}`}>
-                                    {spk.sisa_hari ?? "-"}
-                                  </span>
-                                </td>
-                                <td>{spk.penjahit?.nama_penjahit || "-"}</td>
-                                <td>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
-                                <td>{calculateWaktuPengerjaan(spk)}</td>
-                                <td>
-                                  <div className="ks-cell-product" title={spk.nama_produk}>{spk.nama_produk || "-"}</div>
-                                </td>
-                                <td>{spk.product_size || "-"}</td>
-                                <td>-</td>
-                                <td className="align-right ks-cell-num">{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</td>
-                                <td className="align-right ks-cell-num">
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.product_size || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>-</td>
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</td>
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
                                   <span 
                                     onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")} 
-                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-accent)", fontWeight: "600" }} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "#2563eb", fontWeight: "600" }} 
                                     title="Klik untuk detail pengiriman"
                                   >
                                     {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
                                   </span>
                                 </td>
-                                <td className="align-right ks-cell-num">
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
                                   <span 
                                     onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
-                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "#16a34a", fontWeight: "600" }} 
                                     title="Klik untuk detail sisa barang"
                                   >
                                     {sisaBarang.toLocaleString("id-ID")}
                                   </span>
                                 </td>
-                                <td style={{ textAlign: "center" }}>
+                                <td>
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -2439,15 +2380,21 @@ const SpkCmt = () => {
                                       alignItems: "center",
                                       justifyContent: "center",
                                       cursor: "pointer",
-                                      color: "var(--ks-text-soft)",
+                                      color: "#4b5563",
                                       boxShadow: "none",
                                       margin: "0 auto",
                                       padding: "8px",
                                       transition: "all 0.2s"
                                     }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color = "#111827";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = "#4b5563";
+                                    }}
                                     title="Pilih Aksi"
                                   >
-                                    <FaEllipsisV size={14} />
+                                    <FaEllipsisV size={16} />
                                   </button>
                                 </td>
                               </tr>
@@ -2465,49 +2412,43 @@ const SpkCmt = () => {
                             
                             return (
                               <tr key={`${spk.id_spk}-${color.nama_warna}-${colorIdx}`}>
-                                <td>
-                                  <span className="ks-cell-num" style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + rowCounter}</span>
+                                <td style={{ whiteSpace: "nowrap" }}>
+                                  <strong className="spkcmt-row-id">{(currentPage - 1) * itemsPerPage + rowCounter}</strong>
                                 </td>
-                                <td>
-                                  <span className="ks-cell-code">{spk.nomor_seri || "-"}</span>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.nomor_seri || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{spk.sisa_hari ?? "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.penjahit?.nama_penjahit || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{calculateWaktuPengerjaan(spk)}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>
+                                  <strong>{spk.nama_produk || "-"}</strong>
                                 </td>
-                                <td>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
-                                <td>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
-                                <td style={{ textAlign: "center" }}>
-                                  <span className={`ks-run ${getDeadlineTone(spk.sisa_hari)}`}>
-                                    {spk.sisa_hari ?? "-"}
-                                  </span>
-                                </td>
-                                <td>{spk.penjahit?.nama_penjahit || "-"}</td>
-                                <td>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
-                                <td>{calculateWaktuPengerjaan(spk)}</td>
-                                <td>
-                                  <div className="ks-cell-product" title={spk.nama_produk}>{spk.nama_produk || "-"}</div>
-                                </td>
-                                <td>{spk.product_size || "-"}</td>
-                                <td>{color.nama_warna}</td>
-                                <td className="align-right ks-cell-num" style={{ fontWeight: "700" }}>
+                                <td style={{ whiteSpace: "nowrap" }}>{spk.product_size || "-"}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{color.nama_warna}</td>
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right", fontWeight: "700", color: "#0f172a" }}>
                                   {(color.qty || 0).toLocaleString("id-ID")}
                                 </td>
-                                <td className="align-right ks-cell-num">
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
                                   <span 
                                     onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")} 
-                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-accent)", fontWeight: "600" }} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "#2563eb", fontWeight: "600" }} 
                                     title="Klik untuk detail pengiriman"
                                   >
                                     {(spk.total_barang_dikirim || 0).toLocaleString("id-ID")}
                                   </span>
                                 </td>
-                                <td className="align-right ks-cell-num">
+                                <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
                                   <span 
                                     onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
-                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "#16a34a", fontWeight: "600" }} 
                                     title="Klik untuk detail sisa barang"
                                   >
                                     {sisaBarang.toLocaleString("id-ID")}
                                   </span>
                                 </td>
-                                <td style={{ textAlign: "center" }}>
+                                <td>
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -2530,15 +2471,21 @@ const SpkCmt = () => {
                                       alignItems: "center",
                                       justifyContent: "center",
                                       cursor: "pointer",
-                                      color: "var(--ks-text-soft)",
+                                      color: "#4b5563",
                                       boxShadow: "none",
                                       margin: "0 auto",
                                       padding: "8px",
                                       transition: "all 0.2s"
                                     }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color = "#111827";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = "#4b5563";
+                                    }}
                                     title="Pilih Aksi"
                                   >
-                                    <FaEllipsisV size={14} />
+                                    <FaEllipsisV size={16} />
                                   </button>
                                 </td>
                               </tr>
@@ -2550,664 +2497,22 @@ const SpkCmt = () => {
                   </table>
                 </div>
 
-                <div className="ks-footer">
-                  <div className="ks-footer-info">
-                    <span>Halaman {formatNumber(currentPage)} dari {formatNumber(lastPage)} · Menampilkan {formatNumber(filteredSpk.length)} data</span>
-                  </div>
-
-                  <div className="ks-pager">
-                    <button type="button" className="ks-pg-btn" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1}>
-                      &laquo;
-                    </button>
-                    <button type="button" className="ks-pg-btn" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
-                      &lsaquo;
-                    </button>
-                    {pageNumbers.map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        className={`ks-pg-btn ${currentPage === n ? "is-active" : ""}`}
-                        onClick={() => setCurrentPage(n)}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                    <button type="button" className="ks-pg-btn" onClick={() => setCurrentPage((p) => Math.min(lastPage, p + 1))} disabled={currentPage >= lastPage}>
-                      &rsaquo;
-                    </button>
-                    <button type="button" className="ks-pg-btn" onClick={() => setCurrentPage(lastPage)} disabled={currentPage >= lastPage}>
-                      &raquo;
-                    </button>
-                  </div>
+                <div className="spkcmt-pagination">
+                  <button type="button" className="spkcmt-pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                    Prev
+                  </button>
+                  <span className="spkcmt-pagination-info">
+                    Halaman {currentPage} dari {lastPage}
+                  </span>
+                  <button type="button" className="spkcmt-pagination-btn" disabled={currentPage === lastPage} onClick={() => setCurrentPage(currentPage + 1)}>
+                    Next
+                  </button>
                 </div>
               </>
             )}
           </section>
         </main>
-        </>
-      ) : (
-        <div className="spkcmt-shell">
-          <header className="spkcmt-topbar">
-            <div className="spkcmt-title-group" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button
-                type="button"
-                className="spkcmt-btn-secondary"
-                onClick={() => {
-                  setShowForm(false);
-                  setNewSpk({
-                    source_type: "cutting",
-                    source_id: "",
-                    deadline: "",
-                    tanggal_ambil: "",
-                    id_penjahit: "",
-                    keterangan: "",
-                    catatan: "",
-                    markeran: "",
-                    aksesoris: [],
-                    handtag: "",
-                    merek: "",
-                    harga_barang_dasar: "",
-                    jenis_harga_barang: "per_pcs",
-                    harga_per_jasa: "",
-                    jenis_harga_jasa: "per_barang",
-                  });
-                  setPreviewData(null);
-                  setSelectedSpk(null);
-                }}
-                style={{ padding: '8px 14px', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-              >
-                ← Kembali
-              </button>
-              <div className="spkcmt-title-wrap">
-                <div className="spkcmt-module-pill">CMT Module</div>
-                <h1>{selectedSpk ? "Edit Data SPK CMT" : "Tambah SPK CMT"}</h1>
-                <p className="spkcmt-header-subtitle" style={{ margin: '4px 0 0' }}>
-                  Silakan lengkapi data SPK CMT di bawah ini. Preview cetak akan terupdate secara langsung.
-                </p>
-              </div>
-            </div>
-          </header>
-
-          <main className="spkcmt-main">
-            <div style={{ display: "flex", gap: "24px", width: "100%", alignItems: "flex-start" }}>
-              {/* LEFT 50%: Form */}
-              <div style={{ flex: 1, minWidth: 0, background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", boxShadow: "0 4px 20px rgba(15, 23, 42, 0.05)" }}>
-                <form onSubmit={handleSubmit}>
-                  <div style={{ display: "flex", gap: "20px", marginBottom: "16px" }}>
-                    {/* ===== LEFT: Distribusi Cutting / Jasa List ===== */}
-                    {!selectedSpk && (
-                      <div style={{ flex: "0 0 240px", display: "flex", flexDirection: "column" }}>
-                        <label className="spkcmt-form-label" style={{ marginBottom: "6px" }}>Pilih Sumber Pekerjaan</label>
-                        <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                          <button
-                            type="button"
-                            className={`spkcmt-btn-secondary ${newSpk.source_type === "cutting" ? "active" : ""}`}
-                            onClick={() => setNewSpk({ ...newSpk, source_type: "cutting", source_id: "" })}
-                            style={{ flex: 1, padding: "6px", fontSize: "11px", background: newSpk.source_type === "cutting" ? "#eff6ff" : "#fff", borderColor: newSpk.source_type === "cutting" ? "#2458ce" : "#e2e8f0", color: newSpk.source_type === "cutting" ? "#2458ce" : "#64748b", cursor: "pointer" }}
-                          >
-                            Cutting
-                          </button>
-                          <button
-                            type="button"
-                            className={`spkcmt-btn-secondary ${newSpk.source_type === "jasa" ? "active" : ""}`}
-                            onClick={() => setNewSpk({ ...newSpk, source_type: "jasa", source_id: "" })}
-                            style={{ flex: 1, padding: "6px", fontSize: "11px", background: newSpk.source_type === "jasa" ? "#eff6ff" : "#fff", borderColor: newSpk.source_type === "jasa" ? "#2458ce" : "#e2e8f0", color: newSpk.source_type === "jasa" ? "#2458ce" : "#64748b", cursor: "pointer" }}
-                          >
-                            Jasa
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Cari kode seri..."
-                          value={searchSourceInput}
-                          onChange={(e) => setSearchSourceInput(e.target.value)}
-                          style={{
-                            width: "100%", padding: "8px 12px", fontSize: "12px", border: "1px solid #cbd5e1",
-                            borderBottom: "none", background: "#f8fafc", outline: "none"
-                          }}
-                        />
-                        <div style={{
-                          border: "1px solid #cbd5e1", background: "#fff", height: "220px",
-                          overflowY: "auto", overflowX: "hidden"
-                        }}>
-                          {loadingSource ? (
-                            <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "12px" }}>Memuat...</div>
-                          ) : sourceOptions.filter((opt) => {
-                            if (!searchSourceInput) return true;
-                            return opt.searchText?.includes(searchSourceInput.toLowerCase());
-                          }).length === 0 ? (
-                            <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "12px" }}>Tidak ditemukan</div>
-                          ) : (
-                            sourceOptions.filter((opt) => {
-                              if (!searchSourceInput) return true;
-                              return opt.searchText?.includes(searchSourceInput.toLowerCase());
-                            }).map((opt) => (
-                              <div
-                                key={opt.value}
-                                onClick={() => setNewSpk({ ...newSpk, source_id: opt.value })}
-                                style={{
-                                  padding: "8px 10px",
-                                  cursor: "pointer",
-                                  borderBottom: "1px solid #f1f5f9",
-                                  background: newSpk.source_id === opt.value ? "#eef3ff" : "#fff",
-                                  borderLeft: newSpk.source_id === opt.value ? "3px solid #2458ce" : "3px solid transparent",
-                                  transition: "background 0.15s",
-                                }}
-                              >
-                                <div style={{ fontWeight: 700, fontSize: "12px", color: newSpk.source_id === opt.value ? "#1e40af" : "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{opt.label}</div>
-                                {opt.subtitle && <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{opt.subtitle}</div>}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ===== RIGHT: Form Fields ===== */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "14px" }}>
-                      {selectedSpk && (
-                        <div style={{ padding: "12px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderLeft: "4px solid #2458ce", fontSize: "13px", color: "#0f172a" }}>
-                          <span style={{ display: "block", fontSize: "11px", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px", letterSpacing: "0.03em" }}>Sumber Pekerjaan (Read-Only)</span>
-                          <strong style={{ fontSize: "14px", color: "#1e3a8a" }}>{selectedSpk.nomor_seri || selectedSpk.kode_seri || "-"}</strong>
-                          {selectedSpk.nama_produk && <span style={{ marginLeft: "6px", color: "#475569" }}>• {selectedSpk.nama_produk}</span>}
-                          {selectedSpk.jumlah_produk && <span style={{ marginLeft: "6px", fontWeight: "600", color: "#0f172a" }}>({selectedSpk.jumlah_produk} pcs)</span>}
-                        </div>
-                      )}
-                      
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                        <div className="spkcmt-form-group">
-                          <label className="spkcmt-form-label">Penjahit</label>
-                          <select className="spkcmt-form-select" value={newSpk.id_penjahit} onChange={(e) => setNewSpk({ ...newSpk, id_penjahit: e.target.value })} required>
-                            <option value="">Pilih</option>
-                            {penjahitList.map((p) => (
-                              <option key={p.id_penjahit} value={p.id_penjahit}>{p.nama_penjahit}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="spkcmt-form-group">
-                          <label className="spkcmt-form-label">Harga CMT</label>
-                          <div className="spkcmt-currency-input">
-                            <span className="currency-prefix">Rp</span>
-                            <input type="text" className="spkcmt-form-input" name="harga_per_jasa" value={newSpk.harga_per_jasa} onChange={handleInputChange} placeholder="0" required />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                        <div className="spkcmt-form-group">
-                          <label className="spkcmt-form-label">Deadline</label>
-                          <input type="date" className="spkcmt-form-input" value={newSpk.deadline} onChange={(e) => setNewSpk({ ...newSpk, deadline: e.target.value })} required />
-                        </div>
-                        <div className="spkcmt-form-group">
-                          <label className="spkcmt-form-label">Tanggal Ambil</label>
-                          <input type="date" className="spkcmt-form-input" value={newSpk.tanggal_ambil || ""} onChange={(e) => setNewSpk({ ...newSpk, tanggal_ambil: e.target.value })} />
-                        </div>
-                      </div>
-
-                      <div className="spkcmt-form-group">
-                        <label className="spkcmt-form-label">Keterangan SPK (Notes)</label>
-                        <textarea
-                          className="spkcmt-form-input spkcmt-form-textarea"
-                          name="keterangan"
-                          value={newSpk.keterangan || ""}
-                          onChange={(e) => setNewSpk({ ...newSpk, keterangan: e.target.value })}
-                          placeholder="Notes SPK otomatis dari Product List atau ketik manual catatan tambahan di sini..."
-                          rows={3}
-                          style={{ width: "100%", fontFamily: "inherit", resize: "vertical", minHeight: "70px" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ================= PREVIEW / DETAIL SPK ================= */}
-                  {previewData && (
-                    <div className="spkcmt-form-group" style={{ marginTop: "16px" }}>
-                      <div className="spkcmt-table-container" style={{ border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "visible" }}>
-                        <table className="spkcmt-table" style={{ margin: 0, width: "100%", tableLayout: "fixed" }}>
-                          <colgroup>
-                            <col style={{ width: "35%" }} />
-                            <col style={{ width: "20%" }} />
-                            <col style={{ width: "15%" }} />
-                            <col style={{ width: "30%" }} />
-                          </colgroup>
-                          <thead>
-                            <tr>
-                              <th>SKU</th>
-                              <th>Warna</th>
-                              <th style={{ textAlign: "center" }}>Qty</th>
-                              <th>Aksesoris</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const rawSkus = Array.isArray(previewData.skus) && previewData.skus.length > 0 ? previewData.skus : [];
-                              const rawWarna = Array.isArray(previewData.warna) && previewData.warna.length > 0 ? previewData.warna : [];
-                              // Prefer warna if it has more detail (more items)
-                              if (rawWarna.length > rawSkus.length) {
-                                return rawWarna.map((w, idx) => (
-                                <tr key={idx}>
-                                  <td style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.display || w.sku || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap" }}>{w.nama_warna || w.warna || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{(w.qty || w.jumlah || 0).toLocaleString("id-ID")}</td>
-                                  <td>
-                                    <Select
-                                      options={aksesorisList.map((a) => ({ value: a.nama_aksesoris, label: a.nama_aksesoris, satuan: a.satuan || "" }))}
-                                      value={newSpk.aksesoris?.[idx]?.nama ? { value: newSpk.aksesoris[idx].nama, label: newSpk.aksesoris[idx].nama } : null}
-                                      onChange={(selected) => {
-                                        const newAksesoris = [...(newSpk.aksesoris || [])];
-                                        if (!newAksesoris[idx]) newAksesoris[idx] = { nama: "", jumlah: "", satuan: "" };
-                                        newAksesoris[idx].nama = selected ? selected.value : "";
-                                        if (selected?.satuan) newAksesoris[idx].satuan = selected.satuan;
-                                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
-                                      }}
-                                      placeholder="Pilih..."
-                                      isClearable
-                                      menuPortalTarget={document.body}
-                                      styles={{
-                                        control: (base) => ({ ...base, minHeight: "34px", height: "34px", fontSize: "12px", borderRadius: "6px", border: "1px solid #cbd5e1" }),
-                                        valueContainer: (base) => ({ ...base, padding: "0 6px" }),
-                                        input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                                        indicatorsContainer: (base) => ({ ...base, height: "34px" }),
-                                        menu: (base) => ({ ...base, fontSize: "12px" }),
-                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
-                                      }}
-                                    />
-                                  </td>
-                                </tr>
-                                ));
-                              } else if (rawSkus.length > 0) {
-                                return rawSkus.map((sku, idx) => (
-                                <tr key={idx}>
-                                  <td style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sku.display || sku.sku || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap" }}>{sku.warna || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{(sku.qty || sku.jumlah || 0).toLocaleString("id-ID")}</td>
-                                  <td>
-                                    <Select
-                                      options={aksesorisList.map((a) => ({ value: a.nama_aksesoris, label: a.nama_aksesoris, satuan: a.satuan || "" }))}
-                                      value={newSpk.aksesoris?.[idx]?.nama ? { value: newSpk.aksesoris[idx].nama, label: newSpk.aksesoris[idx].nama } : null}
-                                      onChange={(selected) => {
-                                        const newAksesoris = [...(newSpk.aksesoris || [])];
-                                        if (!newAksesoris[idx]) newAksesoris[idx] = { nama: "", jumlah: "", satuan: "" };
-                                        newAksesoris[idx].nama = selected ? selected.value : "";
-                                        if (selected?.satuan) newAksesoris[idx].satuan = selected.satuan;
-                                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
-                                      }}
-                                      placeholder="Pilih..."
-                                      isClearable
-                                      menuPortalTarget={document.body}
-                                      styles={{
-                                        control: (base) => ({ ...base, minHeight: "34px", height: "34px", fontSize: "12px", borderRadius: "6px", border: "1px solid #cbd5e1" }),
-                                        valueContainer: (base) => ({ ...base, padding: "0 6px" }),
-                                        input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                                        indicatorsContainer: (base) => ({ ...base, height: "34px" }),
-                                        menu: (base) => ({ ...base, fontSize: "12px" }),
-                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
-                                      }}
-                                    />
-                                  </td>
-                                </tr>
-                                ));
-                              } else if (rawWarna.length > 0) {
-                                return rawWarna.map((w, idx) => (
-                                <tr key={idx}>
-                                  <td style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.display || w.sku || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap" }}>{w.nama_warna || w.warna || "-"}</td>
-                                  <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{(w.qty || w.jumlah || 0).toLocaleString("id-ID")}</td>
-                                  <td>
-                                    <Select
-                                      options={aksesorisList.map((a) => ({ value: a.nama_aksesoris, label: a.nama_aksesoris, satuan: a.satuan || "" }))}
-                                      value={newSpk.aksesoris?.[idx]?.nama ? { value: newSpk.aksesoris[idx].nama, label: newSpk.aksesoris[idx].nama } : null}
-                                      onChange={(selected) => {
-                                        const newAksesoris = [...(newSpk.aksesoris || [])];
-                                        if (!newAksesoris[idx]) newAksesoris[idx] = { nama: "", jumlah: "", satuan: "" };
-                                        newAksesoris[idx].nama = selected ? selected.value : "";
-                                        if (selected?.satuan) newAksesoris[idx].satuan = selected.satuan;
-                                        setNewSpk({ ...newSpk, aksesoris: newAksesoris });
-                                      }}
-                                      placeholder="Pilih..."
-                                      isClearable
-                                      menuPortalTarget={document.body}
-                                      styles={{
-                                        control: (base) => ({ ...base, minHeight: "34px", height: "34px", fontSize: "12px", borderRadius: "6px", border: "1px solid #cbd5e1" }),
-                                        valueContainer: (base) => ({ ...base, padding: "0 6px" }),
-                                        input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                                        indicatorsContainer: (base) => ({ ...base, height: "34px" }),
-                                        menu: (base) => ({ ...base, fontSize: "12px" }),
-                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
-                                      }}
-                                    />
-                                  </td>
-                                </tr>
-                                ));
-                              } else {
-                                return (
-                                <tr>
-                                  <td colSpan="4" style={{ textAlign: "center", color: "#64748b" }}>Data detail tidak tersedia</td>
-                                </tr>
-                                );
-                              }
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="spkcmt-form-actions" style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                    <button type="submit" className="spkcmt-btn-submit" style={{ padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: '600' }}>
-                      <FaSave /> {selectedSpk ? "Simpan Perubahan" : "Simpan SPK CMT"}
-                    </button>
-                    <button
-                      type="button"
-                      className="spkcmt-btn-cancel"
-                      onClick={() => {
-                        setShowForm(false);
-                        setNewSpk({
-                          source_type: "cutting",
-                          source_id: "",
-                          deadline: "",
-                          tanggal_ambil: "",
-                          id_penjahit: "",
-                          keterangan: "",
-                          catatan: "",
-                          markeran: "",
-                          aksesoris: [],
-                          handtag: "",
-                          merek: "",
-                          harga_barang_dasar: "",
-                          jenis_harga_barang: "per_pcs",
-                          harga_per_jasa: "",
-                          jenis_harga_jasa: "per_barang",
-                        });
-                        setPreviewData(null);
-                        setSelectedSpk(null);
-                      }}
-                      style={{ padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', border: '1px solid #cbd5e1', background: '#fff', color: '#64748b', cursor: 'pointer' }}
-                    >
-                      <FaTimes /> Batal
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* RIGHT 50%: Live Print Preview — Full SPK Document */}
-              <div className="spkcmt-preview-column" style={{ flex: 1, minWidth: 0 }}>
-                {previewData ? (() => {
-                  const namaCmt = penjahitList.find(p => String(p.id_penjahit) === String(newSpk.id_penjahit))?.nama_penjahit || "-";
-                  const namaProduk = previewData?.nama_produk || "-";
-                  const kodeSeri = previewData?.kode_seri || previewData?.nomor_seri || "-";
-                  const hargaJasa = newSpk.harga_per_jasa || "0";
-                  // Use previewData.skus if available, fallback to previewData.warna for detailed per-color breakdown
-                  const rawSkus = Array.isArray(previewData.skus) && previewData.skus.length > 0 ? previewData.skus : [];
-                  const rawWarna = Array.isArray(previewData.warna) && previewData.warna.length > 0 ? previewData.warna : [];
-                  // If warna has more detail (more items) than skus, prefer warna for detailed breakdown
-                  const skus = rawWarna.length > rawSkus.length
-                    ? rawWarna.map(w => ({
-                        warna: w.nama_warna || w.warna || "-",
-                        qty: w.qty || w.jumlah || 0,
-                        display: w.display || w.sku || "-",
-                        sku: w.sku || "-",
-                      }))
-                    : rawSkus;
-                  const totalProduksi = skus.reduce((sum, s) => sum + (Number(s.qty) || Number(s.jumlah) || 0), 0);
-                  const formatTgl = (d) => {
-                    if (!d) return "-";
-                    try {
-                      const dt = new Date(d);
-                      if (isNaN(dt)) return d;
-                      return dt.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-                    } catch { return d; }
-                  };
-                  const waktuPengerjaan = (() => {
-                    if (!newSpk.deadline || !newSpk.tanggal_ambil) return "-";
-                    const d1 = new Date(newSpk.deadline);
-                    const d2 = new Date(newSpk.tanggal_ambil);
-                    if (isNaN(d1) || isNaN(d2)) return "-";
-                    d1.setHours(0,0,0,0); d2.setHours(0,0,0,0);
-                    return Math.round((d1 - d2) / (1000*60*60*24));
-                  })();
-                  const uniqueWarnas = [...new Set(skus.map(s => s.warna).filter(Boolean))];
-
-                  return (
-                  <div style={{ background: "#ffffff", border: "1px solid #c8cdd4", borderRadius: "4px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", position: "relative" }}>
-                    {/* Print Button Bar */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 12px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const printArea = document.getElementById("spkcmt-print-area");
-                          if (printArea) {
-                            const printWindow = window.open("", "_blank");
-                            printWindow.document.write(`
-                              <html><head><title>SPK CMT - ${kodeSeri}</title>
-                              <style>
-                                @page { size: A4; margin: 12mm; }
-                                * { box-sizing: border-box; margin: 0; padding: 0; }
-                                body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a2e; line-height: 1.4; padding: 0; }
-                                .spk-doc { width: 100%; }
-                                .spk-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 3px solid #1a1a2e; }
-                                .spk-header-left h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #1a1a2e; }
-                                .spk-header-left p { font-size: 10px; color: #555; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-                                .spk-header-right { text-align: right; }
-                                .spk-header-right .seri-label { font-size: 10px; color: #666; text-transform: uppercase; }
-                                .spk-header-right .seri-value { font-size: 18px; font-weight: 800; color: #1a1a2e; }
-                                .spk-info-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; border: 1.5px solid #1a1a2e; }
-                                .spk-info-table td { padding: 5px 8px; font-size: 11px; border: 1px solid #c8cdd4; vertical-align: middle; }
-                                .spk-info-table .label { font-weight: 700; text-transform: uppercase; font-size: 9.5px; color: #333; background: #f0f2f5; width: 110px; letter-spacing: 0.3px; }
-                                .spk-info-table .value { font-weight: 600; color: #1a1a2e; }
-                                .spk-info-table .value-highlight { font-weight: 700; color: #d63384; }
-                                .spk-info-table .waktu-box { text-align: center; }
-                                .spk-info-table .waktu-number { font-size: 22px; font-weight: 800; color: #d63384; display: block; }
-                                .spk-info-table .waktu-unit { font-size: 9px; color: #888; text-transform: uppercase; }
-                                .spk-sku-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; border: 1.5px solid #1a1a2e; }
-                                .spk-sku-table th { padding: 5px 8px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: #1a1a2e; color: #fff; border: 1px solid #1a1a2e; letter-spacing: 0.3px; }
-                                .spk-sku-table td { padding: 5px 8px; font-size: 11px; border: 1px solid #c8cdd4; }
-                                .spk-sku-table .row-bold td { font-weight: 700; }
-                                .spk-sku-table .total-row td { background: #f0f2f5; font-weight: 800; border-top: 2px solid #1a1a2e; }
-                                .spk-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1a1a2e; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid #1a1a2e; }
-                                .spk-warna-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-                                .spk-warna-card { flex: 1; min-width: 100px; max-width: 160px; border: 1px solid #c8cdd4; text-align: center; padding: 6px; }
-                                .spk-warna-card .warna-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: #1a1a2e; margin-bottom: 4px; letter-spacing: 0.3px; }
-                                .spk-warna-card .warna-placeholder { width: 100%; height: 120px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: #999; font-size: 10px; }
-                                .spk-catatan-box { border: 1.5px solid #1a1a2e; padding: 10px; margin-bottom: 14px; }
-                                .spk-catatan-box .catatan-title { font-size: 10px; font-weight: 700; color: #d63384; margin-bottom: 4px; }
-                                .spk-catatan-box .catatan-hint { font-size: 9px; color: #999; font-style: italic; margin-bottom: 4px; }
-                                .spk-catatan-box .catatan-content { font-size: 11px; font-weight: 600; text-transform: uppercase; }
-                                .spk-ketentuan { border: 2px solid #d63384; padding: 10px; margin-bottom: 14px; background: #fff5f9; }
-                                .spk-ketentuan .ket-title { font-size: 10px; font-weight: 700; color: #d63384; margin-bottom: 6px; }
-                                .spk-ketentuan ol { padding-left: 16px; font-size: 9.5px; color: #333; }
-                                .spk-ketentuan ol li { margin-bottom: 4px; line-height: 1.4; }
-                                .spk-ketentuan .ket-highlight { font-weight: 700; color: #d63384; }
-                                .spk-signature { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 10px; border-top: 1.5px solid #c8cdd4; }
-                                .spk-sig-block { text-align: center; width: 30%; }
-                                .spk-sig-block .sig-label { font-size: 9.5px; color: #666; margin-bottom: 40px; }
-                                .spk-sig-block .sig-line { border-top: 1px solid #1a1a2e; padding-top: 4px; }
-                                .spk-sig-block .sig-name { font-size: 11px; font-weight: 700; }
-                                .spk-sig-block .sig-title { font-size: 9px; color: #888; }
-                                .spec-box { display: inline-block; border: 1px solid #c8cdd4; padding: 2px 6px; margin: 1px; font-size: 9.5px; background: #f8f9fa; }
-                                @media print { body { padding: 0; } }
-                              </style></head><body>${printArea.innerHTML}</body></html>
-                            `);
-                            printWindow.document.close();
-                            printWindow.focus();
-                            printWindow.print();
-                          }
-                        }}
-                        style={{ padding: "6px 16px", background: "linear-gradient(135deg, #1d4ed8, #4f46e5)", color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}
-                      >
-                        🖨 Print
-                      </button>
-                    </div>
-
-                    {/* SPK Document */}
-                    <div id="spkcmt-print-area" style={{ padding: "20px", fontSize: "11px", color: "#1a1a2e", lineHeight: "1.4" }}>
-
-                      {/* ===== HEADER ===== */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", paddingBottom: "8px", borderBottom: "3px solid #1a1a2e" }}>
-                        <div>
-                          <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "2px", color: "#1a1a2e" }}>ILOOK</div>
-                          <div style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "2px" }}>SURAT PERINTAH KERJA CMT</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: "10px", color: "#666", textTransform: "uppercase" }}>NO. SERI:</div>
-                          <div style={{ fontSize: "18px", fontWeight: 800, color: "#1a1a2e" }}>{kodeSeri}</div>
-                        </div>
-                      </div>
-
-                      {/* ===== INFO TABLE ===== */}
-                      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px", border: "1.5px solid #1a1a2e" }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ padding: "5px 8px", fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "#333", background: "#f0f2f5", width: "110px", letterSpacing: "0.3px", border: "1px solid #c8cdd4" }}>NAMA CMT</td>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: "#1a1a2e", border: "1px solid #c8cdd4" }}>{namaCmt}</td>
-                            <td rowSpan="2" style={{ padding: "5px 8px", fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "#333", background: "#f0f2f5", border: "1px solid #c8cdd4", textAlign: "center", letterSpacing: "0.3px" }}>
-                              <span style={{ color: "#d63384", fontWeight: 700 }}>BATAS KIRIM</span>
-                            </td>
-                            <td rowSpan="2" style={{ padding: "5px 8px", fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "#333", background: "#f0f2f5", border: "1px solid #c8cdd4", textAlign: "center" }}>TANGGAL AMBIL</td>
-                            <td rowSpan="3" style={{ padding: "5px 8px", border: "1px solid #c8cdd4", textAlign: "center", verticalAlign: "middle", width: "90px" }}>
-                              <div style={{ fontSize: "9px", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>WAKTU PENGERJAAN</div>
-                              <div style={{ fontSize: "22px", fontWeight: 800, color: "#d63384" }}>{waktuPengerjaan !== "-" ? waktuPengerjaan : "-"}</div>
-                              <div style={{ fontSize: "9px", color: "#888", textTransform: "uppercase" }}>{waktuPengerjaan !== "-" ? "HARI" : ""}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ padding: "5px 8px", fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "#333", background: "#f0f2f5", border: "1px solid #c8cdd4", letterSpacing: "0.3px" }}>NAMA PRODUCT</td>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: "#1a1a2e", border: "1px solid #c8cdd4" }}>
-                              {namaProduk} {previewData?.size ? <span style={{ color: "#d63384" }}>({previewData.size})</span> : ""}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ padding: "5px 8px", fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "#333", background: "#f0f2f5", border: "1px solid #c8cdd4", letterSpacing: "0.3px" }}>HARGA JASA</td>
-                            <td style={{ padding: "5px 8px", fontWeight: 700, color: "#d63384", border: "1px solid #c8cdd4" }}>Rp {hargaJasa}</td>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: "#1a1a2e", border: "1px solid #c8cdd4", textAlign: "center", fontSize: "10px" }}>{formatTgl(newSpk.deadline)}</td>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: "#1a1a2e", border: "1px solid #c8cdd4", textAlign: "center", fontSize: "10px" }}>{formatTgl(newSpk.tanggal_ambil)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      {/* ===== SKU TABLE ===== */}
-                      {skus.length > 0 && (
-                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px", border: "1.5px solid #1a1a2e" }}>
-                          <thead>
-                            <tr>
-                              <th style={{ padding: "5px 8px", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", background: "#1a1a2e", color: "#fff", border: "1px solid #1a1a2e", width: "30px" }}>NO</th>
-                              <th style={{ padding: "5px 8px", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", background: "#1a1a2e", color: "#fff", border: "1px solid #1a1a2e" }}>VARIAN WARNA</th>
-                              <th style={{ padding: "5px 8px", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", background: "#1a1a2e", color: "#fff", border: "1px solid #1a1a2e", width: "50px", textAlign: "center" }}>QTY</th>
-                              <th style={{ padding: "5px 8px", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", background: "#1a1a2e", color: "#fff", border: "1px solid #1a1a2e" }}>AKSESORIS YANG DISERAHKAN</th>
-                              <th colSpan="4" style={{ padding: "5px 8px", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", background: "#1a1a2e", color: "#fff", border: "1px solid #1a1a2e", textAlign: "center" }}>SPESIFIKASI UKURAN</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {skus.map((sku, idx) => (
-                              <tr key={idx} style={{ fontWeight: 600 }}>
-                                <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", textAlign: "center", fontSize: "11px" }}>{idx + 1}</td>
-                                <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", fontWeight: 700, fontSize: "11px" }}>{sku.warna || "-"}</td>
-                                <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", textAlign: "center", fontSize: "11px" }}>{(sku.qty || 0).toLocaleString("id-ID")}</td>
-                                <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", fontSize: "10px" }}>
-                                  {newSpk.aksesoris?.[idx]?.nama
-                                    ? `${newSpk.aksesoris[idx].nama} (${newSpk.aksesoris[idx].jumlah || 0} ${newSpk.aksesoris[idx].satuan || "PCS"})`
-                                    : "-"}
-                                </td>
-                                {idx === 0 && (
-                                  <td rowSpan={skus.length} style={{ padding: "6px", border: "1px solid #c8cdd4", verticalAlign: "top", fontSize: "9.5px" }}>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                                      <span style={{ display: "inline-block", border: "1px solid #c8cdd4", padding: "2px 6px", background: "#f8f9fa" }}>LD (Lebar Dada) &nbsp; <strong>-</strong></span>
-                                      <span style={{ display: "inline-block", border: "1px solid #c8cdd4", padding: "2px 6px", background: "#f8f9fa" }}>PJ DRESS &nbsp; <strong>-</strong></span>
-                                      <span style={{ display: "inline-block", border: "1px solid #c8cdd4", padding: "2px 6px", background: "#f8f9fa" }}>PJ CELANA &nbsp; <strong>-</strong></span>
-                                      <span style={{ display: "inline-block", border: "1px solid #c8cdd4", padding: "2px 6px", background: "#f8f9fa" }}>PJ BAJU &nbsp; <strong>-</strong></span>
-                                    </div>
-                                  </td>
-                                )}
-                              </tr>
-                            ))}
-                            {/* Total Row */}
-                            <tr style={{ background: "#f0f2f5", fontWeight: 800 }}>
-                              <td colSpan="2" style={{ padding: "5px 8px", border: "1px solid #c8cdd4", textAlign: "right", fontSize: "10px", textTransform: "uppercase", borderTop: "2px solid #1a1a2e" }}>TOTAL PRODUKSI</td>
-                              <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", textAlign: "center", fontSize: "12px", borderTop: "2px solid #1a1a2e" }}>{totalProduksi.toLocaleString("id-ID")}</td>
-                              <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", fontSize: "9px", color: "#888", fontWeight: 400, fontStyle: "italic", borderTop: "2px solid #1a1a2e" }}>* Periksa kesesuaian fisik aksesoris</td>
-                              <td style={{ padding: "5px 8px", border: "1px solid #c8cdd4", borderTop: "2px solid #1a1a2e" }}></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      )}
-
-                      {/* ===== VISUAL REFERENSI PRODUK ===== */}
-                      <div style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#1a1a2e", margin: "14px 0 8px", paddingBottom: "4px", borderBottom: "1.5px solid #1a1a2e" }}>
-                        VISUAL REFERENSI PRODUK / VARIAN WARNA
-                      </div>
-                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
-                        {(uniqueWarnas.length > 0 ? uniqueWarnas : ["-"]).map((warna, idx) => (
-                          <div key={idx} style={{ flex: 1, minWidth: "100px", maxWidth: "160px", border: "1px solid #c8cdd4", textAlign: "center", padding: "6px" }}>
-                            <div style={{ fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", color: "#1a1a2e", marginBottom: "4px", letterSpacing: "0.3px" }}>{warna}</div>
-                            <div style={{ width: "100%", height: "120px", background: "#f0f2f5", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "10px", flexDirection: "column", gap: "4px" }}>
-                              <span style={{ fontSize: "18px" }}>?</span>
-                              <span>TIDAK ADA FOTO</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* ===== CATATAN KHUSUS SPK ===== */}
-                      <div style={{ border: "1.5px solid #1a1a2e", padding: "10px", marginBottom: "14px" }}>
-                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#d63384", marginBottom: "4px" }}>? CATATAN KHUSUS SPK</div>
-                        <div style={{ fontSize: "9px", color: "#999", fontStyle: "italic", marginBottom: "4px" }}>Tidak ada catatan khusus untuk transaksi ini.</div>
-                        <div style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase" }}>
-                          KETERANGAN: {newSpk.keterangan || "-"}
-                        </div>
-                      </div>
-
-                      {/* ===== KETENTUAN & CATATAN KERJA CMT ===== */}
-                      <div style={{ border: "2px solid #d63384", padding: "10px", marginBottom: "14px", background: "#fff5f9" }}>
-                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#d63384", marginBottom: "6px" }}>? KETENTUAN & CATATAN KERJA CMT (PENTING):</div>
-                        <ol style={{ paddingLeft: "16px", fontSize: "9.5px", color: "#333" }}>
-                          <li style={{ marginBottom: "4px", lineHeight: "1.4" }}>
-                            <strong>Sampel asli tidak boleh hilang.</strong> Jika sampel hilang, CMT wajib mengganti kerugian sebesar <span style={{ fontWeight: 700, color: "#d63384" }}>Rp 500.000,- (Lima Ratus Ribu Rupiah)</span>. Pengembalian sampel harus dilakukan di hari pertama pengiriman barang jadi ke CMT. Jika pengembalian sampel tertunda, otomatis akan dipotong klaim sebesar nominal tersebut dari tagihan CMT. Menandatangani SPK ini berarti CMT setuju dengan segala ketentuan tertulis.
-                          </li>
-                          <li style={{ marginBottom: "4px", lineHeight: "1.4" }}>
-                            <strong>Laporan & Overtime.</strong> Batas pelaporan masalah setelah pengambilan SPK adalah 2-5 hari. Jika tidak ada laporan, pekerjaan dianggap lengkap tanpa kendala. Keterlambatan pengiriman (overtime) tanpa alasan/tagskonfirmasi tertulis akan dikenakan pemotongan nilai tagihan (klaim).
-                          </li>
-                        </ol>
-                      </div>
-
-                      {/* ===== TANDA TANGAN ===== */}
-                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px", paddingTop: "10px", borderTop: "1.5px solid #c8cdd4" }}>
-                        <div style={{ textAlign: "center", width: "30%" }}>
-                          <div style={{ fontSize: "9.5px", color: "#666", marginBottom: "40px" }}>Dibuat Oleh,</div>
-                          <div style={{ borderTop: "1px solid #1a1a2e", paddingTop: "4px" }}>
-                            <div style={{ fontSize: "11px", fontWeight: 700 }}>Sendy</div>
-                            <div style={{ fontSize: "9px", color: "#888" }}>Tim Produksi</div>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "center", width: "30%" }}>
-                          <div style={{ fontSize: "9.5px", color: "#666", marginBottom: "40px" }}>Mengetahui,</div>
-                          <div style={{ borderTop: "1px solid #1a1a2e", paddingTop: "4px" }}>
-                            <div style={{ fontSize: "11px", fontWeight: 700 }}>&nbsp;</div>
-                            <div style={{ fontSize: "9px", color: "#888" }}>SPV / Manager</div>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "center", width: "30%" }}>
-                          <div style={{ fontSize: "9.5px", color: "#666", marginBottom: "40px" }}>Diterima Oleh CMT,</div>
-                          <div style={{ borderTop: "1px solid #1a1a2e", paddingTop: "4px" }}>
-                            <div style={{ fontSize: "11px", fontWeight: 700 }}>{namaCmt !== "-" ? namaCmt : ""}</div>
-                            <div style={{ fontSize: "9px", color: "#888" }}>Mitra CMT</div>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                  );
-                })() : (
-                  <div className="spkcmt-live-preview-empty" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #cbd5e1", borderRadius: "12px", background: "#f8fafc", padding: "40px 24px", color: "#64748b", height: "320px", gap: "12px" }}>
-                    <FaBarcode size={32} style={{ color: "#94a3b8" }} />
-                    <span style={{ fontSize: "13px", fontWeight: "500", textAlign: "center", maxWidth: "240px", lineHeight: "1.5" }}>Pilih distribusi cutting atau SPK Jasa untuk menampilkan preview cetak.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </main>
-        </div>
-      )}
+      </div>
       {showChatPopup && (
         <div className="spkcmt-chat-overlay" onClick={handleCloseChat}>
           <div className="spkcmt-chat-popup" onClick={(e) => e.stopPropagation()}>
@@ -3838,7 +3143,7 @@ const SpkCmt = () => {
         </div>
       )}
 
-      {false && showForm && (
+      {showForm && (
         <div
           className="spkcmt-modal-overlay"
           onClick={() => {
@@ -4096,8 +3401,8 @@ const SpkCmt = () => {
                             ))
                           ) : Array.isArray(previewData.warna) && previewData.warna.length > 0 ? (
                             previewData.warna.map((w, idx) => (
-                               <tr key={idx}>
-                                <td style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.display || w.sku || "-"}</td>
+                              <tr key={idx}>
+                                <td style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>-</td>
                                 <td style={{ whiteSpace: "nowrap" }}>{w.nama_warna || w.warna || "-"}</td>
                                 <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>{(w.qty || w.jumlah || 0).toLocaleString("id-ID")}</td>
                                 <td>

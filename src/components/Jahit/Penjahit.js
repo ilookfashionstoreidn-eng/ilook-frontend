@@ -19,6 +19,7 @@ import {
 import Swal from "sweetalert2";
 
 const emptyPenjahit = {
+  id_penjahit: "",
   nama_penjahit: "",
   kontak: "",
   alamat: "",
@@ -53,6 +54,7 @@ const parseMesin = (mesin) => {
 };
 
 const createPenjahitPayload = (penjahit) => ({
+  id_penjahit: penjahit.id_penjahit || "",
   nama_penjahit: penjahit.nama_penjahit || "",
   kontak: penjahit.kontak || "",
   alamat: penjahit.alamat || "",
@@ -150,6 +152,9 @@ const Penjahit = () => {
     try {
       setError("");
       const formData = new FormData();
+      if (newPenjahit.id_penjahit) {
+        formData.append("id_penjahit", newPenjahit.id_penjahit);
+      }
       formData.append("nama_penjahit", newPenjahit.nama_penjahit);
       formData.append("kontak", newPenjahit.kontak);
       formData.append("alamat", newPenjahit.alamat);
@@ -308,183 +313,146 @@ const Penjahit = () => {
 
   return (
     <div className="penjahit-page">
-      <div className="penjahit-shell">
-        <header className="penjahit-header-card">
-          <div className="penjahit-header-main">
-            <div className="penjahit-header-icon">
-              <FiScissors size={20} />
-            </div>
-            <div>
-              <span className="penjahit-label">Jahit Master</span>
-              <h1>Data Penjahit</h1>
-              <p>Kelola partner jahit, data kontak, dan informasi pembayaran.</p>
-              <div className="penjahit-header-tags">
-                <span className="header-tag header-tag-primary"> Master Data</span>
-                <span className="header-tag">Vendor Workspace</span>
-              </div>
-            </div>
+      {/* ── Header ── */}
+      <header className="penjahit-header">
+        <div className="penjahit-header-id">
+          <h1>Data Penjahit</h1>
+          <span className="penjahit-header-sub">Manajemen vendor jahit, kontak, dan informasi tim</span>
+        </div>
+        <div className="penjahit-header-actions">
+          <div className="penjahit-search-wrap">
+            <FiSearch size={14} />
+            <input
+              id="penjahit-search"
+              type="text"
+              placeholder="Cari penjahit..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
           </div>
+          <button
+            type="button"
+            className="penjahit-btn-primary"
+            onClick={handleOpenCreateForm}
+          >
+            <FiPlus size={14} />
+            Tambah Data
+          </button>
+        </div>
+      </header>
 
-          <div className="penjahit-header-actions">
-            <label className="penjahit-searchbar" htmlFor="penjahit-search">
-              <FiSearch size={18} />
-              <input
-                id="penjahit-search"
-                type="text"
-                placeholder="Cari penjahit..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
+      {/* ── Alert ── */}
+      {(successMessage || error) && (
+        <div className={`penjahit-alert ${error ? "error" : "success"}`}>
+          {error ? <FiX size={14} /> : <FiCheckCircle size={14} />}
+          <span>{error || successMessage}</span>
+        </div>
+      )}
 
-            <button
-              type="button"
-              className="penjahit-primary-btn"
-              onClick={handleOpenCreateForm}
-            >
-              <FiPlus size={18} />
-              Tambah Data
-            </button>
-          </div>
-        </header>
-
-        {(successMessage || error) && (
-          <div className={`penjahit-alert ${error ? "error" : "success"}`}>
-            {error ? <FiX size={16} /> : <FiCheckCircle size={16} />}
-            <span>{error || successMessage}</span>
-          </div>
-        )}
-
-        <section className="penjahit-summary-grid">
-          <article className="summary-card summary-card-blue">
-            <div className="summary-icon">
-              <FiUsers size={18} />
-            </div>
-            <div>
-              <span>Total Penjahit</span>
-              <strong>{penjahits.length}</strong>
-            </div>
-          </article>
-          <article className="summary-card summary-card-amber">
-            <div className="summary-icon">
-              <FiScissors size={18} />
-            </div>
-            <div>
-              <span>Total Tim</span>
-              <strong>{totalTim}</strong>
-            </div>
-          </article>
-          <article className="summary-card summary-card-emerald">
-            <div className="summary-icon">
-              <FiFileText size={18} />
-            </div>
-            <div>
-              <span>Dokumen KTP</span>
-              <strong>{totalDokumen}</strong>
-            </div>
-          </article>
-        </section>
-
-        <section className="penjahit-table-card">
-          <div className="penjahit-table-top">
-            <div>
-              <span className="table-section-label">Master Directory</span>
-              <h2>Daftar Penjahit</h2>
-              <p>
-                {loading
-                  ? "Memuat data..."
-                  : `${filteredPenjahits.length} dari ${penjahits.length} data ditampilkan`}
-              </p>
-            </div>
-          </div>
-
-          <div className="penjahit-table-wrap">
-            <table className="penjahit-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nama Penjahit</th>
-                  <th>Kategori</th>
-                  <th>Kontak</th>
-                  <th>Jumlah Tim</th>
-                  <th>Bank</th>
-                  <th className="align-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!loading && filteredPenjahits.length > 0 &&
-                  filteredPenjahits.map((penjahit) => (
-                    <tr key={penjahit.id_penjahit}>
-                      <td data-label="ID">
-                        <span className="table-id-badge">#{penjahit.id_penjahit}</span>
-                      </td>
-                      <td data-label="Nama Penjahit">
-                        <div className="penjahit-name-cell">
-                          <strong>{penjahit.nama_penjahit}</strong>
-                          <span>{penjahit.alamat || "Alamat belum tersedia"}</span>
-                        </div>
-                      </td>
-                      <td data-label="Kategori">
-                        <span className="table-badge">{penjahit.kategori_penjahit || "-"}</span>
-                      </td>
-                      <td data-label="Kontak">{penjahit.kontak || "-"}</td>
-                      <td data-label="Jumlah Tim">{penjahit.jumlah_tim || 0}</td>
-                      <td data-label="Bank">{penjahit.bank || "-"}</td>
-                      <td data-label="Aksi" className="align-right">
-                        <div className="table-actions">
-                          <button
-                            type="button"
-                            className="table-icon-btn table-icon-view"
-                            onClick={() => handleDetailClick(penjahit)}
-                            aria-label={`Lihat detail ${penjahit.nama_penjahit}`}
-                          >
-                            <FiEye size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="table-icon-btn table-icon-edit"
-                            onClick={() => handleEditClick(penjahit)}
-                            aria-label={`Edit ${penjahit.nama_penjahit}`}
-                          >
-                            <FiEdit2 size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="table-icon-btn table-icon-delete"
-                            onClick={() => handleDeleteClick(penjahit.id_penjahit)}
-                            aria-label={`Hapus ${penjahit.nama_penjahit}`}
-                            style={{ color: '#ef4444', background: '#fef2f2', border: '1px solid #fee2e2' }}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                {!loading && filteredPenjahits.length === 0 && (
-                  <tr>
-                    <td colSpan="7" className="table-empty-state">
-                      Tidak ada data yang sesuai dengan pencarian.
-                    </td>
-                  </tr>
-                )}
-
-                {loading && (
-                  <tr>
-                    <td colSpan="7" className="table-empty-state">
-                      Memuat direktori penjahit...
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+      {/* ── Stat Rail ── */}
+      <div className="penjahit-statrail">
+        <div className="penjahit-stat-badge">
+          <span>Total Penjahit</span>
+          <strong>{penjahits.length}</strong>
+        </div>
+        <div className="penjahit-stat-badge">
+          <span>Total Tim</span>
+          <strong>{totalTim}</strong>
+        </div>
+        <div className="penjahit-stat-badge">
+          <span>Dokumen KTP</span>
+          <strong>{totalDokumen}</strong>
+        </div>
       </div>
 
+      {/* ── Board ── */}
+      <div className="penjahit-board">
+        <div className="penjahit-table-container">
+          <table className="penjahit-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nama Penjahit</th>
+                <th>Kategori</th>
+                <th>Kontak</th>
+                <th>Jumlah Tim</th>
+                <th>Bank</th>
+                <th className="align-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!loading && filteredPenjahits.length > 0 &&
+                filteredPenjahits.map((penjahit) => (
+                  <tr key={penjahit.id_penjahit}>
+                    <td>
+                      <span className="table-id-badge">#{penjahit.id_penjahit}</span>
+                    </td>
+                    <td>
+                      <div className="penjahit-name-cell">
+                        <strong>{penjahit.nama_penjahit}</strong>
+                        <span>{penjahit.alamat || "Alamat belum tersedia"}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="table-badge">{penjahit.kategori_penjahit || "-"}</span>
+                    </td>
+                    <td>{penjahit.kontak || "-"}</td>
+                    <td>{penjahit.jumlah_tim || 0}</td>
+                    <td>{penjahit.bank || "-"}</td>
+                    <td className="align-right">
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="table-icon-btn"
+                          onClick={() => handleDetailClick(penjahit)}
+                          aria-label={`Lihat detail ${penjahit.nama_penjahit}`}
+                        >
+                          <FiEye size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="table-icon-btn"
+                          onClick={() => handleEditClick(penjahit)}
+                          aria-label={`Edit ${penjahit.nama_penjahit}`}
+                        >
+                          <FiEdit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="table-icon-btn table-icon-delete"
+                          onClick={() => handleDeleteClick(penjahit.id_penjahit)}
+                          aria-label={`Hapus ${penjahit.nama_penjahit}`}
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+              {!loading && filteredPenjahits.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="table-empty-state">
+                    Tidak ada data yang sesuai dengan pencarian.
+                  </td>
+                </tr>
+              )}
+
+              {loading && (
+                <tr>
+                  <td colSpan="7" className="table-empty-state">
+                    Memuat direktori penjahit...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Detail Modal ── */}
       {showPopup && selectedPenjahit && (
-        <div className="penjahit-modal-layer">
+        <div className="penjahit-modal-overlay">
           <button
             type="button"
             className="penjahit-modal-backdrop"
@@ -492,7 +460,7 @@ const Penjahit = () => {
             aria-label="Tutup detail penjahit"
           />
 
-          <div className="penjahit-modal detail-modal">
+          <div className="penjahit-modal">
             <div className="penjahit-modal-header">
               <div>
                 <span className="penjahit-label">Detail</span>
@@ -510,27 +478,27 @@ const Penjahit = () => {
 
             <div className="detail-grid">
               <div className="detail-card">
-                <span><FiPhone size={15} /> Kontak</span>
+                <span><FiPhone size={13} /> Kontak</span>
                 <strong>{selectedPenjahit.kontak || "-"}</strong>
               </div>
               <div className="detail-card">
-                <span><FiUsers size={15} /> Jumlah Tim</span>
+                <span><FiUsers size={13} /> Jumlah Tim</span>
                 <strong>{selectedPenjahit.jumlah_tim || 0}</strong>
               </div>
               <div className="detail-card">
-                <span><FiCreditCard size={15} /> Bank</span>
+                <span><FiCreditCard size={13} /> Bank</span>
                 <strong>{selectedPenjahit.bank || "-"}</strong>
               </div>
               <div className="detail-card">
-                <span><FiFileText size={15} /> No. Rekening</span>
+                <span><FiFileText size={13} /> No. Rekening</span>
                 <strong>{selectedPenjahit.no_rekening || "-"}</strong>
               </div>
               <div className="detail-card wide">
-                <span><FiMapPin size={15} /> Alamat</span>
+                <span><FiMapPin size={13} /> Alamat</span>
                 <p>{selectedPenjahit.alamat || "Alamat belum tersedia."}</p>
               </div>
               <div className="detail-card wide">
-                <span><FiFileText size={15} /> Dokumen & Mesin</span>
+                <span><FiFileText size={13} /> Dokumen & Mesin</span>
                 <div className="detail-meta">
                   <p>
                     Status KTP: {selectedPenjahit.ktp ? "Tersedia" : "Belum tersedia"}
@@ -554,8 +522,9 @@ const Penjahit = () => {
         </div>
       )}
 
+      {/* ── Form Modal ── */}
       {showForm && (
-        <div className="penjahit-modal-layer">
+        <div className="penjahit-modal-overlay">
           <button
             type="button"
             className="penjahit-modal-backdrop"
@@ -563,7 +532,7 @@ const Penjahit = () => {
             aria-label="Tutup form penjahit"
           />
 
-          <div className="penjahit-modal form-modal">
+          <div className="penjahit-modal">
             <div className="penjahit-modal-header">
               <div>
                 <span className="penjahit-label">{newPenjahit.id ? "Edit" : "Tambah"}</span>
@@ -584,6 +553,21 @@ const Penjahit = () => {
               onSubmit={newPenjahit.id ? handleFormUpdate : handleFormSubmit}
             >
               <div className="form-grid">
+                <label className="field-group">
+                  <span>ID CMT (Opsional)</span>
+                  <input
+                    type="number"
+                    value={newPenjahit.id_penjahit}
+                    onChange={(event) =>
+                      setNewPenjahit({
+                        ...newPenjahit,
+                        id_penjahit: event.target.value,
+                      })
+                    }
+                    placeholder="Otomatis jika kosong"
+                  />
+                </label>
+
                 <label className="field-group">
                   <span>Nama Penjahit</span>
                   <input
@@ -712,7 +696,7 @@ const Penjahit = () => {
                     })
                   }
                 >
-                  <FiPlus size={16} />
+                  <FiPlus size={14} />
                   Tambah Mesin
                 </button>
               </div>
@@ -784,8 +768,8 @@ const Penjahit = () => {
                 >
                   Batal
                 </button>
-                <button type="submit" className="penjahit-primary-btn">
-                  <FiCheckCircle size={18} />
+                <button type="submit" className="penjahit-btn-primary">
+                  <FiCheckCircle size={14} />
                   {newPenjahit.id ? "Simpan Perubahan" : "Simpan Data"}
                 </button>
               </div>
@@ -798,4 +782,3 @@ const Penjahit = () => {
 };
 
 export default Penjahit;
-

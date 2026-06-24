@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./KodeSeriBelumDikerjakanOptimized.css";
 import "./Pengiriman.css";
 import API from "../../api";
 import Select from "react-select";
@@ -19,6 +20,9 @@ import {
   FiTruck,
   FiUser,
   FiX,
+  FiRefreshCw,
+  FiInbox,
+  FiImage,
 } from "react-icons/fi";
 
 const getTodayDate = () => {
@@ -30,12 +34,8 @@ const getTodayDate = () => {
 };
 
 const createInitialPengiriman = () => ({
-  id_spk: "",
+  no_seri: "",
   tanggal_pengiriman: getTodayDate(),
-  total_barang_dikirim: "",
-  sisa_barang: "",
-  total_bayar: "",
-  warna: [],
   foto_nota: null,
 });
 
@@ -57,6 +57,8 @@ const statusConfig = {
   },
 };
 
+const STORAGE_URL = API.defaults.baseURL ? API.defaults.baseURL.replace(/\/api\/?$/, "") + "/storage" : "http://localhost:8000/storage";
+
 const getStatusConfig = (status) => statusConfig[status] || statusConfig.pending;
 
 const Pengiriman = () => {
@@ -75,13 +77,17 @@ const Pengiriman = () => {
   const [penjahitList, setPenjahitList] = useState([]);
   const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
   const [warnaData, setWarnaData] = useState([]);
+  const [formItems, setFormItems] = useState([{ sku: "", qty: 0, harga: 0 }]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [skuSearch, setSkuSearch] = useState("");
+  const [hoveredNota, setHoveredNota] = useState(null);
   const [showPetugasAtasPopup, setShowPetugasAtasPopup] = useState(false);
   const [spkCmtList, setSpkCmtList] = useState([]);
   const [selectedSpkDeadline, setSelectedSpkDeadline] = useState(null);
   const [deadlineError, setDeadlineError] = useState("");
   const [tanggalMasaLaluError, setTanggalMasaLaluError] = useState("");
-  const [newPengiriman, setNewPengiriman] = useState(createInitialPengiriman());
-
+  const [newPengiriman, setNewPengiriman] = useState({ ...createInitialPengiriman(), id_penjahit: "" });
+  const [skuList, setSkuList] = useState([]);
   const userRole = localStorage.getItem("role");
 
   useEffect(() => {
@@ -110,7 +116,7 @@ const Pengiriman = () => {
     };
 
     fetchPengirimans();
-  }, [currentPage, selectedPenjahit, sortBy, sortOrder, selectedStatusVerifikasi]);
+  }, [currentPage, selectedPenjahit, sortBy, sortOrder, selectedStatusVerifikasi, refreshKey]);
 
   useEffect(() => {
     const fetchPenjahits = async () => {
@@ -123,6 +129,34 @@ const Pengiriman = () => {
     };
 
     fetchPenjahits();
+  }, []);
+
+  useEffect(() => {
+    const fetchSkus = async () => {
+      try {
+        const response = await API.get("/product-list/spk-options");
+        const groups = response.data.data || [];
+        const flatSkus = [];
+        groups.forEach(group => {
+          if (Array.isArray(group.skus)) {
+            group.skus.forEach(sku => {
+              if (sku.sku_name) {
+                flatSkus.push({
+                  sku: sku.sku_name,
+                  label: sku.sku_name,
+                  price: sku.price_cmt || 0
+                });
+              }
+            });
+          }
+        });
+        setSkuList(flatSkus);
+      } catch (fetchError) {
+        console.error("Gagal mengambil data SKU", fetchError);
+      }
+    };
+
+    fetchSkus();
   }, []);
 
   useEffect(() => {
@@ -165,6 +199,7 @@ const Pengiriman = () => {
       setNewPengiriman((prev) => ({
         ...prev,
         tanggal_pengiriman: getTodayDate(),
+        id_penjahit: "",
       }));
       setTanggalMasaLaluError("");
       setDeadlineError("");
@@ -179,17 +214,27 @@ const Pengiriman = () => {
         return;
       }
 
+      // Pre-fill with existing saved warna values if selectedPengiriman has them
+      const existingWarnaMap = {};
+      if (selectedPengiriman && Array.isArray(selectedPengiriman.warna)) {
+        selectedPengiriman.warna.forEach((w) => {
+          existingWarnaMap[w.warna] = w.jumlah_dikirim;
+        });
+      }
+
       setWarnaData(
         response.data.warna.map((warna) => ({
           nama_warna: warna.nama_warna,
           qty_spk: warna.qty,
-          jumlah_dikirim: 0,
+          jumlah_dikirim: existingWarnaMap[warna.nama_warna] !== undefined ? existingWarnaMap[warna.nama_warna] : 0,
         }))
       );
     } catch (fetchError) {
       setWarnaData([]);
     }
   };
+
+
 
   const fetchSpkDeadline = async (idSpk) => {
     try {
@@ -320,16 +365,13 @@ const Pengiriman = () => {
       );
   }, [pengirimans, searchTerm, sortOrder]);
 
-  const dashboardStats = useMemo(() => {
+  const statRail = useMemo(() => {
     const pendingCount = filteredPengirimans.filter(
       (item) => (item.status_verifikasi || "pending") === "pending"
     ).length;
 
-    const totalTransferValid = filteredPengirimans.reduce((total, item) => {
-      if (item.status_verifikasi !== "valid") {
-        return total;
-      }
-      return total + getTotalTransfer(item);
+    const totalBayar = filteredPengirimans.reduce((total, item) => {
+      return total + (Number(item.total_bayar) || 0);
     }, 0);
 
     const totalSisaBarang = filteredPengirimans.reduce(
@@ -341,38 +383,22 @@ const Pengiriman = () => {
       (item) => item.status_verifikasi === "invalid"
     ).length;
 
+    const validCount = filteredPengirimans.filter(
+      (item) => item.status_verifikasi === "valid"
+    ).length;
+
+    const uniqueCmtCount = new Set(
+      filteredPengirimans.map((item) => item.nama_penjahit).filter(Boolean)
+    ).size;
+
     return [
-      {
-        key: "shipments",
-        label: "Total Pengiriman",
-        value: filteredPengirimans.length,
-        note: "Data tampil pada halaman aktif",
-        icon: <FiPackage />,
-      },
-      {
-        key: "pending",
-        label: "Menunggu Verifikasi",
-        value: pendingCount,
-        note: "Butuh tindak lanjut petugas atas",
-        icon: <FiClock />,
-      },
-      {
-        key: "transfer",
-        label: "Transfer Tervalidasi",
-        value: formatRupiah(totalTransferValid),
-        note: "Akumulasi pembayaran valid",
-        icon: <FiDollarSign />,
-      },
-      {
-        key: "sisa",
-        label: "Sisa Barang",
-        value: `${totalSisaBarang} pcs`,
-        note:
-          invalidCount > 0
-            ? `${invalidCount} data berstatus invalid`
-            : "Semua pengiriman tertata",
-        icon: <FiShield />,
-      },
+      { label: "Pengiriman", value: filteredPengirimans.length },
+      { label: "Valid", value: validCount, tone: "safe" },
+      { label: "Pending", value: pendingCount, tone: "warning" },
+      { label: "Invalid", value: invalidCount, tone: "overdue" },
+      { label: "Total Bayar", value: formatRupiah(totalBayar) },
+      { label: "Sisa Barang", value: `${totalSisaBarang} pcs` },
+      { label: "Partner CMT", value: `${uniqueCmtCount} aktif` },
     ];
   }, [filteredPengirimans]);
 
@@ -465,6 +491,24 @@ const Pengiriman = () => {
       }));
   }, [spkCmtList]);
 
+  const cmtOptions = useMemo(() => {
+    return penjahitList.map(p => ({ value: p.id_penjahit, label: p.nama_penjahit }));
+  }, [penjahitList]);
+
+  const skuOptionsList = useMemo(() => {
+    if (!Array.isArray(skuList)) return [];
+    return skuList.map(item => ({ value: item.sku, label: item.label || item.sku, price: item.price || 0 }));
+  }, [skuList]);
+
+  const filteredSkuOptions = useMemo(() => {
+    if (!skuSearch || skuSearch.trim() === "") {
+      return []; // Sembunyikan jika belum ada pencarian
+    }
+    const lowerSearch = skuSearch.toLowerCase();
+    const filtered = skuOptionsList.filter(o => o.label.toLowerCase().includes(lowerSearch));
+    return filtered.slice(0, 50);
+  }, [skuOptionsList, skuSearch]);
+
   const formatTanggal = (tanggal) => {
     const date = new Date(tanggal);
     return new Intl.DateTimeFormat("id-ID", {
@@ -489,10 +533,11 @@ const Pengiriman = () => {
   }
 
   const resetFormState = () => {
-    setNewPengiriman(createInitialPengiriman());
+    setNewPengiriman({ ...createInitialPengiriman(), id_penjahit: "" });
     setSelectedSpkDeadline(null);
     setDeadlineError("");
     setTanggalMasaLaluError("");
+    setFormItems([{ sku: "", qty: 0, harga: 0 }]);
   };
 
   const closeFormModal = () => {
@@ -514,13 +559,26 @@ const Pengiriman = () => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    if (!newPengiriman.id_spk) {
-      alert("Silakan pilih SPK CMT terlebih dahulu");
+    if (!newPengiriman.no_seri.trim()) {
+      alert("Silakan isi No Seri terlebih dahulu");
+      return;
+    }
+
+    if (!newPengiriman.id_penjahit) {
+      alert("Silakan pilih CMT terlebih dahulu");
       return;
     }
 
     if (!newPengiriman.foto_nota) {
       alert("Silakan upload foto nota terlebih dahulu");
+      return;
+    }
+
+    // Filter out empty rows
+    const validItems = formItems.filter((item) => item.sku.trim() && Number(item.qty) > 0);
+
+    if (validItems.length === 0) {
+      alert("Silakan isi minimal satu baris SKU dan Qty.");
       return;
     }
 
@@ -533,31 +591,31 @@ const Pengiriman = () => {
       return;
     }
 
-    const deadlineValidation = validateDeadline(
-      newPengiriman.tanggal_pengiriman,
-      true
-    );
-
-    if (!deadlineValidation.valid) {
-      alert(deadlineValidation.error);
-      return;
-    }
-
     const formData = new FormData();
-    formData.append("id_spk", Number(newPengiriman.id_spk));
+    formData.append("id_penjahit", newPengiriman.id_penjahit);
+    if (newPengiriman.no_seri.trim()) {
+      formData.append("no_seri", newPengiriman.no_seri.trim());
+      formData.append("no_seri_pengiriman", `${newPengiriman.no_seri.trim()}.${newPengiriman.id_penjahit}`);
+    }
     formData.append("tanggal_pengiriman", newPengiriman.tanggal_pengiriman);
-    formData.append(
-      "total_barang_dikirim",
-      Number(newPengiriman.total_barang_dikirim) || 0
-    );
+    
+    // Calculate total bayar
+    const totalBayar = validItems.reduce((acc, curr) => acc + ((parseInt(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0);
+    formData.append("total_bayar", totalBayar);
+
     formData.append("foto_nota", newPengiriman.foto_nota);
+    formData.append("items", JSON.stringify(validItems.map((item) => ({
+      sku: item.sku,
+      qty: item.qty,
+      harga: parseFloat(item.harga) || 0
+    }))));
 
     try {
-      const response = await API.post("/pengiriman/petugas-bawah", formData, {
+      await API.post("/pengiriman/petugas-bawah", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setPengirimans((prev) => [...prev, response.data.data]);
+      setRefreshKey((prev) => prev + 1);
       closeFormModal();
     } catch (submitError) {
       alert(
@@ -631,177 +689,88 @@ const Pengiriman = () => {
         submitError.response?.data?.error || "Gagal memperbarui data pengiriman."
       );
     }
-  };
-
-  const selectedStatus = selectedPengiriman
+  };  const selectedStatus = selectedPengiriman
     ? getStatusConfig(selectedPengiriman.status_verifikasi || "pending")
     : getStatusConfig("pending");
 
+  const pageNumbers = [];
+  const pageStart = Math.max(1, currentPage - 2);
+  const pageEnd = Math.min(lastPage, currentPage + 2);
+  for (let i = pageStart; i <= pageEnd; i++) pageNumbers.push(i);
+
   return (
-    <div className="pengiriman-page">
-      <div className="pengiriman-shell">
-        <section className="pengiriman-hero">
-          <div className="pengiriman-hero-copy">
-            <span className="pengiriman-eyebrow">
-              <FiTruck />
-              CMT Delivery Control
+    <div className="ks-page">
+      {/* ── Header ── */}
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Manajemen Pengiriman CMT</h1>
+          <span className="ks-header-sub">Pengiriman, verifikasi, dan sisa barang — semua dalam kendali penuh</span>
+        </div>
+      </header>
+
+      {/* ── Stat rail ── */}
+      <div className="ks-statrail">
+        {statRail.map((s) => (
+          <div className="ks-stat" key={s.label} style={{ flex: 1, minWidth: 0 }}>
+            <span className="ks-stat-label">{s.label}</span>
+            <span className={`ks-stat-value ${s.tone ? `tone-${s.tone}` : ""}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {s.tone && <span className={`ks-dot tone-${s.tone}`} />}
+              {s.value}
             </span>
-            <div className="pengiriman-title-row">
-              <div className="pengiriman-title-icon">
-                <FiTruck />
-              </div>
-              <div>
-                <h1>Manajemen Pengiriman CMT</h1>
-                <p>
-                  Satu workspace. Pengiriman, verifikasi, dan sisa barang — semua dalam kendali penuh.
-                </p>
-              </div>
-            </div>
-            <div className="pengiriman-chip-row">
-              <span className="pengiriman-chip pengiriman-chip--primary">
-                <FiCalendar />
-                {formatTanggal(getTodayDate())}
-              </span>
-              <span className="pengiriman-chip">
-                <FiPackage />
-                {filteredPengirimans.length} data aktif di halaman ini
-              </span>
-              <span className="pengiriman-chip">
-                <FiShield />
-                {heroSnapshot.validCount} data sudah valid
-              </span>
-            </div>
           </div>
+        ))}
+      </div>
 
-          <div className="pengiriman-hero-aside">
-            <div className="pengiriman-hero-card">
-              <span className="pengiriman-hero-card-label">Snapshot Operasional</span>
-              <strong>{heroSnapshot.totalTransferValid}</strong>
-              <p>
-                Fokus utama hari ini ada pada verifikasi pengiriman dan kontrol
-                nilai transfer yang sudah sah.
-              </p>
-              <div className="pengiriman-hero-side-grid">
-                <div>
-                  <span>Pending</span>
-                  <strong>{heroSnapshot.pendingCount}</strong>
-                </div>
-                <div>
-                  <span>Top Transfer</span>
-                  <strong>{heroSnapshot.topTransferLabel}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="pengiriman-stats-grid">
-          {dashboardStats.map((item) => (
-            <article key={item.key} className="pengiriman-stat-card">
-              <div className="pengiriman-stat-icon">{item.icon}</div>
-              <div className="pengiriman-stat-copy">
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-                <small>{item.note}</small>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <section className="pengiriman-main-card">
-          <div className="pengiriman-main-head">
-            <div>
-              <span className="pengiriman-section-label">
-                <FiFilter />
-                Control Center
-              </span>
-              <h2>Daftar Pengiriman</h2>
-              <p>
-                Filter, pantau, dan verifikasi data pengiriman dengan struktur
-                yang lebih cepat dipindai.
-              </p>
-            </div>
-
-            <div className="pengiriman-head-actions">
-              <button
-                type="button"
-                className="pengiriman-primary-btn"
-                onClick={() => setShowForm(true)}
-              >
-                <FiPlus />
-                Tambah Pengiriman
-              </button>
-            </div>
-          </div>
-
-          <div className="pengiriman-inline-stats">
-            {toolbarInsights.map((item) => (
-              <div key={item.key} className="pengiriman-inline-stat">
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="pengiriman-filter-grid">
-            <label className="pengiriman-filter-field pengiriman-filter-field--search">
-              <span>
-                <FiSearch />
-                Cari data
-              </span>
-              <input
-                type="text"
-                placeholder="Cari SPK, produk, atau CMT"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-
-            <label className="pengiriman-filter-field">
-              <span>
-                <FiUser />
-                CMT
-              </span>
+      {/* ── Board ── */}
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+            <label className="ks-select-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--ks-text-soft)", fontWeight: "500" }}>
+              <span>CMT:</span>
               <select
                 value={selectedPenjahit}
-                onChange={(event) => setSelectedPenjahit(event.target.value)}
+                onChange={(e) => setSelectedPenjahit(e.target.value)}
+                style={{
+                  height: "30px",
+                  padding: "0 10px",
+                  borderRadius: "7px",
+                  border: "1px solid var(--ks-line-strong)",
+                  fontSize: "12px",
+                  background: "var(--ks-surface)",
+                  color: "var(--ks-text)",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  fontWeight: "500",
+                  cursor: "pointer"
+                }}
               >
                 <option value="">Semua CMT</option>
-                {penjahitList.map((penjahit) => (
-                  <option
-                    key={penjahit.id_penjahit}
-                    value={penjahit.id_penjahit}
-                  >
-                    {penjahit.nama_penjahit}
+                {penjahitList.map((p) => (
+                  <option key={p.id_penjahit} value={p.id_penjahit}>
+                    {p.nama_penjahit}
                   </option>
                 ))}
               </select>
             </label>
 
-            <label className="pengiriman-filter-field">
-              <span>
-                <FiCalendar />
-                Urutan data
-              </span>
-              <select
-                value={sortOrder}
-                onChange={(event) => setSortOrder(event.target.value)}
-              >
-                <option value="desc">Terbaru</option>
-                <option value="asc">Terlama</option>
-              </select>
-            </label>
-
-            <label className="pengiriman-filter-field">
-              <span>
-                <FiShield />
-                Status verifikasi
-              </span>
+            <label className="ks-select-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--ks-text-soft)", fontWeight: "500" }}>
+              <span>Status:</span>
               <select
                 value={selectedStatusVerifikasi}
-                onChange={(event) =>
-                  setSelectedStatusVerifikasi(event.target.value)
-                }
+                onChange={(e) => setSelectedStatusVerifikasi(e.target.value)}
+                style={{
+                  height: "30px",
+                  padding: "0 10px",
+                  borderRadius: "7px",
+                  border: "1px solid var(--ks-line-strong)",
+                  fontSize: "12px",
+                  background: "var(--ks-surface)",
+                  color: "var(--ks-text)",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  fontWeight: "500",
+                  cursor: "pointer"
+                }}
               >
                 <option value="">Semua status</option>
                 <option value="pending">Pending</option>
@@ -809,162 +778,241 @@ const Pengiriman = () => {
                 <option value="valid">Valid</option>
               </select>
             </label>
+
+            <label className="ks-select-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--ks-text-soft)", fontWeight: "500" }}>
+              <span>Urutan:</span>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{
+                  height: "30px",
+                  padding: "0 10px",
+                  borderRadius: "7px",
+                  border: "1px solid var(--ks-line-strong)",
+                  fontSize: "12px",
+                  background: "var(--ks-surface)",
+                  color: "var(--ks-text)",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  fontWeight: "500",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="desc">Terbaru</option>
+                <option value="asc">Terlama</option>
+              </select>
+            </label>
           </div>
 
-          <div className="pengiriman-table-card">
-            <div className="pengiriman-table-head">
-              <div>
-                <h3>Ringkasan Halaman</h3>
-                <p>
-                  Menampilkan {filteredPengirimans.length} data dari halaman{" "}
-                  {currentPage}.
-                </p>
-              </div>
-              <div className="pengiriman-table-meta">
-                <span className="pengiriman-table-meta-chip">
-                  Halaman {currentPage} / {lastPage}
-                </span>
-              </div>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>
+            <label className="ks-search" style={{ marginLeft: 0 }}>
+              <FiSearch className="ks-search-icon" size={14} />
+              <input
+                type="text"
+                placeholder="Cari SPK, produk, atau CMT..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="ks-btn is-primary"
+              onClick={() => setShowForm(true)}
+            >
+              <FiPlus size={13} /> Tambah Pengiriman
+            </button>
+          </div>
+        </div>
 
-            {error && (
-              <div className="pengiriman-inline-alert">
-                <FiAlertCircle />
-                <span>{error}</span>
-              </div>
-            )}
+        {error && (
+          <div className="ks-empty" style={{ padding: "20px" }}>
+            <FiAlertCircle size={20} />
+            <p>{error}</p>
+          </div>
+        )}
 
-            <div className="pengiriman-table-wrapper">
-              <table className="pengiriman-table">
+        {loading ? (
+          <div className="ks-empty">
+            <FiRefreshCw className="is-spinning" size={20} />
+            <p>Memuat data pengiriman...</p>
+          </div>
+        ) : filteredPengirimans.length === 0 ? (
+          <div className="ks-empty">
+            <FiInbox size={20} />
+            <p>{searchTerm ? `Tidak ada hasil pencarian untuk "${searchTerm}".` : "Belum ada data pengiriman."}</p>
+          </div>
+        ) : (
+          <>
+            <div className="ks-grid-scroll">
+              <table className="ks-grid">
                 <thead>
                   <tr>
-                    <th>SPK</th>
+                    <th className="ks-col-dot" aria-label="Status" />
+                    <th>No Seri</th>
                     <th>CMT</th>
-                    <th>Produk</th>
+                    <th>Produk / SKU</th>
                     <th>Tanggal</th>
-                    <th>Qty Kirim</th>
-                    <th>Sisa</th>
-                    <th>Total Transfer</th>
+                    <th className="align-right">Qty Kirim</th>
+                    <th className="align-right">Harga</th>
+                    <th className="align-right">Total Bayar</th>
                     <th>Status</th>
-                    <th>Aksi</th>
+                    <th style={{ width: "80px", textAlign: "center" }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="9" className="pengiriman-table-state">
-                        Memuat data pengiriman...
-                      </td>
-                    </tr>
-                  ) : filteredPengirimans.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="pengiriman-table-state">
-                        Tidak ada data pengiriman yang sesuai filter.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredPengirimans.map((pengiriman) => {
-                      const status = getStatusConfig(
-                        pengiriman.status_verifikasi || "pending"
-                      );
-                      const totalTransfer = getTotalTransfer(pengiriman);
+                  {filteredPengirimans.map((pengiriman) => {
+                    const status = getStatusConfig(
+                      pengiriman.status_verifikasi || "pending"
+                    );
+                    const totalTransfer = getTotalTransfer(pengiriman);
+                    
+                    // Map verification status to urgency tones: valid -> safe, pending -> warning, invalid -> overdue
+                    let statusTone = "none";
+                    if (pengiriman.status_verifikasi === "valid") statusTone = "safe";
+                    else if (pengiriman.status_verifikasi === "pending") statusTone = "warning";
+                    else if (pengiriman.status_verifikasi === "invalid") statusTone = "overdue";
 
-                      return (
-                        <tr key={pengiriman.id_pengiriman}>
-                          <td>
-                            <div className="pengiriman-cell-primary">
-                              <strong>SPK-{pengiriman.id_spk}</strong>
-                              <span>ID Pengiriman #{pengiriman.id_pengiriman}</span>
-                            </div>
-                          </td>
-                          <td>{pengiriman.nama_penjahit || "-"}</td>
-                          <td>{pengiriman.nama_produk || "-"}</td>
-                          <td>{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
-                          <td>{pengiriman.total_barang_dikirim || 0} pcs</td>
-                          <td>
-                            <span
-                              className={`pengiriman-qty-chip ${
-                                Number(pengiriman.sisa_barang) > 0
-                                  ? "is-warning"
-                                  : "is-safe"
-                              }`}
-                            >
-                              {pengiriman.sisa_barang || 0} pcs
-                            </span>
-                          </td>
-                          <td>
-                            {pengiriman.status_verifikasi === "valid" ? (
-                              formatRupiah(totalTransfer)
-                            ) : (
-                              <span className="pengiriman-muted-text">
-                                Belum diverifikasi
-                              </span>
+                    return (
+                      <tr key={pengiriman.id_pengiriman}>
+                        <td className="ks-col-dot">
+                          <span className={`ks-dot tone-${statusTone}`} title={status.label} />
+                        </td>
+                        <td className="ks-cell-code">
+                          <strong>{pengiriman.no_seri_pengiriman || `SPK-${pengiriman.id_spk}`}</strong>
+                        </td>
+                        <td className="ks-cell-product">{pengiriman.nama_penjahit || "-"}</td>
+                        <td title={pengiriman.nama_produk} style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pengiriman.nama_produk || "-"}</td>
+                        <td className="ks-muted">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                        <td className="align-right ks-cell-num">{(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs</td>
+                        <td className="align-right ks-cell-num">
+                          {formatRupiah((pengiriman.total_bayar || 0) / (pengiriman.total_barang_dikirim || 1))}
+                        </td>
+                        <td className="align-right ks-cell-num">
+                          <strong>{formatRupiah(pengiriman.total_bayar || 0)}</strong>
+                        </td>
+                        <td>
+                          <span className={`ks-tag ${pengiriman.status_verifikasi === "valid" ? "is-sudah" : "is-belum"}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
+                            {pengiriman.foto_nota && (
+                              <div 
+                                className="nota-hover-container" 
+                                style={{ position: "relative", display: "inline-flex" }}
+                                onMouseEnter={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setHoveredNota({
+                                    url: pengiriman.foto_nota,
+                                    isPdf: pengiriman.foto_nota.endsWith(".pdf"),
+                                    x: rect.left,
+                                    y: rect.top
+                                  });
+                                }}
+                                onMouseLeave={() => {
+                                  setHoveredNota(null);
+                                }}
+                              >
+                                <a
+                                  href={`${STORAGE_URL}/${pengiriman.foto_nota}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="ks-btn"
+                                  style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-text)" }}
+                                  title="Lihat Nota"
+                                >
+                                  <FiImage size={12} />
+                                </a>
+                              </div>
                             )}
-                          </td>
-                          <td>
-                            <span className={`pengiriman-status ${status.tone}`}>
-                              {status.icon}
-                              {status.label}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="pengiriman-row-actions">
+                            <button
+                              type="button"
+                              className="ks-btn"
+                              style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)" }}
+                              onClick={() => handleDetailClick(pengiriman)}
+                              title="Detail"
+                            >
+                              <FiFileText size={12} />
+                            </button>
+                            {userRole !== "staff_bawah" && (
                               <button
                                 type="button"
-                                className="pengiriman-icon-btn"
-                                onClick={() => handleDetailClick(pengiriman)}
-                                title="Detail"
+                                className="ks-btn"
+                                style={{
+                                  padding: "4px 8px",
+                                  minHeight: "26px",
+                                  background: "var(--ks-accent-soft, #edf4ff)",
+                                  color: "var(--ks-accent, #2458ce)",
+                                  border: "1px solid rgba(36, 88, 206, 0.2)"
+                                }}
+                                onClick={() => handlePetugasAtas(pengiriman)}
+                                title="Verifikasi"
                               >
-                                <FiFileText />
+                                <FiShield size={12} />
                               </button>
-                              {userRole !== "staff_bawah" && (
-                                <button
-                                  type="button"
-                                  className="pengiriman-icon-btn pengiriman-icon-btn--success"
-                                  onClick={() => handlePetugasAtas(pengiriman)}
-                                  title="Verifikasi"
-                                >
-                                  <FiShield />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            <div className="pengiriman-pagination">
-              <button
-                type="button"
-                className="pengiriman-pagination-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-              >
-                <FiArrowLeft />
-                Prev
-              </button>
-
-              <span className="pengiriman-pagination-info">
-                Halaman {currentPage} dari {lastPage}
-              </span>
-
-              <button
-                type="button"
-                className="pengiriman-pagination-btn"
-                disabled={currentPage === lastPage}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-              >
-                Next
-                <FiArrowRight />
-              </button>
+            <div className="ks-footer">
+              <div className="ks-footer-info">
+                <span>Hal. {currentPage}/{lastPage} · {filteredPengirimans.length} baris halaman ini</span>
+              </div>
+              <div className="ks-pager">
+                <button
+                  type="button"
+                  className="ks-pg-btn"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage <= 1}
+                >
+                  First
+                </button>
+                <button
+                  type="button"
+                  className="ks-pg-btn"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  Prev
+                </button>
+                {pageNumbers.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`ks-pg-btn ${currentPage === n ? "is-active" : ""}`}
+                    onClick={() => setCurrentPage(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="ks-pg-btn"
+                  onClick={() => setCurrentPage((p) => Math.min(lastPage, p + 1))}
+                  disabled={currentPage >= lastPage}
+                >
+                  Next
+                </button>
+                <button
+                  type="button"
+                  className="ks-pg-btn"
+                  onClick={() => setCurrentPage(lastPage)}
+                  disabled={currentPage >= lastPage}
+                >
+                  Last
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
-      </div>
+          </>
+        )}
+      </section>
 
       {showPopup && selectedPengiriman && (
         <div className="pengiriman-modal-overlay" onClick={closePopup}>
@@ -1101,6 +1149,7 @@ const Pengiriman = () => {
         <div className="pengiriman-modal-overlay" onClick={closeFormModal}>
           <div
             className="pengiriman-modal"
+            style={{ width: "900px", maxWidth: "95%" }}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="pengiriman-modal-header">
@@ -1124,40 +1173,50 @@ const Pengiriman = () => {
             <div className="pengiriman-modal-body">
               <form onSubmit={handleFormSubmit} className="pengiriman-form">
                 <div className="pengiriman-form-grid">
-                  <div className="pengiriman-form-group pengiriman-form-group--full">
-                    <label className="pengiriman-form-label">SPK CMT</label>
+                  <div className="pengiriman-form-group">
+                    <label className="pengiriman-form-label">CMT / Penjahit</label>
                     <Select
-                      classNamePrefix="pengiriman-select"
-                      options={spkCmtOptions}
-                      value={
-                        spkCmtOptions.find(
-                          (option) => option.value === newPengiriman.id_spk
-                        ) || null
-                      }
-                      onChange={(selected) => {
-                        const idSpk = selected ? selected.value : "";
-
-                        setNewPengiriman((prev) => ({
-                          ...prev,
-                          id_spk: idSpk,
-                        }));
-
-                        if (idSpk) {
-                          fetchSpkDeadline(idSpk);
-                        } else {
-                          setSelectedSpkDeadline(null);
-                          setDeadlineError("");
-                        }
-                      }}
-                      placeholder="Pilih atau cari SPK CMT..."
-                      isSearchable
+                      options={cmtOptions}
+                      value={cmtOptions.find(o => o.value === newPengiriman.id_penjahit) || null}
+                      onChange={(selected) => setNewPengiriman(prev => ({ ...prev, id_penjahit: selected ? selected.value : "" }))}
+                      placeholder="Pilih CMT..."
                       isClearable
-                      noOptionsMessage={({ inputValue }) =>
-                        inputValue
-                          ? `Tidak ditemukan untuk "${inputValue}"`
-                          : "Tidak ada SPK CMT dengan status sudah diambil"
-                      }
-                      required
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      styles={{
+                        menuPortal: base => ({ ...base, zIndex: 9999 }),
+                        control: (base) => ({
+                          ...base,
+                          borderColor: "var(--ks-line-strong)",
+                          borderRadius: "8px",
+                          minHeight: "36px"
+                        })
+                      }}
+                    />
+                  </div>
+
+                  <div className="pengiriman-form-group">
+                    <label className="pengiriman-form-label">No Seri</label>
+                    <input
+                      type="text"
+                      className="pengiriman-form-input"
+                      name="no_seri"
+                      value={newPengiriman.no_seri}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan no seri"
+                      required={false}
+                    />
+                  </div>
+
+                  <div className="pengiriman-form-group">
+                    <label className="pengiriman-form-label">No Seri Pengiriman</label>
+                    <input
+                      type="text"
+                      className="pengiriman-form-input"
+                      value={newPengiriman.no_seri && newPengiriman.id_penjahit ? `${newPengiriman.no_seri}.${newPengiriman.id_penjahit}` : ""}
+                      disabled
+                      placeholder="Dibuat otomatis"
+                      style={{ backgroundColor: "var(--ks-background-2)", cursor: "not-allowed" }}
                     />
                   </div>
 
@@ -1169,42 +1228,165 @@ const Pengiriman = () => {
                       type="date"
                       name="tanggal_pengiriman"
                       className={`pengiriman-form-input ${
-                        deadlineError || tanggalMasaLaluError ? "has-error" : ""
+                        tanggalMasaLaluError ? "has-error" : ""
                       }`}
                       value={newPengiriman.tanggal_pengiriman}
                       onChange={handleInputChange}
                       min={getTodayDate()}
-                      max={selectedSpkDeadline || undefined}
                       required
                     />
-                    {selectedSpkDeadline && (
-                      <small className="pengiriman-form-help">
-                        Deadline SPK: {formatTanggal(selectedSpkDeadline)}
-                      </small>
-                    )}
                     {tanggalMasaLaluError && (
                       <div className="pengiriman-form-error">
                         {tanggalMasaLaluError}
                       </div>
                     )}
-                    {deadlineError && (
-                      <div className="pengiriman-form-error">
-                        {deadlineError}
-                      </div>
-                    )}
                   </div>
 
-                  <div className="pengiriman-form-group">
-                    <label className="pengiriman-form-label">Total Barang</label>
-                    <input
-                      type="number"
-                      name="total_barang_dikirim"
-                      className="pengiriman-form-input"
-                      value={newPengiriman.total_barang_dikirim}
-                      onChange={handleInputChange}
-                      placeholder="Masukkan jumlah barang"
-                      required
-                    />
+                  <div className="pengiriman-form-group pengiriman-form-group--full">
+                    <label className="pengiriman-form-label" style={{ marginBottom: "6px" }}>Detail SKU & Qty</label>
+                    <div style={{
+                      border: "1px solid var(--ks-line, #ececef)",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                    }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+                        <thead>
+                          <tr style={{ color: "var(--ks-text-light)", textTransform: "uppercase" }}>
+                            <th style={{ textAlign: "left", padding: "12px", width: "40%" }}>SKU</th>
+                            <th style={{ textAlign: "left", padding: "12px", width: "15%" }}>QTY</th>
+                            <th style={{ textAlign: "left", padding: "12px", width: "20%" }}>Harga</th>
+                            <th style={{ textAlign: "left", padding: "12px", width: "20%" }}>Total</th>
+                            <th style={{ width: "5%" }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formItems.map((item, index) => (
+                            <tr key={index} style={{ borderTop: index > 0 ? "1px solid var(--ks-line, #ececef)" : "none" }}>
+                              <td style={{ padding: "6px 12px" }}>
+                                <Select
+                                  options={filteredSkuOptions}
+                                  value={skuOptionsList.find(o => o.value === item.sku) || null}
+                                  onInputChange={(val, { action }) => {
+                                    if (action === "input-change" || action === "set-value") {
+                                      setSkuSearch(val);
+                                    }
+                                  }}
+                                  onChange={(selected) => {
+                                    const val = selected ? selected.value : "";
+                                    const price = selected ? selected.price : 0;
+                                    setFormItems((prev) =>
+                                      prev.map((r, i) => (i === index ? { ...r, sku: val, harga: price } : r))
+                                    );
+                                  }}
+                                  placeholder="Ketik untuk mencari SKU..."
+                                  noOptionsMessage={({ inputValue }) => 
+                                    !inputValue ? "Ketik nama SKU untuk mencari..." : "SKU tidak ditemukan"
+                                  }
+                                  isClearable
+                                  menuPortalTarget={document.body}
+                                  menuPosition="fixed"
+                                  styles={{
+                                    menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                    control: (base) => ({
+                                      ...base,
+                                      borderColor: "var(--ks-line, #ececef)",
+                                      minHeight: "32px",
+                                      height: "32px"
+                                    }),
+                                    valueContainer: (base) => ({
+                                      ...base,
+                                      padding: "0 8px"
+                                    }),
+                                    input: (base) => ({
+                                      ...base,
+                                      margin: "0",
+                                      padding: "0"
+                                    })
+                                  }}
+                                />
+                              </td>
+                              <td style={{ padding: "6px 12px" }}>
+                                <input
+                                  type="number"
+                                  className="pengiriman-form-input"
+                                  value={item.qty}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFormItems((prev) =>
+                                      prev.map((r, i) => (i === index ? { ...r, qty: val } : r))
+                                    );
+                                  }}
+                                  placeholder="0"
+                                  min="0"
+                                  style={{ height: "32px", padding: "6px 10px" }}
+                                />
+                              </td>
+                              <td style={{ padding: "6px 12px" }}>
+                                <input
+                                  type="number"
+                                  className="pengiriman-form-input"
+                                  value={item.harga}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFormItems((prev) =>
+                                      prev.map((r, i) => (i === index ? { ...r, harga: val } : r))
+                                    );
+                                  }}
+                                  min="0"
+                                  placeholder="0"
+                                  style={{ height: "32px", padding: "6px 10px" }}
+                                />
+                              </td>
+                              <td style={{ padding: "6px 12px" }}>
+                                <div style={{ height: "32px", padding: "6px 10px", backgroundColor: "var(--ks-background-2)", borderRadius: "6px", display: "flex", alignItems: "center", color: "var(--ks-text)", fontSize: "13px" }}>
+                                  Rp {((parseInt(item.qty) || 0) * (parseFloat(item.harga) || 0)).toLocaleString("id-ID")}
+                                </div>
+                              </td>
+                              <td style={{ padding: "6px 12px", textAlign: "right" }}>
+                                {formItems.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setFormItems((prev) => prev.filter((_, i) => i !== index))
+                                    }
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      color: "var(--ks-overdue, #e5484d)",
+                                      cursor: "pointer",
+                                      padding: "4px",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                    }}
+                                    title="Hapus baris"
+                                  >
+                                    <FiX size={14} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr>
+                            <td colSpan="3" style={{ padding: "12px", textAlign: "right", fontWeight: "600", color: "var(--ks-text)", borderTop: "1px solid var(--ks-line, #ececef)" }}>
+                              Grand Total:
+                            </td>
+                            <td colSpan="2" style={{ padding: "12px", fontWeight: "600", color: "var(--ks-primary)", borderTop: "1px solid var(--ks-line, #ececef)" }}>
+                              Rp {formItems.reduce((acc, curr) => acc + ((parseInt(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0).toLocaleString("id-ID")}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div style={{ padding: "8px 12px", borderTop: "1px solid var(--ks-line, #ececef)" }}>
+                        <button
+                          type="button"
+                          className="ks-btn"
+                          onClick={() => setFormItems((prev) => [...prev, { sku: "", qty: 0, harga: 0 }])}
+                          style={{ fontSize: "12px" }}
+                        >
+                          <FiPlus size={12} /> Tambah Baris
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pengiriman-form-group pengiriman-form-group--full">
@@ -1351,6 +1533,38 @@ const Pengiriman = () => {
           </div>
         </div>
       )}
+
+      {/* Global Hover Popup for Nota */}
+      {hoveredNota && (
+        <div style={{
+          position: "fixed",
+          left: Math.max(10, hoveredNota.x - 260), // position to the left of cursor, with 10px padding from screen edge
+          top: Math.max(10, hoveredNota.y - 150),  // position vertically relative to cursor
+          backgroundColor: "#fff",
+          border: "1px solid var(--ks-line)",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+          borderRadius: "8px",
+          padding: "8px",
+          zIndex: 99999,
+          width: "250px",
+          pointerEvents: "none"
+        }}>
+          {hoveredNota.isPdf ? (
+            <div style={{ textAlign: "center", padding: "16px", background: "#f8f9fa", borderRadius: "6px" }}>
+              <FiFileText size={32} color="var(--ks-primary)" />
+              <div style={{ fontSize: "12px", marginTop: "8px", fontWeight: "600" }}>Dokumen PDF</div>
+              <div style={{ fontSize: "11px", color: "var(--ks-muted)", marginTop: "4px" }}>Klik icon untuk membuka</div>
+            </div>
+          ) : (
+            <img 
+              src={`${STORAGE_URL}/${hoveredNota.url}`} 
+              alt="Nota Preview" 
+              style={{ width: "100%", borderRadius: "4px", objectFit: "contain", maxHeight: "300px" }} 
+            />
+          )}
+        </div>
+      )}
+
     </div>
   );
 };

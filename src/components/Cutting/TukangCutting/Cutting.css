@@ -443,7 +443,7 @@ border-color: #356191;
     border-radius: 5px;
   }
   
-  button[type="button"] {
+  .penjahit-container button[type="button"] {
     background-color: #b9b9b9;
     border: 1px solid var(--border);
     padding: 5px 10px;
@@ -453,11 +453,11 @@ border-color: #356191;
     align-items: center;
     gap: 5px;
   }
-  
+
   /* Mengatur jarak antara tombol "Tambah Warna" dan input */
-  button[type="button"] .icon {
+  .penjahit-container button[type="button"] .icon {
     margin-right: 5px;
-    
+
   }
   
   .modern-form label {

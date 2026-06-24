@@ -148,3 +148,148 @@
 @media (max-width: 640px) {
   .pdr-stats-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== Analytics dashboard layout ===== */
+.pdr-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.pdr-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.pdr-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 2.15fr);
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: start;
+}
+.pdr-hourly-chart { height: 300px; position: relative; }
+.pdr-card-hint { font-weight: 600; color: #94a3b8; font-size: 12px; }
+.pdr-peak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pdr-card { padding: 18px 20px; display: flex; flex-direction: column; }
+.pdr-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* ===== Heatmap ===== */
+.pdr-heatmap-scroll { overflow-x: auto; overflow-y: auto; max-height: 320px; }
+.pdr-heatmap { display: inline-flex; flex-direction: column; gap: 3px; min-width: 100%; }
+.pdr-heat-row { display: flex; gap: 3px; align-items: center; }
+.pdr-heat-daylabel {
+  width: 58px;
+  min-width: 58px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: right;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+.pdr-heat-hourlabel {
+  flex: 1;
+  min-width: 22px;
+  font-size: 9.5px;
+  color: #94a3b8;
+  text-align: center;
+  font-weight: 600;
+}
+.pdr-heat-cell {
+  flex: 1;
+  min-width: 22px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #064e3b;
+  transition: transform 0.1s ease;
+  cursor: default;
+}
+.pdr-heat-cell:hover { transform: scale(1.18); box-shadow: 0 2px 6px rgba(15,23,42,0.2); }
+.pdr-heat-head .pdr-heat-hourlabel { height: auto; }
+
+/* ===== Mode donut ===== */
+.pdr-mode-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.pdr-donut { position: relative; width: 170px; height: 170px; }
+.pdr-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.pdr-donut-num { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
+.pdr-donut-lbl { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.pdr-mode-legend { width: 100%; display: flex; flex-direction: column; gap: 7px; }
+.pdr-mode-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.pdr-mode-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.pdr-mode-name { color: #334155; font-weight: 600; flex: 1; }
+.pdr-mode-val { color: #0f172a; font-weight: 700; }
+.pdr-mode-pct { color: #94a3b8; font-weight: 600; font-size: 11.5px; }
+
+/* ===== Sort toggle ===== */
+.pdr-sort-toggle { display: inline-flex; background: #f1f5f9; border-radius: 8px; padding: 3px; gap: 2px; }
+.pdr-sort-toggle button {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pdr-sort-toggle button.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(15,23,42,0.1); }
+
+/* ===== Rank badge ===== */
+.pdr-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.pdr-rank-1 { background: linear-gradient(135deg,#fde047,#facc15); color: #713f12; }
+.pdr-rank-2 { background: linear-gradient(135deg,#e2e8f0,#cbd5e1); color: #334155; }
+.pdr-rank-3 { background: linear-gradient(135deg,#fdba74,#fb923c); color: #7c2d12; }
+
+@media (max-width: 1024px) {
+  .pdr-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pdr-analytics-grid { grid-template-columns: 1fr; }
+  .pdr-bottom-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pdr-kpi-grid { grid-template-columns: 1fr; }
+}

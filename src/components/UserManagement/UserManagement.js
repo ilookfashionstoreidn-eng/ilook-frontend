@@ -114,7 +114,7 @@ const AVAILABLE_MENUS = [
     submenus: [
       { key: "cmt:dashboard", label: "Dashboard CMT" },
       { key: "cmt:penjahit", label: "Daftar Penjahit" },
-      { key: "cmt:pekerjaan_tersedia", label: "Laporan Pekerjaan Tersedia" },
+      { key: "cmt:pekerjaan_tersedia", label: "Pekerjaan Tersedia" },
       { key: "cmt:spk", label: "Surat Perintah Kerja CMT" },
       { key: "cmt:data_dikerjakan", label: "Data Dikerjakan & Pengiriman" },
       { key: "cmt:pengiriman", label: "Pengiriman" },
