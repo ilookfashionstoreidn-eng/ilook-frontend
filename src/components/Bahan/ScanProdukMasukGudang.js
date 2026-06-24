@@ -968,17 +968,7 @@ const ScanProdukMasukGudang = () => {
     }
   };
 
-  const handleSelectBulkSessions = () => {
-    const selected = sessions.filter((s) => selectedSessionIds.includes(s.id));
-    if (selected.length === 0) return;
-    setActiveSessions(selected);
-    setSlotId("");
-    setExecNotes("");
-    if (state.layouts.length && !layoutId) {
-      setLayoutId(String(state.layouts[0].id));
-    }
-    setActiveScene(2);
-  };
+
 
   const handleToggleSelectSession = (sessionId) => {
     setSelectedSessionIds((prev) =>
