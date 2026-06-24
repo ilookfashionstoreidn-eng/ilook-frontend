@@ -1008,6 +1008,8 @@ const ScanProdukMasukGudang = () => {
   const handleExecuteSession = async (event) => {
     event.preventDefault();
 
+    if (isExecuting) return;
+
     if (!selectedSessionIds.length || !slotId) {
       await showGudangWarning(
         "Tujuan belum dipilih",
