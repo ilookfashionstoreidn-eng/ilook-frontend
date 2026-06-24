@@ -114,10 +114,12 @@ const Layout = () => {
     };
   }, [handleLogout]);
 
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+
   // Auto collapse sidebar after 10 seconds of inactivity
   useEffect(() => {
     let timer;
-    if (!isSidebarCollapsed) {
+    if (!isSidebarCollapsed && !isSidebarHovered) {
       timer = setTimeout(() => {
         setIsSidebarCollapsed(true);
       }, 10000);
@@ -125,7 +127,7 @@ const Layout = () => {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isSidebarCollapsed]);
+  }, [isSidebarCollapsed, isSidebarHovered]);
 
   const hasAccess = (menuKey) => {
     if (role === "super-admin") return true;
@@ -193,7 +195,14 @@ const Layout = () => {
       </button>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
+      <aside 
+        className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}
+        onMouseEnter={() => {
+          setIsSidebarHovered(true);
+          if (isSidebarCollapsed) setIsSidebarCollapsed(false);
+        }}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+      >
         <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", overflow: 'hidden' }}>
             <div style={{ width: "26px", height: "26px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: "7px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff", flexShrink: 0, boxShadow: "0 4px 10px -4px rgba(16,185,129,0.6)" }}>
