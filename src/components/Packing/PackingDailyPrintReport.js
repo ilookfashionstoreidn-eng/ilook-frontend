@@ -129,7 +129,7 @@ const PackingDailyPrintReport = () => {
     };
 
     return (
-        <div className="packing-dashboard-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingBottom: 0 }}>
+        <div className="packing-dashboard-page">
             <div className="packing-dashboard-header" style={{ flexShrink: 0 }}>
                 <div className="packing-title-row">
                     <button className="packing-back-btn" onClick={() => navigate('/packing')} title="Kembali">
@@ -163,7 +163,7 @@ const PackingDailyPrintReport = () => {
                 </div>
             </div>
 
-            <div className="packing-dashboard-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingBottom: 24 }}>
+            <div className="packing-dashboard-content">
                 {/* Summary stat cards */}
                 <div className="pdr-stats-grid">
                     <div className="pdr-stat-card">
@@ -200,9 +200,9 @@ const PackingDailyPrintReport = () => {
                     </div>
                 </div>
 
-                <div className="packing-dashboard-bottom-grid" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '16px' }}>
+                <div className="packing-dashboard-bottom-grid">
                     {/* CHART CARD */}
-                    <div className="packing-card" style={{ padding: 20, flexShrink: 0, height: '240px', display: 'flex', flexDirection: 'column', marginBottom: 0 }}>
+                    <div className="packing-card" style={{ padding: 20, height: '280px', display: 'flex', flexDirection: 'column' }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                             <span className="packing-card-label">
                                 <FontAwesomeIcon icon={faChartLine} className="me-2" style={{ color: '#0ea5e9' }} />
@@ -220,7 +220,7 @@ const PackingDailyPrintReport = () => {
                         </div>
                     </div>
 
-                    <div className="packing-card" style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: 0 }}>
+                    <div className="packing-card" style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
                         <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 14 }}>
                             <span className="packing-card-label">Breakdown Harian ({reportData.length} Hari)</span>
                             {loading && <Spinner animation="border" size="sm" style={{ color: '#0ea5e9' }} />}

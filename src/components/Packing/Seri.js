@@ -3,8 +3,11 @@ import "./Seri.css";
 import API from "../../api";
 import { 
   FiSearch, FiPlus, FiDownload, FiHash,
-  FiBox, FiX, FiCheckCircle, FiLayers, FiDatabase, FiFilter, FiGrid, FiEdit3
+  FiBox, FiX, FiCheckCircle, FiLayers, FiDatabase, FiFilter, FiGrid, FiEdit3, FiTrash2
 } from "react-icons/fi";
+import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
+import dayjs from "dayjs";
 
 const Seri = () => {
   const [seri, setSeri] = useState([]);
@@ -14,6 +17,7 @@ const Seri = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -31,10 +35,10 @@ const Seri = () => {
     jumlah: "1",
   });
 
-  const fetchSeri = useCallback(async (page = 1, search = "") => {
+  const fetchSeri = useCallback(async (page = 1, search = "", status = "all") => {
     try {
       setLoading(true);
-      const response = await API.get(`/seri?page=${page}&search=${encodeURIComponent(search)}`);
+      const response = await API.get(`/seri?page=${page}&search=${encodeURIComponent(search)}&status_scan=${status}`);
       setSeri(response.data.data);
       setCurrentPage(response.data.current_page);
       setLastPage(response.data.last_page);
@@ -126,11 +130,28 @@ const Seri = () => {
   }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchSeri(1, searchTerm);
-    }, 500);
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, fetchSeri]);
+    fetchSeri(currentPage, searchTerm, activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, activeTab]);
+
+  const handleSearchSubmit = () => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchSeri(1, searchTerm, activeTab);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
 
   useEffect(() => {
     if (!showForm || inputMode !== "product-list") return;
@@ -162,6 +183,44 @@ const Seri = () => {
     } catch (error) {
       console.error("Error downloading file:", error);
       alert("Gagal mengunduh file.");
+    }
+  };
+
+  const handleDelete = async (id, nomorSeri) => {
+    const result = await Swal.fire({
+      title: 'Hapus Seri?',
+      text: `Apakah Anda yakin ingin menghapus nomor seri ${nomorSeri}? Data yang dihapus tidak dapat dikembalikan.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      background: '#ffffff',
+      customClass: {
+        title: 'text-gray-800',
+        content: 'text-gray-600'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await API.delete(`/seri/${id}`);
+        Swal.fire({
+          title: 'Terhapus!',
+          text: `Nomor seri ${nomorSeri} berhasil dihapus.`,
+          icon: 'success',
+          confirmButtonColor: '#3b82f6'
+        });
+        fetchSeri(currentPage, searchTerm, activeTab);
+      } catch (error) {
+        Swal.fire({
+          title: 'Gagal!',
+          text: error.response?.data?.message || 'Terjadi kesalahan saat menghapus data seri.',
+          icon: 'error',
+          confirmButtonColor: '#3b82f6'
+        });
+      }
     }
   };
 
@@ -322,25 +381,13 @@ const Seri = () => {
 
   return (
     <div className="seri-page">
-      <header className="seri-topbar">
+          <header className="seri-topbar">
             <div className="seri-title-group">
               <div className="brand-icon">
                 <FiBox size={24} color="#fff" />
               </div>
               <div className="brand-text">
                  <h1>Data Seri Directory</h1>
-                 <p>Manajemen nomor seri dan referensi SKU produk</p>
-              </div>
-            </div>
-            
-            <div className="seri-actions">
-              <div className="search-bar">
-                <input 
-                  type="text" 
-                  placeholder="Cari nomor seri, SKU produk..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
               </div>
             </div>
           </header>
@@ -371,93 +418,135 @@ const Seri = () => {
             </section>
 
             <div className="table-card">
+              <div className="seri-tabs-container">
+                <div className="seri-tabs">
+                  <button className={`seri-tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Semua</button>
+                  <button className={`seri-tab-btn ${activeTab === 'unscanned' ? 'active' : ''}`} onClick={() => handleTabChange('unscanned')}>Belum Di-scan</button>
+                  <button className={`seri-tab-btn ${activeTab === 'scanned' ? 'active' : ''}`} onClick={() => handleTabChange('scanned')}>Sudah Di-scan</button>
+                </div>
+              </div>
+
               <div className="table-header">
                 <div>
                   <h3>Semua Data Seri</h3>
-                  <p>
-                    Monitoring nomor seri produk dan referensi SKU
-                    {isFiltering ? ` - menampilkan ${visibleRows} hasil dari filter` : ` - ${totalRows} data pada halaman ini`}
-                  </p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowForm(true)}>
-                   <FiPlus size={18} /> Tambah Seri Baru
-                </button>
+                <div className="table-header-actions">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #dde3ed', borderRight: 'none', borderRadius: '8px 0 0 8px', background: '#f8fafc', paddingLeft: '12px', transition: 'border-color 0.2s, background 0.2s' }}>
+                      <FiSearch color="#94a3b8" size={15} style={{ flexShrink: 0 }} />
+                      <input 
+                        type="text" 
+                        placeholder="Cari nomor seri, SKU..." 
+                        style={{ border: 'none', background: 'transparent', outline: 'none', padding: '8px 12px', width: '210px', fontSize: '13px', margin: 0 }}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                      />
+                    </div>
+                    <button className="search-btn" onClick={handleSearchSubmit}>Cari</button>
+                  </div>
+                  <button className="btn-primary" onClick={() => setShowForm(true)}>
+                     <FiPlus size={18} /> Tambah Seri
+                  </button>
+                </div>
               </div>
 
               <div className="table-container">
                 <table className="modern-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center' }}>No</th>
-                      <th style={{ paddingLeft: '24px' }}>Nomor Seri</th>
-                      <th>Informasi SKU</th>
-                      <th>Status Scan</th>
-                      <th className="text-right" style={{ paddingRight: '24px' }}>Aksi</th>
+                      <th style={{ width: '5%', textAlign: 'center', whiteSpace: 'nowrap' }}>No</th>
+                      <th style={{ paddingLeft: '24px', width: '35%' }}>Nomor Seri</th>
+                      <th style={{ width: '25%' }}>Informasi SKU</th>
+                      <th style={{ width: '15%', whiteSpace: 'nowrap' }}>Tanggal Dibuat</th>
+                      <th style={{ width: '15%', whiteSpace: 'nowrap' }}>Status Scan</th>
+                      <th className="text-right" style={{ paddingRight: '24px', width: '5%', whiteSpace: 'nowrap' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                       {loading ? (
                         <tr className="empty-row">
-                            <td colSpan="5" className="empty-state">Memuat data seri...</td>
+                            <td colSpan="6" className="empty-state" style={{ textAlign: 'center' }}>Memuat data seri...</td>
                         </tr>
                       ) : error ? (
                         <tr className="empty-row">
-                            <td colSpan="5" className="empty-state text-accent">{error}</td>
+                            <td colSpan="6" className="empty-state text-accent" style={{ textAlign: 'center' }}>{error}</td>
                         </tr>
-                      ) : sortedData.map((item, index) => (
-                        <tr key={item.id}>
-                          <td className="text-muted font-mono" style={{ textAlign: 'center' }}>
-                             {index + 1}
-                          </td>
-                          <td style={{ paddingLeft: '24px' }}>
-                            <div className="serial-pill">
-                              <span className="status-dot-sm"></span>
-                              <span className="font-semibold text-accent">{item.nomor_seri}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="sku-inline">
-                                <FiLayers className="text-muted" />
-                                <span className="sku-chip">{item.sku}</span>
-                            </span>
-                          </td>
-                          <td>
-                            {item.scanned_count > 0 ? (
-                              <div className="scanned-status-pill success" title={
-                                item.scanned_details?.map(d => `${d.barcode}: ${d.source}`).join("\n")
-                              }>
-                                <div className="scanned-dot-wrapper">
-                                  <span className="scanned-dot green"></span>
-                                  <span className="scanned-text font-semibold text-success">
-                                    {item.scanned_count} / {item.jumlah} Di-scan
-                                  </span>
+                      ) : (
+                        <AnimatePresence>
+                          {sortedData.map((item, index) => (
+                            <motion.tr 
+                              key={item.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              transition={{ duration: 0.2, delay: index * 0.05 }}
+                              className="seri-table-row"
+                            >
+                              <td className="text-muted font-mono" style={{ textAlign: 'center' }}>
+                                 {index + 1}
+                              </td>
+                              <td style={{ paddingLeft: '24px' }}>
+                                <div className="serial-pill">
+                                  <span className="status-dot-sm"></span>
+                                  <span className="font-semibold text-accent">{item.nomor_seri}</span>
                                 </div>
-                                <div className="scanned-origins">
-                                  {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
-                                    <span key={source} className="scanned-source-badge">{source}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="scanned-status-pill neutral">
-                                <div className="scanned-dot-wrapper">
-                                  <span className="scanned-dot gray"></span>
-                                  <span className="scanned-text text-muted">Belum di-scan</span>
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                          <td className="text-right" style={{ paddingRight: '24px' }}>
-                             <button className="btn-download-blue" onClick={() => downloadQR(item.id, item.nomor_seri)}>
-                                <FiDownload /> Unduh QR
-                             </button>
-                          </td>
-                        </tr>
-                      ))}
+                              </td>
+                              <td>
+                                <span className="sku-inline">
+                                    <FiLayers className="text-muted" />
+                                    <span className="sku-chip">{item.sku}</span>
+                                </span>
+                              </td>
+                              <td>
+                                <span className="text-muted font-semibold" style={{ fontSize: '13px' }}>
+                                  {dayjs(item.created_at).format('DD MMM YYYY')}
+                                </span>
+                              </td>
+                              <td>
+                                {item.scanned_count > 0 ? (
+                                  <div className="scanned-status-pill success" title={
+                                    item.scanned_details?.map(d => `${d.barcode}: ${d.source}`).join("\n")
+                                  }>
+                                    <div className="scanned-dot-wrapper">
+                                      <span className="scanned-dot green"></span>
+                                      <span className="scanned-text font-semibold text-success">
+                                        {item.scanned_count} / {item.jumlah} Di-scan
+                                      </span>
+                                    </div>
+                                    <div className="scanned-origins">
+                                      {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
+                                        <span key={source} className="scanned-source-badge">{source}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="scanned-status-pill neutral">
+                                    <div className="scanned-dot-wrapper">
+                                      <span className="scanned-dot gray"></span>
+                                      <span className="scanned-text text-muted">Belum di-scan</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="text-right" style={{ paddingRight: '24px' }}>
+                                 <div className="action-buttons-group">
+                                   <button className="btn-download-blue" onClick={() => downloadQR(item.id, item.nomor_seri)} title="Unduh QR">
+                                      <FiDownload />
+                                   </button>
+                                   <button className="btn-delete-red" onClick={() => handleDelete(item.id, item.nomor_seri)} title="Hapus Seri">
+                                      <FiTrash2 />
+                                   </button>
+                                 </div>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </AnimatePresence>
+                      )}
                     {!loading && sortedData.length === 0 && !error && (
                       <tr className="empty-row">
-                        <td colSpan="5" className="empty-state">
-                          Tidak ada data seri yang sesuai dengan kata kunci "{searchTerm}".
+                        <td colSpan="6" className="empty-state">
+                          Tidak ada data seri yang sesuai dengan kriteria.
                         </td>
                       </tr>
                     )}
