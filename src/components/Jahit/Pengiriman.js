@@ -90,6 +90,51 @@ const Pengiriman = () => {
   const [newPengiriman, setNewPengiriman] = useState({ ...createInitialPengiriman(), id_penjahit: "" });
   const [skuList, setSkuList] = useState([]);
   const userRole = localStorage.getItem("role");
+  const importInputRef = React.useRef(null);
+  const [importStatus, setImportStatus] = useState({ loading: false, msg: "" });
+
+
+  
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await API.get("/pengiriman/import/template", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "template_pengiriman.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      alert("Gagal mendownload template");
+    }
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportStatus({ loading: true, msg: "Memproses import..." });
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await API.post("/pengiriman/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setImportStatus({ loading: false, msg: "" });
+      alert(res.data.message + " Baris berhasil: " + res.data.processed);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setImportStatus({ loading: false, msg: "" });
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || "Gagal mengimport data";
+      alert("Error Import: " + errorMsg);
+    }
+    
+    if (importInputRef.current) {
+      importInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     const fetchPengirimans = async () => {
@@ -829,6 +874,33 @@ const Pengiriman = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </label>
+            
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{ display: "none" }}
+              ref={importInputRef}
+              onChange={handleFileImport}
+            />
+            {importStatus.loading ? (
+              <span style={{ fontSize: "12px", color: "#666" }}>{importStatus.msg}</span>
+            ) : null}
+            <button
+              type="button"
+              className="ks-btn"
+              onClick={handleDownloadTemplate}
+              title="Download Template Excel"
+            >
+              Template
+            </button>
+            <button
+              type="button"
+              className="ks-btn"
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import Excel
+            </button>
+
             <button
               type="button"
               className="ks-btn is-primary"
