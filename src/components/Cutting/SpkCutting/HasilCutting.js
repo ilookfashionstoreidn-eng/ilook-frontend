@@ -128,6 +128,8 @@ const HasilCutting = () => {
   const [lastPage, setLastPage] = useState(1);
   const [showForm, setShowForm] = useState(false); // Default false agar langsung tampil index
   const [editingId, setEditingId] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
   const [detailData, setDetailData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // snapshot data lama saat edit
   const [tanggalPotong, setTanggalPotong] = useState(new Date().toISOString().split("T")[0]);
@@ -882,6 +884,75 @@ const HasilCutting = () => {
     }
   };
 
+  const handleExportTemplate = async () => {
+    try {
+      showStatusAlert("info", "Memproses Export", "Sedang mengunduh template Excel, mohon tunggu...");
+      const response = await API.get('/hasil-cutting/export-template', {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `template-hasil-cutting-${new Date().getTime()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      window.Swal?.close();
+    } catch (error) {
+      console.error("Export error:", error);
+      showStatusAlert("error", "Gagal", "Terjadi kesalahan saat mengunduh template Excel.");
+    }
+  };
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await API.post("/hasil-cutting/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const { message, created, skipped, errors } = response.data;
+      
+      let alertHtml = `<div style="text-align: left; max-height: 200px; overflow-y: auto;">
+        <p><strong>Berhasil dibuat:</strong> ${created} data</p>
+        <p><strong>Dilewati/Gagal:</strong> ${skipped} data</p>
+      `;
+
+      if (errors && errors.length > 0) {
+        alertHtml += `<hr/><p><strong>Daftar Error:</strong></p><ul style="color: #dc3545; font-size: 0.9em; padding-left: 20px;">`;
+        errors.forEach(err => {
+          alertHtml += `<li>Baris ${err.row}: ${err.message}</li>`;
+        });
+        alertHtml += `</ul>`;
+      }
+      alertHtml += `</div>`;
+
+      await window.Swal?.fire({
+        icon: skipped > 0 ? "warning" : "success",
+        title: message || "Import Selesai",
+        html: alertHtml,
+        confirmButtonText: "Tutup",
+      });
+
+      fetchHasilCuttingData();
+      fetchTargetStats();
+    } catch (error) {
+      console.error("Import error:", error);
+      const errMsg = error.response?.data?.message || error.response?.data?.error || "Gagal mengimport file Excel.";
+      showStatusAlert("error", "Import Gagal", errMsg);
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   // Handler untuk tambah baru
   const handleTambahBaru = () => {
     setShowForm(true);
@@ -1150,7 +1221,20 @@ const HasilCutting = () => {
               )}
             </div>
           </div>
-          <div className="ks-toolbar-actions">
+          <div className="ks-toolbar-actions" style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" className="ks-btn is-primary" onClick={handleExportTemplate}>
+              <i className="fas fa-file-export"></i> Export Template
+            </button>
+            <input 
+              type="file" 
+              accept=".xlsx,.xls,.csv" 
+              style={{ display: "none" }} 
+              ref={fileInputRef} 
+              onChange={handleImportExcel}
+            />
+            <button type="button" className="ks-btn is-primary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+              <i className="fas fa-file-import"></i> {importing ? "Mengimport..." : "Import Excel"}
+            </button>
             <button type="button" className="ks-btn is-primary" onClick={handleTambahBaru}>
               <i className="fas fa-plus"></i> Tambah Baru
             </button>
