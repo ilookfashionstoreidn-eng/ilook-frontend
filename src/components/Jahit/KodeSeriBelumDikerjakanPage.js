@@ -246,6 +246,32 @@ const KodeSeriBelumDikerjakanPage = () => {
     doc.save("Laporan_Kode_Seri_Belum_Dikerjakan.pdf");
   };
 
+  const handleExportExcel = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        search: searchTerm,
+        type: typeFilter,
+        potong: potongFilter
+      });
+      const response = await API.get(`/kode-seri-belum-dikerjakan/export-excel?${params.toString()}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `template_spk_cmt_${new Date().getTime()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error exporting Excel:", error);
+      setErrorMessage("Gagal mengunduh Excel.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExportPNG = async () => {
     const tableElement = document.querySelector(".ks-board");
     if (!tableElement) return;
@@ -310,6 +336,9 @@ const KodeSeriBelumDikerjakanPage = () => {
         <div className="ks-header-actions">
           <button type="button" className="ks-btn" onClick={handleExportPDF} disabled={loading || flattenedRows.length === 0}>
             <FiDownload size={13} /> PDF
+          </button>
+          <button type="button" className="ks-btn ks-btn-excel" onClick={handleExportExcel} disabled={loading || flattenedRows.length === 0}>
+            <FiDownload size={13} /> Excel
           </button>
           <button type="button" className="ks-btn" onClick={handleExportPNG} disabled={loading || flattenedRows.length === 0}>
             <FiDownload size={13} /> PNG
