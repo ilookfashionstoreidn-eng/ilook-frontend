@@ -122,8 +122,21 @@ const Pengiriman = () => {
       const res = await API.post("/pengiriman/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      let finalMsg = res.data.message + " Baris berhasil: " + res.data.processed;
+      if (res.data.skipped > 0) {
+        finalMsg += "\n\nBaris dilewati (gagal): " + res.data.skipped;
+        if (res.data.errors && res.data.errors.length > 0) {
+          finalMsg += "\nAlasan:\n";
+          res.data.errors.slice(0, 10).forEach(e => {
+            finalMsg += `- Baris Excel ke-${e.row}: ${e.message}\n`;
+          });
+          if (res.data.errors.length > 10) {
+            finalMsg += `... dan ${res.data.errors.length - 10} error lainnya.`;
+          }
+        }
+      }
+      alert(finalMsg);
       setImportStatus({ loading: false, msg: "" });
-      alert(res.data.message + " Baris berhasil: " + res.data.processed);
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
       setImportStatus({ loading: false, msg: "" });
