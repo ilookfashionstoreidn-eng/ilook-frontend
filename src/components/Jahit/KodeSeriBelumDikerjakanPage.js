@@ -250,7 +250,7 @@ const KodeSeriBelumDikerjakanPage = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        search: searchTerm,
+        search: debouncedSearch || "",
         type: typeFilter,
         potong: potongFilter
       });
