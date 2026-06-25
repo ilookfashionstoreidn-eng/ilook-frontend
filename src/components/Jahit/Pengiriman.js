@@ -23,6 +23,7 @@ import {
   FiRefreshCw,
   FiInbox,
   FiImage,
+  FiTrash2,
 } from "react-icons/fi";
 
 const getTodayDate = () => {
@@ -392,13 +393,13 @@ const Pengiriman = () => {
     ).size;
 
     return [
-      { label: "Pengiriman", value: filteredPengirimans.length },
-      { label: "Valid", value: validCount, tone: "safe" },
-      { label: "Pending", value: pendingCount, tone: "warning" },
-      { label: "Invalid", value: invalidCount, tone: "overdue" },
+      { label: "Total Pengiriman", value: filteredPengirimans.length },
+      { label: "Total Valid", value: validCount, tone: "safe" },
+      { label: "Total Pending", value: pendingCount, tone: "warning" },
+      { label: "Total Invalid", value: invalidCount, tone: "overdue" },
       { label: "Total Bayar", value: formatRupiah(totalBayar) },
-      { label: "Sisa Barang", value: `${totalSisaBarang} pcs` },
-      { label: "Partner CMT", value: `${uniqueCmtCount} aktif` },
+      { label: "Total Sisa", value: `${totalSisaBarang} pcs` },
+      { label: "Total Partner CMT", value: `${uniqueCmtCount} aktif` },
     ];
   }, [filteredPengirimans]);
 
@@ -653,6 +654,20 @@ const Pengiriman = () => {
     setShowPetugasAtasPopup(false);
   };
 
+  const handleDeletePengiriman = async (pengiriman) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus data pengiriman ini (No Seri: ${pengiriman.no_seri_pengiriman || "SPK-" + pengiriman.id_spk})?`)) {
+      return;
+    }
+    try {
+      await API.delete(`/pengiriman/${pengiriman.id_pengiriman}`);
+      setPengirimans((prev) => prev.filter((p) => p.id_pengiriman !== pengiriman.id_pengiriman));
+      setRefreshKey((prev) => prev + 1); // trigger fetch new aggregated data
+    } catch (err) {
+      console.error("Gagal menghapus pengiriman:", err);
+      alert(err.response?.data?.message || "Gagal menghapus data pengiriman.");
+    }
+  };
+
   const handlePetugasAtas = (pengiriman) => {
     setSelectedPengiriman(pengiriman);
     setShowPetugasAtasPopup(true);
@@ -712,7 +727,7 @@ const Pengiriman = () => {
       <div className="ks-statrail">
         {statRail.map((s) => (
           <div className="ks-stat" key={s.label} style={{ flex: 1, minWidth: 0 }}>
-            <span className="ks-stat-label">{s.label}</span>
+            <span className="ks-stat-label" style={{ whiteSpace: "normal" }}>{s.label}</span>
             <span className={`ks-stat-value ${s.tone ? `tone-${s.tone}` : ""}`} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {s.tone && <span className={`ks-dot tone-${s.tone}`} />}
               {s.value}
@@ -848,10 +863,11 @@ const Pengiriman = () => {
                 <thead>
                   <tr>
                     <th className="ks-col-dot" aria-label="Status" />
-                    <th>No Seri</th>
+                    <th>Tanggal</th>
                     <th>CMT</th>
                     <th>Produk / SKU</th>
-                    <th>Tanggal</th>
+                    <th>No Seri</th>
+                    <th>Warna</th>
                     <th className="align-right">Qty Kirim</th>
                     <th className="align-right">Harga</th>
                     <th className="align-right">Total Bayar</th>
@@ -877,12 +893,15 @@ const Pengiriman = () => {
                         <td className="ks-col-dot">
                           <span className={`ks-dot tone-${statusTone}`} title={status.label} />
                         </td>
+                        <td className="ks-muted">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                        <td className="ks-cell-product">{pengiriman.nama_penjahit || "-"}</td>
+                        <td title={pengiriman.nama_produk} style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pengiriman.nama_produk || "-"}</td>
                         <td className="ks-cell-code">
                           <strong>{pengiriman.no_seri_pengiriman || `SPK-${pengiriman.id_spk}`}</strong>
                         </td>
-                        <td className="ks-cell-product">{pengiriman.nama_penjahit || "-"}</td>
-                        <td title={pengiriman.nama_produk} style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pengiriman.nama_produk || "-"}</td>
-                        <td className="ks-muted">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                        <td style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pengiriman.warna?.map(w => w.warna).join(', ') || "-"}>
+                          {pengiriman.warna?.length > 0 ? pengiriman.warna.map(w => w.warna).join(', ') : "-"}
+                        </td>
                         <td className="align-right ks-cell-num">{(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs</td>
                         <td className="align-right ks-cell-num">
                           {formatRupiah((pengiriman.total_bayar || 0) / (pengiriman.total_barang_dikirim || 1))}
@@ -934,6 +953,15 @@ const Pengiriman = () => {
                               title="Detail"
                             >
                               <FiFileText size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              className="ks-btn"
+                              style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-error, #d32f2f)" }}
+                              onClick={() => handleDeletePengiriman(pengiriman)}
+                              title="Hapus"
+                            >
+                              <FiTrash2 size={12} />
                             </button>
                             {userRole !== "staff_bawah" && (
                               <button

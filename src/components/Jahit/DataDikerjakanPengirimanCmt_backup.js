@@ -509,102 +509,180 @@ const DataDikerjakanPengirimanCmt = () => {
     };
 
     return (
-        <div className="ks-page">
-            <header className="ks-header">
-                <div className="ks-header-id">
-                    <h1>Data Dikerjakan & Pengiriman CMT</h1>
-                    <span className="ks-header-sub">Satu dashboard. Semua kendali operasional — backlog, deadline, dan performa pengiriman.</span>
-                </div>
-            </header>
-
-            <div className="ks-statrail" style={{ padding: "0 20px" }}>
-                {summaryCards.map((card, idx) => (
-                    <div key={card.key} className="ks-stat" style={{ flex: 1, minWidth: 0, ...(idx > 0 ? { borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px", paddingRight: "16px" } : { paddingRight: "16px" }) }}>
-                        <span className="ks-stat-label">{card.label}</span>
-                        <span className="ks-stat-value">{card.value}</span>
-                    </div>
-                ))}
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", padding: "20px" }}>
-                <section className="ks-board">
-                    <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--ks-line)" }}>
-                        <h2 style={{ fontSize: "14px", fontWeight: 600, color: "var(--ks-text-dark)", margin: 0 }}>Top performa pengiriman per CMT</h2>
-                        <span style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>Warna menunjukkan posisi terhadap rata-rata mingguan masing-masing partner.</span>
-                    </div>
-                    <div style={{ padding: "20px", height: "300px" }}>
-                        {!loading && barChartData ? (
-                            <Bar data={barChartData} options={chartOptions} />
-                        ) : (
-                            <div className="ks-empty">Belum ada data chart untuk ditampilkan.</div>
-                        )}
-                    </div>
-                </section>
-                <section className="ks-board">
-                    <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--ks-line)" }}>
-                        <h2 style={{ fontSize: "14px", fontWeight: 600, color: "var(--ks-text-dark)", margin: 0 }}>Arah pengiriman 4 minggu terakhir</h2>
-                        <span style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>Memudahkan melihat momentum naik atau turun sebelum closing pengiriman.</span>
-                    </div>
-                    <div style={{ padding: "20px", height: "300px" }}>
-                        {!loading && lineChartData ? (
-                            <Line data={lineChartData} options={chartOptions} />
-                        ) : (
-                            <div className="ks-empty">Belum ada data trend untuk ditampilkan.</div>
-                        )}
-                    </div>
-                </section>
-            </div>
-
-                <section className="ks-board" style={{ margin: "0 20px 20px" }}>
-                    <div className="ks-toolbar">
-                        <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", width: "100%" }}>
-                            <div className="ks-search">
-                                <i className="fas fa-search ks-search-icon"></i>
-                                <input
-                                    type="text"
-                                    placeholder="Cari partner CMT atau baris"
-                                    value={searchTerm}
-                                    onChange={(event) => setSearchTerm(event.target.value)}
-                                    className="ks-search-input"
-                                />
+        <div className="penjahit-page ddpcmt-page">
+            <div className="penjahit-shell ddpcmt-shell">
+                <section className="ddpcmt-hero-card">
+                    <div className="ddpcmt-hero-main">
+                        <span className="ddpcmt-eyebrow">CMT Delivery Control</span>
+                        <div className="ddpcmt-title-row">
+                            <div className="ddpcmt-title-icon">
+                                <FiTruck />
                             </div>
-
-                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                                <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ks-text-soft)" }}>Riwayat Pengiriman:</span>
-                                <select className="ks-input" style={{ width: "160px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} value={weekRange} onChange={(event) => handleWeekRangeChange(event.target.value)}>
-                                    {PERIOD_OPTIONS.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option} Minggu Terakhir
-                                        </option>
-                                    ))}
-                                </select>
+                            <div>
+                                <h1>Data Dikerjakan & Pengiriman CMT</h1>
+                                <p>
+                                    Satu dashboard. Semua kendali operasional — backlog, deadline, dan performa pengiriman.
+                                </p>
                             </div>
-                            <div style={{ flex: 1 }}></div>
-                            <div style={{ display: "flex", gap: "8px" }}>
-                                <button type="button" className="ks-btn is-secondary" onClick={fetchData} style={{ padding: "4px 12px", fontSize: "11px", minHeight: "24px" }}>
-                                    <FiRefreshCw style={{ marginRight: "4px" }}/> Refresh
-                                </button>
-                                <button type="button" className="ks-btn is-secondary" onClick={handleExportPDF} style={{ padding: "4px 12px", fontSize: "11px", minHeight: "24px" }}>
-                                    <FaFilePdf style={{ marginRight: "4px" }}/> PDF
-                                </button>
-                                <button type="button" className="ks-btn is-primary" onClick={handleExportExcel} style={{ padding: "4px 12px", fontSize: "11px", minHeight: "24px" }}>
-                                    <FaFileExcel style={{ marginRight: "4px" }}/> Excel
-                                </button>
-                            </div>
+                        </div>
+                        <div className="ddpcmt-chip-row">
+                            <span className="ddpcmt-chip ddpcmt-chip-primary">
+                                <FiCalendar /> {weekRange} minggu terakhir
+                            </span>
+                            <span className="ddpcmt-chip">
+                                <FiClock /> Update {lastUpdated || formatDateTime(new Date())}
+                            </span>
+                            {topShipment && (
+                                <span className="ddpcmt-chip">
+                                    <FiTrendingUp /> Top delivery {topShipment.nama_cmt}
+                                </span>
+                            )}
                         </div>
                     </div>
 
-                    <div className="ks-grid-scroll">
-                        {loading && !data.length ? (
-                            <div className="ks-empty">
-                                <p>Memuat dashboard pengiriman...</p>
+                    <aside className="ddpcmt-hero-side">
+                        <div className="ddpcmt-side-card">
+                            <span className="ddpcmt-side-label">Operational Snapshot</span>
+                            <strong>{formatNumber(summary.total_pengiriman_minggu_ini || 0)} pcs</strong>
+                            <p>
+                                Output minggu ini terhadap baseline rata-rata {formatNumber(summary.total_rata_rata || 0)} pcs per periode.
+                            </p>
+                            <div className="ddpcmt-side-grid">
+                                <div>
+                                    <span>Partner Aktif</span>
+                                    <strong>{formatNumber(data.length)}</strong>
+                                </div>
+                                <div>
+                                    <span>Risk Tertinggi</span>
+                                    <strong>{topRiskCmt?.nama_cmt || "-"}</strong>
+                                </div>
                             </div>
-                        ) : error && !data.length ? (
-                            <div className="ks-empty">
-                                <p>{error}</p>
+                        </div>
+                    </aside>
+                </section>
+
+                <section className="ddpcmt-summary-grid">
+                    {summaryCards.map((card) => (
+                        <article key={card.key} className={`ddpcmt-summary-card tone-${card.tone}`}>
+                            <div className="ddpcmt-summary-icon">{card.icon}</div>
+                            <div>
+                                <span>{card.label}</span>
+                                <strong>{card.value}</strong>
+                                <p>{card.note}</p>
                             </div>
-                        ) : (
-                            <table className="ks-grid">
+                        </article>
+                    ))}
+                </section>
+
+                <section className="ddpcmt-visual-grid">
+                    <article className="ddpcmt-panel">
+                        <div className="ddpcmt-panel-header">
+                            <div>
+                                <span className="ddpcmt-panel-eyebrow">Shipment Comparison</span>
+                                <h2>Top performa pengiriman per CMT</h2>
+                                <p>Warna menunjukkan posisi terhadap rata-rata mingguan masing-masing partner.</p>
+                            </div>
+                            <div className="ddpcmt-panel-badge">
+                                <FiBarChart2 /> Top 8 CMT
+                            </div>
+                        </div>
+                        <div className="ddpcmt-chart-area">
+                            {!loading && barChartData ? (
+                                <Bar data={barChartData} options={chartOptions} />
+                            ) : (
+                                <div className="ddpcmt-chart-empty">Belum ada data chart untuk ditampilkan.</div>
+                            )}
+                        </div>
+                    </article>
+
+                    <article className="ddpcmt-panel">
+                        <div className="ddpcmt-panel-header">
+                            <div>
+                                <span className="ddpcmt-panel-eyebrow">Weekly Trend</span>
+                                <h2>Arah pengiriman 4 minggu terakhir</h2>
+                                <p>Memudahkan melihat momentum naik atau turun sebelum closing pengiriman.</p>
+                            </div>
+                            <div className="ddpcmt-panel-badge subtle">
+                                <FiActivity /> Trendline
+                            </div>
+                        </div>
+                        <div className="ddpcmt-chart-area">
+                            {!loading && lineChartData ? (
+                                <Line data={lineChartData} options={chartOptions} />
+                            ) : (
+                                <div className="ddpcmt-chart-empty">Belum ada data trend untuk ditampilkan.</div>
+                            )}
+                        </div>
+                    </article>
+                </section>
+
+                <section className="ddpcmt-table-card">
+                    <div className="ddpcmt-table-head">
+                        <div>
+                            <span className="ddpcmt-panel-eyebrow">Operational Table</span>
+                            <h2>Detail backlog dan pengiriman per partner</h2>
+                            <p>
+                                Menampilkan {formatNumber(filteredData.length)} dari {formatNumber(data.length)} partner CMT yang terdaftar.
+                            </p>
+                        </div>
+
+                        <div className="ddpcmt-toolbar">
+                            <label className="ddpcmt-search-field">
+                                <FiSearch />
+                                <input
+                                    type="text"
+                                    placeholder="Cari partner CMT atau nomor baris"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                />
+                            </label>
+
+                            <button type="button" className="ddpcmt-btn ddpcmt-btn-subtle" onClick={fetchData}>
+                                <FiRefreshCw /> Refresh
+                            </button>
+                            <button type="button" className="ddpcmt-btn ddpcmt-btn-secondary" onClick={handleExportPDF}>
+                                <FaFilePdf /> PDF
+                            </button>
+                            <button type="button" className="ddpcmt-btn ddpcmt-btn-primary" onClick={handleExportExcel}>
+                                <FaFileExcel /> Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="ddpcmt-inline-stats">
+                        <div className="ddpcmt-inline-stat">
+                            <span>View</span>
+                            <strong>{isFilteredView ? "Filtered" : "Overall"}</strong>
+                        </div>
+                        <div className="ddpcmt-inline-stat">
+                            <span>Top Delivery</span>
+                            <strong>{topShipment?.nama_cmt || "-"}</strong>
+                        </div>
+                        <div className="ddpcmt-inline-stat">
+                            <span>Highest Risk</span>
+                            <strong>{topRiskCmt?.nama_cmt || "-"}</strong>
+                        </div>
+                        <div className="ddpcmt-inline-stat">
+                            <span>Rata-rata Weekly</span>
+                            <strong>{formatNumber(summary.total_rata_rata || 0)} pcs</strong>
+                        </div>
+                    </div>
+
+                    {loading && !data.length ? (
+                        <div className="ddpcmt-state-card">
+                            <div className="ddpcmt-spinner" />
+                            <strong>Memuat dashboard pengiriman</strong>
+                            <p>Data sedang disiapkan agar tampilan operasional tetap sinkron dengan periode yang dipilih.</p>
+                        </div>
+                    ) : error && !data.length ? (
+                        <div className="ddpcmt-state-card error">
+                            <div className="ddpcmt-state-icon">!</div>
+                            <strong>Data belum dapat dimuat</strong>
+                            <p>{error}</p>
+                        </div>
+                    ) : (
+                        <div className="table-wrapper ddpcmt-table-wrap">
+                            <table className="data-dikerjakan-table ddpcmt-table">
                                 <thead>
                                     <tr>
                                         <th rowSpan="2" className="header-neutral sticky-col sticky-no">
@@ -754,9 +832,10 @@ const DataDikerjakanPengirimanCmt = () => {
                                     </tfoot>
                                 )}
                             </table>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </section>
+            </div>
         </div>
     );
 };

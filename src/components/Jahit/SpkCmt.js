@@ -2171,32 +2171,57 @@ const SpkCmt = () => {
         <div className="ks-statrail">
           <div className="ks-stat">
             <span className="ks-stat-label">Total SPK</span>
-            <span className="ks-stat-value">{totalSpkOverview}</span>
+            <span className="ks-stat-value">{statusCount.total_spk || 0}</span>
           </div>
           <div className="ks-stat">
-            <span className="ks-stat-label">Belum Diambil</span>
-            <span className="ks-stat-value tone-warning">
-              <span className="ks-dot tone-warning" />
-              {statusCount.belum_diambil || 0}
+            <span className="ks-stat-label">Total Produk</span>
+            <span className="ks-stat-value tone-none">
+              {(statusCount.total_produk || 0).toLocaleString("id-ID")}
             </span>
           </div>
           <div className="ks-stat">
-            <span className="ks-stat-label">Pending</span>
+            <span className="ks-stat-label">Total Kirim</span>
+            <span className="ks-stat-value tone-safe">
+              {(statusCount.total_kirim || 0).toLocaleString("id-ID")}
+            </span>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Total Sisa</span>
+            <span className="ks-stat-value tone-warning">
+              {(statusCount.total_sisa || 0).toLocaleString("id-ID")}
+            </span>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">SPK Dekat Deadline</span>
             <span className="ks-stat-value tone-overdue">
               <span className="ks-dot tone-overdue" />
-              {statusCount.pending || 0}
+              {statusCount.spk_mendekati || 0}
             </span>
           </div>
           <div className="ks-stat">
-            <span className="ks-stat-label">Completed</span>
+            <span className="ks-stat-label">Sisa (Jauh Deadline)</span>
             <span className="ks-stat-value tone-safe">
               <span className="ks-dot tone-safe" />
-              {statusCount.completed || 0}
+              {(statusCount.sisa_jauh || 0).toLocaleString("id-ID")}
+            </span>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Sisa (Dekat Deadline)</span>
+            <span className="ks-stat-value tone-warning">
+              <span className="ks-dot tone-warning" />
+              {(statusCount.sisa_mendekati || 0).toLocaleString("id-ID")}
+            </span>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Sisa (Lewat Deadline)</span>
+            <span className="ks-stat-value tone-overdue">
+              <span className="ks-dot tone-overdue" />
+              {(statusCount.sisa_lewat || 0).toLocaleString("id-ID")}
             </span>
           </div>
         </div>
 
-        <main className="spkcmt-main" style={{ padding: 0, gap: 0 }}>
+        <main className="spkcmt-main" style={{ padding: 0, gap: 0, flex: 1, minHeight: 0 }}>
           <section className="ks-board">
             <div className="ks-toolbar" style={{ justifyContent: "space-between" }}>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
@@ -2335,7 +2360,7 @@ const SpkCmt = () => {
                       <tr>
                         <th>No</th>
                         <th>Nomor Seri</th>
-                        <th>Created At</th>
+                        <th>Tgl SPK</th>
                         <th>Deadline</th>
                         <th style={{ textAlign: "center" }}>
                           <button
@@ -2382,7 +2407,7 @@ const SpkCmt = () => {
                                 <td>
                                   <span className="ks-cell-code">{spk.nomor_seri || "-"}</span>
                                 </td>
-                                <td>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
+                                <td>{spk.tgl_spk ? new Date(spk.tgl_spk).toLocaleDateString("id-ID") : (cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-")}</td>
                                 <td>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
                                 <td style={{ textAlign: "center" }}>
                                   <span className={`ks-run ${getDeadlineTone(spk.sisa_hari)}`}>
@@ -2471,7 +2496,7 @@ const SpkCmt = () => {
                                 <td>
                                   <span className="ks-cell-code">{spk.nomor_seri || "-"}</span>
                                 </td>
-                                <td>{cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-"}</td>
+                                <td>{spk.tgl_spk ? new Date(spk.tgl_spk).toLocaleDateString("id-ID") : (cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-")}</td>
                                 <td>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
                                 <td style={{ textAlign: "center" }}>
                                   <span className={`ks-run ${getDeadlineTone(spk.sisa_hari)}`}>

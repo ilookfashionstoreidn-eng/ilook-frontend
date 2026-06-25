@@ -130,116 +130,83 @@ const HistoryPendapatan = () => {
   };
 
   return (
-    <div className="history-container">
-      <div className="history-header">
-        <h1>Riwayat Pendapatan (Lunas)</h1>
-        <p>Kelola dan pantau riwayat pembayaran penjahit yang sudah dibayarkan.</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="summary-cards">
-        <div className="summary-card">
-          <div className="card-icon icon-blue">
-            <FiDollarSign />
-          </div>
-          <div className="card-title">Total Pendapatan</div>
-          <div className="card-value">{formatCurrency(summary.totalPendapatan)}</div>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Riwayat Pendapatan (Lunas)</h1>
+          <span className="ks-header-sub">Kelola dan pantau riwayat pembayaran penjahit yang sudah dibayarkan.</span>
         </div>
-        
-        <div className="summary-card">
-          <div className="card-icon icon-green">
-            <FiCreditCard />
-          </div>
-          <div className="card-title">Total Transfer</div>
-          <div className="card-value">{formatCurrency(summary.totalTransfer)}</div>
-        </div>
+      </header>
 
-        <div className="summary-card">
-          <div className="card-icon icon-purple">
-            <FiActivity />
-          </div>
-          <div className="card-title">Transaksi Selesai</div>
-          <div className="card-value">{summary.sudahDibayar}</div>
+      {/* Stat Rail */}
+      <div className="ks-statrail" style={{ padding: "0 20px" }}>
+        <div className="ks-stat" style={{ flex: 1, minWidth: 0, paddingRight: "16px" }}>
+          <span className="ks-stat-label">Total Pendapatan</span>
+          <span className="ks-stat-value tone-primary">{formatCurrency(summary.totalPendapatan)}</span>
         </div>
-
-        <div className="summary-card">
-          <div className="card-icon icon-orange">
-            <FiAlertCircle />
-          </div>
-          <div className="card-title">Belum Dibayar</div>
-          <div className="card-value">{summary.belumDibayar}</div>
+        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px", paddingRight: "16px" }}>
+          <span className="ks-stat-label">Total Transfer</span>
+          <span className="ks-stat-value tone-safe">{formatCurrency(summary.totalTransfer)}</span>
+        </div>
+        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px", paddingRight: "16px" }}>
+          <span className="ks-stat-label">Transaksi Selesai</span>
+          <span className="ks-stat-value">{summary.sudahDibayar}</span>
+        </div>
+        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px" }}>
+          <span className="ks-stat-label">Belum Dibayar</span>
+          <span className="ks-stat-value tone-warning">{summary.belumDibayar}</span>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="filter-section">
-        <div className="search-box">
-          <FiSearch className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Cari nama penjahit..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button 
-              onClick={clearSearch} 
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#9ca3af',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <FiX />
-            </button>
-          )}
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", width: "100%" }}>
+            <div className="ks-search">
+              <i className="fas fa-search ks-search-icon"></i>
+              <input 
+                type="text" 
+                placeholder="Cari nama penjahit..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="ks-search-input"
+              />
+              {searchTerm && (
+                <button 
+                  onClick={clearSearch} 
+                  className="ks-search-clear"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ks-text-soft)" }}>Dari:</span>
+              <input type="date" className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ks-text-soft)" }}>Sampai:</span>
+              <input type="date" className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
         </div>
 
-        <div className="date-filters">
-          <div className="date-input-group">
-            <label>Dari:</label>
-            <input 
-              type="date" 
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="date-input-group">
-            <label>Sampai:</label>
-            <input 
-              type="date" 
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Table Section */}
-      <div className="table-card">
-        {error ? (
-            <div className="empty-state">
-            <p className="error-text">{error}</p>
-          </div>
-        ) : (
-          <>
-            <div className="table-responsive">
-              <table className="modern-table">
+        <div className="ks-grid-scroll">
+          {error ? (
+            <div className="ks-empty">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <>
+              <table className="ks-grid">
                 <thead>
                   <tr>
-                    <th>Tanggal</th>
-                    <th>ID Pendapatan</th>
-                    <th>Nama Penjahit</th>
-                    <th>Status</th>
-                    <th>Total Pendapatan</th>
-                    <th>Total Transfer</th>
+                    <th>TANGGAL</th>
+                    <th>ID PENDAPATAN</th>
+                    <th>NAMA PENJAHIT</th>
+                    <th>STATUS</th>
+                    <th>TOTAL PENDAPATAN</th>
+                    <th>TOTAL TRANSFER</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,64 +216,60 @@ const HistoryPendapatan = () => {
                     pendapatans.map((pendapatan) => (
                       <tr key={pendapatan.id_pendapatan}>
                         <td>{formatDate(pendapatan.created_at)}</td>
-                        <td className="col-id">#{pendapatan.id_pendapatan}</td>
-                        <td className="col-name">{pendapatan.penjahit?.nama_penjahit || "-"}</td>
+                        <td><strong>#{pendapatan.id_pendapatan}</strong></td>
+                        <td>{pendapatan.penjahit?.nama_penjahit || "-"}</td>
                         <td>
-                          <span className={`status-pill ${getStatusClass(pendapatan.status_pembayaran)}`}>
-                            {pendapatan.status_pembayaran}
-                          </span>
+                          {pendapatan.status_pembayaran}
                         </td>
-                        <td className="col-money">{formatCurrency(pendapatan.total_pendapatan)}</td>
-                        <td className="col-money">{formatCurrency(pendapatan.total_transfer)}</td>
+                        <td>{formatCurrency(pendapatan.total_pendapatan)}</td>
+                        <td>{formatCurrency(pendapatan.total_transfer)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6">
-                        <div className="empty-state">
-                          <div className="empty-icon"><FiSearch /></div>
-                          <p className="empty-text">Tidak ada data ditemukan</p>
-                          <p className="empty-subtext">Coba sesuaikan filter pencarian atau tanggal Anda.</p>
-                        </div>
+                      <td colSpan="6" style={{ textAlign: "center", padding: "32px 0" }}>
+                        Tidak ada data ditemukan
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
-            </div>
-            
-            {/* Pagination Controls - Only show if not loading and has data */}
-            {!loading && pendapatans.length > 0 && (
-              <div className="pagination-controls">
-                  <div className="pagination-info">
-                      Menampilkan <span style={{ fontWeight: 'bold', color: '#111827' }}>{pagination.from}</span> - <span style={{ fontWeight: 'bold', color: '#111827' }}>{pagination.to}</span> dari <span style={{ fontWeight: 'bold', color: '#111827' }}>{pagination.total}</span> data
-                  </div>
-                  <div className="pagination-buttons">
-                      <button 
-                          className="btn-pagination"
-                          onClick={() => handlePageChange(pagination.currentPage - 1)}
-                          disabled={pagination.currentPage === 1}
-                      >
-                          <FiChevronLeft /> Sebelumnya
-                      </button>
-                      
-                      <div className="page-number">
-                          Halaman {pagination.currentPage}
-                      </div>
 
-                      <button 
-                          className="btn-pagination"
-                          onClick={() => handlePageChange(pagination.currentPage + 1)}
-                          disabled={pagination.currentPage === pagination.lastPage}
-                      >
-                          Selanjutnya <FiChevronRight />
-                      </button>
+              {/* Pagination Controls - Only show if not loading and has data */}
+              {!loading && pendapatans.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid var(--ks-line)" }}>
+                  <div style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>
+                    Menampilkan <span style={{ fontWeight: '600', color: '#0f172a' }}>{pagination.from}</span> - <span style={{ fontWeight: '600', color: '#0f172a' }}>{pagination.to}</span> dari <span style={{ fontWeight: '600', color: '#0f172a' }}>{pagination.total}</span> data
                   </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button 
+                      className="ks-btn is-secondary"
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={pagination.currentPage === 1}
+                      style={{ fontSize: "12px" }}
+                    >
+                      <FiChevronLeft style={{ marginRight: "4px" }} /> Sebelumnya
+                    </button>
+                    
+                    <div style={{ fontSize: "12px", fontWeight: "500" }}>
+                      Halaman {pagination.currentPage}
+                    </div>
+
+                    <button 
+                      className="ks-btn is-secondary"
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={pagination.currentPage === pagination.lastPage}
+                      style={{ fontSize: "12px" }}
+                    >
+                      Selanjutnya <FiChevronRight style={{ marginLeft: "4px" }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

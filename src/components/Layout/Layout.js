@@ -740,6 +740,7 @@ const Layout = () => {
                             </Link>
                           </li>
                         )}
+                        {/* 
                         {hasAccess("cmt:deadline") && (
                           <li>
                             <Link to="deadline" className={`dropdown-link ${activeMenu === "deadline" ? "active" : ""}`} onClick={() => handleMenuClick("deadline")}>
@@ -760,7 +761,8 @@ const Layout = () => {
                               <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> SKU
                             </Link>
                           </li>
-                        )}
+                        )} 
+                        */}
                       </>
                     )}
                   </ul>

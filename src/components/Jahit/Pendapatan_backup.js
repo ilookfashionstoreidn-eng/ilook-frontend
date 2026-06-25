@@ -674,95 +674,99 @@ const Pendapatan = () => {
   };
 
   return (
-    <div className="ks-page">
-      <header className="ks-header">
-        <div className="ks-header-id">
-          <h1>Data Pendapatan</h1>
-          <span className="ks-header-sub">Kelola pendapatan penjahit dengan mudah dan efisien</span>
-        </div>
-      </header>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Pendapatan</h1>
+      </div>
 
-      <section className="ks-board">
-        <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ks-text-soft)" }}>Dari:</span>
-              <input type="date" className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ks-text-soft)" }}>Sampai:</span>
-              <input type="date" className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-            <button onClick={handleFilter} className="ks-btn is-secondary" style={{ padding: "4px 12px", fontSize: "11px", minHeight: "24px" }}>
-              Terapkan Filter
-            </button>
+      <div className="pendapatan-filter-card">
+        <div className="pendapatan-filter-group">
+          <div className="pendapatan-filter-item">
+            <label>
+              <FaCalendarAlt /> Dari Tanggal
+            </label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
-        </div>
 
-        <div className="ks-grid-scroll">
-          {loading ? (
-            <div className="ks-empty">
-              <p>Memuat data...</p>
-            </div>
-          ) : error ? (
-            <div className="ks-empty">
-              <p>{error}</p>
-            </div>
-          ) : pendapatans.length === 0 ? (
-            <div className="ks-empty">
-              <p>Tidak ada data pendapatan</p>
-            </div>
-          ) : (
-            <table className="ks-grid">
+          <div className="pendapatan-filter-item">
+            <label>
+              <FaCalendarAlt /> Sampai Tanggal
+            </label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
+
+          <button onClick={handleFilter} className="pendapatan-btn-filter">
+            Terapkan Filter
+          </button>
+        </div>
+      </div>
+
+      <div className="pendapatan-table-card">
+        {loading ? (
+          <div className="pendapatan-loading">Memuat data...</div>
+        ) : error ? (
+          <div className="pendapatan-error">{error}</div>
+        ) : pendapatans.length === 0 ? (
+          <div className="pendapatan-empty">
+            <div className="pendapatan-empty-icon">💰</div>
+            <p>Tidak ada data pendapatan</p>
+          </div>
+        ) : (
+          <div className="pendapatan-table-wrapper">
+            <table className="pendapatan-table">
               <thead>
                 <tr>
-                  <th>NAMA PENJAHIT</th>
-                  <th>TOTAL PENDAPATAN</th>
-                  <th>TOTAL TRANSFER</th>
-                  <th>STATUS</th>
-                  <th>AKSI</th>
+                  <th>Nama Penjahit</th>
+                  <th>Total Pendapatan</th>
+                  <th>Total Transfer</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {pendapatans.map((pendapatan) => (
                   <tr key={pendapatan.id_penjahit}>
                     <td>
-                      <strong>{pendapatan.nama_penjahit || "Tidak Diketahui"}</strong>
+                      <span className="pendapatan-name">{pendapatan.nama_penjahit || "Tidak Diketahui"}</span>
                     </td>
-                    <td>{formatRupiah(pendapatan.total_pendapatan || 0)}</td>
-                    <td>{formatRupiah(pendapatan.total_transfer || 0)}</td>
+                    <td>
+                      <span className="pendapatan-amount">{formatRupiah(pendapatan.total_pendapatan || 0)}</span>
+                    </td>
+                    <td>
+                      <span className="pendapatan-amount">{formatRupiah(pendapatan.total_transfer || 0)}</span>
+                    </td>
                     <td>
                       {pendapatan.total_pendapatan > 0 ? (
                         pendapatan.status_pembayaran === "belum dibayar" && pendapatan.pendapatan_id ? (
-                          <button onClick={() => handleBayarInvoice(pendapatan)} className="ks-btn is-primary" style={{ padding: "4px 12px", minHeight: "28px", fontSize: "12px" }}>
+                          <button onClick={() => handleBayarInvoice(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
                             Bayar
                           </button>
                         ) : pendapatan.status_pembayaran === "sudah dibayar" ? (
-                          <span style={{ color: "#059669", fontWeight: 500 }}>Sudah Dibayar</span>
+                          <span className="pendapatan-badge pendapatan-badge-success">Sudah Dibayar</span>
                         ) : (
-                          <button onClick={() => handleOpenForm(pendapatan)} className="ks-btn is-primary" style={{ padding: "4px 12px", minHeight: "28px", fontSize: "12px" }}>
+                          <button onClick={() => handleOpenForm(pendapatan)} className="pendapatan-btn pendapatan-btn-primary">
                             Buat Invoice
                           </button>
                         )
                       ) : (
-                        <span style={{ color: "#9ca3af" }}>Tidak ada pendapatan</span>
+                        <span className="pendapatan-badge pendapatan-badge-disabled">Tidak ada pendapatan</span>
                       )}
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div className="pendapatan-actions">
                         {pendapatan.pendapatan_id ? (
                           <>
                             {pendapatan.status_pembayaran === "belum dibayar" && (
-                              <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
+                              <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
                                 <FaDownload />
                               </button>
                             )}
                             {pendapatan.status_pembayaran === "sudah dibayar" && (
                               <>
-                                <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleDetailClick(pendapatan)} title="Detail">
+                                <button className="pendapatan-btn-icon" onClick={() => handleDetailClick(pendapatan)} title="Detail">
                                   <FaInfoCircle />
                                 </button>
-                                <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
+                                <button className="pendapatan-btn-icon" onClick={() => handleDownload(pendapatan.pendapatan_id)} title="Download Invoice">
                                   <FaDownload />
                                 </button>
                               </>
@@ -771,7 +775,7 @@ const Pendapatan = () => {
                         ) : (
                           <>
                             <button
-                              className="ks-btn is-secondary ks-btn-icon"
+                              className="pendapatan-btn-icon"
                               onClick={() => handleDownloadInvoicePreview(pendapatan)}
                               title="Download Preview Invoice"
                               disabled={downloadingPreview || pendapatan.total_pendapatan === 0}
@@ -787,9 +791,9 @@ const Pendapatan = () => {
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
-      </section>
+          </div>
+        )}
+      </div>
 
       {/* Modal Detail Pendapatan */}
       {selectedPendapatan && (
@@ -836,8 +840,8 @@ const Pendapatan = () => {
               ) : error ? (
                 <div className="pendapatan-error">{error}</div>
               ) : (
-                <div className="ks-grid-scroll" style={{ maxHeight: "300px" }}>
-                  <table className="ks-grid">
+                <div className="pendapatan-table-wrapper">
+                  <table className="pendapatan-modal-table">
                     <thead>
                       <tr>
                         <th>ID Pengiriman</th>

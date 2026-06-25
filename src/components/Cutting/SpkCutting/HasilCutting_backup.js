@@ -1079,86 +1079,116 @@ const HasilCutting = () => {
   };
 
   return (
-    <div className="ks-page">
-      <header className="ks-header">
-        <div className="ks-header-id">
-          <h1>Data Hasil Cutting</h1>
-          <span className="ks-header-sub">Kelola hasil cutting dengan mudah dan efisien</span>
-        </div>
-      </header>
-
-      {/* Stat Rail - Target Mingguan & Harian */}
-      <div className="ks-statrail" style={{ padding: "0 20px" }}>
-        <div className="ks-stat" style={{ flex: 1, minWidth: 0, paddingRight: "16px" }}>
-          <span className="ks-stat-label">Target Mingguan</span>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span className="ks-stat-value tone-primary">{targetStats.weekly_target.toLocaleString("id-ID")}</span>
-            <span style={{ fontSize: "11px", color: "var(--ks-text-soft)", fontWeight: 500 }}>
-              {targetStats.weekly_remaining > 0 ? `Sisa: ${Number(targetStats.weekly_remaining).toLocaleString("id-ID")}` : "Tercapai!"}
-            </span>
+    <div className="hasil-cutting-container">
+      <div className="hasil-cutting-header-card">
+        <div className="hasil-cutting-title-group">
+          <div className="hasil-cutting-brand-icon">
+            <i className="fas fa-cut"></i>
           </div>
-          <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
-            <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} />
-            <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} />
+          <div className="hasil-cutting-title-wrap">
+            <div className="hasil-cutting-module-pill">Modul Cutting</div>
+            <h1 className="hasil-cutting-header-title">Data Hasil Cutting</h1>
+            <p className="hasil-cutting-header-subtitle">Kelola hasil cutting dengan mudah dan efisien</p>
           </div>
         </div>
+        <button onClick={handleTambahBaru} className="hasil-cutting-primary-button">
+          <i className="fas fa-plus-circle hasil-cutting-primary-button-icon"></i>
+          Tambah Hasil Cutting
+        </button>
+      </div>
 
-        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px", paddingRight: "16px" }}>
-          <span className="ks-stat-label">Tercapai Mingguan</span>
-          <span className="ks-stat-value tone-safe">{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")}</span>
+      {/* Kartu Target Mingguan & Harian */}
+      <div className="hasil-cutting-target-cards">
+        {/* Target Mingguan */}
+        <div className="hasil-cutting-target-card">
+          <div className="hasil-cutting-target-card-icon"><i className="fas fa-bullseye"></i></div>
+          <div className="hasil-cutting-target-card-content">
+            <div className="hasil-cutting-target-card-label">Target Mingguan</div>
+            {/* Filter periode mingguan (custom) */}
+            <div className="hasil-cutting-target-filter-row">
+              <input type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} className="hasil-cutting-target-filter-input" />
+              <span className="hasil-cutting-target-filter-separator">s/d</span>
+              <input type="date" value={weeklyEnd} onChange={(e) => setWeeklyEnd(e.target.value)} className="hasil-cutting-target-filter-input" />
+            </div>
+            <div className="hasil-cutting-target-card-value">{targetStats.weekly_target.toLocaleString("id-ID")} produk</div>
+            <div className="hasil-cutting-target-card-info">
+              Periode ini: <strong>{Number(targetStats.weekly_total || 0).toLocaleString("id-ID")} produk</strong>
+            </div>
+            <div className="hasil-cutting-target-card-status">
+              {targetStats.weekly_remaining > 0 ? (
+                <>
+                  Kurang <strong>{Number(targetStats.weekly_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 50.000
+                </>
+              ) : (
+                <span className="hasil-cutting-target-card-status-achieved">Target mingguan tercapai</span>
+              )}
+            </div>
+            {targetStats.week_start && targetStats.week_end && (
+              <div className="hasil-cutting-target-card-period">
+                Periode: {targetStats.week_start} s/d {targetStats.week_end}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px", paddingRight: "16px" }}>
-          <span className="ks-stat-label">Target Harian</span>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span className="ks-stat-value tone-warning">{targetStats.daily_target.toLocaleString("id-ID")}</span>
-            <span style={{ fontSize: "11px", color: "var(--ks-text-soft)", fontWeight: 500 }}>
-              {targetStats.daily_remaining > 0 ? `Sisa: ${Number(targetStats.daily_remaining).toLocaleString("id-ID")}` : "Tercapai!"}
-            </span>
+        {/* Target Harian */}
+        <div className="hasil-cutting-target-card">
+          <div className="hasil-cutting-target-card-icon daily"><i className="fas fa-chart-line"></i></div>
+          <div className="hasil-cutting-target-card-content">
+            <div className="hasil-cutting-target-card-label daily">Target Harian</div>
+            {/* Filter tanggal harian (custom) */}
+            <div className="hasil-cutting-target-filter-row single">
+              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="hasil-cutting-target-filter-input" />
+            </div>
+            <div className="hasil-cutting-target-card-value daily">{targetStats.daily_target.toLocaleString("id-ID")} produk</div>
+            <div className="hasil-cutting-target-card-info daily">
+              Tanggal ini: <strong>{Number(targetStats.daily_total || 0).toLocaleString("id-ID")} produk</strong>
+            </div>
+            <div className="hasil-cutting-target-card-status daily">
+              {targetStats.daily_remaining > 0 ? (
+                <>
+                  Kurang <strong>{Number(targetStats.daily_remaining).toLocaleString("id-ID")} produk</strong> untuk capai 7.143
+                </>
+              ) : (
+                <span className="hasil-cutting-target-card-status-achieved">Target harian tercapai</span>
+              )}
+            </div>
+            {targetStats.today && <div className="hasil-cutting-target-card-period daily">Tanggal: {targetStats.today}</div>}
           </div>
-          <div style={{ marginTop: "8px" }}>
-            <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="ks-input" style={{ width: "110px", padding: "4px", fontSize: "11px", height: "24px", borderRadius: 0, backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1" }} />
-          </div>
-        </div>
-
-        <div className="ks-stat" style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--ks-line)", paddingLeft: "16px" }}>
-          <span className="ks-stat-label">Tercapai Harian</span>
-          <span className="ks-stat-value tone-safe">{Number(targetStats.daily_total || 0).toLocaleString("id-ID")}</span>
         </div>
       </div>
 
-      <section className="ks-board">
-        <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <div className="ks-search">
-              <i className="fas fa-search ks-search-icon"></i>
+      <div className="hasil-cutting-table-card">
+        <div className="hasil-cutting-table-header">
+          <div>
+            <h3>Daftar Hasil Cutting</h3>
+            <p>Ringkasan data hasil cutting produksi ({dataHasilCutting.length} data)</p>
+          </div>
+          <div className="hasil-cutting-table-tools">
+            <div className="hasil-cutting-table-search">
+              <i className="fas fa-search hasil-cutting-table-search-icon"></i>
               <input
                 type="text"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 placeholder="Cari SPK / Produk / Tukang"
-                className="ks-search-input"
+                className="hasil-cutting-table-search-input"
               />
               {searchKeyword && (
                 <button
                   type="button"
-                  className="ks-search-clear"
+                  className="hasil-cutting-table-search-clear"
                   onClick={() => setSearchKeyword("")}
+                  title="Reset pencarian"
                 >
                   <i className="fas fa-times"></i>
                 </button>
               )}
             </div>
           </div>
-          <div className="ks-toolbar-actions">
-            <button type="button" className="ks-btn is-primary" onClick={handleTambahBaru}>
-              <i className="fas fa-plus"></i> Tambah Baru
-            </button>
-          </div>
         </div>
-
         {/* Tabel Index */}
-        <div className="ks-grid-scroll">
+        <div className="hasil-cutting-table-index-container">
           {loadingData ? (
             <div className="hasil-cutting-loading-container">
               <div className="hasil-cutting-loading-spinner"></div>
@@ -1167,7 +1197,7 @@ const HasilCutting = () => {
           ) : dataHasilCutting.length > 0 ? (
             <>
               <div className="hasil-cutting-table-scroll">
-                <table className="ks-grid">
+                <table className="penjahit-table hasil-cutting-index-table">
                   <thead>
                     <tr>
                       <th>NO</th>
@@ -1184,23 +1214,36 @@ const HasilCutting = () => {
                   </thead>
                   <tbody>
                     {dataHasilCutting.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{(currentPage - 1) * 50 + index + 1}</td>
-                        <td>{item.kode_distribusi || item.id_spk_cutting || "-"}</td>
-                        <td>{item.jenis_hasil === "kombinasi" ? "Kombinasi" : "Bahan Utama"}</td>
-                        <td>{item.nama_produk || "-"}</td>
-                        <td>{item.size || "-"}</td>
-                        <td>{item.estimasi?.toLocaleString("id-ID") || 0}</td>
-                        <td>{item.total_produk?.toLocaleString("id-ID") || 0}</td>
+                      <tr key={item.id} className="hasil-cutting-table-row">
+                        <td className="hasil-cutting-table-no">{(currentPage - 1) * 50 + index + 1}</td>
                         <td>
-                          {item.total_bayar
-                            ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}`
-                            : "Rp 0"}
+                          <span className="hasil-cutting-badge">{item.kode_distribusi || item.id_spk_cutting || "-"}</span>
                         </td>
                         <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.jenis_hasil === "kombinasi" ? "Kombinasi" : "Bahan Utama"}</span>
+                        </td>
+                        <td className="hasil-cutting-table-product">{item.nama_produk || "-"}</td>
+                        <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.size || "-"}</span>
+                        </td>
+                        <td>
+                          <span className="hasil-cutting-badge hasil-cutting-badge-muted">{item.estimasi?.toLocaleString("id-ID") || 0}</span>
+                        </td>
+                        <td>
+                          <span className={`hasil-cutting-badge ${item.total_produk > 0 ? "hasil-cutting-badge-success" : "hasil-cutting-badge-muted"}`}>{item.total_produk?.toLocaleString("id-ID") || 0}</span>
+                        </td>
+                        <td>
+                          <span className={`hasil-cutting-badge ${item.total_bayar > 0 ? "" : "hasil-cutting-badge-muted"}`}>
+                            {item.total_bayar
+                              ? `Rp ${Number(item.total_bayar).toLocaleString("id-ID", {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}`
+                              : "Rp 0"}
+                          </span>
+                        </td>
+                        <td className="hasil-cutting-table-date">
+                          <i className="far fa-calendar-check hasil-cutting-table-date-icon"></i>
                           {item.tanggal_potong ? new Date(item.tanggal_potong).toLocaleDateString("id-ID", {
                             day: "2-digit",
                             month: "2-digit",
@@ -1212,14 +1255,14 @@ const HasilCutting = () => {
                           })}
                         </td>
                         <td>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <button onClick={() => handleDetail(item.id)} className="ks-btn is-secondary ks-btn-icon" title="Detail">
+                          <div className="hasil-cutting-action-buttons">
+                            <button onClick={() => handleDetail(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-info" title="Detail">
                               <i className="fas fa-info-circle"></i>
                             </button>
-                            <button onClick={() => handleEdit(item.id)} className="ks-btn is-secondary ks-btn-icon" title="Edit">
+                            <button onClick={() => handleEdit(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-edit" title="Edit">
                               <i className="fas fa-edit"></i>
                             </button>
-                            <button onClick={() => handleDelete(item.id)} className="ks-btn is-danger ks-btn-icon" title="Hapus">
+                            <button onClick={() => handleDelete(item.id)} className="hasil-cutting-action-button hasil-cutting-action-button-delete" title="Hapus">
                               <i className="fas fa-trash"></i>
                             </button>
                           </div>
@@ -1231,23 +1274,26 @@ const HasilCutting = () => {
               </div>
               {/* Pagination */}
               {lastPage > 1 && (
-                <div className="ks-pager">
-                  <button className="ks-pg-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
-                    Prev
+                <div className="hasil-cutting-pagination">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1} className="hasil-cutting-pagination-button">
+                    <i className="fas fa-chevron-left"></i>
+                    Sebelumnya
                   </button>
-                  <span className="ks-pg-info">
+                  <span className="hasil-cutting-pagination-info">
                     Halaman {currentPage} dari {lastPage}
                   </span>
-                  <button className="ks-pg-btn" onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))} disabled={currentPage === lastPage}>
-                    Next
+                  <button onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))} disabled={currentPage === lastPage} className="hasil-cutting-pagination-button">
+                    Selanjutnya
+                    <i className="fas fa-chevron-right"></i>
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <div className="ks-empty">
-              <h3>{searchKeywordDebounced ? "Data Tidak Ditemukan" : "Belum Ada Data"}</h3>
-              <p>
+            <div className="hasil-cutting-empty-state">
+              <div className="hasil-cutting-empty-state-icon"><i className="fas fa-clipboard-list"></i></div>
+              <h3 className="hasil-cutting-empty-state-title">{searchKeywordDebounced ? "Data Tidak Ditemukan" : "Belum Ada Data"}</h3>
+              <p className="hasil-cutting-empty-state-text">
                 {searchKeywordDebounced
                   ? `Tidak ada data yang cocok dengan kata kunci "${searchKeywordDebounced}"`
                   : "Mulai dengan menambahkan hasil cutting pertama Anda"}
@@ -1255,7 +1301,6 @@ const HasilCutting = () => {
             </div>
           )}
         </div>
-      </section>
 
         {/* Modal Form Inputan */}
         {showForm && (
@@ -1998,6 +2043,7 @@ const HasilCutting = () => {
             </div>
           </div>
         )}
+      </div>
     </div>
   );
 };

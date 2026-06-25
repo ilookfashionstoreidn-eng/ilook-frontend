@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Select from "react-select";
 
+import "../../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import "../../Jahit/Pengiriman.css";
 import "./SpkCutting.css";
 
 import API from "../../../api";
@@ -2626,29 +2628,19 @@ const SpkCutting = () => {
   };
 
   return (
-    <div className="spk-cutting-page">
-      <div className="spk-cutting-header">
-        <div className="spk-cutting-header-top">
-          <div className="spk-cutting-title-group">
-            <div className="spk-cutting-brand-icon">
-              <FiScissors />
-            </div>
-            <div className="spk-cutting-title-wrap">
-              <p className="spk-cutting-module-pill">Cutting Module</p>
-              <h1>Data SPK Cutting</h1>
-              <p className="spk-cutting-header-subtitle">Pemantauan progres, target, dan dokumen kerja cutting.</p>
-            </div>
-          </div>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Data SPK Cutting</h1>
+          <span className="ks-header-sub">Pemantauan progres, target, dan dokumen kerja cutting.</span>
         </div>
-      </div>
+      </header>
 
-
-
-      <div className="spk-cutting-table-container">
-        <div className="spk-cutting-filter-header">
-          <div className="spk-cutting-action-buttons">
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
             <button
-              className="spk-cutting-btn-add"
+              className="ks-btn is-primary"
               onClick={() => {
                 // Reset form saat membuka
 
@@ -2685,38 +2677,34 @@ const SpkCutting = () => {
                 setShowForm(true);
               }}
             >
-              <FaPlus /> Tambah SPK Cutting
+              <FaPlus size={13} /> Tambah SPK Cutting
             </button>
 
-            <button className="spk-cutting-btn-export" onClick={() => setShowExportModal(true)}>
-              <FaFileExcel /> Export Excel
+            <button className="ks-btn" onClick={() => setShowExportModal(true)}>
+              <FaFileExcel size={13} /> Export Excel
             </button>
           </div>
 
-          <div className="spk-cutting-filter-group">
-            <div className="spk-cutting-search-bar">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>
+            <label className="ks-search" style={{ marginLeft: 0 }}>
+              <FiSearch className="ks-search-icon" size={14} />
               <input type="text" placeholder="Cari ID, Nomor SPK, Tukang, atau Produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-              {searchTerm ? (
-                <button type="button" className="spk-cutting-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
-                  <FiX />
-                </button>
-              ) : (
-                <span className="spk-cutting-search-icon">
-                  <FiSearch />
-                </span>
-              )}
-            </div>
+            </label>
           </div>
         </div>
 
         {loading ? (
-          <p className="spk-cutting-loading">Memuat data...</p>
+          <div className="ks-empty">
+            <p>Memuat data...</p>
+          </div>
         ) : error ? (
-          <p className="spk-cutting-error">{error}</p>
+          <div className="ks-empty">
+            <p className="ks-overdue">{error}</p>
+          </div>
         ) : (
           <>
-            <div className="spk-cutting-table-scroll">
-              <table className="spk-cutting-table">
+            <div className="ks-grid-scroll">
+              <table className="ks-grid">
               <thead>
                 <tr>
                  
@@ -2950,26 +2938,24 @@ const SpkCutting = () => {
               </tbody>
               </table>
             </div>
-
-            {/* ✅ OPTIMASI: Server-side Pagination - Tampilkan selalu jika ada data */}
             {pagination.total > 0 && (
-              <div className="spk-cutting-pagination">
-                <div className="spk-cutting-pagination-summary">
-                  Menampilkan {pagination.from || 0} - {pagination.to || 0} dari {pagination.total.toLocaleString("id-ID")} data
+              <div className="ks-footer">
+                <div className="ks-footer-info">
+                  <span>Menampilkan {pagination.from || 0} - {pagination.to || 0} dari {pagination.total.toLocaleString("id-ID")} data</span>
                 </div>
 
                 {pagination.last_page > 1 && (
-                  <div className="spk-cutting-pagination-controls">
-                    <button className="spk-cutting-page-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                      Sebelumnya
+                  <div className="ks-pager">
+                    <button className="ks-pg-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                      Prev
                     </button>
 
-                    <span className="spk-cutting-page-indicator">
+                    <span style={{ fontSize: "12px", color: "var(--ks-text-soft)", margin: "0 8px" }}>
                       Halaman {pagination.current_page} dari {pagination.last_page}
                     </span>
 
-                    <button className="spk-cutting-page-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pagination.last_page}>
-                      Selanjutnya
+                    <button className="ks-pg-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pagination.last_page}>
+                      Next
                     </button>
                   </div>
                 )}
@@ -2977,7 +2963,7 @@ const SpkCutting = () => {
             )}
           </>
         )}
-      </div>
+      </section>
 
       {/* Modal Export Excel */}
       {showExportModal && (

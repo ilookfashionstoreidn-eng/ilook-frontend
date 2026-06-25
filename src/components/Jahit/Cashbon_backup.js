@@ -245,115 +245,92 @@ const Cashbon = () => {
   });
 
   return (
-    <div className="ks-page">
-      <header className="ks-header">
-        <div className="ks-header-id">
-          <h1>Data Cashbon</h1>
-          <span className="ks-header-sub">Kelola kasbon penjahit dengan mudah dan efisien</span>
-        </div>
-      </header>
-
-      <section className="ks-board">
-        <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <div className="ks-search">
-              <select
-                className="ks-input"
-                style={{ width: "240px" }}
-                onChange={(e) => {
-                  if (e.target.value === "") {
-                    // Reload semua data
-                    window.location.reload();
-                  } else {
-                    getFilteredPenjahit(e.target.value);
-                  }
-                }}
-              >
-                <option value="">Semua Penjahit</option>
-                {penjahitList.map((penjahit) => (
-                  <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                    {penjahit.nama_penjahit}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="ks-toolbar-actions">
-            <button type="button" className="ks-btn is-primary" onClick={() => {
-              setNewCashbon({
-                id_penjahit: "",
-                jumlah_cashboan: "",
-                bukti_transfer: null,
-              });
-              setShowForm(true);
-            }}>
-              <i className="fas fa-plus"></i> Tambah Cashbon
-            </button>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Cashbon</h1>
+        <div className="cashbon-actions">
+          <div className="cashbon-filter">
+            <select
+              onChange={(e) => {
+                if (e.target.value === "") {
+                  // Reload semua data
+                  window.location.reload();
+                } else {
+                  getFilteredPenjahit(e.target.value);
+                }
+              }}
+            >
+              <option value="">Semua Penjahit</option>
+              {penjahitList.map((penjahit) => (
+                <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                  {penjahit.nama_penjahit}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+      </div>
 
-        <div className="ks-grid-scroll">
-          {loading && cashbons.length === 0 ? (
-            <div className="ks-empty">
-              <p>Memuat data...</p>
-            </div>
-          ) : error ? (
-            <div className="ks-empty">
-              <p>{error}</p>
-            </div>
-          ) : (
-            <table className="ks-grid">
+      {loading && cashbons.length === 0 ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+        </div>
+      ) : error ? (
+        <div className="empty-state">
+          <p className="empty-state-text">{error}</p>
+        </div>
+      ) : filteredCashbons.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <p className="empty-state-text">Tidak ada data cashbon</p>
+        </div>
+      ) : (
+        <>
+          <div className="cashbon-table-wrapper">
+            <table className="cashbon-table">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>NAMA PENJAHIT</th>
-                  <th>JUMLAH CASHBON</th>
-                  <th>STATUS PEMBAYARAN</th>
-                  <th>TANGGAL CASHBON</th>
-                  <th>AKSI</th>
+                  <th>Nama Penjahit</th>
+                  <th>Jumlah Cashbon</th>
+                  <th>Status Pembayaran</th>
+                  <th>Tanggal Cashbon</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCashbons.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "32px 0" }}>
-                      Tidak ada data cashbon
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCashbons.map((cashbon, index) => {
-                    const namaPenjahit = cashbon.penjahit?.nama_penjahit || penjahitList.find((p) => p.id_penjahit === cashbon.id_penjahit)?.nama_penjahit || "Tidak Diketahui";
+                {filteredCashbons.map((cashbon, index) => {
+                  const namaPenjahit = cashbon.penjahit?.nama_penjahit || penjahitList.find((p) => p.id_penjahit === cashbon.id_penjahit)?.nama_penjahit || "Tidak Diketahui";
 
-                    return (
-                      <tr key={cashbon.id || cashbon.id_cashboan || index}>
-                        <td>{cashbon.id || cashbon.id_cashboan || "-"}</td>
-                        <td>
-                          <strong>{namaPenjahit}</strong>
-                        </td>
-                        <td>{formatRupiahDisplay(cashbon.jumlah_cashboan || 0)}</td>
-                        <td>{cashbon.status_pembayaran || "belum lunas"}</td>
-                        <td>{formatTanggal(cashbon.tanggal_cashboan)}</td>
-                        <td>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleTambahClick(cashbon)} title="Tambah Cashbon">
-                              <i className="fas fa-plus"></i>
+                  return (
+                    <tr key={cashbon.id || cashbon.id_cashboan || index}>
+                      <td>{cashbon.id || cashbon.id_cashboan || "-"}</td>
+                      <td>{namaPenjahit}</td>
+                      <td>{formatRupiahDisplay(cashbon.jumlah_cashboan || 0)}</td>
+                      <td>
+                        <span className={`status-badge ${getStatusColor(cashbon.status_pembayaran)}`}>{cashbon.status_pembayaran || "belum lunas"}</span>
+                      </td>
+                      <td>{formatTanggal(cashbon.tanggal_cashboan)}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button className="btn-icon btn-icon-add" onClick={() => handleTambahClick(cashbon)} title="Tambah Cashbon">
+                            <FaPlus />
+                          </button>
+                          {(cashbon.id || cashbon.id_cashboan) && (
+                            <button className="btn-icon btn-icon-info" onClick={() => handleDetailClick(cashbon)} title="Detail Cashbon">
+                              <FaInfoCircle />
                             </button>
-                            {(cashbon.id || cashbon.id_cashboan) && (
-                              <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleDetailClick(cashbon)} title="Detail Cashbon">
-                                <i className="fas fa-info-circle"></i>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-          )}
-        </div>
-      </section>
+          </div>
+        </>
+      )}
 
       {/* Detail Modal */}
       {selectedDetailCashbon && (
@@ -384,7 +361,7 @@ const Cashbon = () => {
                 <div className="detail-item">
                   <span className="detail-label">Status Pembayaran:</span>
                   <span className="detail-value">
-                    {selectedDetailCashbon.status_pembayaran || "belum lunas"}
+                    <span className={`status-badge ${getStatusColor(selectedDetailCashbon.status_pembayaran)}`}>{selectedDetailCashbon.status_pembayaran || "belum lunas"}</span>
                   </span>
                 </div>
                 <div className="detail-item">

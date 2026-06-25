@@ -207,98 +207,81 @@ const Hutang = () => {
   };
 
   return (
-    <div className="ks-page">
-      <header className="ks-header">
-        <div className="ks-header-id">
-          <h1>Data Hutang</h1>
-          <span className="ks-header-sub">Kelola hutang penjahit dengan mudah dan efisien</span>
+     <div className="spkcmt-container">
+      <div className="spkcmt-header">
+        <h1>📋 Data Hutang</h1>
+      </div>
+      <div className="hutang-table-container">
+        <div className="hutang-filter-header">
+          <select id="penjahitFilter" className="hutang-select-filter" onChange={(e) => getFilteredPenjahit(e.target.value)}>
+            <option value="">Semua Penjahit</option>
+            {penjahitList.map((penjahit) => (
+              <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
+                {penjahit.nama_penjahit}
+              </option>
+            ))}
+          </select>
         </div>
-      </header>
-
-      <section className="ks-board">
-        <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <div className="ks-search">
-              <select className="ks-input" style={{ width: "240px" }} onChange={(e) => getFilteredPenjahit(e.target.value)}>
-                <option value="">Semua Penjahit</option>
-                {penjahitList.map((penjahit) => (
-                  <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
-                    {penjahit.nama_penjahit}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="ks-toolbar-actions">
-            <button type="button" className="ks-btn is-primary" onClick={() => {
-              setNewHutang({
-                id_penjahit: "",
-                jumlah_hutang: "",
-                jenis_hutang: "overtime",
-                potongan_per_minggu: "",
-                is_potongan_persen: false,
-                persentase_potongan: null,
-                bukti_transfer: null,
-              });
-              setShowForm(true);
-            }}>
-              <i className="fas fa-plus"></i> Tambah Hutang
-            </button>
-          </div>
-        </div>
-
-        <div className="ks-grid-scroll">
-          {loading ? (
-            <div className="ks-empty">
-              <p>Memuat data...</p>
-            </div>
-          ) : (
-            <table className="ks-grid">
-              <thead>
+        {loading ? (
+          <div className="hutang-loading">Memuat data...</div>
+        ) : (
+          <table className="hutang-table">
+            <thead>
+              <tr>
+                <th>NAMA PENJAHIT</th>
+                <th>JUMLAH HUTANG</th>
+                <th>POTONGAN PER MINGGU</th>
+                <th>POTONGAN PER PERSENT</th>
+                <th>STATUS PEMBAYARAN</th>
+                <th>AKSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hutangs.length === 0 ? (
                 <tr>
-                  <th>NAMA PENJAHIT</th>
-                  <th>JUMLAH HUTANG</th>
-                  <th>POTONGAN PER MINGGU</th>
-                  <th>POTONGAN PER PERSENT</th>
-                  <th>STATUS PEMBAYARAN</th>
-                  <th>AKSI</th>
+                  <td colSpan="6" className="hutang-empty-state">
+                    <div className="hutang-empty-state-icon">📋</div>
+                    <div className="hutang-empty-state-text">Tidak ada data hutang</div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {hutangs.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "32px 0" }}>
-                      Tidak ada data hutang
+              ) : (
+                hutangs.map((hutang) => (
+                  <tr key={hutang.id || hutang.id_penjahit}>
+                    <td>
+                      <strong>{hutang.penjahit?.nama_penjahit || penjahitList.find((penjahit) => penjahit.id_penjahit === hutang.id_penjahit)?.nama_penjahit || "Tidak Diketahui"}</strong>
+                    </td>
+                    <td>
+                      <strong style={{ color: "#4299e1" }}>Rp {formatNumberWithDot(hutang.jumlah_hutang || 0)}</strong>
+                    </td>
+                    <td>{hutang.potongan_per_minggu ? `Rp ${formatNumberWithDot(hutang.potongan_per_minggu)}` : "-"}</td>
+                    <td>{hutang.persentase_potongan ? `${hutang.persentase_potongan}%` : "-"}</td>
+                    <td>
+                      <span
+                        className="hutang-status-badge"
+                        style={{
+                          backgroundColor: getStatusColor(hutang.status_pembayaran),
+                        }}
+                      >
+                        {hutang.status_pembayaran}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="hutang-action-group">
+                        <button className="hutang-btn-icon hutang-btn-icon-primary" onClick={() => handleTambahClick(hutang)} title="Tambah Hutang">
+                          <FaPlus />
+                        </button>
+                        <button className="hutang-btn-icon hutang-btn-icon-info" onClick={() => handleDetailClick(hutang)} title="Detail Hutang">
+                          <FaInfoCircle />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ) : (
-                  hutangs.map((hutang) => (
-                    <tr key={hutang.id || hutang.id_penjahit}>
-                      <td>
-                        <strong>{hutang.penjahit?.nama_penjahit || penjahitList.find((penjahit) => penjahit.id_penjahit === hutang.id_penjahit)?.nama_penjahit || "Tidak Diketahui"}</strong>
-                      </td>
-                      <td>Rp {formatNumberWithDot(hutang.jumlah_hutang || 0)}</td>
-                      <td>{hutang.potongan_per_minggu ? `Rp ${formatNumberWithDot(hutang.potongan_per_minggu)}` : "-"}</td>
-                      <td>{hutang.persentase_potongan ? `${hutang.persentase_potongan}%` : "-"}</td>
-                      <td>{hutang.status_pembayaran}</td>
-                      <td>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleTambahClick(hutang)} title="Tambah Hutang">
-                            <i className="fas fa-plus"></i>
-                          </button>
-                          <button className="ks-btn is-secondary ks-btn-icon" onClick={() => handleDetailClick(hutang)} title="Detail Hutang">
-                            <i className="fas fa-info-circle"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {showForm && (
         <div
@@ -552,8 +535,13 @@ const Hutang = () => {
                           <tr key={index}>
                             <td>{history.tanggal_perubahan}</td>
                             <td>
-                              <span style={{ color: history.jenis_perubahan === "penambahan" ? "#38a169" : "#e53e3e", fontWeight: "bold" }}>
-                                {history.jenis_perubahan.toUpperCase()}
+                              <span
+                                className="hutang-status-badge"
+                                style={{
+                                  backgroundColor: history.jenis_perubahan === "penambahan" ? "#48bb78" : "#f56565",
+                                }}
+                              >
+                                {history.jenis_perubahan}
                               </span>
                             </td>
                             <td>
@@ -574,7 +562,7 @@ const Hutang = () => {
                     </table>
                   </div>
                 ) : (
-                  <div className="hutang-no-history" style={{ padding: "32px", textAlign: "center" }}>Tidak ada log pembayaran.</div>
+                  <div className="hutang-no-history">Tidak ada log pembayaran.</div>
                 )}
               </div>
             </div>
