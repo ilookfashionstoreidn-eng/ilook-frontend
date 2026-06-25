@@ -941,8 +941,7 @@ const HasilCutting = () => {
         confirmButtonText: "Tutup",
       });
 
-      fetchHasilCuttingData();
-      fetchTargetStats();
+      window.location.reload();
     } catch (error) {
       console.error("Import error:", error);
       const errMsg = error.response?.data?.message || error.response?.data?.error || "Gagal mengimport file Excel.";
