@@ -984,10 +984,26 @@ const Pengiriman = () => {
                         <td className="ks-cell-code">
                           <strong>{pengiriman.no_seri_pengiriman || `SPK-${pengiriman.id_spk}`}</strong>
                         </td>
-                        <td style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pengiriman.warna?.map(w => w.warna).join(', ') || "-"}>
-                          {pengiriman.warna?.length > 0 ? pengiriman.warna.map(w => w.warna).join(', ') : "-"}
+                        <td style={{ maxWidth: "120px" }}>
+                          {pengiriman.warna?.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                              {pengiriman.warna.map((w, idx) => (
+                                <div key={idx} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.warna}>{w.warna}</div>
+                              ))}
+                            </div>
+                          ) : "-"}
                         </td>
-                        <td className="align-right ks-cell-num">{(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs</td>
+                        <td className="align-right ks-cell-num">
+                          {pengiriman.warna?.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                              {pengiriman.warna.map((w, idx) => (
+                                <div key={idx}>{(w.jumlah_dikirim || 0).toLocaleString("id-ID")} pcs</div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span>{(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs</span>
+                          )}
+                        </td>
                         <td className="align-right ks-cell-num">
                           {formatRupiah((pengiriman.total_bayar || 0) / (pengiriman.total_barang_dikirim || 1))}
                         </td>
