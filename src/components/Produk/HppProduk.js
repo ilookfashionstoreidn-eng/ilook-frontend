@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import "./ProductList.css";
 import "./HppProduk.css";
 import API from "../../api";
 import { FaChevronDown, FaEdit, FaFilePdf, FaInfoCircle, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
@@ -1621,137 +1623,102 @@ const HppProduk = () => {
   const visibleRows = produks.length;
 
   return (
-    <div className="hpp-container">
-      <header className="hpp-header">
-        <div className="hpp-header-top">
-          <div className="hpp-title-group">
-            <div className="hpp-brand-icon">
-              <FiBox />
-            </div>
-            <div className="hpp-title-wrap">
-              <div className="hpp-module-pill">Product Module</div>
-              <h1>Data Produk</h1>
-              <p className="hpp-header-subtitle">Manajemen produk, HPP, dan komponen produksi</p>
-            </div>
-          </div>
-          <div className="hpp-search-wrap">
-            <input type="text" className="hpp-search-input" placeholder="Cari nama produk..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            {searchTerm && (
-              <button
-                className="hpp-search-clear"
-                onClick={() => setSearchTerm("")}
-                title="Hapus pencarian"
-              >
-                x
-              </button>
-            )}
-          </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Data Produk (HPP)</h1>
+          <span className="ks-header-sub">Manajemen produk, HPP, dan komponen produksi</span>
         </div>
       </header>
 
-      <main className="hpp-main">
-        <section className="hpp-stats">
-          <article className="hpp-stat-item">
-            <div className="hpp-stat-label">Total Produk</div>
-            <div className="hpp-stat-value">{total}</div>
-          </article>
-          <article className="hpp-stat-item">
-            <div className="hpp-stat-label">Produk Urgent</div>
-            <div className="hpp-stat-value hpp-stat-value-danger">{totalUrgent}</div>
-          </article>
-          <article className="hpp-stat-item">
-            <div className="hpp-stat-label">Status Fix</div>
-            <div className="hpp-stat-value hpp-stat-value-success">{totalFix}</div>
-          </article>
-          <article className="hpp-stat-item">
-            <div className="hpp-stat-label">Rata-rata HPP</div>
-            <div className="hpp-stat-value hpp-stat-value-info">
-              Rp. {formatRupiahValue(avgHpp)}
-            </div>
-          </article>
-        </section>
-
-        <section className="hpp-table-wrapper">
-          <div className="hpp-table-header">
-            <div>
-              <h3>Semua Data Produk</h3>
-              <p>{isFiltering ? `Menampilkan ${visibleRows} data sesuai filter` : `Menampilkan ${visibleRows} data pada halaman ini`}</p>
-            </div>
-            <button className="hpp-btn-primary" onClick={openAddModal}>
-              <FaPlus /> Tambah Produk
-            </button>
+      <section className="ks-board">
+        <div className="ks-statrail" style={{ marginBottom: "16px" }}>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Total Produk</span>
+            <strong className="ks-stat-value">{total}</strong>
           </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Produk Urgent</span>
+            <strong className="ks-stat-value tone-overdue">{totalUrgent}</strong>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Status Fix</span>
+            <strong className="ks-stat-value tone-safe">{totalFix}</strong>
+          </div>
+          <div className="ks-stat">
+            <span className="ks-stat-label">Rata-rata HPP</span>
+            <strong className="ks-stat-value tone-warning" style={{ color: "#2458ce" }}>Rp. {formatRupiahValue(avgHpp)}</strong>
+          </div>
+        </div>
 
-          <div className="hpp-filter-section">
-            <div className="hpp-filter-wrap">
-              <select value={selectedKategori} onChange={(e) => setSelectedKategori(e.target.value)} className="hpp-filter-select">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                placeholder="Cari nama produk..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: "30px" }}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="hpp-search-clear"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+
+            <div className="pl-filter-select">
+              <select 
+                value={selectedKategori} 
+                onChange={(e) => setSelectedKategori(e.target.value)}
+                className="pl-filter-trigger"
+                style={{ paddingRight: "30px", appearance: "none", cursor: "pointer" }}
+              >
                 <option value="">Semua Status Produk</option>
                 <option value="Urgent">Urgent</option>
                 <option value="Normal">Normal</option>
               </select>
-              {selectedKategori && (
-                <span className="hpp-filter-badge" onClick={() => setSelectedKategori("")} title="Hapus filter">
-                  {selectedKategori} x
-                </span>
-              )}
+              <FaChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "10px", color: "var(--ks-muted)", pointerEvents: "none" }} />
             </div>
-            <div className="hpp-filter-wrap">
-              <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="hpp-filter-select">
+            
+            <div className="pl-filter-select">
+              <select 
+                value={selectedStatus} 
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="pl-filter-trigger"
+                style={{ paddingRight: "30px", appearance: "none", cursor: "pointer" }}
+              >
                 <option value="">Semua Status HPP</option>
                 <option value="sementara">Sementara</option>
                 <option value="fix">Fix</option>
                 <option value="bermasalah">Bermasalah</option>
               </select>
-              {selectedStatus && (
-                <span className="hpp-filter-badge" onClick={() => setSelectedStatus("")} title="Hapus filter">
-                  {selectedStatus === "sementara" ? "Sementara" : selectedStatus === "fix" ? "Fix" : "Bermasalah"} x
-                </span>
-              )}
+              <FaChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "10px", color: "var(--ks-muted)", pointerEvents: "none" }} />
             </div>
           </div>
 
-      {loading ? (
-        <div className="hpp-loading">
-          <div className="hpp-spinner"></div>
-          <div className="hpp-loading-title">Memuat data produk...</div>
-          <div className="hpp-loading-subtitle">Mohon tunggu sebentar</div>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+             <button className="ks-btn is-primary" type="button" onClick={openAddModal}>
+               <FaPlus /> Tambah
+             </button>
+          </div>
         </div>
-      ) : error ? (
-        <div className="hpp-empty-state">
-          <div className="hpp-empty-icon">!</div>
-          <h3 className="hpp-empty-title error">Terjadi Kesalahan</h3>
-          <p className="hpp-empty-text">{error}</p>
-          <button className="hpp-btn-primary" onClick={() => window.location.reload()}>
-            Muat Ulang Halaman
-          </button>
-        </div>
-      ) : produks.length === 0 ? (
-        <div className="hpp-empty-state">
-          <div className="hpp-empty-icon">-</div>
-          <h3 className="hpp-empty-title">Belum Ada Data Produk</h3>
-          <p className="hpp-empty-text">{searchTerm || selectedKategori || selectedStatus ? "Tidak ada produk yang sesuai dengan filter yang Anda pilih" : "Mulai dengan menambahkan produk pertama Anda"}</p>
-          {(searchTerm || selectedKategori || selectedStatus) && (
-            <button
-              className="hpp-btn-secondary hpp-empty-cta"
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedKategori("");
-                setSelectedStatus("");
-              }}
-            >
-              Hapus Filter
-            </button>
-          )}
-          {!searchTerm && !selectedKategori && !selectedStatus && (
-            <button className="hpp-btn-primary hpp-empty-cta" onClick={openAddModal}>
-              <FaPlus /> Tambah Produk Pertama
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="hpp-table-scroll">
-            <table className="hpp-table">
+
+        {loading ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Memuat data produk...</div>
+        ) : error ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#ef4444" }}>{error}</div>
+        ) : produks.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Belum Ada Data Produk</div>
+        ) : (
+          <div className="ks-grid-scroll">
+            <table className="ks-grid">
               <thead>
                 <tr>
                   <th>No</th>
@@ -1762,56 +1729,50 @@ const HppProduk = () => {
                   <th>Status Produk</th>
                   <th>Status HPP</th>
                   <th>HPP</th>
-                  <th>Aksi</th>
+                  <th style={{ textAlign: "right" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {produks.map((produk, index) => {
-                  // Hitung nomor berdasarkan pagination
                   const nomor = (currentPage - 1) * 7 + index + 1;
                   return (
                     <tr key={produk.id_produk || produk.id}>
-                      <td>
-                        <strong>{nomor}</strong>
-                      </td>
+                      <td>{nomor}</td>
                       <td>
                         <img
                           src={produk.gambar_produk}
                           alt={produk.nama_produk}
+                          style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0" }}
                           onError={(e) => {
                             e.target.src = "https://via.placeholder.com/60?text=No+Image";
                           }}
                         />
                       </td>
-                      <td>
-                        <strong>{produk.nama_produk}</strong>
-                      </td>
+                      <td><strong>{produk.nama_produk}</strong></td>
                       <td>{produk.product_group || "-"}</td>
                       <td>{produk.jenis_produk || "-"}</td>
-                      <td>{produk.kategori_produk === "Urgent" ? <span className="hpp-status-badge hpp-status-urgent">Urgent</span> : <span className="hpp-status-badge hpp-status-normal">Normal</span>}</td>
                       <td>
-                        {produk.status_produk === "Sementara" ? (
-                          <span className="hpp-status-badge hpp-status-sementara">Sementara</span>
-                        ) : produk.status_produk === "Fix" ? (
-                          <span className="hpp-status-badge hpp-status-fix">Fix</span>
-                        ) : produk.status_produk === "Bermasalah" ? (
-                          <span className="hpp-status-badge hpp-status-bermasalah">Bermasalah</span>
-                        ) : (
-                          <span className="hpp-status-badge">-</span>
-                        )}
+                        <span className={`ks-tag ${produk.kategori_produk === "Urgent" ? "is-belum" : "is-sudah"}`}>
+                          {produk.kategori_produk || "Normal"}
+                        </span>
                       </td>
                       <td>
-                        <strong className="hpp-hpp-value">Rp. {formatRupiahValue(produk.hpp)}</strong>
+                        <span className={`ks-tag ${produk.status_produk === "Fix" ? "is-sudah" : "is-belum"}`}>
+                          {produk.status_produk || "-"}
+                        </span>
                       </td>
                       <td>
-                        <div className="hpp-action-buttons">
-                          <button className="hpp-btn-icon" onClick={() => handleEditClick(produk)} title="Edit Produk">
+                        <strong>Rp. {formatRupiahValue(produk.hpp)}</strong>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                          <button className="ks-btn" style={{ width: "32px", height: "32px", padding: "0", justifyContent: "center" }} type="button" onClick={() => handleEditClick(produk)} title="Edit Produk">
                             <FaEdit />
                           </button>
-                          <button className="hpp-btn-icon info" onClick={() => handleDetailClick(produk)} title="Detail Produk">
+                          <button className="ks-btn info" style={{ width: "32px", height: "32px", padding: "0", justifyContent: "center" }} type="button" onClick={() => handleDetailClick(produk)} title="Detail Produk">
                             <FaInfoCircle />
                           </button>
-                          <button className="hpp-btn-icon danger" onClick={() => handleDownloadPdf(produk.id)} title="Download PDF">
+                          <button className="ks-btn danger" style={{ width: "32px", height: "32px", padding: "0", justifyContent: "center", background: "#ef4444", color: "#fff", borderColor: "#ef4444" }} type="button" onClick={() => handleDownloadPdf(produk.id)} title="Download PDF">
                             <FaFilePdf />
                           </button>
                         </div>
@@ -1822,30 +1783,24 @@ const HppProduk = () => {
               </tbody>
             </table>
           </div>
+        )}
 
-          {/* Pagination */}
-          {lastPage > 1 && (
-            <div className="hpp-pagination">
-              <button className="hpp-pagination-btn" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} title="Halaman Sebelumnya">
-                Sebelumnya
+        {produks.length > 0 && lastPage > 1 && (
+          <div className="ks-footer">
+            <span style={{ fontSize: "12px", color: "var(--ks-text-soft, #6b6b73)" }}>
+              Halaman {currentPage} dari {lastPage}
+            </span>
+            <div className="ks-pager">
+              <button className="ks-pg-btn" type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
+                Prev
               </button>
-
-              <div className="hpp-pagination-info">
-                <span>
-                  Halaman {currentPage} dari {lastPage}
-                </span>
-                <span className="hpp-pagination-total">(Total: {total} data)</span>
-              </div>
-
-              <button className="hpp-pagination-btn" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === lastPage} title="Halaman Selanjutnya">
-                Selanjutnya
+              <button className="ks-pg-btn" type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= lastPage}>
+                Next
               </button>
             </div>
-          )}
-        </>
-      )}
-        </section>
-      </main>
+          </div>
+        )}
+      </section>
 
       {/* Modal Form Tambah */}
       {showForm && (

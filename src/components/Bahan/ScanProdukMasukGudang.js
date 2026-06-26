@@ -262,6 +262,7 @@ const ScanProdukMasukGudang = () => {
 
   // Main Tab state
   const [activeMainTab, setActiveMainTab] = useState("scan"); // "scan" | "putaway" | "history"
+  const [historyTab, setHistoryTab] = useState("detail"); // "detail" | "summary"
 
   // Seri list & selection (Scene 1 - optional search selector)
   const [seriList, setSeriList] = useState([]);
@@ -1147,7 +1148,32 @@ const ScanProdukMasukGudang = () => {
           (item.slot || "").toLowerCase().includes(term)
         );
       });
-  }, [placementRows, state, allSlots, searchTerm]);
+  }, [placementRows, allSlots, state, searchTerm]);
+
+  const summaryPerSku = useMemo(() => {
+    const summary = {};
+    formattedHistoryItems.forEach((item) => {
+      const sku = item.sku;
+      if (!summary[sku]) {
+        summary[sku] = {
+          sku: item.sku,
+          produk: item.produk,
+          gudang: item.gudang,
+          slots: new Set(),
+          totalQty: 0,
+        };
+      }
+      if (item.slot) {
+        summary[sku].slots.add(item.slot);
+      }
+      summary[sku].totalQty += (item.qty || 1);
+    });
+
+    return Object.values(summary).map(s => ({
+      ...s,
+      slots: Array.from(s.slots).join(", ")
+    }));
+  }, [formattedHistoryItems]);
 
   // Summary counts
   const summary = {
@@ -1985,63 +2011,143 @@ const ScanProdukMasukGudang = () => {
               </div>
             ) : (
               <>
-                <div className="spm-gudang-table-wrap">
-                  <table className="spm-gudang-table">
-                    <thead>
-                      <tr>
-                        <th className="spm-gudang-table-no">No</th>
-                        <th>Barcode</th>
-                        <th>Kode Seri</th>
-                        <th>SKU</th>
-                        <th>Produk</th>
-                        <th>Gudang</th>
-                        <th>Slot</th>
-                        <th>Qty</th>
-                        <th>Petugas</th>
-                        <th>Waktu Penempatan</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: "center" }}>Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formattedHistoryItems.map((item, index) => (
-                        <tr key={item.id}>
-                          <td className="spm-gudang-table-no">{index + 1}</td>
-                          <td className="spm-gudang-table-barcode">{item.barcode}</td>
-                          <td>{item.kode_seri}</td>
-                          <td className="spm-gudang-table-sku">{item.sku}</td>
-                          <td>{item.produk}</td>
-                          <td>{item.gudang}</td>
-                          <td>{item.slot}</td>
-                          <td>{item.qty} pcs</td>
-                          <td>{item.creator_name}</td>
-                          <td>{formatTanggal(item.scanned_at)}</td>
-                          <td>
-                            <span className="spm-gudang-pill spm-gudang-pill-success">
-                              Berhasil
-                            </span>
-                          </td>
-                          <td style={{ textAlign: "center" }}>
-                            <button
-                              type="button"
-                              className="spm-gudang-btn spm-gudang-btn-danger"
-                              style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                              onClick={() => handleDeleteItem(item)}
-                            >
-                              <FaTrash size={10} /> Hapus
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ padding: "0 20px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", gap: "8px", padding: "4px", background: "#f1f5f9", borderRadius: "10px", width: "fit-content" }}>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryTab("detail")}
+                      style={{
+                        padding: "8px 20px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: historyTab === "detail" ? "#ffffff" : "transparent",
+                        color: historyTab === "detail" ? "#7c3aed" : "#64748b",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        boxShadow: historyTab === "detail" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      Detail
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryTab("summary")}
+                      style={{
+                        padding: "8px 20px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: historyTab === "summary" ? "#ffffff" : "transparent",
+                        color: historyTab === "summary" ? "#7c3aed" : "#64748b",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        boxShadow: historyTab === "summary" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      Summary Per SKU
+                    </button>
+                  </div>
                 </div>
 
-                <div className="spm-gudang-table-footer">
-                  <p>
-                    Menampilkan {formattedHistoryItems.length} data penempatan
-                  </p>
-                </div>
+                {historyTab === "detail" && (
+                  <>
+                    <div className="spm-gudang-table-wrap">
+                      <table className="spm-gudang-table">
+                        <thead>
+                          <tr>
+                            <th className="spm-gudang-table-no">No</th>
+                            <th>Barcode</th>
+                            <th>Kode Seri</th>
+                            <th>SKU</th>
+                            <th>Produk</th>
+                            <th>Gudang</th>
+                            <th>Slot</th>
+                            <th>Qty</th>
+                            <th>Petugas</th>
+                            <th>Waktu Penempatan</th>
+                            <th>Status</th>
+                            <th style={{ textAlign: "center" }}>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formattedHistoryItems.map((item, index) => (
+                            <tr key={item.id}>
+                              <td className="spm-gudang-table-no">{index + 1}</td>
+                              <td className="spm-gudang-table-barcode">{item.barcode}</td>
+                              <td>{item.kode_seri}</td>
+                              <td className="spm-gudang-table-sku">{item.sku}</td>
+                              <td>{item.produk}</td>
+                              <td>{item.gudang}</td>
+                              <td>{item.slot}</td>
+                              <td>{item.qty} pcs</td>
+                              <td>{item.creator_name}</td>
+                              <td>{formatTanggal(item.scanned_at)}</td>
+                              <td>
+                                <span className="spm-gudang-pill spm-gudang-pill-success">
+                                  Berhasil
+                                </span>
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                <button
+                                  type="button"
+                                  className="spm-gudang-btn spm-gudang-btn-danger"
+                                  style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                  onClick={() => handleDeleteItem(item)}
+                                >
+                                  <FaTrash size={10} /> Hapus
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="spm-gudang-table-footer">
+                      <p>
+                        Menampilkan {formattedHistoryItems.length} data penempatan
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {historyTab === "summary" && (
+                  <>
+                    <div className="spm-gudang-table-wrap">
+                      <table className="spm-gudang-table">
+                        <thead>
+                          <tr>
+                            <th className="spm-gudang-table-no">No</th>
+                            <th>SKU</th>
+                            <th>Produk</th>
+                            <th>Gudang</th>
+                            <th>Slot Tujuan</th>
+                            <th>Total Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {summaryPerSku.map((item, index) => (
+                            <tr key={index}>
+                              <td className="spm-gudang-table-no">{index + 1}</td>
+                              <td className="spm-gudang-table-sku">{item.sku}</td>
+                              <td>{item.produk}</td>
+                              <td>{item.gudang}</td>
+                              <td>{item.slots}</td>
+                              <td style={{ fontWeight: 600 }}>{item.totalQty} pcs</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div className="spm-gudang-table-footer">
+                      <p>Menampilkan {summaryPerSku.length} jenis SKU</p>
+                    </div>
+                  </>
+                )}
               </>
             )}
             </section>

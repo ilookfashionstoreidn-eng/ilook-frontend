@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "./ProductList.css";
 import API from "../../api";
 import Swal from "sweetalert2";
@@ -2000,109 +2001,39 @@ const ProductList = () => {
   };
 
   return (
-    <div className="product-list-page">
-      <header className="product-list-header">
-        <div className="product-list-title-group">
-          <div className="product-list-brand-icon">
-            <FaLayerGroup />
-          </div>
-          <div>
-            <p className="product-list-pill">Produk</p>
-            <h1>Product List</h1>
-            <span>Database detail produk, material, aksesoris, estimasi, ukuran, price, dan notes SPK.</span>
-          </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Product List</h1>
+          <span className="ks-header-sub">{total} data ditemukan — Database detail produk, material, estimasi, ukuran, dan price</span>
         </div>
       </header>
 
-      <main className="product-list-main">
-
-        <section className="product-list-table-card">
-          <div className="product-list-table-header">
-            <div>
-              <h2>Semua Data Product List</h2>
-              <p>{total} data ditemukan</p>
-            </div>
-            <div className="product-list-table-actions">
-              <input
-                ref={importInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleImportChange}
-                className="product-list-file-input"
-              />
-              <button
-                className="product-list-secondary-button photo"
-                type="button"
-                onClick={openImageModal}
-                disabled={imageUploading || imageAssigning}
-                title="Tambah Foto"
-                style={{ width: "38px", padding: 0, justifyContent: "center" }}
-              >
-                <FaImage />
-              </button>
-              <button
-                className="product-list-secondary-button import"
-                type="button"
-                onClick={handleImportButtonClick}
-                disabled={importing}
-                title="Import Excel"
-                style={{ width: "38px", padding: 0, justifyContent: "center" }}
-              >
-                <FaFileExcel />
-              </button>
-              <button
-                className="product-list-secondary-button export"
-                type="button"
-                onClick={openExportModal}
-                disabled={exporting}
-                title="Export Excel"
-                style={{ width: "38px", padding: 0, justifyContent: "center" }}
-              >
-                <FaDownload />
-              </button>
-              <button
-                className="product-list-secondary-button template"
-                type="button"
-                onClick={handleDownloadTemplate}
-                title="Download Template Excel"
-                style={{ width: "38px", padding: 0, justifyContent: "center", color: "#059669", borderColor: "#34d399", background: "#ecfdf5" }}
-              >
-                <FaFileExcel />
-              </button>
-              <button
-                className="product-list-primary-button product-list-add-button"
-                type="button"
-                onClick={openAddModal}
-                title="Tambah Data"
-                style={{ width: "38px", padding: 0, justifyContent: "center" }}
-              >
-                <FaPlus />
-              </button>
-            </div>
-          </div>
-
-          <div className="product-list-filter-bar">
-            <div className="product-list-search">
-              <FaSearch />
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Cari product, SKU name, group, colour, aksesoris..."
+                placeholder="Cari product, SKU, group, colour..."
+                style={{ paddingLeft: "30px" }}
               />
               {searchInput && (
-                <button type="button" onClick={() => setSearchInput("")}>
+                <button type="button" className="pl-search-clear" onClick={() => setSearchInput("")}>
                   <FaTimes />
                 </button>
               )}
             </div>
 
             <div
-              className={`product-list-searchable-select${groupDropdownOpen ? " open" : ""}`}
+              className={`pl-filter-select${groupDropdownOpen ? " open" : ""}`}
               ref={groupDropdownRef}
             >
               <button
-                className="product-list-searchable-select-trigger"
+                className="pl-filter-trigger"
                 type="button"
                 onClick={() => { setGroupDropdownOpen((prev) => !prev); setMaterialGroup1DropdownOpen(false); setMaterialGroup2DropdownOpen(false); }}
                 aria-haspopup="listbox"
@@ -2113,8 +2044,8 @@ const ProductList = () => {
               </button>
 
               {groupDropdownOpen && (
-                <div className="product-list-searchable-select-menu">
-                  <div className="product-list-searchable-select-search">
+                <div className="pl-filter-menu">
+                  <div className="pl-filter-search">
                     <FaSearch />
                     <input
                       type="text"
@@ -2130,9 +2061,9 @@ const ProductList = () => {
                     )}
                   </div>
 
-                  <div className="product-list-searchable-select-options" role="listbox">
+                  <div className="pl-filter-options" role="listbox">
                     <button
-                      className={`product-list-searchable-option${selectedGroup === "" ? " selected" : ""}`}
+                      className={`pl-filter-option${selectedGroup === "" ? " selected" : ""}`}
                       type="button"
                       onClick={() => handleGroupSelect("")}
                       role="option"
@@ -2144,7 +2075,7 @@ const ProductList = () => {
                     {filteredGroupOptions.length ? (
                       filteredGroupOptions.map((group) => (
                         <button
-                          className={`product-list-searchable-option${selectedGroup === group ? " selected" : ""}`}
+                          className={`pl-filter-option${selectedGroup === group ? " selected" : ""}`}
                           type="button"
                           key={group}
                           onClick={() => handleGroupSelect(group)}
@@ -2155,7 +2086,7 @@ const ProductList = () => {
                         </button>
                       ))
                     ) : (
-                      <div className="product-list-searchable-empty">Product Group tidak ditemukan.</div>
+                      <div className="pl-filter-empty">Product Group tidak ditemukan.</div>
                     )}
                   </div>
                 </div>
@@ -2163,10 +2094,10 @@ const ProductList = () => {
             </div>
 
             <div
-              className={`product-list-searchable-select${materialGroup1DropdownOpen ? " open" : ""}`}
+              className={`pl-filter-select${materialGroup1DropdownOpen ? " open" : ""}`}
             >
               <button
-                className="product-list-searchable-select-trigger"
+                className="pl-filter-trigger"
                 type="button"
                 onClick={() => { setMaterialGroup1DropdownOpen((prev) => !prev); setGroupDropdownOpen(false); setMaterialGroup2DropdownOpen(false); }}
               >
@@ -2175,8 +2106,8 @@ const ProductList = () => {
               </button>
 
               {materialGroup1DropdownOpen && (
-                <div className="product-list-searchable-select-menu">
-                  <div className="product-list-searchable-select-search">
+                <div className="pl-filter-menu">
+                  <div className="pl-filter-search">
                     <FaSearch />
                     <input
                       type="text"
@@ -2192,9 +2123,9 @@ const ProductList = () => {
                     )}
                   </div>
 
-                  <div className="product-list-searchable-select-options">
+                  <div className="pl-filter-options">
                     <button
-                      className={`product-list-searchable-option${selectedMaterialGroup1 === "" ? " selected" : ""}`}
+                      className={`pl-filter-option${selectedMaterialGroup1 === "" ? " selected" : ""}`}
                       type="button"
                       onClick={() => { setSelectedMaterialGroup1(""); setMaterialGroup1DropdownOpen(false); setCurrentPage(1); }}
                     >
@@ -2204,7 +2135,7 @@ const ProductList = () => {
                     {filteredMaterialGroup1Options.length ? (
                       filteredMaterialGroup1Options.map((group) => (
                         <button
-                          className={`product-list-searchable-option${selectedMaterialGroup1 === group ? " selected" : ""}`}
+                          className={`pl-filter-option${selectedMaterialGroup1 === group ? " selected" : ""}`}
                           type="button"
                           key={group}
                           onClick={() => { setSelectedMaterialGroup1(group); setMaterialGroup1DropdownOpen(false); setCurrentPage(1); }}
@@ -2213,7 +2144,7 @@ const ProductList = () => {
                         </button>
                       ))
                     ) : (
-                      <div className="product-list-searchable-empty">Material Group 1 tidak ditemukan.</div>
+                      <div className="pl-filter-empty">Material Group 1 tidak ditemukan.</div>
                     )}
                   </div>
                 </div>
@@ -2221,10 +2152,10 @@ const ProductList = () => {
             </div>
 
             <div
-              className={`product-list-searchable-select${materialGroup2DropdownOpen ? " open" : ""}`}
+              className={`pl-filter-select${materialGroup2DropdownOpen ? " open" : ""}`}
             >
               <button
-                className="product-list-searchable-select-trigger"
+                className="pl-filter-trigger"
                 type="button"
                 onClick={() => { setMaterialGroup2DropdownOpen((prev) => !prev); setGroupDropdownOpen(false); setMaterialGroup1DropdownOpen(false); }}
               >
@@ -2233,8 +2164,8 @@ const ProductList = () => {
               </button>
 
               {materialGroup2DropdownOpen && (
-                <div className="product-list-searchable-select-menu">
-                  <div className="product-list-searchable-select-search">
+                <div className="pl-filter-menu">
+                  <div className="pl-filter-search">
                     <FaSearch />
                     <input
                       type="text"
@@ -2250,9 +2181,9 @@ const ProductList = () => {
                     )}
                   </div>
 
-                  <div className="product-list-searchable-select-options">
+                  <div className="pl-filter-options">
                     <button
-                      className={`product-list-searchable-option${selectedMaterialGroup2 === "" ? " selected" : ""}`}
+                      className={`pl-filter-option${selectedMaterialGroup2 === "" ? " selected" : ""}`}
                       type="button"
                       onClick={() => { setSelectedMaterialGroup2(""); setMaterialGroup2DropdownOpen(false); setCurrentPage(1); }}
                     >
@@ -2262,7 +2193,7 @@ const ProductList = () => {
                     {filteredMaterialGroup2Options.length ? (
                       filteredMaterialGroup2Options.map((group) => (
                         <button
-                          className={`product-list-searchable-option${selectedMaterialGroup2 === group ? " selected" : ""}`}
+                          className={`pl-filter-option${selectedMaterialGroup2 === group ? " selected" : ""}`}
                           type="button"
                           key={group}
                           onClick={() => { setSelectedMaterialGroup2(group); setMaterialGroup2DropdownOpen(false); setCurrentPage(1); }}
@@ -2271,7 +2202,7 @@ const ProductList = () => {
                         </button>
                       ))
                     ) : (
-                      <div className="product-list-searchable-empty">Material Group 2 tidak ditemukan.</div>
+                      <div className="pl-filter-empty">Material Group 2 tidak ditemukan.</div>
                     )}
                   </div>
                 </div>
@@ -2279,118 +2210,146 @@ const ProductList = () => {
             </div>
           </div>
 
-          {error && <div className="product-list-error">{error}</div>}
-
-          <div className="product-list-table-scroll">
-            <table className="product-list-table">
-              <thead>
-                <tr>
-                  <th>SKU Name</th>
-                  <th>Product</th>
-                  <th>Product Group</th>
-                  <th>Product Size</th>
-                  <th>Product Source</th>
-                  <th>Product Colour</th>
-                  <th>Material Group 1</th>
-                  <th>Colour 1</th>
-                  <th>Material Group 2</th>
-                  <th>Colour 2</th>
-                  <th>Accessories</th>
-                  <th>Accessories Colour</th>
-                  <th>Estimasi Cutting</th>
-                  <th>Estimasi Combi</th>
-                  <th>Berat Panjang</th>
-                  <th>Satuan Berat Panjang</th>
-                  <th>Berat Panjang Combi</th>
-                  <th>Satuan Berat Panjang Combi</th>
-                  <th>LD</th>
-                  <th>PJ Dress</th>
-                  <th>PJ Celana</th>
-                  <th>PJ Baju</th>
-                  <th>Notes SPK</th>
-                  <th>Price CMT</th>
-                  <th>Price Cutting</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="26" className="product-list-state-cell">
-                      Memuat data Product List...
-                    </td>
-                  </tr>
-                ) : items.length === 0 ? (
-                  <tr>
-                    <td colSpan="26" className="product-list-state-cell">
-                      Belum ada data Product List.
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item) => (
-                    <tr key={item.id}>
-                      <td><strong>{tableValue(item.sku_name)}</strong></td>
-                      <td>{tableValue(item.product)}</td>
-                      <td>{tableValue(item.product_group)}</td>
-                      <td>{tableValue(item.product_size)}</td>
-                      <td>{tableValue(item.product_source)}</td>
-                      <td>{tableValue(item.product_colour)}</td>
-                      <td>{getMaterialTableValue(item.materials, 0, "material_group")}</td>
-                      <td>{getMaterialTableValue(item.materials, 0, "colour")}</td>
-                      <td>{getMaterialTableValue(item.materials, 1, "material_group")}</td>
-                      <td>{getMaterialTableValue(item.materials, 1, "colour")}</td>
-                      <td>{tableValue(item.product_accecories)}</td>
-                      <td>{tableValue(item.product_accecories_colour)}</td>
-                      <td>{tableValue(item.estimasi_cutting)}</td>
-                      <td>{tableValue(item.estimasi_combi)}</td>
-                      <td>{tableValue(item.berat_panjang)}</td>
-                      <td>{tableValue(item.satuan_berat_panjang)}</td>
-                      <td>{tableValue(item.berat_panjang_combi)}</td>
-                      <td>{tableValue(item.satuan_berat_panjang_combi)}</td>
-                      <td>{tableValue(item.LD)}</td>
-                      <td>{tableValue(item.pj_dress)}</td>
-                      <td>{tableValue(item.pj_celana)}</td>
-                      <td>{tableValue(item.pj_baju)}</td>
-                      <td className="product-list-notes-cell">{item.notes_spk || "-"}</td>
-                      <td>{tableValue(item.price_cmt)}</td>
-                      <td>{tableValue(item.price_cutting)}</td>
-                      <td>
-                        <div className="product-list-actions">
-                          <button className="product-list-icon-button info" type="button" onClick={() => openDetailModal(item)} title="Detail">
-                            <FaInfoCircle />
-                          </button>
-                          <button className="product-list-icon-button" type="button" onClick={() => handleDuplicate(item)} title="Duplikat">
-                            <FiCopy />
-                          </button>{/* [DUPLIKAT] - ditambahkan */}
-                          <button className="product-list-icon-button" type="button" onClick={() => openEditModal(item)} title="Edit">
-                            <FaEdit />
-                          </button>
-                          <button className="product-list-icon-button danger" type="button" onClick={() => handleDelete(item)} title="Hapus">
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="product-list-pagination">
-            <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
-              Sebelumnya
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleImportChange}
+              style={{ display: "none" }}
+            />
+            <button className="ks-btn" type="button" onClick={openImageModal} disabled={imageUploading || imageAssigning} title="Tambah Foto">
+              <FaImage />
             </button>
-            <span>
+            <button className="ks-btn" type="button" onClick={handleImportButtonClick} disabled={importing} title="Import Excel">
+              <FaFileExcel />
+            </button>
+            <button className="ks-btn" type="button" onClick={openExportModal} disabled={exporting} title="Export Excel">
+              <FaDownload />
+            </button>
+            <button className="ks-btn" type="button" onClick={handleDownloadTemplate} title="Download Template Excel">
+              <FaFileExcel />
+            </button>
+            <button className="ks-btn is-primary" type="button" onClick={openAddModal} title="Tambah Data">
+              <FaPlus /> Tambah
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="pl-error-bar">{error}</div>}
+
+        <div className="ks-grid-scroll">
+          <table className="ks-grid">
+            <thead>
+              <tr>
+                <th>SKU Name</th>
+                <th>Product</th>
+                <th>Product Group</th>
+                <th>Product Size</th>
+                <th>Product Source</th>
+                <th>Product Colour</th>
+                <th>Material Group 1</th>
+                <th>Colour 1</th>
+                <th>Material Group 2</th>
+                <th>Colour 2</th>
+                <th>Accessories</th>
+                <th>Accessories Colour</th>
+                <th>Estimasi Cutting</th>
+                <th>Estimasi Combi</th>
+                <th>Berat Panjang</th>
+                <th>Satuan Berat Panjang</th>
+                <th>Berat Panjang Combi</th>
+                <th>Satuan Berat Panjang Combi</th>
+                <th>LD</th>
+                <th>PJ Dress</th>
+                <th>PJ Celana</th>
+                <th>PJ Baju</th>
+                <th>Notes SPK</th>
+                <th>Price CMT</th>
+                <th>Price Cutting</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="26" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                    Memuat data Product List...
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan="26" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                    Belum ada data Product List.
+                  </td>
+                </tr>
+              ) : (
+                items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="ks-cell-code">{tableValue(item.sku_name)}</td>
+                    <td className="ks-cell-product">{tableValue(item.product)}</td>
+                    <td>{tableValue(item.product_group)}</td>
+                    <td>{tableValue(item.product_size)}</td>
+                    <td>{tableValue(item.product_source)}</td>
+                    <td>{tableValue(item.product_colour)}</td>
+                    <td>{getMaterialTableValue(item.materials, 0, "material_group")}</td>
+                    <td>{getMaterialTableValue(item.materials, 0, "colour")}</td>
+                    <td>{getMaterialTableValue(item.materials, 1, "material_group")}</td>
+                    <td>{getMaterialTableValue(item.materials, 1, "colour")}</td>
+                    <td>{tableValue(item.product_accecories)}</td>
+                    <td>{tableValue(item.product_accecories_colour)}</td>
+                    <td>{tableValue(item.estimasi_cutting)}</td>
+                    <td>{tableValue(item.estimasi_combi)}</td>
+                    <td>{tableValue(item.berat_panjang)}</td>
+                    <td>{tableValue(item.satuan_berat_panjang)}</td>
+                    <td>{tableValue(item.berat_panjang_combi)}</td>
+                    <td>{tableValue(item.satuan_berat_panjang_combi)}</td>
+                    <td>{tableValue(item.LD)}</td>
+                    <td>{tableValue(item.pj_dress)}</td>
+                    <td>{tableValue(item.pj_celana)}</td>
+                    <td>{tableValue(item.pj_baju)}</td>
+                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>{item.notes_spk || "-"}</td>
+                    <td>{tableValue(item.price_cmt)}</td>
+                    <td>{tableValue(item.price_cutting)}</td>
+                    <td>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button className="ks-btn pl-act-btn info" type="button" onClick={() => openDetailModal(item)} title="Detail">
+                          <FaInfoCircle />
+                        </button>
+                        <button className="ks-btn pl-act-btn" type="button" onClick={() => handleDuplicate(item)} title="Duplikat">
+                          <FiCopy />
+                        </button>{/* [DUPLIKAT] - ditambahkan */}
+                        <button className="ks-btn pl-act-btn" type="button" onClick={() => openEditModal(item)} title="Edit">
+                          <FaEdit />
+                        </button>
+                        <button className="ks-btn pl-act-btn danger" type="button" onClick={() => handleDelete(item)} title="Hapus">
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {lastPage > 1 && (
+          <div className="ks-footer">
+            <span style={{ fontSize: "12px", color: "var(--ks-text-soft, #6b6b73)" }}>
               Halaman {currentPage} dari {lastPage}
             </span>
-            <button type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= lastPage}>
-              Berikutnya
-            </button>
+            <div className="ks-pager">
+              <button className="ks-pg-btn" type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
+                Prev
+              </button>
+              <button className="ks-pg-btn" type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= lastPage}>
+                Next
+              </button>
+            </div>
           </div>
-        </section>
-      </main>
-
+        )}
+      </section>
 
       {renderModal()}
       {renderExportModal()}
