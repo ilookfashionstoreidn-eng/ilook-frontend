@@ -66,6 +66,7 @@ const Pengiriman = () => {
   const [pengirimans, setPengirimans] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editModeId, setEditModeId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -568,6 +569,7 @@ const Pengiriman = () => {
     setDeadlineError("");
     setTanggalMasaLaluError("");
     setFormItems([{ sku: "", qty: 0, harga: 0 }]);
+    setEditModeId(null);
   };
 
   const closeFormModal = () => {
@@ -578,6 +580,28 @@ const Pengiriman = () => {
   const closePopup = () => {
     setShowPopup(false);
     setSelectedPengiriman(null);
+  };
+
+  const handleEditClick = (pengiriman) => {
+    setEditModeId(pengiriman.id_pengiriman);
+    
+    const loadedItems = pengiriman.warna?.map(w => ({
+      sku: w.warna,
+      qty: w.jumlah_dikirim,
+      harga: 0 
+    })) || [{ sku: "", qty: 0, harga: 0 }];
+    
+    const extractedSeri = pengiriman.no_seri_pengiriman ? pengiriman.no_seri_pengiriman.split('.')[0] : "";
+    
+    setNewPengiriman({
+      ...createInitialPengiriman(),
+      id_penjahit: pengiriman.id_penjahit || "",
+      no_seri: extractedSeri,
+      tanggal_pengiriman: pengiriman.tanggal_pengiriman ? pengiriman.tanggal_pengiriman.split('T')[0] : getTodayDate(),
+      foto_nota: null 
+    });
+    setFormItems(loadedItems);
+    setShowForm(true);
   };
 
   const closePetugasAtasPopup = () => {
@@ -599,7 +623,7 @@ const Pengiriman = () => {
       return;
     }
 
-    if (!newPengiriman.foto_nota) {
+    if (!editModeId && !newPengiriman.foto_nota) {
       alert("Silakan upload foto nota terlebih dahulu");
       return;
     }
@@ -633,7 +657,9 @@ const Pengiriman = () => {
     const totalBayar = validItems.reduce((acc, curr) => acc + ((parseInt(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0);
     formData.append("total_bayar", totalBayar);
 
-    formData.append("foto_nota", newPengiriman.foto_nota);
+    if (newPengiriman.foto_nota) {
+      formData.append("foto_nota", newPengiriman.foto_nota);
+    }
     formData.append("items", JSON.stringify(validItems.map((item) => ({
       sku: item.sku,
       qty: item.qty,
@@ -641,9 +667,15 @@ const Pengiriman = () => {
     }))));
 
     try {
-      await API.post("/pengiriman/petugas-bawah", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (editModeId) {
+        await API.post(`/pengiriman/petugas-bawah/${editModeId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        await API.post("/pengiriman/petugas-bawah", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
 
       setRefreshKey((prev) => prev + 1);
       closeFormModal();
@@ -1030,6 +1062,15 @@ const Pengiriman = () => {
                                 >
                                   <FiTrash2 size={12} />
                                 </button>
+                                <button
+                                  type="button"
+                                  className="ks-btn"
+                                  style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-primary, #1976d2)", marginLeft: "4px" }}
+                                  onClick={() => handleEditClick(pengiriman)}
+                                  title="Edit"
+                                >
+                                  <FiEdit2 size={12} />
+                                </button>
                                 {userRole !== "staff_bawah" && (
                                   <button
                                     type="button"
@@ -1249,14 +1290,15 @@ const Pengiriman = () => {
             style={{ width: "900px", maxWidth: "95%" }}
             onClick={(event) => event.stopPropagation()}
           >
+          <div className="pengiriman-modal-content pengiriman-form-modal">
             <div className="pengiriman-modal-header">
               <div>
-                <span className="pengiriman-section-label pengiriman-section-label--light">
-                  <FiPlus />
-                  Input Pengiriman
-                </span>
-                <h2>Tambah Data Pengiriman</h2>
-                <p>Simpan data pengiriman baru beserta nota dan tanggal kirim.</p>
+                <h3 className="pengiriman-modal-title" style={{ fontSize: "16px", fontWeight: "600", color: "var(--ks-text-strong)" }}>
+                  {editModeId ? "Edit Data Pengiriman" : "Tambah Data Pengiriman"}
+                </h3>
+                <p className="pengiriman-modal-subtitle" style={{ fontSize: "12px", color: "var(--ks-text-soft)", marginTop: "4px" }}>
+                  {editModeId ? "Edit data pengiriman beserta nota dan tanggal kirim." : "Simpan data pengiriman baru beserta nota dan tanggal kirim."}
+                </p>
               </div>
               <button
                 type="button"
