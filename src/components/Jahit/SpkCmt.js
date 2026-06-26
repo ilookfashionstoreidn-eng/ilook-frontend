@@ -2388,7 +2388,7 @@ const SpkCmt = () => {
                     <tbody>
                       {(() => {
                         let rowCounter = 0;
-                        return filteredSpk.map((spk) => {
+                        return filteredSpk.flatMap((spk) => {
                           const latestPengiriman = spk.pengiriman?.length ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1) : null;
                           const activeColors = spk.warna || [];
                           const cuttingDate = spk.sumber_pekerjaan?.spk_cutting?.created_at 
@@ -2396,11 +2396,11 @@ const SpkCmt = () => {
                             || spk.spk_cutting_distribusi?.spk_cutting?.created_at 
                             || spk.created_at;
                           
-                          rowCounter++;
-                          const sisaBarangDefault = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
-                          
-                          return (
-                              <tr key={`${spk.id_spk}`}>
+                          if (activeColors.length === 0) {
+                            rowCounter++;
+                            const sisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
+                            return (
+                              <tr key={`${spk.id_spk}-none`}>
                                 <td>
                                   <span className="ks-cell-num" style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + rowCounter}</span>
                                 </td>
@@ -2421,24 +2421,8 @@ const SpkCmt = () => {
                                   <div className="ks-cell-product" title={spk.nama_produk}>{spk.nama_produk || "-"}</div>
                                 </td>
                                 <td>{spk.product_size || "-"}</td>
-                                <td style={{ maxWidth: "120px" }}>
-                                  {activeColors.length > 0 ? (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                      {activeColors.map((c, i) => (
-                                        <div key={i} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.nama_warna || c.warna}>{c.nama_warna || c.warna}</div>
-                                      ))}
-                                    </div>
-                                  ) : "-"}
-                                </td>
-                                <td className="align-right ks-cell-num" style={{ fontWeight: "700" }}>
-                                  {activeColors.length > 0 ? (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                      {activeColors.map((c, i) => (
-                                        <div key={i}>{(c.qty || 0).toLocaleString("id-ID")}</div>
-                                      ))}
-                                    </div>
-                                  ) : (spk.jumlah_produk || 0).toLocaleString("id-ID")}
-                                </td>
+                                <td>-</td>
+                                <td className="align-right ks-cell-num">{(spk.jumlah_produk || 0).toLocaleString("id-ID")}</td>
                                 <td className="align-right ks-cell-num">
                                   <span 
                                     onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")} 
@@ -2449,38 +2433,13 @@ const SpkCmt = () => {
                                   </span>
                                 </td>
                                 <td className="align-right ks-cell-num">
-                                  {activeColors.length > 0 ? (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                      {activeColors.map((c, i) => {
-                                        const warnaNama = c.nama_warna || c.warna;
-                                        const sisa = latestPengiriman
-                                          ? (latestPengiriman.sisa_barang_per_warna?.[warnaNama] ?? 
-                                             latestPengiriman.sisa_barang_per_warna?.[warnaNama?.trim()] ?? 
-                                             latestPengiriman.sisa_barang_per_warna?.[warnaNama?.toUpperCase()] ?? 
-                                             c.qty ?? 0)
-                                          : (c.qty ?? 0);
-                                        return (
-                                          <div key={i}>
-                                            <span 
-                                              onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
-                                              style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
-                                              title="Klik untuk detail sisa barang"
-                                            >
-                                              {sisa.toLocaleString("id-ID")}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <span 
-                                      onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
-                                      style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
-                                      title="Klik untuk detail sisa barang"
-                                    >
-                                      {sisaBarangDefault.toLocaleString("id-ID")}
-                                    </span>
-                                  )}
+                                  <span 
+                                    onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
+                                    title="Klik untuk detail sisa barang"
+                                  >
+                                    {sisaBarang.toLocaleString("id-ID")}
+                                  </span>
                                 </td>
                                 <td style={{ textAlign: "center" }}>
                                   <button
@@ -2517,7 +2476,100 @@ const SpkCmt = () => {
                                   </button>
                                 </td>
                               </tr>
-                          );
+                            );
+                          }
+
+                          return activeColors.map((color, colorIdx) => {
+                            rowCounter++;
+                            const sisaBarang = latestPengiriman
+                              ? (latestPengiriman.sisa_barang_per_warna?.[color.nama_warna] ??
+                                 latestPengiriman.sisa_barang_per_warna?.[color.nama_warna.trim()] ??
+                                 latestPengiriman.sisa_barang_per_warna?.[color.nama_warna.toUpperCase()] ??
+                                 color.qty ?? 0)
+                              : (color.qty ?? 0);
+                            const kirimPerWarna = (color.qty ?? 0) - sisaBarang;
+                            
+                            return (
+                              <tr key={`${spk.id_spk}-${color.nama_warna}-${colorIdx}`}>
+                                <td>
+                                  <span className="ks-cell-num" style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + rowCounter}</span>
+                                </td>
+                                <td>
+                                  <span className="ks-cell-code">{spk.nomor_seri || "-"}</span>
+                                </td>
+                                <td>{spk.tgl_spk ? new Date(spk.tgl_spk).toLocaleDateString("id-ID") : (cuttingDate ? new Date(cuttingDate).toLocaleDateString("id-ID") : "-")}</td>
+                                <td>{spk.deadline ? new Date(spk.deadline).toLocaleDateString("id-ID") : "-"}</td>
+                                <td style={{ textAlign: "center" }}>
+                                  <span className={`ks-run ${getDeadlineTone(spk.sisa_hari)}`}>
+                                    {spk.sisa_hari ?? "-"}
+                                  </span>
+                                </td>
+                                <td>{spk.penjahit?.nama_penjahit || "-"}</td>
+                                <td>{spk.tanggal_ambil ? new Date(spk.tanggal_ambil).toLocaleDateString("id-ID") : "-"}</td>
+                                <td>{calculateWaktuPengerjaan(spk)}</td>
+                                <td>
+                                  <div className="ks-cell-product" title={spk.nama_produk}>{spk.nama_produk || "-"}</div>
+                                </td>
+                                <td>{spk.product_size || "-"}</td>
+                                <td>{color.nama_warna}</td>
+                                <td className="align-right ks-cell-num" style={{ fontWeight: "700" }}>
+                                  {(color.qty || 0).toLocaleString("id-ID")}
+                                </td>
+                                <td className="align-right ks-cell-num">
+                                  <span
+                                    onClick={() => handlePengirimanDetailClick(spk, "jumlah_kirim")}
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-accent)", fontWeight: "600" }}
+                                    title="Klik untuk detail pengiriman"
+                                  >
+                                    {kirimPerWarna.toLocaleString("id-ID")}
+                                  </span>
+                                </td>
+                                <td className="align-right ks-cell-num">
+                                  <span 
+                                    onClick={() => handlePengirimanDetailClick(spk, "sisa_barang")} 
+                                    style={{ cursor: "pointer", textDecoration: "underline", color: "var(--ks-safe)", fontWeight: "600" }} 
+                                    title="Klik untuk detail sisa barang"
+                                  >
+                                    {sisaBarang.toLocaleString("id-ID")}
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: "center" }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.nativeEvent.stopImmediatePropagation();
+                                      if (dropdownSpk?.id_spk === spk.id_spk) {
+                                        setDropdownSpk(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setDropdownPosition({
+                                          top: rect.bottom + window.scrollY,
+                                          left: rect.right + window.scrollX - 160
+                                        });
+                                        setDropdownSpk(spk);
+                                      }
+                                    }}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      cursor: "pointer",
+                                      color: "var(--ks-text-soft)",
+                                      boxShadow: "none",
+                                      margin: "0 auto",
+                                      padding: "8px",
+                                      transition: "all 0.2s"
+                                    }}
+                                    title="Pilih Aksi"
+                                  >
+                                    <FaEllipsisV size={14} />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          });
                         });
                       })()}
                     </tbody>

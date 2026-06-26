@@ -961,7 +961,7 @@ const Pengiriman = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPengirimans.map((pengiriman) => {
+                  {filteredPengirimans.flatMap((pengiriman) => {
                     const status = getStatusConfig(
                       pengiriman.status_verifikasi || "pending"
                     );
@@ -973,118 +973,115 @@ const Pengiriman = () => {
                     else if (pengiriman.status_verifikasi === "pending") statusTone = "warning";
                     else if (pengiriman.status_verifikasi === "invalid") statusTone = "overdue";
 
-                    return (
-                      <tr key={pengiriman.id_pengiriman}>
-                        <td className="ks-col-dot">
-                          <span className={`ks-dot tone-${statusTone}`} title={status.label} />
-                        </td>
-                        <td className="ks-muted">{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
-                        <td className="ks-cell-product">{pengiriman.nama_penjahit || "-"}</td>
-                        <td title={pengiriman.nama_produk} style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pengiriman.nama_produk || "-"}</td>
-                        <td className="ks-cell-code">
-                          <strong>{pengiriman.no_seri_pengiriman || `SPK-${pengiriman.id_spk}`}</strong>
-                        </td>
-                        <td style={{ maxWidth: "120px" }}>
-                          {pengiriman.warna?.length > 0 ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                              {pengiriman.warna.map((w, idx) => (
-                                <div key={idx} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.warna}>{w.warna}</div>
-                              ))}
-                            </div>
-                          ) : "-"}
-                        </td>
-                        <td className="align-right ks-cell-num">
-                          {pengiriman.warna?.length > 0 ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                              {pengiriman.warna.map((w, idx) => (
-                                <div key={idx}>{(w.jumlah_dikirim || 0).toLocaleString("id-ID")} pcs</div>
-                              ))}
-                            </div>
-                          ) : (
-                            <span>{(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs</span>
-                          )}
+                    const warnaList = pengiriman.warna?.length > 0 ? pengiriman.warna : [null];
+                    const rowCount = warnaList.length;
+
+                    return warnaList.map((w, idx) => (
+                      <tr key={`${pengiriman.id_pengiriman}-${idx}`}>
+                        {idx === 0 && (
+                          <>
+                            <td className="ks-col-dot" rowSpan={rowCount}>
+                              <span className={`ks-dot tone-${statusTone}`} title={status.label} />
+                            </td>
+                            <td className="ks-muted" rowSpan={rowCount}>{formatTanggal(pengiriman.tanggal_pengiriman)}</td>
+                            <td className="ks-cell-product" rowSpan={rowCount}>{pengiriman.nama_penjahit || "-"}</td>
+                            <td title={pengiriman.nama_produk} style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} rowSpan={rowCount}>{pengiriman.nama_produk || "-"}</td>
+                            <td className="ks-cell-code" rowSpan={rowCount}>
+                              <strong>{pengiriman.no_seri_pengiriman || `SPK-${pengiriman.id_spk}`}</strong>
+                            </td>
+                          </>
+                        )}
+                        <td style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {w ? w.warna : "-"}
                         </td>
                         <td className="align-right ks-cell-num">
-                          {formatRupiah((pengiriman.total_bayar || 0) / (pengiriman.total_barang_dikirim || 1))}
+                          {w ? `${(w.jumlah_dikirim || 0).toLocaleString("id-ID")} pcs` : `${(pengiriman.total_barang_dikirim || 0).toLocaleString("id-ID")} pcs`}
                         </td>
-                        <td className="align-right ks-cell-num">
-                          <strong>{formatRupiah(pengiriman.total_bayar || 0)}</strong>
-                        </td>
-                        <td>
-                          <span className={`ks-tag ${pengiriman.status_verifikasi === "valid" ? "is-sudah" : "is-belum"}`}>
-                            {status.label}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
-                            {pengiriman.foto_nota && (
-                              <div 
-                                className="nota-hover-container" 
-                                style={{ position: "relative", display: "inline-flex" }}
-                                onMouseEnter={(e) => {
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  setHoveredNota({
-                                    url: pengiriman.foto_nota,
-                                    isPdf: pengiriman.foto_nota.endsWith(".pdf"),
-                                    x: rect.left,
-                                    y: rect.top
-                                  });
-                                }}
-                                onMouseLeave={() => {
-                                  setHoveredNota(null);
-                                }}
-                              >
-                                <a
-                                  href={`${STORAGE_URL}/${pengiriman.foto_nota}`}
-                                  target="_blank"
-                                  rel="noreferrer"
+                        {idx === 0 && (
+                          <>
+                            <td className="align-right ks-cell-num" rowSpan={rowCount}>
+                              {formatRupiah((pengiriman.total_bayar || 0) / (pengiriman.total_barang_dikirim || 1))}
+                            </td>
+                            <td className="align-right ks-cell-num" rowSpan={rowCount}>
+                              <strong>{formatRupiah(pengiriman.total_bayar || 0)}</strong>
+                            </td>
+                            <td rowSpan={rowCount}>
+                              <span className={`ks-tag ${pengiriman.status_verifikasi === "valid" ? "is-sudah" : "is-belum"}`}>
+                                {status.label}
+                              </span>
+                            </td>
+                            <td rowSpan={rowCount}>
+                              <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
+                                {pengiriman.foto_nota && (
+                                  <div 
+                                    className="nota-hover-container" 
+                                    style={{ position: "relative", display: "inline-flex" }}
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setHoveredNota({
+                                        url: pengiriman.foto_nota,
+                                        isPdf: pengiriman.foto_nota.endsWith(".pdf"),
+                                        x: rect.left,
+                                        y: rect.top
+                                      });
+                                    }}
+                                    onMouseLeave={() => {
+                                      setHoveredNota(null);
+                                    }}
+                                  >
+                                    <a
+                                      href={`${STORAGE_URL}/${pengiriman.foto_nota}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="ks-btn"
+                                      style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-text)" }}
+                                      title="Lihat Nota"
+                                    >
+                                      <FiImage size={12} />
+                                    </a>
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
                                   className="ks-btn"
-                                  style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-text)" }}
-                                  title="Lihat Nota"
+                                  style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)" }}
+                                  onClick={() => handleDetailClick(pengiriman)}
+                                  title="Detail"
                                 >
-                                  <FiImage size={12} />
-                                </a>
+                                  <FiFileText size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ks-btn"
+                                  style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-error, #d32f2f)" }}
+                                  onClick={() => handleDeletePengiriman(pengiriman)}
+                                  title="Hapus"
+                                >
+                                  <FiTrash2 size={12} />
+                                </button>
+                                {userRole !== "staff_bawah" && (
+                                  <button
+                                    type="button"
+                                    className="ks-btn"
+                                    style={{
+                                      padding: "4px 8px",
+                                      minHeight: "26px",
+                                      background: "var(--ks-accent-soft, #edf4ff)",
+                                      color: "var(--ks-accent, #2458ce)",
+                                      border: "1px solid rgba(36, 88, 206, 0.2)"
+                                    }}
+                                    onClick={() => handlePetugasAtas(pengiriman)}
+                                    title="Verifikasi"
+                                  >
+                                    <FiShield size={12} />
+                                  </button>
+                                )}
                               </div>
-                            )}
-                            <button
-                              type="button"
-                              className="ks-btn"
-                              style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)" }}
-                              onClick={() => handleDetailClick(pengiriman)}
-                              title="Detail"
-                            >
-                              <FiFileText size={12} />
-                            </button>
-                            <button
-                              type="button"
-                              className="ks-btn"
-                              style={{ padding: "4px 8px", minHeight: "26px", border: "1px solid var(--ks-line-strong)", color: "var(--ks-error, #d32f2f)" }}
-                              onClick={() => handleDeletePengiriman(pengiriman)}
-                              title="Hapus"
-                            >
-                              <FiTrash2 size={12} />
-                            </button>
-                            {userRole !== "staff_bawah" && (
-                              <button
-                                type="button"
-                                className="ks-btn"
-                                style={{
-                                  padding: "4px 8px",
-                                  minHeight: "26px",
-                                  background: "var(--ks-accent-soft, #edf4ff)",
-                                  color: "var(--ks-accent, #2458ce)",
-                                  border: "1px solid rgba(36, 88, 206, 0.2)"
-                                }}
-                                onClick={() => handlePetugasAtas(pengiriman)}
-                                title="Verifikasi"
-                              >
-                                <FiShield size={12} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                            </td>
+                          </>
+                        )}
                       </tr>
-                    );
+                    ));
                   })}
                 </tbody>
               </table>
