@@ -1,137 +1,78 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./DashboardCutting.css";
 import API from "../../../api";
-import { Line, Doughnut } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import "chart.js/auto";
-import { FaCalendarAlt } from "react-icons/fa";
-
-const createEmptySummary = () => ({
-  all: 0,
-  belum_diambil: {
-    count: 0,
-    total_asumsi_produk: 0,
-  },
-  sudah_diambil: 0,
-  selesai: 0,
-  in_progress_weekly: {
-    count: 0,
-    total_asumsi_produk: 0,
-    target: 50000,
-    remaining: 50000,
-  },
-  in_progress_daily: {
-    count: 0,
-    total_asumsi_produk: 0,
-    target: 7143,
-    remaining: 7143,
-  },
-});
+import { FaCalendarAlt, FaExclamationTriangle, FaClock, FaCheckCircle, FaBoxOpen, FaFire } from "react-icons/fa";
 
 const formatDateParam = (date) => {
   const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-const formatLongDate = (date) => {
-  return date.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+const formatLongDate = (date) =>
+  date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+const formatRupiah = (value) =>
+  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value || 0);
+
+const createEmptySummary = () => ({
+  all: 0,
+  belum_diambil: { count: 0, total_asumsi_produk: 0 },
+  sudah_diambil: 0,
+  selesai: 0,
+  in_progress_weekly: { count: 0, total_asumsi_produk: 0, target: 50000, remaining: 50000 },
+  in_progress_daily: { count: 0, total_asumsi_produk: 0, target: 7143, remaining: 7143 },
+});
 
 const DashboardCutting = () => {
   const [summary, setSummary] = useState(createEmptySummary);
   const [spkList, setSpkList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeFilter, setTimeFilter] = useState("today");
   const [performance, setPerformance] = useState([]);
   const [performanceLoading, setPerformanceLoading] = useState(false);
-  const [performanceError, setPerformanceError] = useState(null);
   const [performanceRange, setPerformanceRange] = useState("today");
   const [performanceFilterOpen, setPerformanceFilterOpen] = useState(false);
   const [incomeList, setIncomeList] = useState([]);
   const [incomeLoading, setIncomeLoading] = useState(false);
-  const [incomeError, setIncomeError] = useState(null);
   const [cuttingStats, setCuttingStats] = useState({
-    monthly_target: 250000,
-    monthly_total: 0,
-    weekly_target: 50000,
-    weekly_total: 0,
-    daily_target: 8333,
-    daily_total: 0,
+    monthly_target: 250000, monthly_total: 0,
+    weekly_target: 50000, weekly_total: 0,
+    daily_target: 8333, daily_total: 0,
   });
 
   const today = useMemo(() => new Date(), []);
 
-  const buildParams = () => {
-    const base = {
-      per_page: 50,
-      progress_status: "belum_diambil",
-    };
-
-    if (timeFilter === "today") {
-      const dateStr = formatDateParam(today);
-      return {
-        ...base,
-        start_date: dateStr,
-        end_date: dateStr,
-        daily_date: dateStr,
-        weekly_start: dateStr,
-        weekly_end: dateStr,
-      };
+  const getRangeForType = (type) => {
+    const base = new Date(today);
+    if (type === "today") {
+      const s = formatDateParam(base);
+      return { start: s, end: s };
     }
-
-    if (timeFilter === "week") {
-      const baseDate = new Date(today);
-      const day = baseDate.getDay();
-      const offsetToMonday = (day + 6) % 7;
-      const start = new Date(baseDate);
-      start.setDate(start.getDate() - offsetToMonday);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      const startStr = formatDateParam(start);
-      const endStr = formatDateParam(end);
-      return {
-        ...base,
-        start_date: startStr,
-        end_date: endStr,
-        weekly_start: startStr,
-        weekly_end: endStr,
-      };
+    if (type === "week") {
+      const off = (base.getDay() + 6) % 7;
+      const start = new Date(base); start.setDate(base.getDate() - off);
+      const end = new Date(start); end.setDate(start.getDate() + 6);
+      return { start: formatDateParam(start), end: formatDateParam(end) };
     }
-
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const startStr = formatDateParam(monthStart);
-    const endStr = formatDateParam(monthEnd);
-    return {
-      ...base,
-      start_date: startStr,
-      end_date: endStr,
-      weekly_start: startStr,
-      weekly_end: endStr,
-    };
+    const ms = new Date(base.getFullYear(), base.getMonth(), 1);
+    const me = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    return { start: formatDateParam(ms), end: formatDateParam(me) };
   };
 
   const fetchDashboard = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const params = buildParams();
-      const response = await API.get("/spk_cutting", { params });
-      const payload = response.data || {};
+      setLoading(true); setError(null);
+      const dateStr = formatDateParam(today);
+      const range = getRangeForType("week");
+      const params = { per_page: 100, progress_status: "belum_diambil", start_date: dateStr, end_date: dateStr, daily_date: dateStr, weekly_start: range.start, weekly_end: range.end };
+      const res = await API.get("/spk_cutting", { params });
+      const payload = res.data || {};
       setSummary(payload.summary || createEmptySummary());
       setSpkList(Array.isArray(payload.data) ? payload.data : []);
     } catch (err) {
-      const message =
-        err?.response?.data?.message || "Gagal memuat data dashboard cutting";
-      setError(message);
+      setError(err?.response?.data?.message || "Gagal memuat data");
       setSummary(createEmptySummary());
       setSpkList([]);
     } finally {
@@ -139,241 +80,103 @@ const DashboardCutting = () => {
     }
   };
 
-  const getRangeForType = (type) => {
-    const baseDate = new Date(today);
-
-    if (type === "today") {
-      const dateStr = formatDateParam(baseDate);
-      return {
-        start: dateStr,
-        end: dateStr,
-      };
-    }
-
-    if (type === "week") {
-      const day = baseDate.getDay();
-      const offsetToMonday = (day + 6) % 7;
-      const start = new Date(baseDate);
-      start.setDate(start.getDate() - offsetToMonday);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      return {
-        start: formatDateParam(start),
-        end: formatDateParam(end),
-      };
-    }
-
-    const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-    const monthEnd = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
-    return {
-      start: formatDateParam(monthStart),
-      end: formatDateParam(monthEnd),
-    };
-  };
-
   const fetchPerformance = async () => {
     try {
       setPerformanceLoading(true);
-      setPerformanceError(null);
       const range = getRangeForType(performanceRange);
-      const params = {
-        per_page: 500,
-      };
-
-      if (performanceRange === "today") {
-        params.daily_date = range.start;
-      } else {
-        params.weekly_start = range.start;
-        params.weekly_end = range.end;
-      }
-
-      const response = await API.get("/hasil_cutting", {
-        params,
-      });
-
-      const raw = response.data?.data || [];
-
+      const params = { per_page: 500 };
+      if (performanceRange === "today") params.daily_date = range.start;
+      else { params.weekly_start = range.start; params.weekly_end = range.end; }
+      const res = await API.get("/hasil_cutting", { params });
+      const raw = res.data?.data || [];
       const grouped = {};
-
       raw.forEach((item) => {
-        const tukangId = item.tukang_cutting_id || "unknown";
-        const nama = item.nama_tukang_cutting || "-";
-        const spkId = item.spk_cutting_id;
-        const totalProdukItem = item.total_produk || 0;
-
-        if (!grouped[tukangId]) {
-          grouped[tukangId] = {
-            tukang_cutting_id: tukangId,
-            nama_tukang_cutting: nama,
-            spk_ids: new Set(),
-            total_produk: 0,
-          };
-        }
-
-        if (spkId) {
-          grouped[tukangId].spk_ids.add(spkId);
-        }
-        grouped[tukangId].total_produk += totalProdukItem;
+        const id = item.tukang_cutting_id || "unknown";
+        if (!grouped[id]) grouped[id] = { tukang_cutting_id: id, nama_tukang_cutting: item.nama_tukang_cutting || "-", spk_ids: new Set(), total_produk: 0 };
+        if (item.spk_cutting_id) grouped[id].spk_ids.add(item.spk_cutting_id);
+        grouped[id].total_produk += item.total_produk || 0;
       });
-
-      const aggregated = Object.values(grouped)
-        .map((item) => ({
-          tukang_cutting_id: item.tukang_cutting_id,
-          nama_tukang_cutting: item.nama_tukang_cutting,
-          jumlah_spk: item.spk_ids.size,
-          total_produk: item.total_produk,
-        }))
-        .filter((item) => item.jumlah_spk > 0 && item.total_produk > 0)
-        .sort((a, b) => b.total_produk - a.total_produk)
-        .slice(0, 4);
-
-      setPerformance(aggregated);
-    } catch (err) {
-      setPerformanceError("Gagal memuat performa tukang cutting");
-      setPerformance([]);
-    } finally {
-      setPerformanceLoading(false);
-    }
+      setPerformance(
+        Object.values(grouped)
+          .map(i => ({ ...i, jumlah_spk: i.spk_ids.size }))
+          .filter(i => i.jumlah_spk > 0 && i.total_produk > 0)
+          .sort((a, b) => b.total_produk - a.total_produk)
+          .slice(0, 6)
+      );
+    } catch { setPerformance([]); } finally { setPerformanceLoading(false); }
   };
 
   const fetchCuttingStats = async () => {
     try {
-      const response = await API.get("/hasil_cutting");
-      const stats = response.data?.stats || {};
-      setCuttingStats((prev) => ({
-        ...prev,
-        monthly_target:
-          stats.monthly_target ?? prev.monthly_target,
-        monthly_total:
-          stats.monthly_total ?? prev.monthly_total,
-        weekly_target:
-          stats.weekly_target ?? prev.weekly_target,
-        weekly_total:
-          stats.weekly_total ?? prev.weekly_total,
-        daily_target:
-          stats.daily_target ?? prev.daily_target,
-        daily_total:
-          stats.daily_total ?? prev.daily_total,
+      const res = await API.get("/hasil_cutting");
+      const s = res.data?.stats || {};
+      setCuttingStats(prev => ({
+        monthly_target: s.monthly_target ?? prev.monthly_target,
+        monthly_total: s.monthly_total ?? prev.monthly_total,
+        weekly_target: s.weekly_target ?? prev.weekly_target,
+        weekly_total: s.weekly_total ?? prev.weekly_total,
+        daily_target: s.daily_target ?? prev.daily_target,
+        daily_total: s.daily_total ?? prev.daily_total,
       }));
-    } catch (err) {
-      // Biarkan menggunakan nilai sebelumnya jika gagal
-    }
+    } catch {}
   };
 
   const fetchIncomeWeekly = async () => {
     try {
       setIncomeLoading(true);
-      setIncomeError(null);
       const range = getRangeForType("week");
-
-      const response = await API.get("/pendapatan/mingguan/cutting", {
-        params: {
-          start_date: range.start,
-          end_date: range.end,
-        },
-      });
-
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-
-      const sorted = data
-        .map((item) => ({
-          tukang_cutting_id: item.tukang_cutting_id,
-          nama_tukang_cutting: item.nama_tukang_cutting ?? "-",
-          total_transfer: item.total_transfer ?? 0,
-        }))
-        .filter((item) => item.total_transfer > 0)
-        .sort((a, b) => b.total_transfer - a.total_transfer)
-        .slice(0, 4);
-
-      setIncomeList(sorted);
-    } catch (err) {
-      setIncomeError("Gagal memuat pendapatan tukang cutting");
-      setIncomeList([]);
-    } finally {
-      setIncomeLoading(false);
-    }
+      const res = await API.get("/pendapatan/mingguan/cutting", { params: { start_date: range.start, end_date: range.end } });
+      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      setIncomeList(data.map(i => ({ tukang_cutting_id: i.tukang_cutting_id, nama_tukang_cutting: i.nama_tukang_cutting ?? "-", total_transfer: i.total_transfer ?? 0 })).filter(i => i.total_transfer > 0).sort((a, b) => b.total_transfer - a.total_transfer).slice(0, 6));
+    } catch { setIncomeList([]); } finally { setIncomeLoading(false); }
   };
 
-  useEffect(() => {
-    fetchDashboard();
-    fetchCuttingStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeFilter]);
+  useEffect(() => { fetchDashboard(); fetchCuttingStats(); }, []);
+  useEffect(() => { fetchPerformance(); }, [performanceRange]);
+  useEffect(() => { fetchIncomeWeekly(); }, []);
 
-  useEffect(() => {
-    fetchPerformance();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [performanceRange]);
-
-  useEffect(() => {
-    fetchIncomeWeekly();
-  }, []);
-
-  const totalSpk = summary.all || 0;
+  // Derived values
   const totalBelum = summary.belum_diambil?.count || 0;
+  const totalBelumQty = summary.belum_diambil?.total_asumsi_produk || 0;
   const totalProses = summary.sudah_diambil || 0;
   const totalSelesai = summary.selesai || 0;
+  const totalSpk = summary.all || 0;
 
   const dailyTotal = cuttingStats.daily_total || 0;
   const dailyTarget = cuttingStats.daily_target || 8333;
-  const dailyProgressPercent =
-    dailyTarget > 0 ? Math.min(100, (dailyTotal / dailyTarget) * 100) : 0;
-  const dailyEstTotal = summary.in_progress_daily?.total_asumsi_produk || 0;
-  const dailyEstPercent =
-    dailyTarget > 0 ? Math.min(100, (dailyEstTotal / dailyTarget) * 100) : 0;
+  const dailyPct = dailyTarget > 0 ? Math.min(100, (dailyTotal / dailyTarget) * 100) : 0;
 
   const weeklyTotal = cuttingStats.weekly_total || 0;
   const weeklyTarget = cuttingStats.weekly_target || 50000;
-  const weeklyProgressPercent =
-    weeklyTarget > 0 ? Math.min(100, (weeklyTotal / weeklyTarget) * 100) : 0;
-  const weeklyEstTotal = summary.in_progress_weekly?.total_asumsi_produk || 0;
-  const weeklyEstPercent =
-    weeklyTarget > 0 ? Math.min(100, (weeklyEstTotal / weeklyTarget) * 100) : 0;
+  const weeklyPct = weeklyTarget > 0 ? Math.min(100, (weeklyTotal / weeklyTarget) * 100) : 0;
 
   const monthlyTotal = cuttingStats.monthly_total || 0;
   const monthlyTarget = cuttingStats.monthly_target || 250000;
-  const monthlyProgressPercent =
-    monthlyTarget > 0 ? Math.min(100, (monthlyTotal / monthlyTarget) * 100) : 0;
-  const monthlyEstTotal = summary.in_progress_monthly?.total_asumsi_produk || 0;
-  const monthlyEstPercent =
-    monthlyTarget > 0 ? Math.min(100, (monthlyEstTotal / monthlyTarget) * 100) : 0;
+  const monthlyPct = monthlyTarget > 0 ? Math.min(100, (monthlyTotal / monthlyTarget) * 100) : 0;
 
-  const deadlineItems = useMemo(() => {
-    const withDeadline = spkList.filter(
-      (item) => item.sisa_hari !== null && item.sisa_hari !== undefined
-    );
-    const sorted = withDeadline.sort((a, b) => {
-      const aVal = a.sisa_hari;
-      const bVal = b.sisa_hari;
-      if (aVal === bVal) return 0;
-      return aVal < bVal ? -1 : 1;
+  // Deadline urgency from spkList (belum diambil)
+  const deadlineGroups = useMemo(() => {
+    const over = [], urgent = [], safe = [];
+    spkList.forEach(item => {
+      if (item.sisa_hari === null || item.sisa_hari === undefined) return;
+      if (item.sisa_hari < 0) over.push(item);
+      else if (item.sisa_hari <= 7) urgent.push(item);
+      else safe.push(item);
     });
-    return sorted.slice(0, 4);
+    over.sort((a, b) => a.sisa_hari - b.sisa_hari);
+    urgent.sort((a, b) => a.sisa_hari - b.sisa_hari);
+    return { over, urgent, safe };
   }, [spkList]);
 
+  const alertItems = useMemo(() => [...deadlineGroups.over, ...deadlineGroups.urgent].slice(0, 8), [deadlineGroups]);
+
+  // Chart
   const dailyChartData = useMemo(() => {
-    const rawData = summary.chart_data;
-    if (!Array.isArray(rawData) || rawData.length === 0) {
-      return null;
-    }
-
-    const labels = rawData.map(item => {
-      const date = new Date(item.date);
-      return date.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "short",
-      });
-    });
-
-    const values = rawData.map(item => Number(item.total_qty) || 0);
-
-    const hasValue = values.some((v) => v > 0);
-    if (!hasValue) {
-      return null;
-    }
-
+    const raw = summary.chart_data;
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    const labels = raw.map(i => new Date(i.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }));
+    const values = raw.map(i => Number(i.total_qty) || 0);
+    if (!values.some(v => v > 0)) return null;
     return {
       labels,
       datasets: [
@@ -381,671 +184,261 @@ const DashboardCutting = () => {
           label: "Produksi",
           data: values,
           borderColor: "#2563eb",
-          backgroundColor: "rgba(37, 99, 235, 0.16)",
-          borderWidth: 2,
+          backgroundColor: "rgba(37,99,235,0.12)",
+          borderWidth: 2.5,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
-          pointHoverRadius: 6,
+          pointHoverRadius: 7,
           pointBackgroundColor: "#2563eb",
         },
-      ],
-    };
-  }, [summary]);
-
-  const dailyChartOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) =>
-              `${context.parsed.y.toLocaleString("id-ID")} pcs`,
-          },
-        },
-      },
-      scales: {
-        x: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            color: "#6b7280",
-          },
-        },
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: "rgba(148, 163, 184, 0.2)",
-          },
-          ticks: {
-            color: "#6b7280",
-          },
-        },
-      },
-    }),
-    []
-  );
-
-  const statusChartData = useMemo(() => {
-    const total = totalSpk || 0;
-    if (total === 0) {
-      return {
-        labels: ["Belum Diambil", "Proses", "Selesai"],
-        datasets: [
-          {
-            data: [1, 1, 1],
-            backgroundColor: ["#e5e7eb", "#e5e7eb", "#e5e7eb"],
-            borderWidth: 0,
-          },
-        ],
-      };
-    }
-
-    return {
-      labels: ["Belum Diambil", "Proses", "Selesai"],
-      datasets: [
         {
-          data: [totalBelum, totalProses, totalSelesai],
-          backgroundColor: ["#f97316", "#0ea5e9", "#22c55e"],
-          borderWidth: 0,
+          label: "Target Harian",
+          data: raw.map(() => dailyTarget),
+          borderColor: "rgba(239,68,68,0.5)",
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          fill: false,
+          pointRadius: 0,
+          tension: 0,
         },
       ],
     };
-  }, [totalSpk, totalBelum, totalProses, totalSelesai]);
+  }, [summary, dailyTarget]);
 
-  const deadlineStatusCounts = useMemo(() => {
-    let warning = 0; // <= 7 and >= 0
-    let aman = 0; // > 7
-    let over = 0; // < 0
+  const chartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("id-ID")} pcs` } },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: "#6b7280", font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: "rgba(148,163,184,0.15)" }, ticks: { color: "#6b7280", font: { size: 11 } } },
+    },
+  }), []);
 
-    const withDeadline = spkList.filter(
-      (item) => item.sisa_hari !== null && item.sisa_hari !== undefined
-    );
+  const maxPerfProduk = useMemo(() => performance.reduce((m, i) => i.total_produk > m ? i.total_produk : m, 0), [performance]);
 
-    withDeadline.forEach((item) => {
-      if (item.sisa_hari < 0) over++;
-      else if (item.sisa_hari <= 7) warning++;
-      else aman++;
-    });
+  const perfFilterLabel = performanceRange === "today" ? "Hari Ini" : performanceRange === "week" ? "Minggu Ini" : "Bulan Ini";
 
-    return { warning, aman, over, total: withDeadline.length };
-  }, [spkList]);
-
-  const deadlineChartData = useMemo(() => {
-    const total = deadlineStatusCounts.total;
-    if (total === 0) {
-      return {
-        labels: ["Aman (> 7 Hari)", "Warning (0-7 Hari)", "Over (< 0 Hari)"],
-        datasets: [
-          {
-            data: [1, 1, 1],
-            backgroundColor: ["#e5e7eb", "#e5e7eb", "#e5e7eb"],
-            borderWidth: 0,
-          },
-        ],
-      };
-    }
-
-    return {
-      labels: ["Aman (> 7 Hari)", "Warning (0-7 Hari)", "Over (< 0 Hari)"],
-      datasets: [
-        {
-          data: [deadlineStatusCounts.aman, deadlineStatusCounts.warning, deadlineStatusCounts.over],
-          backgroundColor: ["#22c55e", "#eab308", "#ef4444"],
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [deadlineStatusCounts]);
-
-  const statusChartOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) =>
-              `${context.label}: ${context.parsed.toLocaleString("id-ID")} SPK`,
-          },
-        },
-      },
-      cutout: "72%",
-    }),
-    []
-  );
-
-  const renderDeadlineBadge = (sisaHari) => {
-    if (sisaHari === null || sisaHari === undefined) {
-      return {
-        label: "Tidak ada data",
-        className: "deadline-badge-neutral",
-      };
-    }
-    if (sisaHari < 0) {
-      return {
-        label: "Telat",
-        className: "deadline-badge-danger",
-      };
-    }
-    if (sisaHari === 0) {
-      return {
-        label: "Hari ini",
-        className: "deadline-badge-warning",
-      };
-    }
-    if (sisaHari === 1) {
-      return {
-        label: "1 Hari",
-        className: "deadline-badge-warning",
-      };
-    }
-    if (sisaHari <= 3) {
-      return {
-        label: `${sisaHari} Hari`,
-        className: "deadline-badge-warning",
-      };
-    }
-    return {
-      label: `${sisaHari} Hari`,
-      className: "deadline-badge-safe",
-    };
+  const getDeadlineBadge = (sisa) => {
+    if (sisa < 0) return { label: `${Math.abs(sisa)}h terlambat`, cls: "dbd-over" };
+    if (sisa === 0) return { label: "Hari ini!", cls: "dbd-warn" };
+    if (sisa <= 3) return { label: `${sisa} hari`, cls: "dbd-warn" };
+    return { label: `${sisa} hari`, cls: "dbd-safe" };
   };
-
-  const formattedDate = formatLongDate(today);
-
-  const performanceFilterLabel =
-    performanceRange === "today"
-      ? "Hari Ini"
-      : performanceRange === "week"
-      ? "Minggu Ini"
-      : "Bulan Ini";
-
-  const maxPerformanceProduk = useMemo(() => {
-    if (!performance || performance.length === 0) return 0;
-    return performance.reduce(
-      (max, item) =>
-        item.total_produk > max ? item.total_produk : max,
-      0
-    );
-  }, [performance]);
-
-  const formatRupiah = (value) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(value || 0);
 
   return (
     <div className="cutting-dashboard-page">
+      {/* Header */}
       <div className="cutting-dashboard-header">
         <div className="cutting-dashboard-title">
           <h1>Dashboard Produksi Cutting</h1>
           <div className="cutting-dashboard-date">
             <FaCalendarAlt />
-            <span>{formattedDate}</span>
+            <span>{formatLongDate(today)}</span>
           </div>
         </div>
       </div>
 
-      {error && (
-        <div className="cutting-dashboard-error">
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <div className="cutting-dashboard-error"><span>{error}</span></div>}
 
-      <div className="cutting-dashboard-top-grid">
-        <div className="cutting-card cutting-card-total">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Total SPK</span>
-          </div>
-          <div className="cutting-card-main-value">{totalSpk}</div>
-          <div className="cutting-card-status-row">
-            <div className="cutting-card-status-item">
-              <span className="status-dot status-dot-orange" />
-              <span className="status-name">Belum Diambil</span>
-              <span className="status-value">{totalBelum}</span>
-            </div>
-            <div className="cutting-card-status-item">
-              <span className="status-dot status-dot-blue" />
-              <span className="status-name">Proses</span>
-              <span className="status-value">{totalProses}</span>
-            </div>
-            <div className="cutting-card-status-item">
-              <span className="status-dot status-dot-green" />
-              <span className="status-name">Selesai</span>
-              <span className="status-value">{totalSelesai}</span>
+      {/* ── Row 1: 5 stat cards ── */}
+      <div className="dc-stat-row">
+
+        {/* SPK Overview */}
+        <div className="dc-stat-card dc-stat-spk">
+          <div className="dc-stat-icon"><FaCheckCircle /></div>
+          <div className="dc-stat-body">
+            <div className="dc-stat-label">Total SPK</div>
+            <div className="dc-stat-value">{totalSpk.toLocaleString("id-ID")}</div>
+            <div className="dc-stat-pills">
+              <span className="dc-pill dc-pill-orange">Antrian {totalBelum}</span>
+              <span className="dc-pill dc-pill-blue">Proses {totalProses}</span>
+              <span className="dc-pill dc-pill-green">Selesai {totalSelesai}</span>
             </div>
           </div>
         </div>
 
-        <div className="cutting-card cutting-card-today">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Produksi Hari Ini</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
-                {dailyTotal.toLocaleString("id-ID")} pcs
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
-                {dailyEstTotal.toLocaleString("id-ID")} pcs
-              </div>
-            </div>
-          </div>
-          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Target: {dailyTarget.toLocaleString("id-ID")} pcs</span>
-            <span style={{ color: '#f59e0b' }}>Est: {Math.round(dailyEstPercent)}%</span>
-          </div>
-          <div className="cutting-progress-bar">
-            <div
-              className="cutting-progress-bar-fill"
-              style={{ width: `${dailyProgressPercent}%`, position: 'relative', zIndex: 2 }}
-            />
-            <div
-              style={{
-                width: `${dailyEstPercent}%`,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                background: 'rgba(245, 158, 11, 0.3)',
-                zIndex: 1,
-                borderRadius: '999px',
-                transition: 'width 0.3s ease'
-              }}
-            />
+        {/* Antrian + estimasi qty */}
+        <div className="dc-stat-card dc-stat-antrian">
+          <div className="dc-stat-icon dc-icon-orange"><FaBoxOpen /></div>
+          <div className="dc-stat-body">
+            <div className="dc-stat-label">Antrian Belum Diambil</div>
+            <div className="dc-stat-value dc-val-orange">{totalBelum.toLocaleString("id-ID")} <span className="dc-stat-unit">SPK</span></div>
+            <div className="dc-stat-sub">Est. <strong>{totalBelumQty.toLocaleString("id-ID")}</strong> pcs belum cutting</div>
           </div>
         </div>
 
-        <div className="cutting-card cutting-card-week">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Progress Mingguan</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
-                {weeklyTotal.toLocaleString("id-ID")} pcs
+        {/* Produksi Hari Ini */}
+        <div className="dc-stat-card dc-stat-daily">
+          <div className="dc-stat-icon dc-icon-blue"><FaFire /></div>
+          <div className="dc-stat-body">
+            <div className="dc-stat-label">Produksi Hari Ini</div>
+            <div className="dc-stat-value">{dailyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+            <div className="dc-progress-wrap">
+              <div className="dc-progress-track">
+                <div className="dc-progress-fill dc-fill-blue" style={{ width: `${dailyPct}%` }} />
               </div>
+              <span className="dc-progress-pct">{Math.round(dailyPct)}%</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
-                {weeklyEstTotal.toLocaleString("id-ID")} pcs
-              </div>
-            </div>
-          </div>
-          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Target: {weeklyTarget.toLocaleString("id-ID")} pcs</span>
-            <span style={{ color: '#f59e0b' }}>Est: {Math.round(weeklyEstPercent)}%</span>
-          </div>
-          <div className="cutting-progress-bar cutting-progress-bar-week">
-            <div
-              className="cutting-progress-bar-fill-week"
-              style={{ width: `${weeklyProgressPercent}%`, position: 'relative', zIndex: 2 }}
-            />
-            <div
-              style={{
-                width: `${weeklyEstPercent}%`,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                background: 'rgba(245, 158, 11, 0.3)',
-                zIndex: 1,
-                borderRadius: '999px',
-                transition: 'width 0.3s ease'
-              }}
-            />
+            <div className="dc-stat-sub">Target {dailyTarget.toLocaleString("id-ID")} pcs</div>
           </div>
         </div>
 
-        <div className="cutting-card cutting-card-month">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Progress Bulanan</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Aktual</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '22px' }}>
-                {monthlyTotal.toLocaleString("id-ID")} pcs
+        {/* Progress Mingguan */}
+        <div className="dc-stat-card dc-stat-weekly">
+          <div className="dc-stat-icon dc-icon-green"><FaClock /></div>
+          <div className="dc-stat-body">
+            <div className="dc-stat-label">Produksi Minggu Ini</div>
+            <div className="dc-stat-value">{weeklyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+            <div className="dc-progress-wrap">
+              <div className="dc-progress-track">
+                <div className="dc-progress-fill dc-fill-green" style={{ width: `${weeklyPct}%` }} />
               </div>
+              <span className="dc-progress-pct">{Math.round(weeklyPct)}%</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Estimasi</div>
-              <div className="cutting-card-main-value" style={{ fontSize: '16px', color: '#f59e0b' }}>
-                {monthlyEstTotal.toLocaleString("id-ID")} pcs
-              </div>
-            </div>
-          </div>
-          <div className="cutting-card-sub" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Target: {monthlyTarget.toLocaleString("id-ID")} pcs</span>
-            <span style={{ color: '#f59e0b' }}>Est: {Math.round(monthlyEstPercent)}%</span>
-          </div>
-          <div className="cutting-progress-bar cutting-progress-bar-month">
-            <div
-              className="cutting-progress-bar-fill-month"
-              style={{ width: `${monthlyProgressPercent}%`, position: 'relative', zIndex: 2 }}
-            />
-            <div
-              style={{
-                width: `${monthlyEstPercent}%`,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                background: 'rgba(245, 158, 11, 0.3)',
-                zIndex: 1,
-                borderRadius: '999px',
-                transition: 'width 0.3s ease'
-              }}
-            />
+            <div className="dc-stat-sub">Target {weeklyTarget.toLocaleString("id-ID")} pcs</div>
           </div>
         </div>
+
+        {/* Progress Bulanan */}
+        <div className="dc-stat-card dc-stat-monthly">
+          <div className="dc-stat-icon dc-icon-purple"><FaCalendarAlt /></div>
+          <div className="dc-stat-body">
+            <div className="dc-stat-label">Produksi Bulan Ini</div>
+            <div className="dc-stat-value">{monthlyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+            <div className="dc-progress-wrap">
+              <div className="dc-progress-track">
+                <div className="dc-progress-fill dc-fill-purple" style={{ width: `${monthlyPct}%` }} />
+              </div>
+              <span className="dc-progress-pct">{Math.round(monthlyPct)}%</span>
+            </div>
+            <div className="dc-stat-sub">Target {monthlyTarget.toLocaleString("id-ID")} pcs</div>
+          </div>
+        </div>
+
       </div>
 
-      <div className="cutting-dashboard-bottom-grid">
+      {/* ── Row 2: Chart + Deadline Alert ── */}
+      <div className="dc-mid-row">
 
-        <div className="cutting-card cutting-card-chart">
+        {/* Grafik harian */}
+        <div className="cutting-card dc-chart-card">
           <div className="cutting-card-header">
             <span className="cutting-card-label">Grafik Produksi Harian</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "#64748b" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 3, background: "#2563eb", borderRadius: 2 }} /> Aktual</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 2, borderTop: "2px dashed rgba(239,68,68,0.6)" }} /> Target</span>
+            </div>
           </div>
-          <div className="cutting-chart-wrapper">
-            {loading && (
-              <div className="cutting-empty-text">Memuat grafik</div>
-            )}
-            {!loading && !dailyChartData && (
-              <div className="cutting-empty-text">Belum ada data produksi</div>
-            )}
-            {!loading && dailyChartData && (
-              <Line data={dailyChartData} options={dailyChartOptions} />
-            )}
+          <div style={{ height: 240, marginTop: 8 }}>
+            {loading && <div className="cutting-empty-text">Memuat grafik…</div>}
+            {!loading && !dailyChartData && <div className="cutting-empty-text">Belum ada data produksi</div>}
+            {!loading && dailyChartData && <Line data={dailyChartData} options={chartOptions} />}
           </div>
         </div>
 
-        <div className="cutting-card cutting-card-status">
+        {/* Deadline Alert */}
+        <div className="cutting-card dc-alert-card">
           <div className="cutting-card-header">
-            <span className="cutting-card-label">Distribusi Status SPK</span>
-          </div>
-          <div className="cutting-status-content">
-            <div className="cutting-status-chart">
-              <Doughnut data={statusChartData} options={statusChartOptions} />
-              <div className="cutting-status-center">
-                <span className="cutting-status-center-value">
-                  {totalSpk.toLocaleString("id-ID")}
-                </span>
-                <span className="cutting-status-center-label">Total SPK</span>
-              </div>
-            </div>
-            <div className="cutting-status-legend">
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-orange" />
-                <div className="cutting-status-legend-text">
-                  <span>Belum Diambil</span>
-                  <span className="cutting-status-legend-sub">
-                    {totalSpk > 0
-                      ? `${Math.round(
-                          (totalBelum / totalSpk) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {totalBelum}
-                </span>
-              </div>
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-blue" />
-                <div className="cutting-status-legend-text">
-                  <span>Proses</span>
-                  <span className="cutting-status-legend-sub">
-                    {totalSpk > 0
-                      ? `${Math.round(
-                          (totalProses / totalSpk) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {totalProses}
-                </span>
-              </div>
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-green" />
-                <div className="cutting-status-legend-text">
-                  <span>Selesai</span>
-                  <span className="cutting-status-legend-sub">
-                    {totalSpk > 0
-                      ? `${Math.round(
-                          (totalSelesai / totalSpk) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {totalSelesai}
-                </span>
-              </div>
+            <span className="cutting-card-label">
+              <FaExclamationTriangle style={{ color: "#f59e0b", marginRight: 6 }} />
+              SPK Deadline Mepet
+            </span>
+            <div style={{ display: "flex", gap: 6, fontSize: 11 }}>
+              {deadlineGroups.over.length > 0 && <span className="dc-badge-over">{deadlineGroups.over.length} lewat</span>}
+              {deadlineGroups.urgent.length > 0 && <span className="dc-badge-warn">{deadlineGroups.urgent.length} mepet</span>}
             </div>
           </div>
+          {alertItems.length === 0 ? (
+            <div className="cutting-empty-text" style={{ height: 200 }}>
+              {loading ? "Memuat…" : "Semua SPK aman ✓"}
+            </div>
+          ) : (
+            <div className="dc-alert-list">
+              {alertItems.map((item, i) => {
+                const badge = getDeadlineBadge(item.sisa_hari);
+                const produk = item.nama_produk || item.produk?.nama_produk || "-";
+                return (
+                  <div key={i} className={`dc-alert-item ${item.sisa_hari < 0 ? "dc-alert-over" : "dc-alert-urgent"}`}>
+                    <div className="dc-alert-left">
+                      <div className="dc-alert-id">#{item.kode_seri || item.id || i + 1}</div>
+                      <div className="dc-alert-product">{produk}</div>
+                      <div className="dc-alert-penjahit">{item.penjahit?.nama_penjahit || item.nama_penjahit || "—"}</div>
+                    </div>
+                    <span className={`dc-deadline-badge ${badge.cls}`}>{badge.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        <div className="cutting-card cutting-card-status">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Distribusi Status Deadline</span>
-          </div>
-          <div className="cutting-status-content">
-            <div className="cutting-status-chart">
-              <Doughnut data={deadlineChartData} options={statusChartOptions} />
-              <div className="cutting-status-center">
-                <span className="cutting-status-center-value">
-                  {deadlineStatusCounts.total.toLocaleString("id-ID")}
-                </span>
-                <span className="cutting-status-center-label">Total SPK</span>
-              </div>
-            </div>
-            <div className="cutting-status-legend">
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-green" />
-                <div className="cutting-status-legend-text">
-                  <span>Aman (> 7 Hari)</span>
-                  <span className="cutting-status-legend-sub">
-                    {deadlineStatusCounts.total > 0
-                      ? `${Math.round(
-                          (deadlineStatusCounts.aman / deadlineStatusCounts.total) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {deadlineStatusCounts.aman}
-                </span>
-              </div>
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-yellow" />
-                <div className="cutting-status-legend-text">
-                  <span>Warning (0-7 Hari)</span>
-                  <span className="cutting-status-legend-sub">
-                    {deadlineStatusCounts.total > 0
-                      ? `${Math.round(
-                          (deadlineStatusCounts.warning / deadlineStatusCounts.total) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {deadlineStatusCounts.warning}
-                </span>
-              </div>
-              <div className="cutting-status-legend-item">
-                <span className="status-dot status-dot-red" />
-                <div className="cutting-status-legend-text">
-                  <span>Over (&lt; 0 Hari)</span>
-                  <span className="cutting-status-legend-sub">
-                    {deadlineStatusCounts.total > 0
-                      ? `${Math.round(
-                          (deadlineStatusCounts.over / deadlineStatusCounts.total) * 100
-                        )}% dari total`
-                      : "0%"}
-                  </span>
-                </div>
-                <span className="cutting-status-legend-value">
-                  {deadlineStatusCounts.over}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
+      {/* ── Row 3: Performa + Pendapatan ── */}
       <div className="cutting-performance-section">
+
+        {/* Performa Tukang */}
         <div className="cutting-card cutting-card-performance">
           <div className="cutting-card-header performance-header-row">
             <span className="cutting-card-label">Performa Tukang</span>
-            <div
-              className="performance-filter-pill"
-              onClick={() =>
-                setPerformanceFilterOpen((open) => !open)
-              }
-            >
-              <span>{performanceFilterLabel}</span>
+            <div className="performance-filter-pill" onClick={() => setPerformanceFilterOpen(o => !o)}>
+              <span>{perfFilterLabel}</span>
             </div>
           </div>
           {performanceFilterOpen && (
             <div className="performance-filter-dropdown">
-              <button
-                type="button"
-                className={
-                  performanceRange === "today"
-                    ? "performance-filter-option performance-filter-option-active"
-                    : "performance-filter-option"
-                }
-                onClick={() => {
-                  setPerformanceRange("today");
-                  setPerformanceFilterOpen(false);
-                }}
-              >
-                Hari Ini
-              </button>
-              <button
-                type="button"
-                className={
-                  performanceRange === "week"
-                    ? "performance-filter-option performance-filter-option-active"
-                    : "performance-filter-option"
-                }
-                onClick={() => {
-                  setPerformanceRange("week");
-                  setPerformanceFilterOpen(false);
-                }}
-              >
-                Minggu Ini
-              </button>
-              <button
-                type="button"
-                className={
-                  performanceRange === "month"
-                    ? "performance-filter-option performance-filter-option-active"
-                    : "performance-filter-option"
-                }
-                onClick={() => {
-                  setPerformanceRange("month");
-                  setPerformanceFilterOpen(false);
-                }}
-              >
-                Bulan Ini
-              </button>
-            </div>
-          )}
-          {performanceError && (
-            <div className="cutting-dashboard-error performance-error">
-              <span>{performanceError}</span>
+              {["today", "week", "month"].map(r => (
+                <button key={r} type="button"
+                  className={`performance-filter-option${performanceRange === r ? " performance-filter-option-active" : ""}`}
+                  onClick={() => { setPerformanceRange(r); setPerformanceFilterOpen(false); }}>
+                  {r === "today" ? "Hari Ini" : r === "week" ? "Minggu Ini" : "Bulan Ini"}
+                </button>
+              ))}
             </div>
           )}
           <div className="performance-table-wrapper">
             {performanceLoading ? (
-              <div className="cutting-empty-text">
-                Memuat performa tukang
-              </div>
+              <div className="cutting-empty-text">Memuat performa…</div>
             ) : performance.length === 0 ? (
-              <div className="cutting-empty-text">
-                Belum ada data performa tukang
-              </div>
+              <div className="cutting-empty-text">Belum ada data performa</div>
             ) : (
               <table className="performance-table">
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Tukang</th>
-                    <th>SPK</th>
+                    <th style={{ textAlign: "center" }}>SPK</th>
                     <th>Total Pcs</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {performance.map((item, index) => {
-                    const totalProduk = item.total_produk || 0;
-                    const widthPercent =
-                      maxPerformanceProduk > 0
-                        ? Math.max(
-                            10,
-                            (totalProduk / maxPerformanceProduk) *
-                              100
-                          )
-                        : 0;
-                    const colorClass =
-                      index === 0
-                        ? "performance-bar-fill-blue"
-                        : index === 1
-                        ? "performance-bar-fill-green"
-                        : index === 2
-                        ? "performance-bar-fill-red"
-                        : "performance-bar-fill-orange";
-                    const name =
-                      item.nama_tukang_cutting || "-";
-                    const initial =
-                      name && name.trim().length > 0
-                        ? name.trim().charAt(0).toUpperCase()
-                        : "?";
+                  {performance.map((item, idx) => {
+                    const pct = maxPerfProduk > 0 ? Math.max(8, (item.total_produk / maxPerfProduk) * 100) : 0;
+                    const colors = ["dc-fill-blue", "dc-fill-green", "dc-fill-purple", "dc-fill-orange", "dc-fill-red", "dc-fill-teal"];
+                    const name = item.nama_tukang_cutting || "-";
                     return (
-                      <tr key={item.tukang_cutting_id || index}>
+                      <tr key={item.tukang_cutting_id || idx}>
+                        <td style={{ color: "#94a3b8", fontWeight: 700, fontSize: 12, width: 28 }}>{idx + 1}</td>
                         <td>
                           <div className="performance-user-cell">
-                            <div className="performance-avatar">
-                              <span>{initial}</span>
+                            <div className={`performance-avatar dc-avatar-${idx % 6}`}>
+                              <span>{name.charAt(0).toUpperCase()}</span>
                             </div>
-                            <span className="performance-name">
-                              {name}
-                            </span>
+                            <span className="performance-name">{name}</span>
                           </div>
                         </td>
-                        <td className="performance-number">
-                          {item.jumlah_spk || 0}
-                        </td>
+                        <td className="performance-number">{item.jumlah_spk}</td>
                         <td>
                           <div className="performance-pcs-cell">
                             <div className="performance-pcs-bar">
-                              <div
-                                className={`performance-pcs-bar-fill ${colorClass}`}
-                                style={{
-                                  width: `${widthPercent}%`,
-                                }}
-                              />
+                              <div className={`performance-pcs-bar-fill ${colors[idx % colors.length]}`} style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="performance-pcs-value">
-                              {totalProduk.toLocaleString("id-ID")}
-                            </span>
+                            <span className="performance-pcs-value">{item.total_produk.toLocaleString("id-ID")}</span>
                           </div>
                         </td>
                       </tr>
@@ -1056,62 +449,31 @@ const DashboardCutting = () => {
             )}
           </div>
         </div>
+
+        {/* Pendapatan Tukang */}
         <div className="cutting-card cutting-card-income">
           <div className="cutting-card-header performance-header-row">
             <span className="cutting-card-label">Pendapatan Tukang</span>
-            <div className="performance-filter-pill income-filter-pill">
-              <span>Minggu Ini</span>
-            </div>
+            <div className="performance-filter-pill income-filter-pill"><span>Minggu Ini</span></div>
           </div>
-          {incomeError && (
-            <div className="cutting-dashboard-error performance-error">
-              <span>{incomeError}</span>
-            </div>
-          )}
           <div className="income-list-wrapper">
             {incomeLoading ? (
-              <div className="cutting-empty-text">
-                Memuat pendapatan tukang
-              </div>
+              <div className="cutting-empty-text">Memuat pendapatan…</div>
             ) : incomeList.length === 0 ? (
-              <div className="cutting-empty-text">
-                Belum ada data pendapatan minggu ini
-              </div>
+              <div className="cutting-empty-text">Belum ada data pendapatan</div>
             ) : (
               <ul className="income-list">
-                {incomeList.map((item, index) => {
+                {incomeList.map((item, idx) => {
                   const name = item.nama_tukang_cutting || "-";
-                  const initial =
-                    name && name.trim().length > 0
-                      ? name.trim().charAt(0).toUpperCase()
-                      : "?";
-
-                  const colorClass =
-                    index === 0
-                      ? "income-amount-green"
-                      : index === 1
-                      ? "income-amount-blue"
-                      : index === 2
-                      ? "income-amount-orange"
-                      : "income-amount-red";
-
+                  const colorCls = ["income-amount-green", "income-amount-blue", "income-amount-orange", "income-amount-red"][idx] || "income-amount-green";
                   return (
-                    <li
-                      key={item.tukang_cutting_id || index}
-                      className="income-item"
-                    >
-                      <span className="income-rank">{index + 1}.</span>
+                    <li key={item.tukang_cutting_id || idx} className="income-item">
+                      <span className="income-rank">{idx + 1}.</span>
                       <div className="income-user">
-                        <div className="income-avatar">
-                          <span>{initial}</span>
-                        </div>
+                        <div className="income-avatar"><span>{name.charAt(0).toUpperCase()}</span></div>
                         <span className="income-name">{name}</span>
                       </div>
-                      <span
-                        className={`income-amount ${colorClass}`}
-                      >
-                        {formatRupiah(item.total_transfer)}
-                      </span>
+                      <span className={`income-amount ${colorCls}`}>{formatRupiah(item.total_transfer)}</span>
                     </li>
                   );
                 })}
@@ -1119,6 +481,7 @@ const DashboardCutting = () => {
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
