@@ -24,6 +24,7 @@ import {
   FiInbox,
   FiImage,
   FiTrash2,
+  FiEdit2,
 } from "react-icons/fi";
 
 const getTodayDate = () => {
