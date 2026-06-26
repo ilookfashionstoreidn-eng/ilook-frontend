@@ -1290,7 +1290,6 @@ const Pengiriman = () => {
             style={{ width: "900px", maxWidth: "95%" }}
             onClick={(event) => event.stopPropagation()}
           >
-          <div className="pengiriman-modal-content pengiriman-form-modal">
             <div className="pengiriman-modal-header">
               <div>
                 <h3 className="pengiriman-modal-title" style={{ fontSize: "16px", fontWeight: "600", color: "var(--ks-text-strong)" }}>
