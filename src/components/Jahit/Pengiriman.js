@@ -317,35 +317,6 @@ const Pengiriman = () => {
   };
 
   const validateTanggalMasaLalu = (tanggalPengiriman) => {
-    if (!tanggalPengiriman) {
-      setTanggalMasaLaluError("");
-      return { valid: true, error: "" };
-    }
-
-    const tanggal = new Date(tanggalPengiriman);
-    tanggal.setHours(0, 0, 0, 0);
-
-    const hariIni = new Date();
-    hariIni.setHours(0, 0, 0, 0);
-
-    if (tanggal < hariIni) {
-      const tanggalFormatted = new Intl.DateTimeFormat("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }).format(tanggal);
-
-      const hariIniFormatted = new Intl.DateTimeFormat("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }).format(hariIni);
-
-      const message = `Tanggal pengiriman (${tanggalFormatted}) tidak boleh sebelum hari ini (${hariIniFormatted}).`;
-      setTanggalMasaLaluError(message);
-      return { valid: false, error: message };
-    }
-
     setTanggalMasaLaluError("");
     return { valid: true, error: "" };
   };
@@ -1358,7 +1329,6 @@ const Pengiriman = () => {
                       }`}
                       value={newPengiriman.tanggal_pengiriman}
                       onChange={handleInputChange}
-                      min={getTodayDate()}
                       required
                     />
                     {tanggalMasaLaluError && (

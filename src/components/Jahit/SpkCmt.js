@@ -1275,6 +1275,11 @@ const SpkCmt = () => {
   };
 
   const filteredSpk = spkCmtData.filter((spk) => {
+    const latestPengiriman = spk.pengiriman?.length ? [...spk.pengiriman].sort((a, b) => a.id_pengiriman - b.id_pengiriman).at(-1) : null;
+    const totalSisaBarang = latestPengiriman?.sisa_barang ?? spk.jumlah_produk ?? 0;
+    
+    if (totalSisaBarang <= 0) return false;
+
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return spk.nama_produk?.toLowerCase().includes(searchLower) || spk.nomor_seri?.toLowerCase().includes(searchLower) || spk.penjahit?.nama_penjahit?.toLowerCase().includes(searchLower);
@@ -2245,7 +2250,7 @@ const SpkCmt = () => {
                   style={{ height: "30px", border: "1px solid var(--ks-line-strong)", borderRadius: "6px", padding: "0 8px", outline: "none", background: "var(--ks-surface)", color: "var(--ks-text)", fontSize: "12px", maxWidth: "150px" }}
                 >
                   <option value="">Semua Penjahit</option>
-                  {penjahitList.map((penjahit) => (
+                  {penjahitList.filter(p => p.total_sisa > 0).map((penjahit) => (
                     <option key={penjahit.id_penjahit} value={penjahit.id_penjahit}>
                       {penjahit.nama_penjahit}
                     </option>
@@ -2479,17 +2484,20 @@ const SpkCmt = () => {
                             );
                           }
 
-                          return activeColors.map((color, colorIdx) => {
-                            rowCounter++;
+                          return activeColors.reduce((acc, color, colorIdx) => {
                             const sisaBarang = latestPengiriman
                               ? (latestPengiriman.sisa_barang_per_warna?.[color.nama_warna] ??
                                  latestPengiriman.sisa_barang_per_warna?.[color.nama_warna.trim()] ??
                                  latestPengiriman.sisa_barang_per_warna?.[color.nama_warna.toUpperCase()] ??
                                  color.qty ?? 0)
                               : (color.qty ?? 0);
+                            
+                            if (sisaBarang <= 0) return acc;
+                            
+                            rowCounter++;
                             const kirimPerWarna = (color.qty ?? 0) - sisaBarang;
                             
-                            return (
+                            acc.push(
                               <tr key={`${spk.id_spk}-${color.nama_warna}-${colorIdx}`}>
                                 <td>
                                   <span className="ks-cell-num" style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + rowCounter}</span>
@@ -2569,7 +2577,8 @@ const SpkCmt = () => {
                                 </td>
                               </tr>
                             );
-                          });
+                            return acc;
+                          }, []);
                         });
                       })()}
                     </tbody>
