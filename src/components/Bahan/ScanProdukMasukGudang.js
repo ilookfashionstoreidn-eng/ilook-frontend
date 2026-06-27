@@ -276,9 +276,8 @@ const ScanProdukMasukGudang = () => {
   const seriComboboxRef = useRef(null);
 
   // Scan state (Scene 1)
-  const [scanInput, setScanInput] = useState("");
   const [scanMessage, setScanMessage] = useState("");
-  const [scanStatus, setScanStatus] = useState(""); // "", "loading", "success", "error"
+  const [scanStatus, setScanStatus] = useState("info"); // "", "loading", "success", "error"
   const [scannedBarcodes, setScannedBarcodes] = useState([]);
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
@@ -562,8 +561,6 @@ const ScanProdukMasukGudang = () => {
 
   // Barcode handling: Enter scans instantly, with a tiny fallback for scanners without Enter.
   const handleBarcodeChange = (value) => {
-    setScanInput(value);
-
     if (barcodeTimeoutRef.current) {
       clearTimeout(barcodeTimeoutRef.current);
     }
@@ -584,14 +581,13 @@ const ScanProdukMasukGudang = () => {
         if (scanInputRef.current) {
           scanInputRef.current.value = "";
         }
-        setScanInput("");
         await processScan(trimmedValue);
       }, 300);
     }
   };
 
   const processScan = async (barcodeValue = null) => {
-    let barcodeToScan = (barcodeValue || scanInput).trim();
+    let barcodeToScan = (barcodeValue || (scanInputRef.current ? scanInputRef.current.value : "")).trim();
     let autoSavedMsg = "";
 
     if (!barcodeToScan) {
@@ -714,7 +710,7 @@ const ScanProdukMasukGudang = () => {
         if (scanInputRef.current) {
           scanInputRef.current.value = "";
         }
-        setScanInput("");
+
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
         return;
@@ -730,7 +726,7 @@ const ScanProdukMasukGudang = () => {
         if (scanInputRef.current) {
           scanInputRef.current.value = "";
         }
-        setScanInput("");
+
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
         return;
@@ -742,7 +738,7 @@ const ScanProdukMasukGudang = () => {
         if (scanInputRef.current) {
           scanInputRef.current.value = "";
         }
-        setScanInput("");
+
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
         return;
@@ -755,7 +751,6 @@ const ScanProdukMasukGudang = () => {
         if (scanInputRef.current) {
           scanInputRef.current.value = "";
         }
-        setScanInput("");
         playSound("error");
         setTimeout(() => focusScanInput(), 100);
         return;
@@ -778,7 +773,6 @@ const ScanProdukMasukGudang = () => {
       if (scanInputRef.current) {
         scanInputRef.current.value = "";
       }
-      setScanInput("");
       playSound("error");
       setTimeout(() => focusScanInput(), 100);
       return;
@@ -792,7 +786,6 @@ const ScanProdukMasukGudang = () => {
       if (scanInputRef.current) {
         scanInputRef.current.value = "";
       }
-      setScanInput("");
       playSound("error");
       setTimeout(() => focusScanInput(), 100);
       return;
@@ -814,17 +807,15 @@ const ScanProdukMasukGudang = () => {
     if (scanInputRef.current) {
       scanInputRef.current.value = "";
     }
-    setScanInput("");
     focusScanInput();
   };
 
   const handleScan = async (e) => {
     e.preventDefault();
-    const val = scanInput.trim();
+    const val = scanInputRef.current ? scanInputRef.current.value.trim() : "";
     if (scanInputRef.current) {
       scanInputRef.current.value = "";
     }
-    setScanInput("");
     await processScan(val);
   };
 
@@ -836,7 +827,6 @@ const ScanProdukMasukGudang = () => {
     }
     const val = e.currentTarget.value.trim();
     e.currentTarget.value = "";
-    setScanInput("");
     await processScan(val);
   };
 
@@ -933,7 +923,7 @@ const ScanProdukMasukGudang = () => {
       setScannedBarcodes([]);
       setSessionNotes("");
       setScanMessage("");
-      setScanInput("");
+
       setActiveMainTab("putaway"); // Move to putaway tab to place it
 
       // Reload sessions list
@@ -1451,7 +1441,6 @@ const ScanProdukMasukGudang = () => {
                   <div style={{ display: "flex", gap: 12 }}>
                     <input
                       ref={scanInputRef}
-                      value={scanInput}
                       onChange={(e) => handleBarcodeChange(e.target.value)}
                       onKeyDown={handleScanKeyDown}
                       placeholder={
@@ -1466,7 +1455,6 @@ const ScanProdukMasukGudang = () => {
                     <button
                       type="button"
                       className="gudang-ui-button"
-                      disabled={!scanInput.trim()}
                       onClick={() => processScan()}
                       style={{ minWidth: 64, justifyContent: "center", padding: "0 20px", background: "#7c3aed", color: "#fff", borderRadius: 12, border: "none" }}
                     >
