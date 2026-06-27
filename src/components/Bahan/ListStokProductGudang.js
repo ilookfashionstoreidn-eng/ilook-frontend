@@ -789,7 +789,7 @@ const ListStokProductGudang = () => {
             </div>
           ) : hasRows ? (
             <>
-              <table className="ks-grid">
+              <table className="ks-grid" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={{ width: '60px', textAlign: 'center' }}>Gambar</th>
@@ -840,7 +840,7 @@ const ListStokProductGudang = () => {
                       {group.rows.map((row, rowIndex) => (
                         <tr key={row.id}>
                           {rowIndex === 0 && (
-                            <td rowSpan={group.rows.length} style={{ verticalAlign: 'top', padding: '8px', textAlign: 'center' }}>
+                            <td rowSpan={group.rows.length} style={{ verticalAlign: 'top', padding: '8px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>
                               {group.gambarProduk ? (
                                 <img 
                                   src={group.gambarProduk} 
@@ -864,22 +864,22 @@ const ListStokProductGudang = () => {
                               )}
                             </td>
                           )}
-                          <td>{formatNumber(row.rowNumber)}</td>
-                          <td><strong>{formatDateOnly(row.tanggal)}</strong></td>
-                          <td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0' }}>{formatNumber(row.rowNumber)}</td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0' }}><strong>{formatDateOnly(row.tanggal)}</strong></td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0' }}>
                             <strong>{highlightText(row.sku, activeSearch)}</strong>
                           </td>
-                          <td className="align-right">{formatNumber(row.qtyAwal)}</td>
-                          <td className="align-right" style={{ color: '#10b981', fontWeight: 'bold' }}>{row.qtyMasuk > 0 ? '+' : ''}{formatNumber(row.qtyMasuk)}</td>
-                          <td className="align-right" style={{ color: '#ef4444', fontWeight: 'bold' }}>{row.qtyKeluar > 0 ? '-' : ''}{formatNumber(row.qtyKeluar)}</td>
-                          <td className="align-right" style={{ fontWeight: 'bold' }}>{formatNumber(row.qtySisa)}</td>
-                          <td>
+                          <td className="align-right" style={{ borderBottom: '1px solid #e2e8f0' }}>{formatNumber(row.qtyAwal)}</td>
+                          <td className="align-right" style={{ color: '#10b981', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>{row.qtyMasuk > 0 ? '+' : ''}{formatNumber(row.qtyMasuk)}</td>
+                          <td className="align-right" style={{ color: '#ef4444', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>{row.qtyKeluar > 0 ? '-' : ''}{formatNumber(row.qtyKeluar)}</td>
+                          <td className="align-right" style={{ fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>{formatNumber(row.qtySisa)}</td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0' }}>
                             <strong>{highlightText(row.layoutName || '', activeSearch)}</strong>
                           </td>
-                          <td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0' }}>
                             <span className="ks-badge">{highlightText(row.namaGudang, activeSearch)}</span>
                           </td>
-                          <td style={{ textAlign: 'center' }}>
+                          <td style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>
                             <button
                               type="button"
                               className="ks-btn"
