@@ -1,0 +1,433 @@
+/* ═══════════════════════════════════════════════════════
+   Master Gudang Produk — Linear-style (matches Hasil Cutting)
+   Reuses the .ks-* design system tokens (see
+   KodeSeriBelumDikerjakanOptimized.css). All page-specific
+   styles are prefixed .mgp- and scoped under .ks-page.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Header extras ───────────────────────────── */
+.ks-page .mgp-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 7px;
+  background: var(--ks-hover);
+  color: var(--ks-text-soft);
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 280px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ks-page .mgp-active-pill strong {
+  color: var(--ks-text);
+  font-weight: 600;
+}
+.ks-page .mgp-active-pill .mgp-active-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ks-accent);
+  flex-shrink: 0;
+}
+
+/* ── Tab bar (segmented control) ─────────────── */
+.ks-page .mgp-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--ks-surface);
+  border-bottom: 1px solid var(--ks-line);
+  flex-shrink: 0;
+}
+
+/* ── Error banner ────────────────────────────── */
+.ks-page .mgp-error {
+  margin: 12px 20px 0;
+  padding: 10px 14px;
+  border: 1px solid #f5c2c2;
+  background: #fdecec;
+  color: #b42318;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+/* ── Board / scroll region ───────────────────── */
+.ks-page .mgp-board { padding: 0; }
+.ks-page .mgp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+
+/* ── Section card ────────────────────────────── */
+.ks-page .mgp-card {
+  background: var(--ks-surface);
+  border: 1px solid var(--ks-line);
+  border-radius: 10px;
+  padding: 16px;
+}
+.ks-page .mgp-card + .mgp-card { margin-top: 14px; }
+
+.ks-page .mgp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.ks-page .mgp-card-head h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ks-text);
+}
+.ks-page .mgp-card-head p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ks-muted);
+  line-height: 1.4;
+}
+
+/* ── Layout grids ────────────────────────────── */
+.ks-page .mgp-cols {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.ks-page .mgp-cols-struktur {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.ks-page .mgp-cols-peta {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.ks-page .mgp-stack { display: flex; flex-direction: column; gap: 14px; }
+
+@media (max-width: 1024px) {
+  .ks-page .mgp-cols,
+  .ks-page .mgp-cols-struktur,
+  .ks-page .mgp-cols-peta { grid-template-columns: 1fr; }
+}
+
+/* ── Form fields ─────────────────────────────── */
+.ks-page .mgp-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ks-page .mgp-form-grid.single { grid-template-columns: 1fr; }
+.ks-page .mgp-form-grid .span-2 { grid-column: 1 / -1; }
+
+.ks-page .mgp-field { display: flex; flex-direction: column; gap: 5px; }
+.ks-page .mgp-field label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ks-muted);
+}
+.ks-page .mgp-input,
+.ks-page .mgp-textarea {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 7px;
+  background: var(--ks-surface);
+  color: var(--ks-text);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.13s ease, box-shadow 0.13s ease;
+}
+.ks-page .mgp-textarea { height: auto; min-height: 60px; padding: 8px 10px; resize: vertical; }
+.ks-page .mgp-input::placeholder,
+.ks-page .mgp-textarea::placeholder { color: var(--ks-muted); }
+.ks-page .mgp-input:focus,
+.ks-page .mgp-textarea:focus {
+  border-color: var(--ks-accent);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+}
+.ks-page .mgp-input:disabled,
+.ks-page .mgp-textarea:disabled { background: #f5f5f7; opacity: 0.7; cursor: not-allowed; }
+
+.ks-page .mgp-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ks-page .mgp-inline-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+@media (max-width: 560px) {
+  .ks-page .mgp-form-grid,
+  .ks-page .mgp-inline-form { grid-template-columns: 1fr; }
+}
+
+/* ── Lists (gudang / lantai / blok) ──────────── */
+.ks-page .mgp-list { display: flex; flex-direction: column; gap: 8px; }
+.ks-page .mgp-list-scroll { max-height: 420px; overflow: auto; padding-right: 4px; }
+
+.ks-page .mgp-item {
+  border: 1px solid var(--ks-line);
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: var(--ks-surface);
+  transition: border-color 0.13s ease, background 0.13s ease, box-shadow 0.13s ease;
+}
+.ks-page .mgp-item.clickable { cursor: pointer; }
+.ks-page .mgp-item.clickable:hover { background: var(--ks-hover); border-color: var(--ks-line-strong); }
+.ks-page .mgp-item.active {
+  border-color: var(--ks-accent);
+  background: #f5f8ff;
+  box-shadow: 0 0 0 1px var(--ks-accent) inset;
+}
+.ks-page .mgp-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ks-page .mgp-item-head h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ks-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ks-page .mgp-item p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--ks-text-soft);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ks-page .mgp-item small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--ks-muted);
+}
+
+/* ── Chips & badges ──────────────────────────── */
+.ks-page .mgp-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f2f4;
+  color: var(--ks-text-soft);
+  border: 1px solid var(--ks-line);
+  white-space: nowrap;
+}
+.ks-page .mgp-chip.accent { background: #eef3ff; color: var(--ks-accent); border-color: #d6e1fb; }
+.ks-page .mgp-chip.safe { background: #e7f6f0; color: var(--ks-safe); border-color: #c7ebd9; }
+.ks-page .mgp-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* ── Mini stat strip (per-layout overview) ───── */
+.ks-page .mgp-mini-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px;
+  background: var(--ks-line);
+  border: 1px solid var(--ks-line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.ks-page .mgp-mini-stat {
+  background: var(--ks-surface);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ks-page .mgp-mini-stat span {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ks-muted);
+}
+.ks-page .mgp-mini-stat strong {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ks-text);
+  font-variant-numeric: tabular-nums;
+}
+.ks-page .mgp-mini-stat small { font-size: 11px; color: var(--ks-text-soft); }
+
+/* ── Icon buttons ────────────────────────────── */
+.ks-page .mgp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 6px;
+  background: var(--ks-surface);
+  color: var(--ks-text-soft);
+  cursor: pointer;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.ks-page .mgp-icon-btn:hover { background: var(--ks-hover); color: var(--ks-text); }
+.ks-page .mgp-icon-btn.danger:hover { background: #fdecec; color: var(--ks-overdue); border-color: #f5c2c2; }
+.ks-page .mgp-icon-btn.ok { color: var(--ks-safe); }
+.ks-page .mgp-icon-actions { display: flex; gap: 6px; }
+
+/* ── Selectable pill button (floor/block name) ─ */
+.ks-page .mgp-select-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 7px;
+  background: var(--ks-surface);
+  color: var(--ks-text-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.13s ease;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ks-page .mgp-item.active .mgp-select-btn {
+  border-color: var(--ks-accent);
+  color: var(--ks-accent);
+  background: #eef3ff;
+}
+.ks-page .mgp-inline-edit { display: flex; gap: 6px; flex: 1; align-items: center; }
+.ks-page .mgp-inline-edit .mgp-input { height: 28px; }
+
+/* ── Rack compact cards ──────────────────────── */
+.ks-page .mgp-rack-wrap { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--ks-line-strong); }
+.ks-page .mgp-rack-wrap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ks-page .mgp-rack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.ks-page .mgp-rack-card {
+  border: 1px solid var(--ks-line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--ks-bg);
+}
+.ks-page .mgp-rack-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.ks-page .mgp-rack-main { display: flex; flex-direction: column; min-width: 0; }
+.ks-page .mgp-rack-main strong { font-size: 12px; font-weight: 600; color: var(--ks-text); }
+.ks-page .mgp-rack-main span {
+  font-size: 11px;
+  color: var(--ks-text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ks-page .mgp-rack-meta { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.ks-page .mgp-rack-card .mgp-icon-btn { width: 24px; height: 24px; }
+
+/* ── Slot alias / callout ────────────────────── */
+.ks-page .mgp-callout {
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: #eef3ff;
+  border: 1px solid #d6e1fb;
+  color: var(--ks-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ks-page .mgp-slot-meta { display: grid; gap: 10px; margin-top: 12px; }
+.ks-page .mgp-slot-meta > div { display: flex; flex-direction: column; gap: 2px; }
+.ks-page .mgp-slot-meta strong {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ks-muted);
+}
+.ks-page .mgp-slot-meta span { font-size: 12.5px; color: var(--ks-text); }
+
+/* ── Note line ───────────────────────────────── */
+.ks-page .mgp-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--ks-text-soft);
+  line-height: 1.5;
+}
+
+/* ── Empty state (inside cards) ──────────────── */
+.ks-page .mgp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 28px 20px;
+  border: 1px dashed var(--ks-line-strong);
+  border-radius: 9px;
+  background: var(--ks-bg);
+  color: var(--ks-text-soft);
+  font-size: 12.5px;
+}
+
+/* ── Inline "go to tab" link inside empty state ─ */
+.ks-page .mgp-link-tab {
+  margin: 0 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 6px;
+  background: var(--ks-surface);
+  color: var(--ks-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ks-page .mgp-link-tab:hover { background: #eef3ff; }
+
+/* ── Map panel tweaks (keep map component intact) ─ */
+.ks-page .mgp-map-host { margin-top: 4px; }
+.ks-page .mgp-map-host .gudang-layout-map { margin-top: 4px; }

@@ -520,9 +520,11 @@ const ScanProdukMasukGudang = () => {
     return seriDetails.prints.filter((print) => {
       if (print.is_cancelled) return false;
       if (print.is_scanned) return true;
-      return scannedBarcodes.some((sb) => getSerialFromBarcode(sb.barcode) === print.barcode_seri);
+      if (scannedBarcodes.some((sb) => getSerialFromBarcode(sb.barcode) === print.barcode_seri)) return true;
+      if (sessions.some(sess => Array.isArray(sess.barcodes) && sess.barcodes.some(b => (b.serialCode || getSerialFromBarcode(b.barcode)) === print.barcode_seri))) return true;
+      return false;
     }).length;
-  }, [seriDetails, scannedBarcodes]);
+  }, [seriDetails, scannedBarcodes, sessions]);
 
   const seriProgressPercent = activeSeriPrintCount
     ? (scannedSeriPrintCount / activeSeriPrintCount) * 100
@@ -1047,6 +1049,10 @@ const ScanProdukMasukGudang = () => {
       setActiveMainTab("scan");
       await loadSessions();
       fetchSeriList();
+
+      if (selectedSeriId && selectedSeriNumber) {
+        fetchSeriDetails(selectedSeriId, selectedSeriNumber, { silent: true });
+      }
     } catch (err) {
       await showGudangError(
         "Gagal mengeksekusi penempatan",
@@ -2294,13 +2300,14 @@ const ScanProdukMasukGudang = () => {
                     const isCancelled = Boolean(print.is_cancelled);
                     const isScannedInDb = Boolean(print.is_scanned);
                     const isScannedInCurrentSession = scannedBarcodes.some((sb) => getSerialFromBarcode(sb.barcode) === print.barcode_seri);
-                    const isScanned = isScannedInDb || isScannedInCurrentSession;
+                    const isPending = sessions.some(sess => Array.isArray(sess.barcodes) && sess.barcodes.some(b => (b.serialCode || getSerialFromBarcode(b.barcode)) === print.barcode_seri));
+                    const isScanned = isScannedInDb || isScannedInCurrentSession || isPending;
                     const isCanceling = cancelingPrintKey === print.barcode_seri;
 
-                    const borderColor = isCancelled ? "#fecaca" : isScanned ? "#a7f3d0" : "#e2e8f0";
-                    const backgroundColor = isCancelled ? "#fff1f2" : isScanned ? "#f0fdf4" : "#ffffff";
-                    const textColor = isCancelled ? "#be123c" : isScanned ? "#15803d" : "#475569";
-                    const dotColor = isCancelled ? "#ef4444" : isScanned ? "#10b981" : "#94a3b8";
+                    const borderColor = isCancelled ? "#fecaca" : isScannedInDb ? "#a7f3d0" : (isPending || isScannedInCurrentSession) ? "#fef08a" : "#e2e8f0";
+                    const backgroundColor = isCancelled ? "#fff1f2" : isScannedInDb ? "#f0fdf4" : (isPending || isScannedInCurrentSession) ? "#fefce8" : "#ffffff";
+                    const textColor = isCancelled ? "#be123c" : isScannedInDb ? "#15803d" : (isPending || isScannedInCurrentSession) ? "#a16207" : "#475569";
+                    const dotColor = isCancelled ? "#ef4444" : isScannedInDb ? "#10b981" : (isPending || isScannedInCurrentSession) ? "#eab308" : "#94a3b8";
 
                     return (
                       <div
@@ -2337,14 +2344,14 @@ const ScanProdukMasukGudang = () => {
                           <div style={{
                             marginTop: "4px",
                             fontSize: "10px",
-                            color: "#15803d",
+                            color: isScannedInDb ? "#15803d" : "#a16207",
                             fontWeight: 600,
-                            background: "#d1fae5",
+                            background: isScannedInDb ? "#d1fae5" : "#fef08a",
                             padding: "2px 6px",
                             borderRadius: "4px",
                             width: "fit-content"
                           }}>
-                            {isScannedInCurrentSession ? "Sesi scan" : (print.slot_code || "Ter-scan")}
+                            {isScannedInCurrentSession ? "Sesi scan" : isPending ? "Pending sesi" : (print.slot_code || "Ter-scan")}
                           </div>
                         ) : isCancelled ? (
                           <div style={{

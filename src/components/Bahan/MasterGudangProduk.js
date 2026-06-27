@@ -1,6 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FaCheck, FaEdit, FaLayerGroup, FaPen, FaPlus, FaSave, FaSyncAlt, FaTimes, FaTrash } from "react-icons/fa";
+import {
+  FaCheck,
+  FaEdit,
+  FaLayerGroup,
+  FaMap,
+  FaPen,
+  FaPlus,
+  FaSave,
+  FaSitemap,
+  FaSyncAlt,
+  FaTimes,
+  FaTrash,
+  FaWarehouse,
+} from "react-icons/fa";
 import "./GudangProdukWorkspace.css";
+import "./MasterGudangProduk.css";
 import {
   DEFAULT_BLOCK_CANVAS,
   buildSlotsFromLayout,
@@ -9,13 +23,11 @@ import {
 } from "./GudangProdukMockStore";
 import {
   GudangLayoutMap,
-  GudangStatCard,
   buildGlobalSummary,
   buildLayoutOptionLabel,
   buildSlotHeadline,
   countLayoutSummary,
 } from "./GudangProdukSharedV2";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import GudangLayoutEditorModal from "./GudangLayoutEditorModal";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
 import {
@@ -55,6 +67,7 @@ const emptyRackForm = {
 
 const MasterGudangProduk = () => {
   const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace();
+  const [activeTab, setActiveTab] = useState("gudang");
   const [selectedLayoutId, setSelectedLayoutId] = useState("");
   const [selectedFloorId, setSelectedFloorId] = useState("");
   const [selectedBlockId, setSelectedBlockId] = useState("");
@@ -623,264 +636,381 @@ const MasterGudangProduk = () => {
     }
   };
 
-  return (
-    <GudangProdukBaseShell
-      title="Master Gudang Produk"
-      subtitle="Buat gudang, lantai, blok, rak, dan alias slot secara visual. Peta ini akan dipakai ulang oleh input SKU, stok per lokasi, dan mutasi."
-      icon={FaLayerGroup}
-      statusLabel={
-        isLoading
-          ? "Memuat workspace..."
-          : isSaving
-            ? "Menyimpan perubahan..."
-            : `${globalSummary.layoutCount} gudang aktif`
-      }
-      headerActions={[
-        {
-          key: "reload-workspace",
-          label: "Muat Ulang",
-          onClick: reloadWorkspace,
-          variant: "secondary",
-          icon: FaSyncAlt,
-        },
-      ]}
-    >
-      {error ? (
-        <div className="gudang-ui-empty-panel" style={{ marginBottom: 20 }}>
-          {error}
-        </div>
-      ) : null}
+  const statusLabel = isLoading
+    ? "Memuat workspace…"
+    : isSaving
+      ? "Menyimpan…"
+      : `${globalSummary.layoutCount} gudang aktif`;
 
-      <div className="gudang-ui-stat-grid">
-        <GudangStatCard label="Total Gudang" value={globalSummary.layoutCount} helper="master aktif" />
-        <GudangStatCard label="Total Slot" value={globalSummary.slotCount} helper="hasil generate layout" />
-        <GudangStatCard label="Slot Terisi" value={globalSummary.filledSlots} helper="punya stok aktif" />
-        <GudangStatCard label="Total Qty" value={globalSummary.totalQty} helper="stok aktif saat ini" />
+  const tabItems = [
+    { key: "gudang", label: "Gudang", icon: FaWarehouse, count: state.layouts.length },
+    {
+      key: "struktur",
+      label: "Struktur",
+      icon: FaSitemap,
+      count: selectedLayout ? selectedLayoutStructure.blockCount : 0,
+    },
+    { key: "peta", label: "Peta & Slot", icon: FaMap, count: selectedLayoutSummary.slotCount },
+  ];
+
+  const noWarehouseHint = (
+    <div className="mgp-empty" style={{ minHeight: 280 }}>
+      Belum ada gudang dipilih. Buka tab
+      <button type="button" className="mgp-link-tab" onClick={() => setActiveTab("gudang")}>
+        Gudang
+      </button>
+      untuk memilih atau membuat gudang.
+    </div>
+  );
+
+  return (
+    <div className="ks-page mgp-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Master Gudang Produk</h1>
+          <span className="ks-header-sub">
+            Kelola gudang, lantai, blok, rak, dan alias slot dalam satu workspace.
+          </span>
+        </div>
+        <div className="ks-header-actions">
+          {selectedLayout ? (
+            <span className="mgp-active-pill" title={selectedLayout.name}>
+              <span className="mgp-active-dot" />
+              Aktif:&nbsp;<strong>{selectedLayout.name}</strong>
+            </span>
+          ) : null}
+          <span className="mgp-active-pill" style={{ background: "transparent", border: "none" }}>
+            {statusLabel}
+          </span>
+          <button type="button" className="ks-btn" onClick={reloadWorkspace}>
+            <FaSyncAlt className={isLoading ? "is-spinning" : ""} /> Muat Ulang
+          </button>
+        </div>
+      </header>
+
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Gudang</span>
+          <span className="ks-stat-value">{globalSummary.layoutCount}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Slot</span>
+          <span className="ks-stat-value">{globalSummary.slotCount}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Slot Terisi</span>
+          <span className="ks-stat-value tone-safe">{globalSummary.filledSlots}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Qty</span>
+          <span className="ks-stat-value">{globalSummary.totalQty}</span>
+        </div>
       </div>
 
-      <div className="gudang-ui-grid two-columns gudang-master-shell">
-        <div className="gudang-ui-grid gudang-master-sidebar">
-          <section className="gudang-ui-panel gudang-master-sidebar-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h2>Daftar Gudang</h2>
-                <p>Pilih master yang akan dikelola pada workspace aktif.</p>
-              </div>
-              <span className="gudang-ui-badge placement">{state.layouts.length} gudang</span>
-            </div>
-
-            <div className="gudang-ui-list">
-              {state.layouts.map((layout) => (
-                <div
-                  key={layout.id}
-                  className={`gudang-ui-list-item clickable ${layout.id === selectedLayout?.id ? "active" : ""}`}
-                  onClick={() => selectLayoutCard(layout.id)}
-                  onKeyDown={(event) => handleLayoutCardKeyDown(event, layout.id)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="gudang-ui-list-item-head">
-                    <h4>{layout.name}</h4>
-                    <span className="gudang-ui-badge placement">
-                      {buildLayoutOptionLabel(layout)}
-                    </span>
-                  </div>
-                  <p>{layout.description || layout.address || "Belum ada catatan gudang."}</p>
-                  <small>PIC: {layout.pic || "-"}</small>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="gudang-ui-form-card gudang-master-sidebar-panel">
-            <div className="gudang-ui-panel-head">
-              <div>
-                <h3>Gudang Baru</h3>
-                <p>Tambahkan master baru tanpa meninggalkan halaman ini.</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateWarehouse}>
-              <div className="gudang-ui-form-grid single">
-                <div className="gudang-ui-field">
-                  <label>Nama Gudang</label>
-                  <input
-                    value={warehouseForm.name}
-                    onChange={(event) =>
-                      setWarehouseForm((prev) => ({ ...prev, name: event.target.value }))
-                    }
-                    placeholder="Contoh: Gudang Rumah Besar"
-                  />
-                </div>
-                <div className="gudang-ui-field">
-                  <label>Alamat</label>
-                  <input
-                    value={warehouseForm.address}
-                    onChange={(event) =>
-                      setWarehouseForm((prev) => ({ ...prev, address: event.target.value }))
-                    }
-                    placeholder="Alamat singkat gudang"
-                  />
-                </div>
-                <div className="gudang-ui-field">
-                  <label>PIC</label>
-                  <input
-                    value={warehouseForm.pic}
-                    onChange={(event) =>
-                      setWarehouseForm((prev) => ({ ...prev, pic: event.target.value }))
-                    }
-                    placeholder="Nama penanggung jawab"
-                  />
-                </div>
-                <div className="gudang-ui-field">
-                  <label>Deskripsi</label>
-                  <textarea
-                    value={warehouseForm.description}
-                    onChange={(event) =>
-                      setWarehouseForm((prev) => ({ ...prev, description: event.target.value }))
-                    }
-                    placeholder="Catatan singkat penggunaan gudang"
-                  />
-                </div>
-              </div>
-
-              <div className="gudang-ui-form-actions">
-                <button type="submit" className="gudang-ui-button">
-                  <FaPlus /> Buat Gudang
-                </button>
-              </div>
-            </form>
-          </section>
+      <div className="mgp-tabbar">
+        <div className="ks-segment">
+          {tabItems.map((tab) => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={`ks-seg-btn ${activeTab === tab.key ? "is-active" : ""}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <TabIcon size={12} /> {tab.label} <em>{tab.count}</em>
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        <div className="gudang-ui-grid gudang-master-main">
-          <section className="gudang-ui-panel gudang-master-overview-panel">
+      {error ? <div className="mgp-error">{error}</div> : null}
 
-            {selectedLayout ? (
-              <>
-                <div className="gudang-master-overview">
-                  <div className="gudang-master-overview-main">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <span className="gudang-master-kicker">Gudang Aktif</span>
+      <section className="ks-board mgp-board">
+        <div className="mgp-scroll">
+          {/* ─────────────── TAB: GUDANG ─────────────── */}
+          {activeTab === "gudang" && (
+            <div className="mgp-cols">
+              <div className="mgp-card">
+                <div className="mgp-card-head">
+                  <div>
+                    <h3>Daftar Gudang</h3>
+                    <p>Pilih master yang akan dikelola pada workspace aktif.</p>
+                  </div>
+                  <span className="mgp-chip accent">{state.layouts.length} gudang</span>
+                </div>
+                {state.layouts.length ? (
+                  <div className="mgp-list mgp-list-scroll">
+                    {state.layouts.map((layout) => (
+                      <div
+                        key={layout.id}
+                        className={`mgp-item clickable ${layout.id === selectedLayout?.id ? "active" : ""}`}
+                        onClick={() => selectLayoutCard(layout.id)}
+                        onKeyDown={(event) => handleLayoutCardKeyDown(event, layout.id)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="mgp-item-head">
+                          <h4>{layout.name}</h4>
+                          <span className="mgp-chip">{buildLayoutOptionLabel(layout)}</span>
+                        </div>
+                        <p>{layout.description || layout.address || "Belum ada catatan gudang."}</p>
+                        <small>PIC: {layout.pic || "-"}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mgp-empty">
+                    Belum ada gudang. Tambahkan gudang baru pada panel di samping.
+                  </div>
+                )}
+              </div>
+
+              <div className="mgp-stack">
+                {selectedLayout ? (
+                  <div className="mgp-card">
+                    <div className="mgp-card-head">
+                      <div>
+                        <h3>Informasi Gudang Aktif</h3>
+                        <p>Detail master gudang yang sedang dipilih.</p>
+                      </div>
                       {!editingLayout && (
-                        <button type="button" className="gudang-ui-icon-button" onClick={startEditLayout} title="Edit Gudang">
+                        <button
+                          type="button"
+                          className="mgp-icon-btn"
+                          onClick={startEditLayout}
+                          title="Edit Gudang"
+                        >
                           <FaPen size={12} />
                         </button>
                       )}
                     </div>
+
                     {editingLayout ? (
-                      <div className="gudang-ui-form-grid" style={{ marginTop: 12, marginBottom: 12, background: "#f8fafc", padding: 16, borderRadius: 8, border: "1px dashed #cbd5e1" }}>
-                        <div className="gudang-ui-field" style={{ gridColumn: "span 2" }}>
-                          <label>Nama Gudang</label>
-                          <input
-                            value={editingLayout.name}
-                            onChange={(e) => setEditingLayout(prev => ({ ...prev, name: e.target.value }))}
-                          />
+                      <>
+                        <div className="mgp-form-grid">
+                          <div className="mgp-field span-2">
+                            <label>Nama Gudang</label>
+                            <input
+                              className="mgp-input"
+                              value={editingLayout.name}
+                              onChange={(e) =>
+                                setEditingLayout((prev) => ({ ...prev, name: e.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="mgp-field">
+                            <label>Alamat</label>
+                            <input
+                              className="mgp-input"
+                              value={editingLayout.address}
+                              onChange={(e) =>
+                                setEditingLayout((prev) => ({ ...prev, address: e.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="mgp-field">
+                            <label>PIC</label>
+                            <input
+                              className="mgp-input"
+                              value={editingLayout.pic}
+                              onChange={(e) =>
+                                setEditingLayout((prev) => ({ ...prev, pic: e.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="mgp-field span-2">
+                            <label>Deskripsi</label>
+                            <textarea
+                              className="mgp-textarea"
+                              rows={2}
+                              value={editingLayout.description}
+                              onChange={(e) =>
+                                setEditingLayout((prev) => ({ ...prev, description: e.target.value }))
+                              }
+                            />
+                          </div>
                         </div>
-                        <div className="gudang-ui-field">
-                          <label>Alamat</label>
-                          <input
-                            value={editingLayout.address}
-                            onChange={(e) => setEditingLayout(prev => ({ ...prev, address: e.target.value }))}
-                          />
-                        </div>
-                        <div className="gudang-ui-field">
-                          <label>PIC</label>
-                          <input
-                            value={editingLayout.pic}
-                            onChange={(e) => setEditingLayout(prev => ({ ...prev, pic: e.target.value }))}
-                          />
-                        </div>
-                        <div className="gudang-ui-field" style={{ gridColumn: "span 2" }}>
-                          <label>Deskripsi</label>
-                          <textarea
-                            value={editingLayout.description}
-                            onChange={(e) => setEditingLayout(prev => ({ ...prev, description: e.target.value }))}
-                            rows={2}
-                          />
-                        </div>
-                        <div className="gudang-ui-form-actions" style={{ gridColumn: "span 2", marginTop: 8 }}>
-                          <button type="button" className="gudang-ui-button" onClick={saveEditLayout} style={{ background: "#10b981" }}>
+                        <div className="mgp-form-actions">
+                          <button type="button" className="ks-btn is-primary" onClick={saveEditLayout}>
                             <FaCheck /> Simpan
                           </button>
-                          <button type="button" className="gudang-ui-button-secondary" onClick={cancelEditLayout}>
+                          <button type="button" className="ks-btn" onClick={cancelEditLayout}>
                             <FaTimes /> Batal
                           </button>
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <>
-                        <h2>{selectedLayout.name}</h2>
-                        <p>
-                          {selectedLayout.description || selectedLayout.address || "Struktur gudang siap dikelola dari panel operasional di bawah."}
-                        </p>
-
-                        <div className="gudang-master-meta-row">
-                          <span>Alamat: {selectedLayout.address || "-"}</span>
-                          <span>PIC: {selectedLayout.pic || "-"}</span>
-                          <span>Lantai aktif: {selectedFloor?.label || "-"}</span>
-                          <span>Blok aktif: {selectedBlock?.label || "-"}</span>
+                        <div className="mgp-mini-stats">
+                          <div className="mgp-mini-stat">
+                            <span>Lantai</span>
+                            <strong>{selectedLayout.floors.length}</strong>
+                          </div>
+                          <div className="mgp-mini-stat">
+                            <span>Blok</span>
+                            <strong>{selectedLayoutStructure.blockCount}</strong>
+                          </div>
+                          <div className="mgp-mini-stat">
+                            <span>Rak</span>
+                            <strong>{selectedLayoutStructure.rackCount}</strong>
+                          </div>
+                          <div className="mgp-mini-stat">
+                            <span>Slot</span>
+                            <strong>{selectedLayoutSummary.slotCount}</strong>
+                          </div>
+                        </div>
+                        <div className="mgp-slot-meta" style={{ marginTop: 14 }}>
+                          <div>
+                            <strong>Alamat</strong>
+                            <span>{selectedLayout.address || "-"}</span>
+                          </div>
+                          <div>
+                            <strong>PIC</strong>
+                            <span>{selectedLayout.pic || "-"}</span>
+                          </div>
+                          <div>
+                            <strong>Deskripsi</strong>
+                            <span>{selectedLayout.description || "-"}</span>
+                          </div>
+                        </div>
+                        <div className="mgp-chip-row">
+                          <span className="mgp-chip safe">
+                            {selectedLayoutSummary.filledSlotCount} slot terisi
+                          </span>
+                          <span className="mgp-chip">{selectedLayoutSummary.totalQty} qty aktif</span>
                         </div>
                       </>
                     )}
+                  </div>
+                ) : null}
 
-                    <div className="gudang-ui-chip-row gudang-master-chip-row">
-                      <span className="gudang-ui-chip">{selectedLayout.floors.length} lantai</span>
-                      <span className="gudang-ui-chip">{selectedLayoutStructure.blockCount} blok</span>
-                      <span className="gudang-ui-chip">{selectedLayoutStructure.rackCount} rak</span>
-                      <span className="gudang-ui-chip">{selectedLayoutSummary.slotCount} slot</span>
+                <div className="mgp-card">
+                  <div className="mgp-card-head">
+                    <div>
+                      <h3>Gudang Baru</h3>
+                      <p>Tambahkan master baru tanpa meninggalkan halaman ini.</p>
                     </div>
                   </div>
+                  <form onSubmit={handleCreateWarehouse}>
+                    <div className="mgp-form-grid">
+                      <div className="mgp-field span-2">
+                        <label>Nama Gudang</label>
+                        <input
+                          className="mgp-input"
+                          value={warehouseForm.name}
+                          onChange={(event) =>
+                            setWarehouseForm((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                          placeholder="Contoh: Gudang Rumah Besar"
+                        />
+                      </div>
+                      <div className="mgp-field">
+                        <label>Alamat</label>
+                        <input
+                          className="mgp-input"
+                          value={warehouseForm.address}
+                          onChange={(event) =>
+                            setWarehouseForm((prev) => ({ ...prev, address: event.target.value }))
+                          }
+                          placeholder="Alamat singkat gudang"
+                        />
+                      </div>
+                      <div className="mgp-field">
+                        <label>PIC</label>
+                        <input
+                          className="mgp-input"
+                          value={warehouseForm.pic}
+                          onChange={(event) =>
+                            setWarehouseForm((prev) => ({ ...prev, pic: event.target.value }))
+                          }
+                          placeholder="Nama penanggung jawab"
+                        />
+                      </div>
+                      <div className="mgp-field span-2">
+                        <label>Deskripsi</label>
+                        <textarea
+                          className="mgp-textarea"
+                          value={warehouseForm.description}
+                          onChange={(event) =>
+                            setWarehouseForm((prev) => ({ ...prev, description: event.target.value }))
+                          }
+                          placeholder="Catatan singkat penggunaan gudang"
+                        />
+                      </div>
+                    </div>
+                    <div className="mgp-form-actions">
+                      <button type="submit" className="ks-btn is-primary">
+                        <FaPlus /> Buat Gudang
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
 
-                  <div className="gudang-master-overview-stats">
-                    <div className="gudang-master-overview-stat">
-                      <span>Slot Terisi</span>
-                      <strong>{selectedLayoutSummary.filledSlotCount}</strong>
-                      <small>lokasi punya stok aktif</small>
-                    </div>
-                    <div className="gudang-master-overview-stat">
-                      <span>Total Qty</span>
-                      <strong>{selectedLayoutSummary.totalQty}</strong>
-                      <small>qty aktif pada layout ini</small>
-                    </div>
-                    <div className="gudang-master-overview-stat">
-                      <span>Lantai Dipilih</span>
-                      <strong>{selectedFloor ? selectedFloor.number : "-"}</strong>
-                      <small>{selectedFloorRackCount} rak pada lantai aktif</small>
-                    </div>
-                    <div className="gudang-master-overview-stat">
-                      <span>Blok Dipilih</span>
-                      <strong>{selectedBlock?.code || "-"}</strong>
-                      <small>{selectedBlockRackCount} rak pada blok aktif</small>
-                    </div>
+          {/* ─────────────── TAB: STRUKTUR ─────────────── */}
+          {activeTab === "struktur" &&
+            (selectedLayout ? (
+              <>
+                <div className="mgp-mini-stats" style={{ marginBottom: 14 }}>
+                  <div className="mgp-mini-stat">
+                    <span>Lantai</span>
+                    <strong>{selectedLayout.floors.length}</strong>
+                    <small>total lantai</small>
+                  </div>
+                  <div className="mgp-mini-stat">
+                    <span>Blok</span>
+                    <strong>{selectedLayoutStructure.blockCount}</strong>
+                    <small>semua lantai</small>
+                  </div>
+                  <div className="mgp-mini-stat">
+                    <span>Rak</span>
+                    <strong>{selectedLayoutStructure.rackCount}</strong>
+                    <small>semua blok</small>
+                  </div>
+                  <div className="mgp-mini-stat">
+                    <span>Lantai Aktif</span>
+                    <strong>{selectedFloor ? selectedFloor.number : "-"}</strong>
+                    <small>{selectedFloorRackCount} rak</small>
+                  </div>
+                  <div className="mgp-mini-stat">
+                    <span>Blok Aktif</span>
+                    <strong>{selectedBlock?.code || "-"}</strong>
+                    <small>{selectedBlockRackCount} rak</small>
                   </div>
                 </div>
 
-                <div className="gudang-ui-grid split-hero gudang-master-form-grid" style={{ marginTop: 18 }}>
-                  <div className="gudang-ui-grid">
-                    <section className="gudang-ui-form-card">
-                      <div className="gudang-ui-section-head">
+                <div className="mgp-cols-struktur">
+                  {/* LEFT — Lantai */}
+                  <div className="mgp-stack">
+                    <div className="mgp-card">
+                      <div className="mgp-card-head">
                         <div>
                           <h3>Tambah Lantai</h3>
-                          <p>Nomor lantai disimpan sebagai struktur dasar gudang.</p>
+                          <p>Nomor lantai jadi struktur dasar gudang.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddFloor}>
-                        <div className="gudang-ui-inline-selects">
-                          <div className="gudang-ui-field">
-                            <label>Nomor Lantai</label>
+                        <div className="mgp-inline-form">
+                          <div className="mgp-field">
+                            <label>Nomor</label>
                             <input
                               type="number"
                               min="1"
+                              className="mgp-input"
                               value={floorForm.number}
                               onChange={(event) =>
                                 setFloorForm((prev) => ({ ...prev, number: event.target.value }))
                               }
                             />
                           </div>
-                          <div className="gudang-ui-field">
+                          <div className="mgp-field">
                             <label>Label</label>
                             <input
+                              className="mgp-input"
                               value={floorForm.label}
                               onChange={(event) =>
                                 setFloorForm((prev) => ({ ...prev, label: event.target.value }))
@@ -888,98 +1018,112 @@ const MasterGudangProduk = () => {
                               placeholder="Contoh: Lantai Display"
                             />
                           </div>
-                          <div className="gudang-ui-form-actions" style={{ alignItems: "end" }}>
-                            <button type="submit" className="gudang-ui-button">
-                              <FaPlus /> Tambah
-                            </button>
-                          </div>
+                          <button type="submit" className="ks-btn is-primary">
+                            <FaPlus /> Tambah
+                          </button>
                         </div>
                       </form>
-                    </section>
+                    </div>
 
-                    <section className="gudang-ui-form-card">
-                      <div className="gudang-ui-section-head">
+                    <div className="mgp-card">
+                      <div className="mgp-card-head">
                         <div>
-                          <h3>Struktur Lantai</h3>
-                          <p>Pilih lantai kerja untuk pengelolaan blok dan rak.</p>
+                          <h3>Daftar Lantai</h3>
+                          <p>Pilih lantai kerja untuk kelola blok &amp; rak.</p>
                         </div>
                       </div>
-                      <div className="gudang-ui-list gudang-master-floor-list">
-                        {(selectedLayout.floors || []).map((floor) => (
-                          <div
-                            key={floor.id}
-                            className={`gudang-ui-list-item ${floor.id === selectedFloor?.id ? "active" : ""}`}
-                          >
-                            <div className="gudang-ui-list-item-head">
-                              {editingFloorId === floor.id ? (
-                                <div style={{ display: "flex", gap: 6, flex: 1 }}>
-                                  <input
-                                    value={editingFloorLabel}
-                                    onChange={(e) => setEditingFloorLabel(e.target.value)}
-                                    style={{ flex: 1, padding: "4px 8px", fontSize: 13, borderRadius: 4, border: "1px solid #cbd5e1" }}
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") saveEditFloor();
-                                      if (e.key === "Escape") cancelEditFloor();
-                                    }}
-                                  />
-                                  <button type="button" className="gudang-ui-icon-button" onClick={saveEditFloor} style={{ color: "#10b981" }} title="Simpan">
-                                    <FaCheck size={12} />
-                                  </button>
-                                  <button type="button" className="gudang-ui-icon-button" onClick={cancelEditFloor} title="Batal">
-                                    <FaTimes size={12} />
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="gudang-ui-button-secondary"
-                                    onClick={() => setSelectedFloorId(floor.id)}
-                                  >
-                                    {floor.label}
-                                  </button>
-                                  <div style={{ display: "flex", gap: 4 }}>
+                      {(selectedLayout.floors || []).length ? (
+                        <div className="mgp-list">
+                          {(selectedLayout.floors || []).map((floor) => (
+                            <div
+                              key={floor.id}
+                              className={`mgp-item ${floor.id === selectedFloor?.id ? "active" : ""}`}
+                            >
+                              <div className="mgp-item-head">
+                                {editingFloorId === floor.id ? (
+                                  <div className="mgp-inline-edit">
+                                    <input
+                                      className="mgp-input"
+                                      value={editingFloorLabel}
+                                      onChange={(e) => setEditingFloorLabel(e.target.value)}
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") saveEditFloor();
+                                        if (e.key === "Escape") cancelEditFloor();
+                                      }}
+                                    />
                                     <button
                                       type="button"
-                                      className="gudang-ui-icon-button"
-                                      onClick={() => startEditFloor(floor)}
-                                      title="Edit nama lantai"
+                                      className="mgp-icon-btn ok"
+                                      onClick={saveEditFloor}
+                                      title="Simpan"
                                     >
-                                      <FaPen size={11} />
+                                      <FaCheck size={12} />
                                     </button>
                                     <button
                                       type="button"
-                                      className="gudang-ui-icon-button"
-                                      onClick={() => deleteFloor(floor.id)}
-                                      title="Hapus lantai"
+                                      className="mgp-icon-btn"
+                                      onClick={cancelEditFloor}
+                                      title="Batal"
                                     >
-                                      <FaTrash />
+                                      <FaTimes size={12} />
                                     </button>
                                   </div>
-                                </>
-                              )}
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="mgp-select-btn"
+                                      onClick={() => setSelectedFloorId(floor.id)}
+                                    >
+                                      {floor.label}
+                                    </button>
+                                    <div className="mgp-icon-actions">
+                                      <button
+                                        type="button"
+                                        className="mgp-icon-btn"
+                                        onClick={() => startEditFloor(floor)}
+                                        title="Edit nama lantai"
+                                      >
+                                        <FaPen size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="mgp-icon-btn danger"
+                                        onClick={() => deleteFloor(floor.id)}
+                                        title="Hapus lantai"
+                                      >
+                                        <FaTrash size={11} />
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <small>{(floor.blocks || []).length} blok aktif</small>
                             </div>
-                            <small>{(floor.blocks || []).length} blok aktif</small>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mgp-empty">Belum ada lantai. Tambahkan lantai di atas.</div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="gudang-ui-grid">
-                    <section className="gudang-ui-form-card">
-                      <div className="gudang-ui-section-head">
+                  {/* RIGHT — Blok & Rak */}
+                  <div className="mgp-stack">
+                    <div className="mgp-card">
+                      <div className="mgp-card-head">
                         <div>
                           <h3>Tambah Blok</h3>
-                          <p>Blok akan ditempatkan pada lantai yang sedang dipilih.</p>
+                          <p>Blok ditempatkan pada lantai yang sedang dipilih.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddBlock}>
-                        <div className="gudang-ui-form-grid">
-                          <div className="gudang-ui-field">
+                        <div className="mgp-form-grid">
+                          <div className="mgp-field">
                             <label>Kode Blok</label>
                             <input
+                              className="mgp-input"
                               value={blockForm.code}
                               onChange={(event) =>
                                 setBlockForm((prev) => ({ ...prev, code: event.target.value }))
@@ -988,9 +1132,10 @@ const MasterGudangProduk = () => {
                               disabled={!selectedFloor}
                             />
                           </div>
-                          <div className="gudang-ui-field">
+                          <div className="mgp-field">
                             <label>Label Blok</label>
                             <input
+                              className="mgp-input"
                               value={blockForm.label}
                               onChange={(event) =>
                                 setBlockForm((prev) => ({ ...prev, label: event.target.value }))
@@ -1000,28 +1145,29 @@ const MasterGudangProduk = () => {
                             />
                           </div>
                         </div>
-                        <div className="gudang-ui-form-actions">
-                          <button type="submit" className="gudang-ui-button" disabled={!selectedFloor}>
+                        <div className="mgp-form-actions">
+                          <button type="submit" className="ks-btn is-primary" disabled={!selectedFloor}>
                             <FaPlus /> Tambah Blok
                           </button>
                         </div>
                       </form>
-                    </section>
+                    </div>
 
-                    <section className="gudang-ui-form-card">
-                      <div className="gudang-ui-section-head">
+                    <div className="mgp-card">
+                      <div className="mgp-card-head">
                         <div>
                           <h3>Tambah Rak</h3>
                           <p>Rak baru otomatis menyiapkan slot sesuai jumlah baris.</p>
                         </div>
                       </div>
                       <form onSubmit={handleAddRack}>
-                        <div className="gudang-ui-form-grid">
-                          <div className="gudang-ui-field">
+                        <div className="mgp-form-grid">
+                          <div className="mgp-field">
                             <label>Nomor Rak</label>
                             <input
                               type="number"
                               min="1"
+                              className="mgp-input"
                               value={rackForm.number}
                               onChange={(event) =>
                                 setRackForm((prev) => ({ ...prev, number: event.target.value }))
@@ -1029,11 +1175,12 @@ const MasterGudangProduk = () => {
                               disabled={!selectedBlock}
                             />
                           </div>
-                          <div className="gudang-ui-field">
+                          <div className="mgp-field">
                             <label>Jumlah Baris</label>
                             <input
                               type="number"
                               min="1"
+                              className="mgp-input"
                               value={rackForm.rows}
                               onChange={(event) =>
                                 setRackForm((prev) => ({ ...prev, rows: event.target.value }))
@@ -1041,9 +1188,10 @@ const MasterGudangProduk = () => {
                               disabled={!selectedBlock}
                             />
                           </div>
-                          <div className="gudang-ui-field">
+                          <div className="mgp-field span-2">
                             <label>Label Rak</label>
                             <input
+                              className="mgp-input"
                               value={rackForm.label}
                               onChange={(event) =>
                                 setRackForm((prev) => ({ ...prev, label: event.target.value }))
@@ -1053,312 +1201,293 @@ const MasterGudangProduk = () => {
                             />
                           </div>
                         </div>
-                        <div className="gudang-ui-form-actions">
-                          <button type="submit" className="gudang-ui-button" disabled={!selectedBlock}>
+                        <div className="mgp-form-actions">
+                          <button type="submit" className="ks-btn is-primary" disabled={!selectedBlock}>
                             <FaLayerGroup /> Tambah Rak
                           </button>
                         </div>
                       </form>
-                    </section>
-                  </div>
-                </div>
-
-                <div className="gudang-master-workspace-grid" style={{ marginTop: 18 }}>
-                  <section className="gudang-ui-panel gudang-master-operations-panel">
-                    <div className="gudang-ui-section-head">
-                      <div>
-                        <h3>Struktur Blok dan Rak</h3>
-                        <p>Kelola isi lantai aktif dari satu panel kerja.</p>
-                      </div>
                     </div>
 
-                    {selectedFloor ? (
-                      <div className="gudang-ui-grid gudang-master-scroll-region">
-                        <div className="gudang-ui-list gudang-master-block-list">
-                          {(selectedFloor.blocks || []).map((block) => (
-                            <div
-                              key={block.id}
-                              className={`gudang-ui-list-item ${block.id === selectedBlock?.id ? "active" : ""}`}
-                            >
-                              <div className="gudang-ui-list-item-head">
-                                {editingBlockId === block.id ? (
-                                  <div style={{ display: "flex", gap: 6, flex: 1 }}>
-                                    <input
-                                      value={editingBlockLabel}
-                                      onChange={(e) => setEditingBlockLabel(e.target.value)}
-                                      style={{ flex: 1, padding: "4px 8px", fontSize: 13, borderRadius: 4, border: "1px solid #cbd5e1" }}
-                                      autoFocus
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") saveEditBlock();
-                                        if (e.key === "Escape") cancelEditBlock();
-                                      }}
-                                    />
-                                    <button type="button" className="gudang-ui-icon-button" onClick={saveEditBlock} style={{ color: "#10b981" }} title="Simpan">
-                                      <FaCheck size={12} />
-                                    </button>
-                                    <button type="button" className="gudang-ui-icon-button" onClick={cancelEditBlock} title="Batal">
-                                      <FaTimes size={12} />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <button
-                                      type="button"
-                                      className="gudang-ui-button-secondary"
-                                      onClick={() => setSelectedBlockId(block.id)}
-                                    >
-                                      {block.label}
-                                    </button>
-                                    <div style={{ display: "flex", gap: 4 }}>
+                    <div className="mgp-card">
+                      <div className="mgp-card-head">
+                        <div>
+                          <h3>Struktur Blok &amp; Rak</h3>
+                          <p>
+                            Kelola isi lantai aktif
+                            {selectedFloor ? ` — ${selectedFloor.label}` : ""}.
+                          </p>
+                        </div>
+                      </div>
+                      {selectedFloor ? (
+                        (selectedFloor.blocks || []).length ? (
+                          <div className="mgp-list">
+                            {(selectedFloor.blocks || []).map((block) => (
+                              <div
+                                key={block.id}
+                                className={`mgp-item ${block.id === selectedBlock?.id ? "active" : ""}`}
+                              >
+                                <div className="mgp-item-head">
+                                  {editingBlockId === block.id ? (
+                                    <div className="mgp-inline-edit">
+                                      <input
+                                        className="mgp-input"
+                                        value={editingBlockLabel}
+                                        onChange={(e) => setEditingBlockLabel(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") saveEditBlock();
+                                          if (e.key === "Escape") cancelEditBlock();
+                                        }}
+                                      />
                                       <button
                                         type="button"
-                                        className="gudang-ui-icon-button"
-                                        onClick={() => startEditBlock(block)}
-                                        title="Edit nama blok"
+                                        className="mgp-icon-btn ok"
+                                        onClick={saveEditBlock}
+                                        title="Simpan"
                                       >
-                                        <FaPen size={11} />
+                                        <FaCheck size={12} />
                                       </button>
                                       <button
                                         type="button"
-                                        className="gudang-ui-icon-button"
-                                        onClick={() => deleteBlock(block.id)}
-                                        title="Hapus blok"
+                                        className="mgp-icon-btn"
+                                        onClick={cancelEditBlock}
+                                        title="Batal"
                                       >
-                                        <FaTrash />
+                                        <FaTimes size={12} />
                                       </button>
                                     </div>
-                                  </>
-                                )}
-                              </div>
-                              <div className="gudang-ui-block-summary">
-                                <small>{(block.racks || []).length} rak</small>
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="mgp-select-btn"
+                                        onClick={() => setSelectedBlockId(block.id)}
+                                      >
+                                        {block.label}
+                                      </button>
+                                      <div className="mgp-icon-actions">
+                                        <span className="mgp-chip">{(block.racks || []).length} rak</span>
+                                        <button
+                                          type="button"
+                                          className="mgp-icon-btn"
+                                          onClick={() => startEditBlock(block)}
+                                          title="Edit nama blok"
+                                        >
+                                          <FaPen size={11} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="mgp-icon-btn danger"
+                                          onClick={() => deleteBlock(block.id)}
+                                          title="Hapus blok"
+                                        >
+                                          <FaTrash size={11} />
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+
                                 {block.id === selectedBlock?.id ? (
-                                  <span className="gudang-ui-chip">Dipilih</span>
+                                  block.racks?.length ? (
+                                    <div className="mgp-rack-wrap">
+                                      <div className="mgp-rack-wrap-head">
+                                        <span className="mgp-chip accent">
+                                          {block.racks.length} rak aktif
+                                        </span>
+                                      </div>
+                                      <div className="mgp-rack-grid">
+                                        {block.racks
+                                          .slice()
+                                          .sort((left, right) => left.number - right.number)
+                                          .map((rack) => (
+                                            <div key={rack.id} className="mgp-rack-card">
+                                              <div className="mgp-rack-top">
+                                                {editingRackId === rack.id ? (
+                                                  <div className="mgp-inline-edit">
+                                                    <input
+                                                      className="mgp-input"
+                                                      value={editingRackLabel}
+                                                      onChange={(e) => setEditingRackLabel(e.target.value)}
+                                                      autoFocus
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === "Enter") saveEditRack();
+                                                        if (e.key === "Escape") cancelEditRack();
+                                                      }}
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      className="mgp-icon-btn ok"
+                                                      onClick={saveEditRack}
+                                                      title="Simpan"
+                                                    >
+                                                      <FaCheck size={10} />
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      className="mgp-icon-btn"
+                                                      onClick={cancelEditRack}
+                                                      title="Batal"
+                                                    >
+                                                      <FaTimes size={10} />
+                                                    </button>
+                                                  </div>
+                                                ) : (
+                                                  <>
+                                                    <div className="mgp-rack-main">
+                                                      <strong>
+                                                        Rak {String(rack.number).padStart(2, "0")}
+                                                      </strong>
+                                                      <span>
+                                                        {rack.label ||
+                                                          `Rak ${String(rack.number).padStart(2, "0")}`}
+                                                      </span>
+                                                    </div>
+                                                    <div className="mgp-icon-actions">
+                                                      <button
+                                                        type="button"
+                                                        className="mgp-icon-btn"
+                                                        onClick={() => startEditRack(rack)}
+                                                        title="Edit nama rak"
+                                                      >
+                                                        <FaPen size={10} />
+                                                      </button>
+                                                      <button
+                                                        type="button"
+                                                        className="mgp-icon-btn danger"
+                                                        onClick={() => deleteRack(rack.id)}
+                                                        title={`Hapus Rak ${String(rack.number).padStart(2, "0")}`}
+                                                      >
+                                                        <FaTrash size={10} />
+                                                      </button>
+                                                    </div>
+                                                  </>
+                                                )}
+                                              </div>
+                                              <div className="mgp-rack-meta">
+                                                <span className="mgp-chip">{rack.rows} baris</span>
+                                                <span className="mgp-chip">
+                                                  Kode {String(rack.number).padStart(2, "0")}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="mgp-empty" style={{ marginTop: 10 }}>
+                                      Blok ini belum punya rak. Tambahkan rak dari panel di atas.
+                                    </div>
+                                  )
                                 ) : null}
                               </div>
-
-                              {block.id === selectedBlock?.id ? (
-                                block.racks?.length ? (
-                                  <div className="gudang-ui-rack-collection">
-                                    <div className="gudang-ui-rack-collection-head">
-                                      <span className="gudang-ui-badge placement">
-                                        {block.racks.length} rak aktif
-                                      </span>
-                                      <small className="gudang-ui-rack-collection-note">
-                                        Ditampilkan ringkas untuk menjaga area kerja tetap rapi.
-                                      </small>
-                                    </div>
-
-                                    <div className="gudang-ui-rack-grid-compact">
-                                      {block.racks
-                                        .slice()
-                                        .sort((left, right) => left.number - right.number)
-                                        .map((rack) => (
-                                          <div key={rack.id} className="gudang-ui-rack-compact-card">
-                                            <div className="gudang-ui-rack-compact-top">
-                                              {editingRackId === rack.id ? (
-                                                <div style={{ display: "flex", gap: 4, flex: 1 }}>
-                                                  <input
-                                                    value={editingRackLabel}
-                                                    onChange={(e) => setEditingRackLabel(e.target.value)}
-                                                    style={{ flex: 1, padding: "2px 6px", fontSize: 12, borderRadius: 4, border: "1px solid #cbd5e1" }}
-                                                    autoFocus
-                                                    onKeyDown={(e) => {
-                                                      if (e.key === "Enter") saveEditRack();
-                                                      if (e.key === "Escape") cancelEditRack();
-                                                    }}
-                                                  />
-                                                  <button type="button" className="gudang-ui-icon-button" onClick={saveEditRack} style={{ color: "#10b981", padding: 4 }} title="Simpan">
-                                                    <FaCheck size={10} />
-                                                  </button>
-                                                  <button type="button" className="gudang-ui-icon-button" onClick={cancelEditRack} style={{ padding: 4 }} title="Batal">
-                                                    <FaTimes size={10} />
-                                                  </button>
-                                                </div>
-                                              ) : (
-                                                <>
-                                                  <div className="gudang-ui-rack-compact-main">
-                                                    <strong>Rak {String(rack.number).padStart(2, "0")}</strong>
-                                                    <span>{rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}</span>
-                                                  </div>
-                                                  <div style={{ display: "flex", gap: 2 }}>
-                                                    <button
-                                                      type="button"
-                                                      className="gudang-ui-icon-button"
-                                                      onClick={() => startEditRack(rack)}
-                                                      title="Edit nama rak"
-                                                      style={{ width: 24, height: 24 }}
-                                                    >
-                                                      <FaPen size={10} />
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      className="gudang-ui-icon-button gudang-ui-rack-delete-button"
-                                                      onClick={() => deleteRack(rack.id)}
-                                                      title={`Hapus Rak ${String(rack.number).padStart(2, "0")}`}
-                                                      style={{ width: 24, height: 24 }}
-                                                    >
-                                                      <FaTrash size={10} />
-                                                    </button>
-                                                  </div>
-                                                </>
-                                              )}
-                                            </div>
-
-                                            <div className="gudang-ui-rack-compact-meta">
-                                              <span className="gudang-ui-rack-mini-chip">
-                                                {rack.rows} baris
-                                              </span>
-                                              <span className="gudang-ui-rack-mini-chip soft">
-                                                Kode {String(rack.number).padStart(2, "0")}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        ))}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="gudang-ui-rack-empty">
-                                    Blok ini belum punya rak. Tambahkan rak baru dari panel struktur di atas.
-                                  </div>
-                                )
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="gudang-ui-empty-panel">
-                        Tambahkan atau pilih lantai terlebih dahulu untuk mulai mengatur blok.
-                      </div>
-                    )}
-                  </section>
-
-                  <div className="gudang-ui-grid gudang-master-visual-stack">
-                    <section className="gudang-ui-panel">
-                      <div className="gudang-ui-section-head">
-                        <div>
-                          <h3>Nama Tampil Slot</h3>
-                          <p>Gunakan alias untuk memberi nama lokasi yang mudah dikenali tim gudang.</p>
-                        </div>
-                      </div>
-
-                      {selectedSlot ? (
-                        <>
-                          <div className="gudang-ui-callout" style={{ marginBottom: 14 }}>
-                            <strong>{buildSlotHeadline(selectedSlot)}</strong>
+                            ))}
                           </div>
-                          <div className="gudang-ui-slot-meta">
-                            <div>
-                              <strong>Kode Sistem</strong>
-                              <span>{selectedSlot.slotCode}</span>
-                            </div>
-                            <div>
-                              <strong>Lokasi</strong>
-                              <span>
-                                {selectedLayout.name} | Blok {selectedSlot.blockCode} | Rak{" "}
-                                {String(selectedSlot.rackNumber).padStart(2, "0")}
-                              </span>
-                            </div>
+                        ) : (
+                          <div className="mgp-empty">
+                            Lantai ini belum punya blok. Tambahkan blok dari panel di atas.
                           </div>
-
-                          <div className="gudang-ui-field" style={{ marginTop: 14 }}>
-                            <label>Alias Lokasi</label>
-                            <input
-                              value={slotAliasDraft}
-                              onChange={(event) => setSlotAliasDraft(event.target.value)}
-                              placeholder="Contoh: Rak bestseller lantai 3"
-                            />
-                          </div>
-                          <div className="gudang-ui-form-actions">
-                            <button type="button" className="gudang-ui-button" onClick={saveSlotAlias}>
-                              <FaSave /> Simpan Alias
-                            </button>
-                          </div>
-                        </>
+                        )
                       ) : (
-                        <div className="gudang-ui-empty-panel">
-                          Belum ada slot dipilih. Klik slot pada peta layout untuk mengisi alias lokasi.
+                        <div className="mgp-empty">
+                          Tambahkan atau pilih lantai dulu untuk mulai mengatur blok.
                         </div>
                       )}
-                    </section>
-
-                    <section className="gudang-ui-panel gudang-master-map-panel">
-                      <div className="gudang-ui-panel-head">
-                        <div>
-                          <h2>Peta Layout</h2>
-                          <p>Preview posisi blok, rak, dan slot yang tersimpan pada master gudang aktif.</p>
-                        </div>
-                        <button
-                          type="button"
-                          className="gudang-ui-button-secondary"
-                          onClick={() => setIsLayoutEditorOpen(true)}
-                          disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
-                        >
-                          <FaEdit /> Edit Layout
-                        </button>
-                      </div>
-
-                      <div className="gudang-layout-designer-note">
-                        Gunakan editor layout untuk mengatur posisi rak secara visual. Preview di bawah akan
-                        selalu menampilkan posisi terakhir yang sudah disimpan.
-                      </div>
-
-                      <GudangLayoutMap
-                        layout={selectedLayout}
-                        selectedSlotId={selectedSlot?.id}
-                        onSelectSlot={(slot) => {
-                          setSelectedSlot(slot);
-                          setSlotAliasDraft(slot?.alias || "");
-                        }}
-                        stockSummaryBySlot={stockSummaryBySlot}
-                      />
-                    </section>
+                    </div>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="gudang-ui-empty-panel">
-                Belum ada gudang dipilih. Pilih salah satu master dari panel kiri untuk mulai mengatur layout.
-              </div>
-            )}
-          </section>
+              noWarehouseHint
+            ))}
 
-          {!selectedLayout ? (
-            <section className="gudang-ui-panel">
-              <div className="gudang-ui-panel-head">
-                <div>
-                  <h2>Peta Layout</h2>
-                  <p>Preview posisi blok, rak, dan slot yang tersimpan pada master gudang aktif.</p>
+          {/* ─────────────── TAB: PETA & SLOT ─────────────── */}
+          {activeTab === "peta" &&
+            (selectedLayout ? (
+              <div className="mgp-cols-peta">
+                <div className="mgp-card">
+                  <div className="mgp-card-head">
+                    <div>
+                      <h3>Nama Tampil Slot</h3>
+                      <p>Beri alias agar lokasi mudah dikenali tim gudang.</p>
+                    </div>
+                  </div>
+                  {selectedSlot ? (
+                    <>
+                      <div className="mgp-callout">{buildSlotHeadline(selectedSlot)}</div>
+                      <div className="mgp-slot-meta">
+                        <div>
+                          <strong>Kode Sistem</strong>
+                          <span>{selectedSlot.slotCode}</span>
+                        </div>
+                        <div>
+                          <strong>Lokasi</strong>
+                          <span>
+                            {selectedLayout.name} | Blok {selectedSlot.blockCode} | Rak{" "}
+                            {String(selectedSlot.rackNumber).padStart(2, "0")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mgp-field" style={{ marginTop: 14 }}>
+                        <label>Alias Lokasi</label>
+                        <input
+                          className="mgp-input"
+                          value={slotAliasDraft}
+                          onChange={(event) => setSlotAliasDraft(event.target.value)}
+                          placeholder="Contoh: Rak bestseller lantai 3"
+                        />
+                      </div>
+                      <div className="mgp-form-actions">
+                        <button type="button" className="ks-btn is-primary" onClick={saveSlotAlias}>
+                          <FaSave /> Simpan Alias
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mgp-empty">
+                      Belum ada slot dipilih. Klik slot pada peta untuk mengisi alias lokasi.
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  className="gudang-ui-button-secondary"
-                  onClick={() => setIsLayoutEditorOpen(true)}
-                  disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
-                >
-                  <FaEdit /> Edit Layout
-                </button>
-              </div>
 
-              <div className="gudang-layout-designer-note">
-                Gunakan editor layout untuk mengatur posisi rak secara visual. Preview di bawah akan
-                selalu menampilkan posisi terakhir yang sudah disimpan.
+                <div className="mgp-card">
+                  <div className="mgp-card-head">
+                    <div>
+                      <h3>Peta Layout</h3>
+                      <p>Preview posisi blok, rak, dan slot yang tersimpan pada gudang aktif.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="ks-btn"
+                      onClick={() => setIsLayoutEditorOpen(true)}
+                      disabled={!selectedLayout?.floors?.some((floor) => floor.blocks?.length)}
+                    >
+                      <FaEdit /> Edit Layout
+                    </button>
+                  </div>
+                  <p className="mgp-note">
+                    Gunakan editor layout untuk mengatur posisi rak secara visual. Preview menampilkan
+                    posisi terakhir yang sudah disimpan.
+                  </p>
+                  <div className="mgp-map-host">
+                    <GudangLayoutMap
+                      layout={selectedLayout}
+                      selectedSlotId={selectedSlot?.id}
+                      onSelectSlot={(slot) => {
+                        setSelectedSlot(slot);
+                        setSlotAliasDraft(slot?.alias || "");
+                      }}
+                      stockSummaryBySlot={stockSummaryBySlot}
+                    />
+                  </div>
+                </div>
               </div>
-
-              <GudangLayoutMap
-                layout={selectedLayout}
-                selectedSlotId={selectedSlot?.id}
-                onSelectSlot={(slot) => {
-                  setSelectedSlot(slot);
-                  setSlotAliasDraft(slot?.alias || "");
-                }}
-                stockSummaryBySlot={stockSummaryBySlot}
-              />
-            </section>
-          ) : null}
+            ) : (
+              noWarehouseHint
+            ))}
         </div>
-      </div>
+      </section>
 
       <GudangLayoutEditorModal
         isOpen={isLayoutEditorOpen}
@@ -1368,7 +1497,7 @@ const MasterGudangProduk = () => {
         onClose={() => setIsLayoutEditorOpen(false)}
         onSave={handleSaveLayoutEditor}
       />
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 
