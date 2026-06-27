@@ -50,6 +50,8 @@ const RiwayatStokOpnameGudang = () => {
     page: 1,
     perPage: 50,
     search: "",
+    startDate: "",
+    endDate: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -88,6 +90,8 @@ const RiwayatStokOpnameGudang = () => {
           page: query.page,
           per_page: query.perPage,
           search: query.search,
+          start_date: query.startDate,
+          end_date: query.endDate,
         });
 
         if (ignore) {
@@ -192,6 +196,36 @@ const RiwayatStokOpnameGudang = () => {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </label>
+
+          <label className="ks-search" style={{ flex: '0 0 auto', width: 'auto' }}>
+            <span style={{ fontSize: '12px', color: '#64748b', marginRight: '5px' }}>Mulai:</span>
+            <input
+              type="date"
+              value={query.startDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                startTransition(() => {
+                  setQuery(c => ({ ...c, startDate: val, page: 1 }));
+                });
+              }}
+              style={{ border: 'none', outline: 'none', background: 'transparent' }}
+            />
+          </label>
+
+          <label className="ks-search" style={{ flex: '0 0 auto', width: 'auto' }}>
+            <span style={{ fontSize: '12px', color: '#64748b', marginRight: '5px' }}>Sampai:</span>
+            <input
+              type="date"
+              value={query.endDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                startTransition(() => {
+                  setQuery(c => ({ ...c, endDate: val, page: 1 }));
+                });
+              }}
+              style={{ border: 'none', outline: 'none', background: 'transparent' }}
+            />
+          </label>
         </div>
 
         {error && (
@@ -221,6 +255,7 @@ const RiwayatStokOpnameGudang = () => {
                     <th className="align-right">Qty Sistem</th>
                     <th className="align-right">Qty Fisik</th>
                     <th className="align-right">Selisih</th>
+                    <th className="align-right">Stok Saat Ini</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -250,6 +285,7 @@ const RiwayatStokOpnameGudang = () => {
                           {row.selisih > 0 ? '+' : ''}{row.selisih}
                         </span>
                       </td>
+                      <td className="align-right">{formatNumber(row.stok_saat_ini)}</td>
                       <td>
                         <span className={`ks-badge tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`}>
                           {row.status}
