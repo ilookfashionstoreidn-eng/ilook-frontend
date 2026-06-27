@@ -716,6 +716,23 @@ export const commitOpname = async (payload) => {
   };
 };
 
+/**
+ * Ambil daftar riwayat stok opname gudang.
+ * @param {object} params - { search, page, per_page }
+ */
+export const fetchOpnameHistory = async (params = {}) => {
+  const response = await API.get("/gudang-produk-workspace/opname/history", { params });
+  return {
+    data: Array.isArray(response?.data?.data) ? response.data.data : [],
+    pagination: response?.data?.pagination || {
+      current_page: 1,
+      per_page: 50,
+      total: 0,
+      last_page: 1,
+    }
+  };
+};
+
 // ─── Mutation Sessions ────────────────────────────────────────────────────────
 
 /**
@@ -882,5 +899,10 @@ export const fetchPencarianSeriGudang = async (params) => {
   const response = await API.get("/gudang-produk-workspace/pencarian-seri", {
     params,
   });
+  return response?.data;
+};
+
+export const fetchOpnameHistory = async (params = {}) => {
+  const response = await API.get("/gudang-produk-workspace/opname/history", { params });
   return response?.data;
 };

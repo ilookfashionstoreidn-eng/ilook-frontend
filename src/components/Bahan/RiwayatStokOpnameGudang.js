@@ -1,59 +1,32 @@
-import React, { useState, useMemo } from "react";
+import React, {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useState,
+} from "react";
 import {
-  FiHistory,
   FiSearch,
-  FiCheckCircle,
-  FiInfo,
-  FiPrinter
+  FiPrinter,
+  FiRefreshCw,
+  FiChevronLeft,
+  FiChevronRight
 } from "react-icons/fi";
 import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import { fetchOpnameHistory } from "./GudangProdukWorkspaceApi";
 
-// Dummy data for initial local development
-const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const DUMMY_DATA = isLocalhost ? [
-  {
-    id: 1,
-    opname_number: "OPN-20260627-001",
-    tanggal: "2026-06-27T08:30:00Z",
-    pic: "Budi Santoso",
-    lokasi: "Gudang 1 - Rak A",
-    total_sku: 15,
-    total_qty_sistem: 150,
-    total_qty_fisik: 148,
-    selisih: -2,
-    status: "Selesai",
-    notes: "Ada selisih di Daster Pink karena barang reject."
-  },
-  {
-    id: 2,
-    opname_number: "OPN-20260625-002",
-    tanggal: "2026-06-25T14:15:00Z",
-    pic: "Andi Saputra",
-    lokasi: "Gudang Utama",
-    total_sku: 45,
-    total_qty_sistem: 520,
-    total_qty_fisik: 520,
-    selisih: 0,
-    status: "Selesai",
-    notes: "Stok balance."
-  },
-  {
-    id: 3,
-    opname_number: "OPN-20260620-001",
-    tanggal: "2026-06-20T09:00:00Z",
-    pic: "Citra Kirana",
-    lokasi: "Gudang 2 - Transit",
-    total_sku: 5,
-    total_qty_sistem: 50,
-    selisih: 5,
-    status: "Draft",
-    notes: "Barang retur masuk belum tercatat."
-  }
-] : [];
+const EMPTY_PAGINATION = {
+  current_page: 1,
+  per_page: 50,
+  total: 0,
+  last_page: 1,
+};
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
 const formatDateTime = (value) => {
   if (!value) return "-";
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("id-ID", {
     day: "2-digit",
     month: "short",
@@ -64,44 +37,123 @@ const formatDateTime = (value) => {
 };
 
 const formatNumber = (value) => {
-  return Number(value).toLocaleString("id-ID");
-};
-
-const getUniqueLocations = () => {
-  const locations = DUMMY_DATA.map(d => d.lokasi);
-  return ["Semua Lokasi", ...new Set(locations)];
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed.toLocaleString("id-ID") : "0";
 };
 
 const RiwayatStokOpnameGudang = () => {
+  const [rows, setRows] = useState([]);
+  const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [searchInput, setSearchInput] = useState("");
-  const [filterTanggal, setFilterTanggal] = useState("");
-  const [filterLokasi, setFilterLokasi] = useState("Semua Lokasi");
-  
-  const locations = useMemo(() => getUniqueLocations(), []);
+  const deferredSearchInput = useDeferredValue(searchInput);
+  const [query, setQuery] = useState({
+    page: 1,
+    perPage: 50,
+    search: "",
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [error, setError] = useState("");
 
-  const filteredData = useMemo(() => {
-    return DUMMY_DATA.filter((item) => {
-      // Search filter
-      const search = searchInput.toLowerCase();
-      const matchSearch = 
-        item.opname_number.toLowerCase().includes(search) ||
-        item.pic.toLowerCase().includes(search) ||
-        item.lokasi.toLowerCase().includes(search);
-        
-      // Date filter
-      const itemDate = new Date(item.tanggal).toISOString().split('T')[0];
-      const matchDate = filterTanggal ? itemDate === filterTanggal : true;
-      
-      // Location filter
-      const matchLokasi = filterLokasi === "Semua Lokasi" ? true : item.lokasi === filterLokasi;
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const nextSearch = deferredSearchInput.trim();
 
-      return matchSearch && matchDate && matchLokasi;
+      startTransition(() => {
+        setQuery((current) => {
+          if (current.search === nextSearch && current.page === 1) {
+            return current;
+          }
+
+          return {
+            ...current,
+            search: nextSearch,
+            page: 1,
+          };
+        });
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [deferredSearchInput]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadRows = async () => {
+      setIsLoading(true);
+
+      try {
+        const result = await fetchOpnameHistory({
+          page: query.page,
+          per_page: query.perPage,
+          search: query.search,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        setRows(result.data);
+        setPagination(result.pagination);
+        setError("");
+        setHasLoadedOnce(true);
+      } catch (fetchError) {
+        if (ignore) {
+          return;
+        }
+
+        if (!hasLoadedOnce) {
+          setRows([]);
+          setPagination({
+            ...EMPTY_PAGINATION,
+            current_page: query.page,
+            per_page: query.perPage,
+          });
+        }
+
+        setError(fetchError?.response?.data?.message || fetchError.message || "Gagal memuat riwayat stok opname.");
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadRows();
+
+    return () => {
+      ignore = true;
+    };
+  }, [query]);
+
+  const handlePerPageChange = (event) => {
+    const nextPerPage = Number(event.target.value) || 50;
+
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        perPage: nextPerPage,
+        page: 1,
+      }));
     });
-  }, [searchInput, filterTanggal, filterLokasi]);
+  };
+
+  const goToPage = (page) => {
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        page,
+      }));
+    });
+  };
 
   const handlePrint = () => {
     window.print();
   };
+
+  const isInitialLoading = isLoading && !hasLoadedOnce;
+  const hasRows = rows.length > 0;
 
   return (
     <div className="ks-page" id="print-area">
@@ -111,7 +163,7 @@ const RiwayatStokOpnameGudang = () => {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
-            .ks-toolbar, .ks-header-actions, .ks-statrail { display: none !important; }
+            .ks-toolbar, .ks-header-actions, .ks-statrail, .ks-footer { display: none !important; }
             .ks-grid-scroll { overflow: visible !important; max-height: none !important; }
             .ks-header-sub { color: #000; }
           }
@@ -120,7 +172,7 @@ const RiwayatStokOpnameGudang = () => {
       <header className="ks-header">
         <div className="ks-header-id">
           <h1>Riwayat Stok Opname</h1>
-          <span className="ks-header-sub">Melihat histori perhitungan fisik stok gudang (Dummy Data).</span>
+          <span className="ks-header-sub">Melihat histori perhitungan fisik stok gudang.</span>
         </div>
         <div className="ks-header-actions">
           <button type="button" className="ks-btn" onClick={handlePrint}>
@@ -128,27 +180,6 @@ const RiwayatStokOpnameGudang = () => {
           </button>
         </div>
       </header>
-
-      <div className="ks-statrail">
-        <div className="ks-stat">
-          <span className="ks-stat-label">Total Opname</span>
-          <span className="ks-stat-value">{filteredData.length}</span>
-        </div>
-        <div className="ks-stat">
-          <span className="ks-stat-label">Opname Selesai</span>
-          <span className="ks-stat-value tone-safe">
-            <span className="ks-dot tone-safe" />
-            {filteredData.filter(d => d.status === "Selesai").length}
-          </span>
-        </div>
-        <div className="ks-stat">
-          <span className="ks-stat-label">Opname Draft</span>
-          <span className="ks-stat-value tone-warning">
-            <span className="ks-dot tone-warning" />
-            {filteredData.filter(d => d.status === "Draft").length}
-          </span>
-        </div>
-      </div>
 
       <section className="ks-board">
         <div className="ks-toolbar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -161,109 +192,103 @@ const RiwayatStokOpnameGudang = () => {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </label>
-          
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#64748b' }}>Tanggal:</span>
-            <input 
-              type="date" 
-              value={filterTanggal} 
-              onChange={(e) => setFilterTanggal(e.target.value)}
-              style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                fontSize: '13px',
-                outline: 'none'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#64748b' }}>Lokasi:</span>
-            <select 
-              value={filterLokasi} 
-              onChange={(e) => setFilterLokasi(e.target.value)}
-              style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                fontSize: '13px',
-                outline: 'none',
-                minWidth: '150px'
-              }}
-            >
-              {locations.map(loc => (
-                <option key={loc} value={loc}>{loc}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
+        {error && (
+          <div className="ks-empty" style={{ color: '#ef4444', padding: '10px' }}>
+            {error}
+          </div>
+        )}
+
         <div className="ks-grid-scroll">
-          <table className="ks-grid">
-            <thead>
-              <tr>
-                <th style={{ width: '40px' }}></th>
-                <th>No. Opname</th>
-                <th>Tanggal</th>
-                <th>PIC</th>
-                <th>Lokasi</th>
-                <th className="align-right">Total SKU</th>
-                <th className="align-right">Qty Sistem</th>
-                <th className="align-right">Qty Fisik</th>
-                <th className="align-right">Selisih</th>
-                <th>Status</th>
-                <th>Catatan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.length > 0 ? (
-                filteredData.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <div className={`ks-urgency-dot tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`} />
-                    </td>
-                    <td><strong>{row.opname_number}</strong></td>
-                    <td>{formatDateTime(row.tanggal)}</td>
-                    <td>{row.pic}</td>
-                    <td>{row.lokasi}</td>
-                    <td className="align-right">{formatNumber(row.total_sku)}</td>
-                    <td className="align-right">{formatNumber(row.total_qty_sistem)}</td>
-                    <td className="align-right">
-                      <strong>{formatNumber(row.total_qty_fisik)}</strong>
-                    </td>
-                    <td className="align-right">
-                      <span
-                        style={{
-                          color: row.selisih > 0 ? '#10b981' : row.selisih < 0 ? '#ef4444' : '#6b7280',
-                          fontWeight: row.selisih !== 0 ? 'bold' : 'normal'
-                        }}
-                      >
-                        {row.selisih > 0 ? '+' : ''}{row.selisih}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`ks-badge tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`}>
-                        {row.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.notes}>
-                        {row.notes || '-'}
-                      </div>
-                    </td>
+          {isInitialLoading ? (
+            <div className="ks-empty">
+              <FiRefreshCw className="is-spinning" size={20} />
+              <p>Memuat riwayat stok opname...</p>
+            </div>
+          ) : hasRows ? (
+            <>
+              <table className="ks-grid">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px' }}></th>
+                    <th>No. Opname</th>
+                    <th>Tanggal</th>
+                    <th>PIC</th>
+                    <th>Lokasi</th>
+                    <th className="align-right">Total SKU</th>
+                    <th className="align-right">Qty Sistem</th>
+                    <th className="align-right">Qty Fisik</th>
+                    <th className="align-right">Selisih</th>
+                    <th>Status</th>
+                    <th>Catatan</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="11" className="ks-empty" style={{ padding: '40px' }}>
-                    <FiSearch size={20} style={{ marginBottom: '10px', color: '#94a3b8' }} />
-                    <p>Tidak ada hasil untuk filter pencarian Anda.</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <div className={`ks-urgency-dot tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`} />
+                      </td>
+                      <td><strong>{row.opname_number}</strong></td>
+                      <td>{formatDateTime(row.tanggal)}</td>
+                      <td>{row.pic}</td>
+                      <td>{row.lokasi}</td>
+                      <td className="align-right">{formatNumber(row.total_sku)}</td>
+                      <td className="align-right">{formatNumber(row.total_qty_sistem)}</td>
+                      <td className="align-right">
+                        <strong>{formatNumber(row.total_qty_fisik)}</strong>
+                      </td>
+                      <td className="align-right">
+                        <span
+                          style={{
+                            color: row.selisih > 0 ? '#10b981' : row.selisih < 0 ? '#ef4444' : '#6b7280',
+                            fontWeight: row.selisih !== 0 ? 'bold' : 'normal'
+                          }}
+                        >
+                          {row.selisih > 0 ? '+' : ''}{row.selisih}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`ks-badge tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.notes}>
+                          {row.notes || '-'}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {pagination.last_page > 1 ? (
+                <div className="ks-footer">
+                  <div className="ks-footer-info">
+                    <span>Hal. {formatNumber(pagination.current_page)}/{formatNumber(pagination.last_page)} · {formatNumber(pagination.total)} baris</span>
+                    <label className="ks-pagesize">
+                      Tampil
+                      <select value={query.perPage} onChange={handlePerPageChange}>
+                        {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="ks-pager">
+                    <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.max(1, pagination.current_page - 1))} disabled={pagination.current_page <= 1}><FiChevronLeft size={14} /></button>
+                    <button type="button" className={`ks-pg-btn is-active`}>{pagination.current_page}</button>
+                    <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.min(pagination.last_page, pagination.current_page + 1))} disabled={pagination.current_page >= pagination.last_page}><FiChevronRight size={14} /></button>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div className="ks-empty" style={{ padding: '40px' }}>
+              <FiSearch size={20} style={{ marginBottom: '10px', color: '#94a3b8' }} />
+              <p>Tidak ada hasil riwayat stok opname.</p>
+            </div>
+          )}
         </div>
       </section>
     </div>
