@@ -9,7 +9,8 @@ import {
 import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 
 // Dummy data for initial local development
-const DUMMY_DATA = [
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const DUMMY_DATA = isLocalhost ? [
   {
     id: 1,
     opname_number: "OPN-20260627-001",
@@ -44,12 +45,11 @@ const DUMMY_DATA = [
     lokasi: "Gudang 2 - Transit",
     total_sku: 5,
     total_qty_sistem: 50,
-    total_qty_fisik: 55,
     selisih: 5,
     status: "Draft",
     notes: "Barang retur masuk belum tercatat."
   }
-];
+] : [];
 
 const formatDateTime = (value) => {
   if (!value) return "-";
