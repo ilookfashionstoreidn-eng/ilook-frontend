@@ -216,16 +216,16 @@ const RiwayatStokOpnameGudang = () => {
                     <th>Tanggal</th>
                     <th>PIC</th>
                     <th>Lokasi</th>
+                    <th>SKU</th>
                     <th className="align-right">Total SKU</th>
                     <th className="align-right">Qty Sistem</th>
                     <th className="align-right">Qty Fisik</th>
                     <th className="align-right">Selisih</th>
                     <th>Status</th>
-                    <th>Catatan</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {[...rows].sort((a, b) => b.selisih - a.selisih).map((row) => (
                     <tr key={row.id}>
                       <td>
                         <div className={`ks-urgency-dot tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`} />
@@ -234,6 +234,7 @@ const RiwayatStokOpnameGudang = () => {
                       <td>{formatDateTime(row.tanggal)}</td>
                       <td>{row.pic}</td>
                       <td>{row.lokasi}</td>
+                      <td>{row.sku || '-'}</td>
                       <td className="align-right">{formatNumber(row.total_sku)}</td>
                       <td className="align-right">{formatNumber(row.total_qty_sistem)}</td>
                       <td className="align-right">
@@ -253,11 +254,6 @@ const RiwayatStokOpnameGudang = () => {
                         <span className={`ks-badge tone-${row.status === 'Selesai' ? 'safe' : 'warning'}`}>
                           {row.status}
                         </span>
-                      </td>
-                      <td>
-                        <div style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.notes}>
-                          {row.notes || '-'}
-                        </div>
                       </td>
                     </tr>
                   ))}
