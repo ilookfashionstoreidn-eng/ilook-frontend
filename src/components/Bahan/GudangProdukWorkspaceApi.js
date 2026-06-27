@@ -902,7 +902,3 @@ export const fetchPencarianSeriGudang = async (params) => {
   return response?.data;
 };
 
-export const fetchOpnameHistory = async (params = {}) => {
-  const response = await API.get("/gudang-produk-workspace/opname/history", { params });
-  return response?.data;
-};
