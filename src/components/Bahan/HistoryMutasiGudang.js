@@ -16,9 +16,17 @@ import {
   FaHourglassHalf,
   FaBan,
 } from "react-icons/fa";
-import "./GudangProdukWorkspace.css";
-import { GudangStatCard } from "./GudangProdukSharedV2";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiSearch,
+  FiRefreshCw,
+  FiX,
+  FiClock,
+  FiSlash,
+  FiFilter
+} from "react-icons/fi";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukMutationHistory,
@@ -297,315 +305,167 @@ const HistoryMutasiGudang = () => {
   };
 
   return (
-    <GudangProdukBaseShell
-      title="History Mutasi Gudang"
-      subtitle="Riwayat perpindahan stok antar lokasi/rak dan daftar antrean mutasi."
-      icon={FaExchangeAlt}
-      statusLabel={
-        isInitialLoading
-          ? "Memuat data..."
-          : isRefreshing
-          ? "Memperbarui hasil..."
-          : `${formatNumber(summary.total_rows)} transaksi`
-      }
-      searchValue={searchInput}
-      onSearchChange={setSearchInput}
-      searchPlaceholder="Cari SKU atau lokasi..."
-      headerActions={[
-        {
-          key: "refresh-history-mutasi",
-          label: "Refresh",
-          icon: FaSync,
-          onClick: refreshRows,
-        },
-      ]}
-    >
-      {/* Stat Panel */}
-      <section className="gudang-ui-stat-grid">
-        <GudangStatCard
-          label="Total Transaksi"
-          value={formatNumber(summary.total_rows)}
-          helper="Jumlah pencatatan mutasi pada filter aktif."
-        />
-        <GudangStatCard
-          label="Total Qty Mutasi"
-          value={formatNumber(summary.total_qty)}
-          helper="Akumulasi quantity produk yang dimutasi."
-        />
-      </section>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Riwayat Mutasi Gudang</h1>
+          <span className="ks-header-sub">Riwayat perpindahan stok antar lokasi/rak dan daftar antrean mutasi.</span>
+        </div>
+        <div className="ks-header-actions">
+          <button type="button" className="ks-btn is-primary" onClick={refreshRows} disabled={isLoading}>
+            <FiRefreshCw size={13} className={isRefreshing ? "is-spinning" : ""} />
+            {isLoading ? "Memuat" : "Muat Ulang"}
+          </button>
+        </div>
+      </header>
 
-      {/* Tabs Selector */}
-      <div 
-        style={{ 
-          display: "flex", 
-          gap: "8px", 
-          borderBottom: "1px solid #e2e8f0", 
-          paddingBottom: "8px",
-          marginBottom: "16px"
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("executed");
-            setRows([]);
-            setHasLoadedOnce(false);
-          }}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "6px",
-            border: "none",
-            background: activeTab === "executed" ? "#2458ce" : "transparent",
-            color: activeTab === "executed" ? "#fff" : "#64748b",
-            fontWeight: "600",
-            fontSize: "13px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            transition: "all 0.2s"
-          }}
-        >
-          <FaExchangeAlt size={12} />
-          Riwayat Mutasi
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("pending");
-            setRows([]);
-            setHasLoadedOnce(false);
-          }}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "6px",
-            border: "none",
-            background: activeTab === "pending" ? "#2458ce" : "transparent",
-            color: activeTab === "pending" ? "#fff" : "#64748b",
-            fontWeight: "600",
-            fontSize: "13px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            transition: "all 0.2s"
-          }}
-        >
-          <FaHourglassHalf size={12} />
-          Belum Dieksekusi
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("cancelled");
-            setRows([]);
-            setHasLoadedOnce(false);
-          }}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "6px",
-            border: "none",
-            background: activeTab === "cancelled" ? "#2458ce" : "transparent",
-            color: activeTab === "cancelled" ? "#fff" : "#64748b",
-            fontWeight: "600",
-            fontSize: "13px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            transition: "all 0.2s"
-          }}
-        >
-          <FaBan size={12} />
-          Dibatalkan
-        </button>
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Status Data</span>
+          <span className="ks-stat-value">
+            {isInitialLoading ? "Memuat..." : isRefreshing ? "Memperbarui..." : `${formatNumber(summary.total_rows)} trx`}
+          </span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Transaksi</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_rows)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Qty Mutasi</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty)}</span>
+        </div>
       </div>
 
-      {/* Filter Toolbar */}
-      <section className="gudang-ui-panel gudang-history-filter-panel">
-        <div className="gudang-history-filter-grid">
-          <label className="gudang-history-date-field">
-            <span>Range Tanggal</span>
-            <div className="gudang-history-date-range">
-              <input
-                type="date"
-                value={startDate}
-                onChange={handleStartDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-              <span>-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={handleEndDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-            </div>
-          </label>
-
-          <label className="gudang-history-date-field">
-            <span>1 Tanggal</span>
-            <input
-              type="date"
-              value={singleDate}
-              onChange={handleSingleDateChange}
-              onClick={openDatePicker}
-              onFocus={openDatePicker}
-            />
-          </label>
-
-          <label className="gudang-history-date-field">
-            <span>Baris / halaman</span>
-            <select value={query.perPage} onChange={handlePerPageChange}>
-              {PAGE_SIZE_OPTIONS.map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize} baris
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="gudang-history-filter-actions">
-            {activeSearch || startDate || endDate ? (
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={clearSearch}
-              >
-                <FaTimes />
-                Reset
-              </button>
-            ) : null}
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div className="ks-segment" role="tablist">
             <button
               type="button"
-              className="gudang-ui-header-action primary"
-              onClick={applyFilter}
+              className={`ks-seg-btn ${activeTab === "executed" ? "is-active" : ""}`}
+              onClick={() => {
+                setActiveTab("executed");
+                setRows([]);
+                setHasLoadedOnce(false);
+              }}
             >
-              <FaQrcode />
-              Tampilkan
+              Riwayat Mutasi
+            </button>
+            <button
+              type="button"
+              className={`ks-seg-btn ${activeTab === "pending" ? "is-active" : ""}`}
+              onClick={() => {
+                setActiveTab("pending");
+                setRows([]);
+                setHasLoadedOnce(false);
+              }}
+            >
+              <FiClock style={{ marginRight: '6px' }} /> Belum Dieksekusi
+            </button>
+            <button
+              type="button"
+              className={`ks-seg-btn ${activeTab === "cancelled" ? "is-active" : ""}`}
+              onClick={() => {
+                setActiveTab("cancelled");
+                setRows([]);
+                setHasLoadedOnce(false);
+              }}
+            >
+              <FiSlash style={{ marginRight: '6px' }} /> Dibatalkan
             </button>
           </div>
         </div>
 
-        <div className="gudang-ui-chip-row gudang-history-meta-row">
-          <span className="gudang-ui-chip">
-            Menampilkan {formatNumber(resultFrom)}-{formatNumber(resultTo)} dari{" "}
-            {formatNumber(pagination.total || summary.total_rows)} data
-          </span>
-          <span className="gudang-ui-chip">
-            Halaman {formatNumber(pagination.current_page)} /{" "}
-            {formatNumber(Math.max(pagination.last_page, 1))}
-          </span>
-          {activeSearch ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-active">
-              Pencarian aktif: "{activeSearch}"
-            </span>
-          ) : null}
-          {isSearchDirty ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-pending">
-              Menyiapkan pencarian...
-            </span>
-          ) : null}
+        <div className="ks-toolbar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginTop: '12px' }}>
+          <label className="ks-search" style={{ flex: '1 1 300px' }}>
+            <FiSearch className="ks-search-icon" size={14} />
+            <input
+              type="text"
+              placeholder="Cari SKU atau lokasi..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </label>
+          
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Dari:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={handleEndDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+             <button type="button" className="ks-btn is-primary" onClick={applyFilter}>
+               <FiFilter size={13} /> Tampilkan
+             </button>
+             {(activeSearch || startDate || endDate) && (
+               <button type="button" className="ks-btn" onClick={clearSearch}>
+                 <FiX size={13} /> Reset
+               </button>
+             )}
+          </div>
         </div>
 
         {error ? (
-          <div className="gudang-ui-callout gudang-liststok-callout-error">
-            {error}
+          <div className="ks-empty" style={{ color: '#ef4444' }}>
+             {error}
           </div>
         ) : null}
-      </section>
 
-      {/* Table Section */}
-      <section className="gudang-ui-panel gudang-history-table-panel">
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>
-              {activeTab === "executed"
-                ? "Tabel Riwayat Mutasi"
-                : activeTab === "pending"
-                ? "Tabel Sesi Belum Dieksekusi"
-                : "Tabel Sesi Dibatalkan"}
-            </h2>
-            <p>
-              {activeTab === "executed"
-                ? "Daftar mutasi produk yang telah sukses dipindahkan antar rak."
-                : activeTab === "pending"
-                ? "Daftar antrean pemindahan produk yang belum diselesaikan lokasinya."
-                : "Daftar sesi scan mutasi yang telah dibatalkan."}
-            </p>
-          </div>
-          {isRefreshing ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-pending">
-              Memperbarui hasil...
-            </span>
-          ) : null}
-        </div>
-
+        <div className="ks-grid-scroll">
         {isInitialLoading ? (
-          <div className="gudang-ui-empty-panel">Memuat data mutasi...</div>
+          <div className="ks-empty">
+            <FiRefreshCw className="is-spinning" size={20} />
+            <p>Memuat data mutasi...</p>
+          </div>
         ) : hasRows ? (
           <>
-            <div className="gudang-history-table-stage">
-              {isRefreshing ? (
-                <div className="gudang-liststok-loading-overlay">
-                  Memperbarui data tanpa menutup hasil yang sedang dibaca...
-                </div>
-              ) : null}
-
-              <div className="gudang-ui-table-shell">
-                <table className="gudang-ui-table gudang-history-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>SKU</th>
-                      <th>Qty</th>
-                      <th>Lokasi Asal</th>
-                      {activeTab === "executed" && <th>Lokasi Tujuan</th>}
-                      <th>Operator</th>
-                      <th>Waktu</th>
-                      {(activeTab === "pending" || activeTab === "cancelled") && <th>Seri</th>}
-                      {activeTab === "executed" && <th>Aksi</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <React.Fragment key={row.id}>
-                        <tr>
+            <div style={{ overflowX: "auto" }}>
+              <table className="ks-grid">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px' }}></th>
+                    <th>ID</th>
+                    <th>SKU</th>
+                    <th className="align-right">Qty</th>
+                    <th>Lokasi Asal</th>
+                    {activeTab === "executed" && <th>Lokasi Tujuan</th>}
+                    <th>Operator</th>
+                    <th>Waktu</th>
+                    {(activeTab === "pending" || activeTab === "cancelled") && <th>Seri</th>}
+                    {activeTab === "executed" && <th>Aksi</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <React.Fragment key={row.id}>
+                      <tr>
+                        <td>
+                          <div className={`ks-urgency-dot tone-${activeTab === 'executed' ? 'safe' : activeTab === 'pending' ? 'warning' : 'overdue'}`} />
+                        </td>
+                        <td><strong>#{row.id}</strong></td>
+                        <td><strong>{row.sku || "-"}</strong></td>
+                        <td className="align-right">{formatNumber(row.qty || 0)} pcs</td>
+                        <td>
+                          <span className="ks-badge tone-warning">{row.from_slot || "-"}</span>
+                        </td>
+                        {activeTab === "executed" && (
                           <td>
-                            <strong>#{row.id}</strong>
+                            <span className="ks-badge tone-safe">{row.to_slot || "-"}</span>
                           </td>
-                          <td>
-                            <strong>{row.sku || "-"}</strong>
-                          </td>
-                          <td>
-                            <span
-                              style={{
-                                display: "inline-block",
-                                background: "#eff6ff",
-                                color: "#1e40af",
-                                padding: "2px 8px",
-                                borderRadius: "4px",
-                                fontWeight: "800",
-                                fontSize: "11px"
-                              }}
-                            >
-                              {formatNumber(row.qty || 0)} pcs
-                            </span>
-                          </td>
-                          <td>
-                            <span className="gudang-ui-pill" style={{ background: "#fee2e2", color: "#991b1b" }}>
-                              {row.from_slot || "-"}
-                            </span>
-                          </td>
-                          {activeTab === "executed" && (
-                            <td>
-                              <span className="gudang-ui-pill" style={{ background: "#dcfce7", color: "#166534" }}>
-                                {row.to_slot || "-"}
-                              </span>
-                            </td>
-                          )}
+                        )}
                           <td>{row.creator_name || "-"}</td>
                           <td>{formatDateTime(row.created_at)}</td>
                           {(activeTab === "pending" || activeTab === "cancelled") && (
@@ -613,9 +473,8 @@ const HistoryMutasiGudang = () => {
                               {row.barcodes && row.barcodes.length > 0 ? (
                                 <button
                                   type="button"
-                                  className="liststok-detail-btn"
+                                  className="ks-btn"
                                   onClick={() => toggleRowExpansion(row.id)}
-                                  style={{ padding: "4px 8px", fontSize: "11px" }}
                                 >
                                   {expandedRowId === row.id ? "Tutup" : "Detail"}
                                 </button>
@@ -631,16 +490,8 @@ const HistoryMutasiGudang = () => {
                                   type="button"
                                   onClick={() => handleRevert(row.id, row.notes)}
                                   disabled={isRevertingId === row.id}
-                                  style={{
-                                    padding: "4px 8px",
-                                    fontSize: "11px",
-                                    background: "#fee2e2",
-                                    color: "#991b1b",
-                                    border: "1px solid #f87171",
-                                    borderRadius: "4px",
-                                    cursor: isRevertingId === row.id ? "not-allowed" : "pointer",
-                                    opacity: isRevertingId === row.id ? 0.6 : 1
-                                  }}
+                                  className="ks-btn"
+                                  style={{ borderColor: "#f87171", color: "#b91c1c", backgroundColor: "#fef2f2" }}
                                 >
                                   {isRevertingId === row.id ? "Membatalkan..." : "Batalkan"}
                                 </button>
@@ -682,57 +533,37 @@ const HistoryMutasiGudang = () => {
                         )}
                       </React.Fragment>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </tbody>
+              </table>
             </div>
 
-            {/* Pagination */}
             {pagination.last_page > 1 ? (
-              <div className="gudang-liststok-pagination">
-                <div className="gudang-liststok-pagination-info">
-                  Menampilkan <strong>{formatNumber(resultFrom)}</strong> sampai{" "}
-                  <strong>{formatNumber(resultTo)}</strong> dari{" "}
-                  <strong>{formatNumber(pagination.total)}</strong> data.
+              <div className="ks-footer">
+                <div className="ks-footer-info">
+                  <span>Hal. {formatNumber(pagination.current_page)}/{formatNumber(pagination.last_page)} · {formatNumber(pagination.total)} baris</span>
+                  <label className="ks-pagesize">
+                    Tampil
+                    <select value={query.perPage} onChange={handlePerPageChange}>
+                      {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </label>
                 </div>
-
-                <div className="gudang-liststok-pagination-actions">
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page - 1)}
-                    disabled={pagination.current_page <= 1}
-                  >
-                    <FaChevronLeft />
-                    Sebelumnya
-                  </button>
-                  <span className="gudang-ui-chip">
-                    Halaman {formatNumber(pagination.current_page)} /{" "}
-                    {formatNumber(pagination.last_page)}
-                  </span>
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page + 1)}
-                    disabled={pagination.current_page >= pagination.last_page}
-                  >
-                    Berikutnya
-                    <FaChevronRight />
-                  </button>
+                <div className="ks-pager">
+                  <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.max(1, pagination.current_page - 1))} disabled={pagination.current_page <= 1}><FiChevronLeft size={14} /></button>
+                  <button type="button" className={`ks-pg-btn is-active`}>{pagination.current_page}</button>
+                  <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.min(pagination.last_page, pagination.current_page + 1))} disabled={pagination.current_page >= pagination.last_page}><FiChevronRight size={14} /></button>
                 </div>
               </div>
             ) : null}
           </>
         ) : (
-          <div className="gudang-ui-empty-panel">
-            <strong style={{ display: "block", marginBottom: 8 }}>
-              Tidak ada data mutasi pada filter ini.
-            </strong>
-            <span>Ubah tanggal atau kata kunci pencarian untuk melihat data lain.</span>
+          <div className="ks-empty">
+            <p>Tidak ada data mutasi pada filter ini. Ubah tanggal atau kata kunci pencarian untuk melihat data lain.</p>
           </div>
         )}
+        </div>
       </section>
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 

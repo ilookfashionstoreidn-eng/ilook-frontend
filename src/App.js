@@ -96,6 +96,7 @@ import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
 import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
 import HistoryProdukGudang from "./components/Bahan/HistoryProdukGudang";
 import HistoryMutasiGudang from "./components/Bahan/HistoryMutasiGudang";
+import RiwayatStokOpnameGudang from "./components/Bahan/RiwayatStokOpnameGudang";
 import StokOpnameGudang from "./components/Bahan/StokOpnameGudang";
 import HistoryStokAwalGudang from "./components/Bahan/HistoryStokAwalGudang";
 import PencarianSeriGudang from "./components/Bahan/PencarianSeriGudang";
@@ -259,6 +260,7 @@ const App = () => {
             <Route path="history-produk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk"><HistoryProdukGudang /></MenuProtectedRoute>} />
             <Route path="history-mutasi-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_mutasi"><HistoryMutasiGudang /></MenuProtectedRoute>} />
             <Route path="stok-opname-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:stok_opname"><StokOpnameGudang /></MenuProtectedRoute>} />
+            <Route path="riwayat-stok-opname-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:stok_opname"><RiwayatStokOpnameGudang /></MenuProtectedRoute>} />
             <Route path="history-stok-awal-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_stok_awal"><HistoryStokAwalGudang /></MenuProtectedRoute>} />
             <Route path="history-produk-masuk-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_produk_masuk"><HistoryProdukMasukGudang /></MenuProtectedRoute>} />
             <Route path="history-out-check-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_out_check"><HistoryOutCheckGudang /></MenuProtectedRoute>} />

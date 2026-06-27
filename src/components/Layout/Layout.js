@@ -869,6 +869,13 @@ const Layout = () => {
                     )}
 
                     <div className="dropdown-group-label">History & Lainnya</div>
+                    {hasAccess("gudang_produk:stok_opname") && (
+                      <li>
+                        <Link to="riwayat-stok-opname-gudang" className={`dropdown-link ${activeMenu === "riwayat-stok-opname-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-opname-gudang")}>
+                          <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#a78bfa" }} /> Riwayat Stok Opname
+                        </Link>
+                      </li>
+                    )}
                     {hasAccess("gudang_produk:history_mutasi") && (
                       <li>
                         <Link to="history-mutasi-gudang" className={`dropdown-link ${activeMenu === "history-mutasi-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("history-mutasi-gudang")}>

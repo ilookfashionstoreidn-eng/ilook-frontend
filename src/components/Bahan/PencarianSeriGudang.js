@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { FaSearch, FaBarcode, FaClipboardList } from "react-icons/fa";
+import { FiSearch, FiRefreshCw } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { fetchPencarianSeriGudang } from "./GudangProdukWorkspaceApi";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 
 const formatNumber = (num) => {
   if (num == null) return "-";
@@ -186,59 +186,57 @@ const PencarianSeriGudang = () => {
   };
 
   return (
-    <GudangProdukBaseShell
-      title="Pencarian Seri"
-      subtitle="Cari riwayat pergerakan (log) untuk sebuah nomor seri tertentu."
-      icon={FaBarcode}
-      statusLabel={isLoading ? "Mencari..." : `${activities.length} aktivitas`}
-      hideSearchInput={true}
-    >
-      <section className="gudang-ui-panel" style={{ marginBottom: "20px" }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
-          <label className="gudang-history-date-field" style={{ flex: 1, maxWidth: "500px" }}>
-            <span>Input Kode Seri</span>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Pencarian Seri</h1>
+          <span className="ks-header-sub">Cari riwayat pergerakan (log) untuk sebuah nomor seri tertentu.</span>
+        </div>
+      </header>
+
+      <section className="ks-board">
+        <form onSubmit={handleSearchSubmit} className="ks-toolbar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label className="ks-search" style={{ flex: '1 1 500px' }}>
+            <FiSearch className="ks-search-icon" size={14} />
             <input
               type="text"
+              placeholder="Masukkan kode seri (mis. SET-MIKASA-COKLAT.1)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Masukkan kode seri (mis. SET-MIKASA-COKLAT.1)"
               autoFocus
             />
           </label>
           <button
             type="submit"
-            className="gudang-ui-header-action primary"
+            className="ks-btn is-primary"
             disabled={isLoading || !searchInput.trim()}
           >
-            <FaSearch /> Cari
+            {isLoading ? <FiRefreshCw className="is-spinning" size={13}/> : <FiSearch size={13} />} Cari
           </button>
         </form>
-      </section>
 
-      {error ? (
-        <div className="gudang-ui-callout gudang-liststok-callout-error">
-          {error}
-        </div>
-      ) : null}
-
-      <section className="gudang-ui-panel gudang-history-table-panel">
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Riwayat Pergerakan Seri {activeSearch ? `"${activeSearch}"` : ""}</h2>
-            <p>Tabel log aktivitas gudang yang melibatkan seri ini.</p>
+        {error ? (
+          <div className="ks-empty" style={{ color: '#ef4444' }}>
+             {error}
           </div>
-        </div>
+        ) : null}
+
+        <div className="ks-grid-scroll">
+
 
         {isLoading ? (
-          <div className="gudang-ui-empty-panel">Sedang mencari data...</div>
+          <div className="ks-empty">
+            <FiRefreshCw className="is-spinning" size={20} />
+            <p>Sedang mencari data...</p>
+          </div>
         ) : !activeSearch ? (
-          <div className="gudang-ui-empty-panel">Silakan masukkan kode seri dan tekan Cari.</div>
+          <div className="ks-empty">Silakan masukkan kode seri dan tekan Cari.</div>
         ) : activities.length === 0 ? (
-          <div className="gudang-ui-empty-panel">Tidak ada riwayat ditemukan untuk seri ini.</div>
+          <div className="ks-empty">Tidak ada riwayat ditemukan untuk seri ini.</div>
         ) : (
-          <div className="gudang-history-table-stage">
-            <div className="gudang-ui-table-shell">
-              <table className="gudang-ui-table gudang-history-table">
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table className="ks-grid">
                 <thead>
                   <tr>
                     <th style={{ width: "160px" }}>TGL</th>
@@ -290,13 +288,14 @@ const PencarianSeriGudang = () => {
                       </td>
                     </tr>
                   ))}
-                </tbody>
+                  </tbody>
               </table>
             </div>
-          </div>
+          </>
         )}
+        </div>
       </section>
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 

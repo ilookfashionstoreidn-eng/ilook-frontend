@@ -6,16 +6,14 @@ import React, {
   useState,
 } from "react";
 import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaHistory,
-  FaQrcode,
-  FaSync,
-  FaTimes,
-} from "react-icons/fa";
-import "./GudangProdukWorkspace.css";
-import { GudangStatCard } from "./GudangProdukSharedV2";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
+  FiChevronLeft,
+  FiChevronRight,
+  FiSearch,
+  FiRefreshCw,
+  FiX,
+  FiFilter
+} from "react-icons/fi";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukHistory,
@@ -280,101 +278,83 @@ const HistoryProdukGudang = () => {
   );
 
   return (
-    <GudangProdukBaseShell
-      title="History Produk"
-      subtitle="Riwayat barang masuk dan barang keluar dari gudang produk."
-      icon={FaHistory}
-      statusLabel={
-        isInitialLoading
-          ? "Memuat data..."
-          : isRefreshing
-          ? "Memperbarui hasil..."
-          : `${formatNumber(summary.total_qty || summary.total_rows)} aktivitas`
-      }
-      searchValue={searchInput}
-      onSearchChange={setSearchInput}
-      searchPlaceholder="Cari SKU atau kode seri..."
-      headerActions={[
-        {
-          key: "refresh-history-produk",
-          label: "Refresh",
-          icon: FaSync,
-          onClick: refreshRows,
-        },
-      ]}
-    >
-      <section className="gudang-ui-stat-grid">
-        <GudangStatCard
-          label="Barang Masuk"
-          value={formatNumber(summary.total_qty_masuk)}
-          helper="Total qty masuk pada filter aktif."
-        />
-        <GudangStatCard
-          label="Barang Keluar"
-          value={formatNumber(summary.total_qty_keluar)}
-          helper="Total qty keluar pada filter aktif."
-        />
-        <GudangStatCard
-          label="SKU Berbeda"
-          value={formatNumber(summary.total_sku)}
-          helper="Jumlah SKU berbeda yang keluar."
-        />
-        <GudangStatCard
-          label="Kode Seri Berbeda"
-          value={formatNumber(summary.total_seri)}
-          helper="Jumlah kode seri berbeda."
-        />
-      </section>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Riwayat Produk</h1>
+          <span className="ks-header-sub">Riwayat barang masuk dan barang keluar dari gudang produk.</span>
+        </div>
+        <div className="ks-header-actions">
+          <button type="button" className="ks-btn is-primary" onClick={refreshRows} disabled={isLoading}>
+            <FiRefreshCw size={13} className={isRefreshing ? "is-spinning" : ""} />
+            {isLoading ? "Memuat" : "Muat Ulang"}
+          </button>
+        </div>
+      </header>
 
-      <section className="gudang-ui-panel gudang-history-filter-panel">
-        <div 
-          className="gudang-history-filter-grid" 
-          style={{ gridTemplateColumns: "minmax(260px, 1.2fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(160px, 1.2fr) minmax(120px, 0.8fr) auto" }}
-        >
-          <label className="gudang-history-date-field">
-            <span>Range Tanggal</span>
-            <div className="gudang-history-date-range">
-              <input
-                type="date"
-                value={startDate}
-                onChange={handleStartDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-              <span>-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={handleEndDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-            </div>
-          </label>
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Barang Masuk</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty_masuk)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Barang Keluar</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty_keluar)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">SKU Berbeda</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_sku)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Kode Seri Berbeda</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_seri)}</span>
+        </div>
+      </div>
 
-          <label className="gudang-history-date-field">
-            <span>1 Tanggal</span>
+      <section className="ks-board">
+        <div className="ks-toolbar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <label className="ks-search" style={{ flex: '1 1 250px' }}>
+            <FiSearch className="ks-search-icon" size={14} />
             <input
-              type="date"
-              value={singleDate}
-              onChange={handleSingleDateChange}
-              onClick={openDatePicker}
-              onFocus={openDatePicker}
+              type="text"
+              placeholder="Cari SKU atau kode seri..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </label>
+          
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Dari:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+            />
+          </div>
 
-          <label className="gudang-history-date-field">
-            <span>Jenis</span>
-            <select value={movementType} onChange={(e) => setMovementType(e.target.value)}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={handleEndDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+            />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Jenis:</span>
+            <select value={movementType} onChange={(e) => setMovementType(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}>
               <option value="">Semua Jenis</option>
               <option value="in">Barang Masuk</option>
               <option value="out">Barang Keluar</option>
             </select>
-          </label>
-
-          <label className="gudang-history-date-field">
-            <span>Sumber</span>
-            <select value={source} onChange={(e) => setSource(e.target.value)}>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Sumber:</span>
+            <select value={source} onChange={(e) => setSource(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}>
               <option value="">Semua Sumber</option>
               <option value="Packing Normal">Packing Normal</option>
               <option value="Packing Random">Packing Random</option>
@@ -387,96 +367,37 @@ const HistoryProdukGudang = () => {
               <option value="Stok Opname Masuk">Stok Opname Masuk</option>
               <option value="Stok Opname Keluar">Stok Opname Keluar</option>
             </select>
-          </label>
-
-          <label className="gudang-history-date-field">
-            <span>Baris / halaman</span>
-            <select value={query.perPage} onChange={handlePerPageChange}>
-              {PAGE_SIZE_OPTIONS.map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize} baris
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="gudang-history-filter-actions">
-            {activeSearch ? (
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={clearSearch}
-              >
-                <FaTimes />
-                Reset
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="gudang-ui-header-action primary"
-              onClick={applyFilter}
-            >
-              <FaQrcode />
-              Tampilkan
-            </button>
           </div>
-        </div>
 
-        <div className="gudang-ui-chip-row gudang-history-meta-row">
-          <span className="gudang-ui-chip">
-            Menampilkan {formatNumber(resultFrom)}-{formatNumber(resultTo)} dari{" "}
-            {formatNumber(pagination.total || summary.total_rows)} data
-          </span>
-          <span className="gudang-ui-chip">
-            Halaman {formatNumber(pagination.current_page)} /{" "}
-            {formatNumber(Math.max(pagination.last_page, 1))}
-          </span>
-          {activeSearch ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-active">
-              Pencarian aktif: "{activeSearch}"
-            </span>
-          ) : null}
-          {isSearchDirty ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-pending">
-              Menyiapkan pencarian...
-            </span>
-          ) : null}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+             <button type="button" className="ks-btn is-primary" onClick={applyFilter}>
+               <FiFilter size={13} /> Tampilkan
+             </button>
+             {(activeSearch || startDate || endDate || movementType || source) && (
+               <button type="button" className="ks-btn" onClick={clearSearch}>
+                 <FiX size={13} /> Reset
+               </button>
+             )}
+          </div>
         </div>
 
         {error ? (
-          <div className="gudang-ui-callout gudang-liststok-callout-error">
-            {error}
+          <div className="ks-empty" style={{ color: '#ef4444' }}>
+             {error}
           </div>
         ) : null}
-      </section>
 
-      <section className="gudang-ui-panel gudang-history-table-panel">
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Tabel History Produk</h2>
-            <p>Data berisi arah pergerakan, SKU, qty, kode seri/catatan, dan waktu aktivitas.</p>
-          </div>
-          {isRefreshing ? (
-            <span className="gudang-ui-chip gudang-liststok-chip-pending">
-              Memperbarui hasil...
-            </span>
-          ) : null}
-        </div>
-
+        <div className="ks-grid-scroll">
         {isInitialLoading ? (
-          <div className="gudang-ui-empty-panel">Memuat history produk...</div>
+          <div className="ks-empty">
+            <FiRefreshCw className="is-spinning" size={20} />
+            <p>Memuat history produk...</p>
+          </div>
         ) : hasRows ? (
           <>
-            <div className="gudang-history-table-stage">
-              {isRefreshing ? (
-                <div className="gudang-liststok-loading-overlay">
-                  Memperbarui data tanpa menutup hasil yang sedang dibaca...
-                </div>
-              ) : null}
-
-              <div className="gudang-ui-table-shell">
-                <table className="gudang-ui-table gudang-history-table">
-                  <thead>
+            <div style={{ overflowX: "auto" }}>
+              <table className="ks-grid">
+                <thead>
                     <tr>
                       <th>Jenis</th>
                       <th>SKU</th>
@@ -491,15 +412,8 @@ const HistoryProdukGudang = () => {
                     {visibleRows.map((row) => (
                       <tr key={row.id}>
                         <td>
-                          <span
-                            className={`gudang-history-movement-badge ${
-                              row.movementType === "in" ? "is-in" : "is-out"
-                            }`}
-                          >
-                            {row.movementLabel ||
-                              (row.movementType === "in"
-                                ? "Barang Masuk"
-                                : "Barang Keluar")}
+                          <span className={`ks-badge tone-${row.movementType === 'in' ? 'safe' : 'warning'}`}>
+                            {row.movementLabel || (row.movementType === "in" ? "Barang Masuk" : "Barang Keluar")}
                           </span>
                         </td>
                         <td>
@@ -512,56 +426,37 @@ const HistoryProdukGudang = () => {
                         <td>{formatDateTime(row.happenedAt || row.keluarPada)}</td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </tbody>
+              </table>
             </div>
 
             {pagination.last_page > 1 ? (
-              <div className="gudang-liststok-pagination">
-                <div className="gudang-liststok-pagination-info">
-                  Menampilkan <strong>{formatNumber(resultFrom)}</strong> sampai{" "}
-                  <strong>{formatNumber(resultTo)}</strong> dari{" "}
-                  <strong>{formatNumber(pagination.total)}</strong> data.
+              <div className="ks-footer">
+                <div className="ks-footer-info">
+                  <span>Hal. {formatNumber(pagination.current_page)}/{formatNumber(pagination.last_page)} · {formatNumber(pagination.total)} baris</span>
+                  <label className="ks-pagesize">
+                    Tampil
+                    <select value={query.perPage} onChange={handlePerPageChange}>
+                      {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </label>
                 </div>
-
-                <div className="gudang-liststok-pagination-actions">
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page - 1)}
-                    disabled={pagination.current_page <= 1}
-                  >
-                    <FaChevronLeft />
-                    Sebelumnya
-                  </button>
-                  <span className="gudang-ui-chip">
-                    Halaman {formatNumber(pagination.current_page)} /{" "}
-                    {formatNumber(pagination.last_page)}
-                  </span>
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page + 1)}
-                    disabled={pagination.current_page >= pagination.last_page}
-                  >
-                    Berikutnya
-                    <FaChevronRight />
-                  </button>
+                <div className="ks-pager">
+                  <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.max(1, pagination.current_page - 1))} disabled={pagination.current_page <= 1}><FiChevronLeft size={14} /></button>
+                  <button type="button" className={`ks-pg-btn is-active`}>{pagination.current_page}</button>
+                  <button type="button" className="ks-pg-btn" onClick={() => goToPage(Math.min(pagination.last_page, pagination.current_page + 1))} disabled={pagination.current_page >= pagination.last_page}><FiChevronRight size={14} /></button>
                 </div>
               </div>
             ) : null}
           </>
         ) : (
-          <div className="gudang-ui-empty-panel">
-            <strong style={{ display: "block", marginBottom: 8 }}>
-              Tidak ada history produk pada filter ini.
-            </strong>
-            <span>Ubah tanggal atau kata kunci pencarian untuk melihat data lain.</span>
+          <div className="ks-empty">
+            <p>Tidak ada history produk pada filter ini. Ubah tanggal atau kata kunci pencarian untuk melihat data lain.</p>
           </div>
         )}
+        </div>
       </section>
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 
