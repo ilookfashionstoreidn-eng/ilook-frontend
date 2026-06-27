@@ -21,6 +21,11 @@ const buildRackKey = (layoutId, floorNumber, blockCode, rackNumber) =>
 
 const formatRackNumber = (rackNumber) => String(rackNumber).padStart(2, "0");
 
+const formatNumber = (value) => {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed.toLocaleString("id-ID") : "0";
+};
+
 const truncateText = (value, maxLength) => {
   if (!value) return "";
   return value.length > maxLength ? `${value.slice(0, Math.max(maxLength - 1, 1))}...` : value;
@@ -965,140 +970,161 @@ const StokLokasiGudang = () => {
   };
 
   return (
-    <GudangProdukBaseShell
-      title="Stok per Lokasi Gudang"
-      subtitle="Lihat isi setiap slot gudang berdasarkan layout visual. Filter dapat mempersempit tampilan per gudang, per SKU, atau langsung dari slot di peta."
-      icon={FaBoxes}
-      statusLabel={isLoading ? "Memuat workspace..." : `${summary.filledSlots} slot terisi`}
-      headerActions={[
-        {
-          key: "export-excel",
-          label: "Export Excel",
-          icon: FaFileExcel,
-          variant: "secondary",
-          onClick: handleExportExcel,
-        },
-        {
-          key: "download-layout-pdf",
-          label: isExportingPdf ? "Menyiapkan PDF..." : "Download PDF Layout",
-          icon: FaDownload,
-          variant: "primary",
-          onClick: handleDownloadPdf,
-        },
-      ]}
-      searchValue={searchTerm}
-      onSearchChange={setSearchTerm}
-      searchPlaceholder="Cari slot, alias, SKU, atau produk..."
-    >
+    <div className="ks-page mgp-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Stok per Lokasi Gudang</h1>
+          <span className="ks-header-sub">
+            Lihat isi setiap slot gudang berdasarkan layout visual. Filter dapat mempersempit tampilan per gudang, per SKU, atau langsung dari slot di peta.
+          </span>
+        </div>
+        <div className="ks-header-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: '#64748b', marginRight: '8px' }}>
+            {isLoading ? "Memuat workspace..." : `${summary.filledSlots} slot terisi`}
+          </span>
+          <button type="button" className="ks-btn" onClick={handleExportExcel}>
+            <FaFileExcel size={13} style={{ marginRight: 6 }} /> Export Excel
+          </button>
+          <button type="button" className="ks-btn primary" onClick={handleDownloadPdf} disabled={isExportingPdf}>
+            <FaDownload size={13} style={{ marginRight: 6 }} /> {isExportingPdf ? "Menyiapkan PDF..." : "Download PDF Layout"}
+          </button>
+        </div>
+      </header>
+
       {error ? (
-        <div className="gudang-ui-empty-panel" style={{ marginBottom: 20 }}>
+        <div className="ks-empty" style={{ color: '#ef4444', marginBottom: 20 }}>
           {error}
         </div>
       ) : null}
 
-      <div className="gudang-ui-stat-grid">
-        <GudangStatCard label="Slot Ditampilkan" value={summary.slotCount} helper="hasil filter aktif" />
-        <GudangStatCard label="Slot Terisi" value={summary.filledSlots} helper="lokasi dengan stok" />
-        <GudangStatCard label="Slot Kosong" value={summary.emptySlots} helper="tetap terlihat bila diaktifkan" />
-        <GudangStatCard label="Total Qty" value={summary.totalQty} helper="qty semua slot hasil filter" />
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Slot Ditampilkan</span>
+          <span className="ks-stat-value">{formatNumber(summary.slotCount)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Slot Terisi</span>
+          <span className="ks-stat-value">{formatNumber(summary.filledSlots)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Slot Kosong</span>
+          <span className="ks-stat-value">{formatNumber(summary.emptySlots)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Qty</span>
+          <span className="ks-stat-value">{formatNumber(summary.totalQty)}</span>
+        </div>
       </div>
 
-      <div className="gudang-stoklokasi-simple-stack">
-        <section className="gudang-ui-panel">
-          <div className="gudang-ui-panel-head">
-            <div>
-              <h2>Filter</h2>
-              <p>Pilih gudang, filter SKU bila perlu, lalu lihat daftar lokasi di bawah.</p>
+      <section className="ks-board mgp-board">
+        <div className="mgp-scroll">
+          <div className="ks-toolbar" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          
+          <div style={{ flex: '1 1 200px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px', fontWeight: 600 }}>Cari</label>
+            <div style={{ position: "relative" }}>
+              <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+              <input
+                type="text"
+                style={{ width: "100%", background: "#fff", border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px 0 38px', fontSize: '13px', outline: 'none', color: '#0f172a', height: '38px', boxSizing: 'border-box' }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari slot, alias, SKU, atau produk..."
+              />
             </div>
           </div>
+          <div style={{ flex: '0 0 auto', width: '250px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px', fontWeight: 600 }}>Gudang Produk</label>
+            <select 
+              value={layoutId} 
+              onChange={(event) => setLayoutId(event.target.value)}
+              style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#fff', height: '38px', cursor: 'pointer' }}
+            >
+              {state.layouts.map((layout) => (
+                <option key={layout.id} value={layout.id}>
+                  {layout.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div className="gudang-ui-form-grid">
-            <div className="gudang-ui-field">
-              <label>Gudang Produk</label>
-              <select value={layoutId} onChange={(event) => setLayoutId(event.target.value)}>
-                {state.layouts.map((layout) => (
-                  <option key={layout.id} value={layout.id}>
-                    {layout.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="gudang-ui-field" style={{ position: "relative" }} ref={skuComboboxRef}>
-              <label>Filter SKU</label>
-              <div style={{ position: "relative" }}>
-                <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
-                <input
-                  type="text"
-                  className="gudang-ui-search-input"
-                  style={{ paddingLeft: 40, width: "100%", background: "#fff" }}
-                  value={skuQuery}
-                  onChange={(e) => {
-                    setSkuQuery(e.target.value);
-                    setIsSkuDropdownOpen(true);
-                    if (skuFilter) setSkuFilter("");
+          <div style={{ flex: '1 1 300px', position: "relative" }} ref={skuComboboxRef}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px', fontWeight: 600 }}>Filter SKU</label>
+            <div style={{ position: "relative" }}>
+              <FaSearch style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+              <input
+                type="text"
+                style={{ width: "100%", background: "#fff", border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px 0 38px', fontSize: '13px', outline: 'none', color: '#0f172a', height: '38px', boxSizing: 'border-box' }}
+                value={skuQuery}
+                onChange={(e) => {
+                  setSkuQuery(e.target.value);
+                  setIsSkuDropdownOpen(true);
+                  if (skuFilter) setSkuFilter("");
+                }}
+                onFocus={() => setIsSkuDropdownOpen(true)}
+                placeholder={selectedSkuLabel ? truncateText(selectedSkuLabel, 35) : "Cari dan pilih SKU..."}
+              />
+              {skuFilter && !skuQuery ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSkuFilter("");
+                    setSkuQuery("");
                   }}
-                  onFocus={() => setIsSkuDropdownOpen(true)}
-                  placeholder={selectedSkuLabel ? truncateText(selectedSkuLabel, 35) : "Cari dan pilih SKU..."}
-                />
-                {skuFilter && !skuQuery ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSkuFilter("");
-                      setSkuQuery("");
-                    }}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
-                  >
-                    <FaTimes />
-                  </button>
-                ) : null}
-              </div>
-
-              {isSkuDropdownOpen ? (
-                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #d1dbe8", borderRadius: 10, padding: 8, maxHeight: 280, overflowY: "auto", boxShadow: "0 10px 25px rgba(15,23,42,0.1)" }}>
-                  <button
-                    type="button"
-                    onClick={() => { setSkuFilter(""); setSkuQuery(""); setIsSkuDropdownOpen(false); }}
-                    style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: skuFilter === "" ? "#f0fdf4" : "transparent", color: skuFilter === "" ? "#166534" : "#0f172a", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2, fontWeight: skuFilter === "" ? 700 : 500, fontSize: 13 }}
-                  >
-                    Semua SKU
-                  </button>
-                  {filteredSkus.length ? (
-                    filteredSkus.map((sku) => (
-                      <button
-                        key={sku.id}
-                        type="button"
-                        onClick={() => {
-                          setSkuFilter(String(sku.id));
-                          setSkuQuery("");
-                          setIsSkuDropdownOpen(false);
-                        }}
-                        style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: String(skuFilter) === String(sku.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2 }}
-                      >
-                        <div style={{ fontWeight: String(skuFilter) === String(sku.id) ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
-                          {sku.label}
-                        </div>
-                        {sku.code ? <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{sku.code}</div> : null}
-                      </button>
-                    ))
-                  ) : (
-                    <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>SKU tidak ditemukan.</div>
-                  )}
-                </div>
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4 }}
+                >
+                  <FaTimes />
+                </button>
               ) : null}
             </div>
+
+            {isSkuDropdownOpen ? (
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #d1dbe8", borderRadius: 10, padding: 8, maxHeight: 280, overflowY: "auto", boxShadow: "0 10px 25px rgba(15,23,42,0.1)" }}>
+                <button
+                  type="button"
+                  onClick={() => { setSkuFilter(""); setSkuQuery(""); setIsSkuDropdownOpen(false); }}
+                  style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: skuFilter === "" ? "#f0fdf4" : "transparent", color: skuFilter === "" ? "#166534" : "#0f172a", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2, fontWeight: skuFilter === "" ? 700 : 500, fontSize: 13 }}
+                >
+                  Semua SKU
+                </button>
+                {filteredSkus.length ? (
+                  filteredSkus.map((sku) => (
+                    <button
+                      key={sku.id}
+                      type="button"
+                      onClick={() => {
+                        setSkuFilter(String(sku.id));
+                        setSkuQuery("");
+                        setIsSkuDropdownOpen(false);
+                      }}
+                      style={{ width: "100%", display: "block", textAlign: "left", border: "none", background: String(skuFilter) === String(sku.id) ? "linear-gradient(135deg,#edf4ff,#f0f9ff)" : "transparent", borderRadius: 6, padding: "8px 12px", cursor: "pointer", marginBottom: 2 }}
+                    >
+                      <div style={{ fontWeight: String(skuFilter) === String(sku.id) ? 700 : 500, fontSize: 13, color: "#0f172a" }}>
+                        {sku.label}
+                      </div>
+                      {sku.code ? <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{sku.code}</div> : null}
+                    </button>
+                  ))
+                ) : (
+                  <div style={{ padding: "8px 12px", color: "#64748b", fontSize: 13 }}>SKU tidak ditemukan.</div>
+                )}
+              </div>
+            ) : null}
           </div>
 
-          <div className="gudang-ui-form-actions">
-            <button type="button" className="gudang-ui-button-secondary" onClick={() => setShowEmpty((prev) => !prev)}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+            <button 
+              type="button" 
+              style={{ padding: '0 16px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', height: '38px', fontSize: '13px' }} 
+              onClick={() => setShowEmpty((prev) => !prev)}
+            >
               <FaBoxes /> {showEmpty ? "Sembunyikan Slot Kosong" : "Tampilkan Slot Kosong"}
             </button>
             {(selectedSlot || skuFilter) ? (
               <button
                 type="button"
-                className="gudang-ui-button-secondary"
+                style={{ padding: '0 16px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '6px', fontWeight: '500', cursor: 'pointer', height: '38px', fontSize: '13px' }}
                 onClick={() => {
                   setSelectedSlot(null);
                   setSkuFilter("");
@@ -1109,7 +1135,7 @@ const StokLokasiGudang = () => {
               </button>
             ) : null}
           </div>
-
+        </div>
           {skuFilter ? (
             <div className="gudang-ui-callout gudang-ui-callout-highlight" style={{ marginTop: 16 }}>
               <strong>{selectedSkuLabel || "SKU terpilih"}</strong>
@@ -1123,9 +1149,8 @@ const StokLokasiGudang = () => {
               <div style={{ marginTop: 6 }}>{pdfFeedback.message}</div>
             </div>
           ) : null}
-        </section>
 
-        <section className="gudang-ui-panel">
+        <div className="mgp-card">
           <details>
             <summary style={{ cursor: "pointer", fontWeight: 800, color: "#2458ce", userSelect: "none" }}>
               Tampilkan peta visual gudang
@@ -1140,13 +1165,13 @@ const StokLokasiGudang = () => {
               />
             </div>
           </details>
-        </section>
+        </div>
 
         {focusedSlot || skuFilter ? (
-          <section className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head">
+          <div className="mgp-card">
+            <div className="mgp-card-head">
               <div>
-                <h2>{focusedSlot ? `Fokus: ${focusedSlot.slotCode}` : "Fokus SKU"}</h2>
+                <h3>{focusedSlot ? `Fokus: ${focusedSlot.slotCode}` : "Fokus SKU"}</h3>
                 <p>
                   {focusedSlot
                     ? buildSlotHeadline(focusedSlot)
@@ -1192,13 +1217,13 @@ const StokLokasiGudang = () => {
             ) : (
               <div className="gudang-ui-empty-panel">SKU ini belum punya stok pada layout/filter aktif.</div>
             )}
-          </section>
+          </div>
         ) : null}
 
-        <section className="gudang-ui-panel">
-          <div className="gudang-ui-panel-head">
+        <div className="mgp-card">
+          <div className="mgp-card-head">
             <div>
-              <h2>Daftar Slot</h2>
+              <h3>Daftar Slot</h3>
               <p>{filteredRows.length} lokasi ditampilkan dari {selectedLayout?.name || "gudang aktif"}.</p>
             </div>
           </div>
@@ -1254,9 +1279,10 @@ const StokLokasiGudang = () => {
               <div>Tidak ada slot yang cocok dengan filter saat ini.</div>
             </div>
           )}
-        </section>
-      </div>
-    </GudangProdukBaseShell>
+        </div>
+        </div>
+      </section>
+    </div>
   );
 };
 

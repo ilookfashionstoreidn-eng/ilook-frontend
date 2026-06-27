@@ -8,19 +8,15 @@ import React, {
 import Select from "react-select";
 import {
   FaBarcode,
-  FaBoxes,
   FaChevronLeft,
   FaChevronRight,
   FaInfoCircle,
-  FaMapMarkedAlt,
-  FaQrcode,
+  FaSearch,
   FaSync,
   FaTimes,
-  FaWarehouse,
 } from "react-icons/fa";
+import Swal from "sweetalert2";
 import "./GudangProdukWorkspace.css";
-import { GudangStatCard } from "./GudangProdukSharedV2";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchGudangProdukWorkspace,
@@ -306,10 +302,8 @@ const ListStokProductGudang = () => {
   const [searchInput, setSearchInput] = useState("");
   const deferredSearchInput = useDeferredValue(searchInput);
 
-  // Date range states
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
-  const [singleDate, setSingleDate] = useState(today);
 
   const [query, setQuery] = useState({
     page: 1,
@@ -479,34 +473,12 @@ const ListStokProductGudang = () => {
     };
   }, [query]);
 
-  const openDatePicker = (event) => {
-    const input = event.currentTarget;
-    if (typeof input.showPicker === "function") {
-      try {
-        input.showPicker();
-      } catch (pickerError) {
-        // ignore
-      }
-    }
-  };
-
   const handleStartDateChange = (event) => {
     setStartDate(event.target.value);
-    setSingleDate("");
   };
 
   const handleEndDateChange = (event) => {
     setEndDate(event.target.value);
-    setSingleDate("");
-  };
-
-  const handleSingleDateChange = (event) => {
-    const selectedDate = event.target.value;
-    setSingleDate(selectedDate);
-    if (selectedDate) {
-      setStartDate(selectedDate);
-      setEndDate(selectedDate);
-    }
   };
 
   const applyFilter = () => {
@@ -578,7 +550,6 @@ const ListStokProductGudang = () => {
     setSearchInput("");
     setStartDate(today);
     setEndDate(today);
-    setSingleDate(today);
 
     startTransition(() => {
       setQuery((current) => ({
@@ -621,68 +592,80 @@ const ListStokProductGudang = () => {
   );
 
   return (
-    <GudangProdukBaseShell
-      title="List Stok Product (Daily)"
-      subtitle="Lihat ringkasan stok masuk, keluar, sisa, dan lokasi rak aktif per hari untuk semua SKU di gudang produk."
-      icon={FaBoxes}
-      statusLabel={
-        isInitialLoading
-          ? "Memuat data..."
-          : isRefreshing
-          ? "Memperbarui hasil..."
-          : `${summary.total_rows} baris stok harian`
-      }
-      searchValue={searchInput}
-      onSearchChange={setSearchInput}
-      searchPlaceholder="Cari SKU, nama produk, atau nama gudang..."
-      headerActions={[
-        {
-          key: "refresh-list-stok-product",
-          label: "Refresh",
-          icon: FaSync,
-          onClick: refreshRows,
-        },
-      ]}
-    >
-      <section className="gudang-ui-stat-grid">
-        <GudangStatCard
-          label="Baris Stok"
-          value={formatNumber(summary.total_rows)}
-          helper="Jumlah baris data stok pada filter aktif."
-        />
-        <GudangStatCard
-          label="Qty Masuk"
-          value={formatNumber(summary.total_qty_masuk)}
-          helper="Akumulasi qty masuk harian."
-        />
-        <GudangStatCard
-          label="Qty Keluar"
-          value={formatNumber(summary.total_qty_keluar)}
-          helper="Akumulasi qty keluar harian."
-        />
-        <GudangStatCard
-          label="Qty Sisa"
-          value={formatNumber(summary.total_qty_sisa)}
-          helper={`${formatNumber(summary.total_locations)} lokasi rak aktif terisi.`}
-        />
-      </section>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h2>Running Stok Harian</h2>
+          <span className="ks-header-sub">
+            Riwayat kuantitas awal, masuk, keluar, sisa harian beserta lokasi rak dan detail kode seri produk.
+          </span>
+        </div>
+        <div className="ks-header-actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <button
+            type="button"
+            className="ks-btn"
+            onClick={refreshRows}
+            disabled={isRefreshing}
+          >
+            <FaSync className={isRefreshing ? "is-spinning" : ""} />
+            Refresh
+          </button>
+        </div>
+      </header>
 
-      <section className="gudang-ui-panel gudang-liststok-toolbar-panel">
-        <div className="gudang-liststok-toolbar">
-          <div className="gudang-liststok-toolbar-copy">
-            <div className="gudang-liststok-toolbar-kicker">
-              <FaWarehouse />
-              Panel Operasional
-            </div>
-            <h2>Running Stok Perday</h2>
-            <p>
-              Tampilkan data pergerakan dan sisa stok harian. Gunakan rentang tanggal untuk melihat riwayat stok gudang di hari-hari sebelumnya.
-            </p>
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Baris Stok</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_rows)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Qty Masuk</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty_masuk)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Qty Keluar</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty_keluar)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Qty Sisa</span>
+          <span className="ks-stat-value">{formatNumber(summary.total_qty_sisa)}</span>
+        </div>
+      </div>
+
+      <section className="ks-board">
+        <div className="ks-toolbar" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          <label className="ks-search" style={{ width: '250px', margin: 0 }}>
+            <FaSearch className="ks-search-icon" size={14} />
+            <input
+              type="text"
+              placeholder="Cari SKU, produk..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </label>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Mulai:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', color: '#0f172a' }}
+            />
           </div>
 
-          <div className="gudang-liststok-toolbar-controls">
-            <label className="gudang-liststok-select-field">
-              <span>Filter Gudang</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={handleEndDateChange}
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', color: '#0f172a' }}
+            />
+          </div>
+
+          <div style={{ width: '180px' }}>
               <Select
                 options={[
                   { value: "", label: "Semua Gudang" },
@@ -704,14 +687,23 @@ const ListStokProductGudang = () => {
                   handleLayoutChange({ target: { value: selected ? selected.value : "" } });
                 }}
                 isLoading={isLayoutsLoading}
-                placeholder="Pilih Gudang"
+                placeholder="Semua Gudang"
                 isSearchable
-                styles={customSelectStyles}
+                styles={{
+                  ...customSelectStyles,
+                  control: (base) => ({
+                    ...base,
+                    minHeight: '36px',
+                    borderRadius: '6px',
+                    borderColor: '#e2e8f0',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#cbd5e1' }
+                  })
+                }}
               />
-            </label>
+          </div>
 
-            <label className="gudang-liststok-select-field">
-              <span>Filter Lokasi</span>
+          <div style={{ width: '180px' }}>
               <Select
                 options={[
                   { value: "", label: "Semua Lokasi" },
@@ -732,322 +724,226 @@ const ListStokProductGudang = () => {
                 onChange={(selected) => {
                   handleLocationChange({ target: { value: selected ? selected.value : "" } });
                 }}
-                placeholder="Pilih Lokasi"
+                placeholder="Semua Lokasi"
                 isSearchable
-                styles={customSelectStyles}
+                styles={{
+                  ...customSelectStyles,
+                  control: (base) => ({
+                    ...base,
+                    minHeight: '36px',
+                    borderRadius: '6px',
+                    borderColor: '#e2e8f0',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#cbd5e1' }
+                  })
+                }}
               />
-            </label>
-
-            <label className="gudang-liststok-select-field">
-              <span>Baris / halaman</span>
-              <select value={query.perPage} onChange={handlePerPageChange}>
-                {PAGE_SIZE_OPTIONS.map((pageSize) => (
-                  <option key={pageSize} value={pageSize}>
-                    {pageSize} baris
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
-        </div>
-        {/* Date Filter Toolbar */}
-        <div className="gudang-history-filter-grid" style={{ marginTop: "16px", borderTop: "1px solid #edf2f7", paddingTop: "16px" }}>
-          <label className="gudang-history-date-field">
-            <span>Range Tanggal</span>
-            <div className="gudang-history-date-range">
-              <input
-                type="date"
-                value={startDate}
-                onChange={handleStartDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-              <span>-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={handleEndDateChange}
-                onClick={openDatePicker}
-                onFocus={openDatePicker}
-              />
-            </div>
-          </label>
 
-          <label className="gudang-history-date-field">
-            <span>1 Tanggal</span>
-            <input
-              type="date"
-              value={singleDate}
-              onChange={handleSingleDateChange}
-              onClick={openDatePicker}
-              onFocus={openDatePicker}
-            />
-          </label>
-
-          <div className="gudang-history-filter-actions">
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={clearFilters}
-              >
-                <FaTimes />
-                Reset Filter
-              </button>
-            ) : null}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+            <select 
+              value={query.perPage} 
+              onChange={handlePerPageChange} 
+              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', color: '#0f172a', cursor: 'pointer' }}
+            >
+              {PAGE_SIZE_OPTIONS.map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize} baris
+                </option>
+              ))}
+            </select>
+            
             <button
               type="button"
-              className="gudang-ui-header-action primary"
+              className="ks-btn primary"
+              style={{ padding: '6px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '500', cursor: 'pointer' }}
               onClick={applyFilter}
             >
-              <FaQrcode />
               Tampilkan
             </button>
-          </div>
-        </div>
-
-        <div className="gudang-liststok-meta-row" style={{ marginTop: "16px" }}>
-          <div className="gudang-ui-chip-row">
-            <span className="gudang-ui-chip">
-              Menampilkan {formatNumber(resultFrom)}-{formatNumber(resultTo)} dari{" "}
-              {formatNumber(pagination.total || summary.total_rows)} baris
-            </span>
-            <span className="gudang-ui-chip">
-              Halaman {formatNumber(pagination.current_page)} /{" "}
-              {formatNumber(Math.max(pagination.last_page, 1))}
-            </span>
-            <span className="gudang-ui-chip">
-              <FaMapMarkedAlt style={{ marginRight: 8 }} />
-              {formatNumber(summary.total_locations)} lokasi aktif
-            </span>
-            {activeSearch ? (
-              <span className="gudang-ui-chip gudang-liststok-chip-active">
-                Pencarian aktif: "{activeSearch}"
-              </span>
-            ) : null}
-            {query.layoutId ? (
-              <span className="gudang-ui-chip gudang-liststok-chip-active">
-                Gudang: {layouts.find((l) => l.id === query.layoutId)?.name || query.layoutId}
-              </span>
-            ) : null}
-            {query.location ? (
-              <span className="gudang-ui-chip gudang-liststok-chip-active">
-                Lokasi: "{query.location}"
-              </span>
-            ) : null}
-            {isSearchDirty ? (
-              <span className="gudang-ui-chip gudang-liststok-chip-pending">
-                Menyiapkan pencarian...
-              </span>
-            ) : null}
-          </div>
-
-          <div className="gudang-liststok-legend">
-            <span className="gudang-liststok-legend-item awal">Awal</span>
-            <span className="gudang-liststok-legend-item masuk">Masuk</span>
-            <span className="gudang-liststok-legend-item keluar">Keluar</span>
-            <span className="gudang-liststok-legend-item sisa">Sisa</span>
-          </div>
-        </div>
-
-        {error ? (
-          <div className="gudang-ui-callout gudang-liststok-callout-error">
-            {error}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="gudang-ui-panel gudang-liststok-data-panel">
-        <div className="gudang-ui-panel-head">
-          <div>
-            <h2>Tabel Running Stok Harian</h2>
-            <p>
-              Riwayat kuantitas awal, masuk, keluar, sisa harian beserta lokasi rak dan detail kode seri produk.
-            </p>
-          </div>
-          <div className="gudang-ui-chip-row">
-            {isRefreshing ? (
-              <span className="gudang-ui-chip gudang-liststok-chip-pending">
-                Memperbarui hasil...
-              </span>
-            ) : (
-              <span className="gudang-ui-chip">Siap dibaca</span>
+            
+            {(activeSearch || query.layoutId || query.location || startDate !== today || endDate !== today) && (
+              <button
+                type="button"
+                className="ks-btn"
+                style={{ padding: '6px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', fontWeight: '500', cursor: 'pointer' }}
+                onClick={clearFilters}
+              >
+                Reset
+              </button>
             )}
           </div>
         </div>
 
-        {isInitialLoading ? (
-          <div className="gudang-ui-empty-panel">Memuat data running stok...</div>
-        ) : hasRows ? (
-          <>
-            <div className="gudang-liststok-table-stage">
-              {isRefreshing ? (
-                <div className="gudang-liststok-loading-overlay">
-                  Memperbarui data tanpa menutup hasil yang sedang dibaca...
-                </div>
-              ) : null}
+        {error && (
+          <div className="ks-empty" style={{ color: '#ef4444', padding: '10px' }}>
+            {error}
+          </div>
+        )}
 
-              <div className="gudang-ui-table-shell gudang-liststok-table-shell">
-              <table className="gudang-ui-table gudang-liststok-table">
-                <colgroup>
-                  <col className="gudang-liststok-col-order" />
-                  <col style={{ width: '110px' }} />
-                  <col className="gudang-liststok-col-sku" />
-                  <col className="gudang-liststok-col-qty" />
-                  <col className="gudang-liststok-col-qty" />
-                  <col className="gudang-liststok-col-qty" />
-                  <col className="gudang-liststok-col-qty" />
-                  <col className="gudang-liststok-col-location" />
-                  <col className="gudang-liststok-col-action" />
-                </colgroup>
+        <div className="ks-grid-scroll">
+          {isInitialLoading ? (
+            <div className="ks-empty">
+              <FaSync className="is-spinning" size={20} />
+              <p>Memuat running stok harian...</p>
+            </div>
+          ) : hasRows ? (
+            <>
+              <table className="ks-grid">
                 <thead>
                   <tr>
-                    <th className="gudang-liststok-head-center">No</th>
+                    <th style={{ width: '60px', textAlign: 'center' }}>Gambar</th>
+                    <th style={{ width: '40px' }}>No</th>
                     <th>Tanggal</th>
                     <th>SKU</th>
-                    <th className="gudang-liststok-head-qty">QTY Awal</th>
-                    <th className="gudang-liststok-head-qty">QTY Masuk</th>
-                    <th className="gudang-liststok-head-qty">Qty Keluar</th>
-                    <th className="gudang-liststok-head-qty">Qty Sisa</th>
-                    <th>Nama Gudang</th>
-                    <th className="gudang-liststok-head-center">Kode Seri</th>
+                    <th className="align-right">Qty Awal</th>
+                    <th className="align-right">Qty Masuk</th>
+                    <th className="align-right">Qty Keluar</th>
+                    <th className="align-right">Qty Sisa</th>
+                    <th>Gudang</th>
+                    <th>Lokasi</th>
+                    <th style={{ textAlign: 'center' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="gudang-liststok-order-cell">
-                        {formatNumber(row.rowNumber)}
-                      </td>
-                      <td>
-                        <strong>{formatDateOnly(row.tanggal)}</strong>
-                      </td>
-                      <td>
-                        <div className="gudang-liststok-sku">
-                          <span className="gudang-liststok-sku-code">
-                            {highlightText(row.sku, activeSearch)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="gudang-liststok-qty-cell">
-                        <span className="gudang-liststok-qty awal">
-                          {formatNumber(row.qtyAwal)}
-                        </span>
-                      </td>
-                      <td className="gudang-liststok-qty-cell">
-                        <span className="gudang-liststok-qty masuk">
-                          {formatNumber(row.qtyMasuk)}
-                        </span>
-                      </td>
-                      <td className="gudang-liststok-qty-cell">
-                        <span className="gudang-liststok-qty keluar">
-                          {formatNumber(row.qtyKeluar)}
-                        </span>
-                      </td>
-                      <td className="gudang-liststok-qty-cell">
-                        <span className="gudang-liststok-qty sisa">
-                          {formatNumber(row.qtySisa)}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="gudang-liststok-location-stack">
-                          <span className="gudang-ui-pill gudang-liststok-location">
-                            {highlightText(row.namaGudang, activeSearch)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="gudang-liststok-action-cell">
-                        <button
-                          type="button"
-                          className="liststok-detail-btn"
-                          onClick={() => setSeriModalRow(row)}
-                          title={`Lihat kode seri untuk ${row.sku} di ${row.namaGudang}`}
-                        >
-                          <FaBarcode />
-                          Detail
-                        </button>
-                      </td>
-                    </tr>
+                  {Object.values(
+                    visibleRows.reduce((acc, row) => {
+                      let baseName = row.productName;
+                      if (!baseName) {
+                        if (row.sku && row.sku.includes(' - ')) {
+                          baseName = row.sku.split(' - ')[0].trim();
+                        } else if (row.sku && row.sku.includes('-')) {
+                          const parts = row.sku.split('-');
+                          if (parts.length >= 3) {
+                            baseName = parts.slice(0, parts.length - 2).join('-').trim();
+                          } else {
+                            baseName = parts[0].trim();
+                          }
+                        } else {
+                          baseName = row.skuId;
+                        }
+                      }
+                      
+                      const groupKey = `${baseName}_${row.ukuran || 'no-size'}`;
+                      
+                      if (!acc[groupKey]) {
+                        acc[groupKey] = {
+                          gambarProduk: row.gambarProduk,
+                          rows: [],
+                        };
+                      }
+                      acc[groupKey].rows.push(row);
+                      return acc;
+                    }, {})
+                  ).map((group, groupIdx) => (
+                    <React.Fragment key={`group-${groupIdx}`}>
+                      {group.rows.map((row, rowIndex) => (
+                        <tr key={row.id}>
+                          {rowIndex === 0 && (
+                            <td rowSpan={group.rows.length} style={{ verticalAlign: 'top', padding: '8px', textAlign: 'center' }}>
+                              {group.gambarProduk ? (
+                                <img 
+                                  src={group.gambarProduk} 
+                                  alt="Produk" 
+                                  onClick={() => {
+                                    Swal.fire({
+                                      imageUrl: group.gambarProduk,
+                                      imageAlt: "Gambar Produk",
+                                      showConfirmButton: false,
+                                      width: "auto",
+                                      background: "transparent",
+                                      backdrop: "rgba(0,0,0,0.8)"
+                                    });
+                                  }}
+                                  style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                />
+                              ) : (
+                                <div style={{ width: '48px', height: '48px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                  <span style={{ fontSize: '10px', color: '#94a3b8' }}>No Img</span>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                          <td>{formatNumber(row.rowNumber)}</td>
+                          <td><strong>{formatDateOnly(row.tanggal)}</strong></td>
+                          <td>
+                            <strong>{highlightText(row.sku, activeSearch)}</strong>
+                          </td>
+                          <td className="align-right">{formatNumber(row.qtyAwal)}</td>
+                          <td className="align-right" style={{ color: '#10b981', fontWeight: 'bold' }}>{row.qtyMasuk > 0 ? '+' : ''}{formatNumber(row.qtyMasuk)}</td>
+                          <td className="align-right" style={{ color: '#ef4444', fontWeight: 'bold' }}>{row.qtyKeluar > 0 ? '-' : ''}{formatNumber(row.qtyKeluar)}</td>
+                          <td className="align-right" style={{ fontWeight: 'bold' }}>{formatNumber(row.qtySisa)}</td>
+                          <td>
+                            <strong>{highlightText(row.layoutName || '', activeSearch)}</strong>
+                          </td>
+                          <td>
+                            <span className="ks-badge">{highlightText(row.namaGudang, activeSearch)}</span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              className="ks-btn"
+                              style={{ padding: '4px 8px', fontSize: '12px', margin: '0 auto' }}
+                              onClick={() => setSeriModalRow(row)}
+                            >
+                              <FaBarcode style={{ marginRight: 4 }} />
+                              Detail
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
-            </div>
-            </div>
 
-            {pagination.last_page > 1 ? (
-              <div className="gudang-liststok-pagination">
-                <div className="gudang-liststok-pagination-info">
-                  Menampilkan{" "}
-                  <strong>
-                    {formatNumber((pagination.current_page - 1) * pagination.per_page + 1)}
-                  </strong>{" "}
-                  sampai{" "}
-                  <strong>
-                    {formatNumber(
-                      Math.min(
-                        pagination.current_page * pagination.per_page,
-                        pagination.total
-                      )
-                    )}
-                  </strong>{" "}
-                  dari <strong>{formatNumber(pagination.total)}</strong> baris.
+              {pagination.last_page > 1 ? (
+                <div className="ks-footer">
+                  <div className="ks-footer-info">
+                    Menampilkan <strong>{formatNumber((pagination.current_page - 1) * pagination.per_page + 1)}</strong> - <strong>{formatNumber(Math.min(pagination.current_page * pagination.per_page, pagination.total))}</strong> dari <strong>{formatNumber(pagination.total)}</strong> baris
+                  </div>
+                  <div className="ks-pagination">
+                    <button
+                      className="ks-page-btn"
+                      onClick={() => goToPage(pagination.current_page - 1)}
+                      disabled={pagination.current_page <= 1}
+                    >
+                      <FaChevronLeft size={12} />
+                    </button>
+                    <span className="ks-page-info">
+                      Halaman {formatNumber(pagination.current_page)} dari {formatNumber(pagination.last_page)}
+                    </span>
+                    <button
+                      className="ks-page-btn"
+                      onClick={() => goToPage(pagination.current_page + 1)}
+                      disabled={pagination.current_page >= pagination.last_page}
+                    >
+                      <FaChevronRight size={12} />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="gudang-liststok-pagination-actions">
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page - 1)}
-                    disabled={pagination.current_page <= 1}
-                  >
-                    <FaChevronLeft />
-                    Sebelumnya
-                  </button>
-                  <span className="gudang-ui-chip">
-                    Halaman {formatNumber(pagination.current_page)} /{" "}
-                    {formatNumber(pagination.last_page)}
-                  </span>
-                  <button
-                    type="button"
-                    className="gudang-ui-button-secondary"
-                    onClick={() => goToPage(pagination.current_page + 1)}
-                    disabled={pagination.current_page >= pagination.last_page}
-                  >
-                    Berikutnya
-                    <FaChevronRight />
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <div className="gudang-ui-empty-panel">
-            <strong style={{ display: "block", marginBottom: 8 }}>
-              Tidak ada stok product yang cocok.
-            </strong>
-            <span style={{ display: "block", marginBottom: 16 }}>
-              Coba ganti kata kunci pencarian atau reset filter pencarian yang sedang aktif.
-            </span>
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                className="gudang-ui-button-secondary"
-                onClick={clearFilters}
-              >
-                <FaTimes />
-                Tampilkan Semua Data
-              </button>
-            ) : null}
-          </div>
-        )}
+              ) : null}
+            </>
+          ) : (
+            <div className="ks-empty">
+              <p>Tidak ada stok product yang cocok dengan filter pencarian.</p>
+              {hasActiveFilters ? (
+                <button type="button" className="ks-btn" onClick={clearFilters} style={{ marginTop: '12px' }}>
+                  Reset Filter
+                </button>
+              ) : null}
+            </div>
+          )}
+        </div>
       </section>
+
       {seriModalRow ? (
         <SeriDetailModal
           row={seriModalRow}
           onClose={() => setSeriModalRow(null)}
         />
       ) : null}
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 
