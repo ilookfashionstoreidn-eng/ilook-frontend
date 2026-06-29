@@ -1123,14 +1123,6 @@ const SpkBahan = () => {
   const printItemIds = useMemo(() => filteredPrintItems.map((row) => parseInt(row.id, 10)).filter(Boolean), [filteredPrintItems]);
   const isAllPrintSelected = printItemIds.length > 0 && printItemIds.every((id) => selectedPrintIdSet.has(String(id)));
 
-  const lastSyncLabel = new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date());
-
   return (
     <div className="ks-page pl-page">
       <header className="ks-header">
@@ -1140,24 +1132,7 @@ const SpkBahan = () => {
             Monitoring order pembelian bahan, warna, dan pembayaran per pabrik.
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Terakhir Sinkron</span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{lastSyncLabel}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pabrik Aktif</span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{kpi.total_pabrik_aktif || 0}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Rol</span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{kpi.total_rol || 0}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-            <span style={{ fontSize: "10px", fontWeight: "700", color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pembayaran Tempo</span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#b91c1c" }}>{kpi.total_tempo || 0}</span>
-          </div>
-        </div>
+
       </header>
 
       <section className="ks-board">
@@ -1457,16 +1432,16 @@ const SpkBahan = () => {
                 </>
               )}
 
-              <div className="spkb-form-actions">
+              <div className="spkb-form-actions" style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "24px" }}>
                 <span style={{ marginRight: "auto", alignSelf: "center", color: "#64748b", fontWeight: 700 }}>
                   {selectedSpkIds.length} SPK dipilih
                 </span>
-                <button type="button" className="spkb-btn-secondary" onClick={closePrintModal} disabled={isDownloading}>
+                <button type="button" className="ks-btn is-secondary" onClick={closePrintModal} disabled={isDownloading}>
                   Batal
                 </button>
                 <button
                   type="button"
-                  className="spkb-btn-primary"
+                  className="ks-btn is-primary"
                   onClick={handleDownloadPrintPdf}
                   disabled={selectedSpkIds.length === 0 || isDownloading || isPrintListLoading}
                 >
@@ -1643,11 +1618,11 @@ const SpkBahan = () => {
                 </div>
               </div>
 
-              <div className="spkb-form-actions">
-                <button type="button" className="spkb-btn-secondary" onClick={resetForm}>
+              <div className="spkb-form-actions" style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "24px" }}>
+                <button type="button" className="ks-btn is-secondary" onClick={resetForm}>
                   Batal
                 </button>
-                <button type="submit" className="spkb-btn-primary" disabled={submitting}>
+                <button type="submit" className="ks-btn is-primary" disabled={submitting}>
                   {submitting ? "Menyimpan..." : "Simpan SPK"}
                 </button>
               </div>
@@ -1697,16 +1672,16 @@ const SpkBahan = () => {
                 )}
               </div>
 
-              <div className="spkb-form-actions">
+              <div className="spkb-form-actions" style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "24px" }}>
                 {estimateModal.row?.estimasi_pengiriman && (
-                  <button type="button" className="spkb-btn-secondary spkb-btn-danger-soft" onClick={clearEstimatePengiriman} disabled={estimateModal.submitting}>
+                  <button type="button" className="ks-btn is-secondary" style={{ color: "#ef4444" }} onClick={clearEstimatePengiriman} disabled={estimateModal.submitting}>
                     Hapus Estimasi
                   </button>
                 )}
-                <button type="button" className="spkb-btn-secondary" onClick={closeEstimateModal} disabled={estimateModal.submitting}>
+                <button type="button" className="ks-btn is-secondary" onClick={closeEstimateModal} disabled={estimateModal.submitting}>
                   Batal
                 </button>
-                <button type="submit" className="spkb-btn-primary" disabled={estimateModal.submitting}>
+                <button type="submit" className="ks-btn is-primary" disabled={estimateModal.submitting}>
                   {estimateModal.submitting ? "Menyimpan..." : "Simpan Estimasi"}
                 </button>
               </div>
