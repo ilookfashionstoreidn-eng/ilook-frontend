@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./SpkBahan.css";
+import "../Produk/ProductList.css";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import API from "../../api";
-import { FaCalendarAlt, FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaPrint, FaSearch, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaFileAlt, FaIndustry, FaLayerGroup, FaPlus, FaPrint, FaSearch, FaTrash, FaTimes } from "react-icons/fa";
 // ADDED: FaPrint dipakai untuk tombol Print PDF sesuai icon set existing.
 
 const JENIS_PEMBAYARAN_OPTIONS = ["Cash", "Tempo"];
@@ -1130,104 +1132,105 @@ const SpkBahan = () => {
   }).format(new Date());
 
   return (
-    <div className="spkb-page">
-      <section className="spkb-shell">
-        <header className="spkb-topbar">
-          <div className="spkb-title-wrap">
-            <div className="spkb-title-icon">
-              <FaFileAlt />
-            </div>
-            <div>
-              <h1>SPK Bahan</h1>
-              <p>Monitoring order pembelian bahan, warna, dan pembayaran per pabrik.</p>
-            </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Pemesanan Bahan</h1>
+          <span className="ks-header-sub">
+            Monitoring order pembelian bahan, warna, dan pembayaran per pabrik.
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Terakhir Sinkron</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{lastSyncLabel}</span>
           </div>
-          <div className="spkb-topbar-right">
-            <small>Terakhir sinkron: {lastSyncLabel}</small>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
-              {/* // ADDED: Tombol print diposisikan sejajar dengan tombol aksi utama lain. */}
-              <button type="button" className="spkb-btn-secondary" onClick={openPrintModal}>
-                <FaPrint /> Print PDF
-              </button>
-              <button type="button" className="spkb-btn-primary" onClick={() => setShowForm(true)}>
-                <FaPlus /> Tambah SPK
-              </button>
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pabrik Aktif</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{kpi.total_pabrik_aktif || 0}</span>
           </div>
-        </header>
-
-        <section className="spkb-kpi-grid">
-          <article className="spkb-kpi-card">
-            <span>Total SPK</span>
-            <strong>{kpi.total_spk || 0}</strong>
-          </article>
-          <article className="spkb-kpi-card">
-            <span>Pabrik Aktif</span>
-            <strong>{kpi.total_pabrik_aktif || 0}</strong>
-          </article>
-          <article className="spkb-kpi-card">
-            <span>Total Rol</span>
-            <strong>{kpi.total_rol || 0}</strong>
-          </article>
-          <article className="spkb-kpi-card spkb-kpi-highlight">
-            <span>Pembayaran Tempo</span>
-            <strong>{kpi.total_tempo || 0}</strong>
-          </article>
-        </section>
-
-        <section className="spkb-table-card">
-          <div className="spkb-table-header">
-            <div>
-              <h2>Daftar SPK Bahan</h2>
-              <p>{meta.total || 0} data tercatat</p>
-            </div>
-            <div className="spkb-table-tools">
-              <label className="spkb-perpage-box">
-                <span>Tampil</span>
-                <select
-                  value={perPage}
-                  onChange={(e) => {
-                    const nextPerPage = parseInt(e.target.value, 10);
-                    setPerPage(nextPerPage);
-                    setCurrentPage(1);
-                  }}
-                >
-                  {PER_PAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="spkb-filter-box">
-                <span>Status</span>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  {STATUS_FILTER_OPTIONS.map((option) => (
-                    <option key={option.value || "all"} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="spkb-search-box">
-                <FaSearch />
-                <input
-                  type="text"
-                  placeholder="Cari pabrik, bahan, warna, atau status..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </label>
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Rol</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{kpi.total_rol || 0}</span>
           </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pembayaran Tempo</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#b91c1c" }}>{kpi.total_tempo || 0}</span>
+          </div>
+        </div>
+      </header>
+
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search" style={{ flex: 1, minWidth: "200px" }}>
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                placeholder="Cari pabrik, bahan, warna, atau status..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                style={{ paddingLeft: "30px", width: "100%" }}
+              />
+              {searchInput && (
+                <button type="button" className="pl-search-clear" onClick={() => {
+                  setSearchInput("");
+                  setCurrentPage(1);
+                }}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none" }}
+            >
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={perPage}
+              onChange={(e) => {
+                const nextPerPage = parseInt(e.target.value, 10);
+                setPerPage(nextPerPage);
+                setCurrentPage(1);
+              }}
+              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none" }}
+            >
+              {PER_PAGE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option} baris
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <button
+              type="button"
+              className="ks-btn is-secondary"
+              onClick={openPrintModal}
+            >
+              <FaPrint /> Print PDF
+            </button>
+            <button
+              type="button"
+              className="ks-btn is-primary"
+              onClick={() => setShowForm(true)}
+            >
+              <FaPlus /> Tambah SPK
+            </button>
+          </div>
+        </div>
 
           {loading ? (
             <p className="spkb-state">Memuat data SPK Bahan...</p>
@@ -1237,23 +1240,23 @@ const SpkBahan = () => {
             <p className="spkb-state">Belum ada data SPK Bahan yang sesuai pencarian.</p>
           ) : (
             <>
-              <div className="spkb-table-wrap">
-                <table className="spkb-table">
+              <div className="ks-grid-scroll">
+                <table className="ks-grid">
                   <thead>
                     <tr>
-                      <th className="spkb-col-no">No</th>
-                      <th className="spkb-col-id">ID SPK</th>
-                      <th className="spkb-col-tanggal">Tgl Pemesanan</th>
-                      <th className="spkb-col-pabrik">Pabrik</th>
-                      <th className="spkb-col-bahan">Bahan</th>
-                      <th className="spkb-col-warna">Detail Warna</th>
-                      <th className="spkb-col-rol">Total Rol</th>
-                      <th className="spkb-col-dikirim">Dikirim</th>
-                      <th className="spkb-col-sisa">Sisa Di Pesan</th>
-                      <th className="spkb-col-lebih">Lebih Kirim</th>
-                      <th className="spkb-col-estimasi">Estimasi Pengiriman</th>
-                      <th className="spkb-col-lama">Lama Pesan</th>
-                      <th className="spkb-col-status">Status</th>
+                      <th className="spkb-col-no" style={{ width: "4%" }}>No</th>
+                      <th className="spkb-col-id" style={{ width: "8%" }}>ID SPK</th>
+                      <th className="spkb-col-tanggal" style={{ width: "9%" }}>Tgl Pemesanan</th>
+                      <th className="spkb-col-pabrik" style={{ width: "12%" }}>Pabrik</th>
+                      <th className="spkb-col-bahan" style={{ width: "12%" }}>Bahan</th>
+                      <th className="spkb-col-warna" style={{ width: "20%" }}>Detail Warna</th>
+                      <th className="spkb-col-rol" style={{ width: "5%" }}>Total Rol</th>
+                      <th className="spkb-col-dikirim" style={{ width: "5%" }}>Dikirim</th>
+                      <th className="spkb-col-sisa" style={{ width: "5%" }}>Sisa</th>
+                      <th className="spkb-col-lebih" style={{ width: "5%" }}>Lebih</th>
+                      <th className="spkb-col-estimasi" style={{ width: "10%" }}>Estimasi</th>
+                      <th className="spkb-col-lama" style={{ width: "5%" }}>Lama</th>
+                      <th className="spkb-col-status" style={{ width: "5%" }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1369,7 +1372,7 @@ const SpkBahan = () => {
             </>
           )}
         </section>
-      </section>
+
 
       {/* // ADDED: Modal multi-select SPK untuk print PDF. */}
       {isPrintModalOpen && (
