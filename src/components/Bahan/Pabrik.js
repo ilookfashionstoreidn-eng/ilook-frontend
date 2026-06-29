@@ -301,22 +301,22 @@ const PabrikList = () => {
               )}
             </div>
           </div>
-          <div className="ks-toolbar-actions">
-            <button className="ks-action-btn primary" onClick={openAddModal}>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <button className="ks-btn is-primary" onClick={openAddModal}>
               <FaPlus /> Tambah Pabrik
             </button>
           </div>
         </div>
 
-        <div className="pl-table-wrapper">
+        <div className="ks-grid-scroll">
           {loading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Memuat data...</div>
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Memuat data...</div>
           ) : error ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#ef4444" }}>{error}</div>
+            <div style={{ padding: "40px", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
           ) : filteredPabriks.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Belum ada data pabrik.</div>
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Belum ada data pabrik.</div>
           ) : (
-            <table className="pl-table">
+            <table className="ks-grid">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -330,28 +330,32 @@ const PabrikList = () => {
               <tbody>
                 {filteredPabriks.map((pabrik) => (
                   <tr key={pabrik.id}>
-                    <td>{pabrik.id}</td>
-                    <td><strong>{pabrik.nama_pabrik}</strong></td>
+                    <td className="ks-cell-code">
+                      <strong>{pabrik.id}</strong>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.9em", fontWeight: 600 }}>{pabrik.nama_pabrik}</span>
+                    </td>
                     <td>{pabrik.lokasi || "-"}</td>
                     <td>{pabrik.kontak || "-"}</td>
                     <td>
                       {pabrik.ktp ? (
-                        <a href={getKtpUrl(pabrik.ktp)} target="_blank" rel="noopener noreferrer" style={{ color: "#3b82f6", textDecoration: "underline", fontSize: "13px" }}>
+                        <a href={getKtpUrl(pabrik.ktp)} target="_blank" rel="noopener noreferrer" className="link" style={{ color: "#3b82f6", fontWeight: 500, textDecoration: "none" }}>
                           Lihat KTP
                         </a>
                       ) : (
-                        <span style={{ color: "#94a3b8" }}>-</span>
+                        "-"
                       )}
                     </td>
                     <td>
-                      <div className="pl-table-actions" style={{ justifyContent: "center" }}>
-                        <button className="product-list-icon-button" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                        <button className="ks-icon-btn" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail" style={{ border: "none", background: "none", color: "#64748b", cursor: "pointer", padding: "4px" }}>
                           <FaEye />
                         </button>
-                        <button className="product-list-icon-button" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
+                        <button className="ks-icon-btn" onClick={() => openEditModal(pabrik)} title="Edit Pabrik" style={{ border: "none", background: "none", color: "#3b82f6", cursor: "pointer", padding: "4px" }}>
                           <FaEdit />
                         </button>
-                        <button className="product-list-icon-button" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik" style={{ color: "#ef4444" }}>
+                        <button className="ks-icon-btn" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik" style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer", padding: "4px" }}>
                           <FaTrash />
                         </button>
                       </div>
