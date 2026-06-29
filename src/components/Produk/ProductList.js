@@ -2242,7 +2242,8 @@ const ProductList = () => {
           <table className="ks-grid">
             <thead>
               <tr>
-                <th>Produk & SKU</th>
+                <th>SKU Name</th>
+                <th>Produk</th>
                 <th>Material Utama</th>
                 <th>Material Kombinasi</th>
                 <th>Aksesoris</th>
@@ -2257,22 +2258,24 @@ const ProductList = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="10" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="11" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Memuat data Product List...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="11" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Belum ada data Product List.
                   </td>
                 </tr>
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
+                    <td className="ks-cell-code">
+                      <strong>{item.sku_name || "-"}</strong>
+                    </td>
                     <td>
-                      <strong className="ks-cell-code">{item.sku_name || "-"}</strong><br />
-                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                      <span style={{ fontSize: "0.9em", fontWeight: 600 }}>
                         {item.product_group || "-"} | {item.product || "-"}
                       </span><br />
                       <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
