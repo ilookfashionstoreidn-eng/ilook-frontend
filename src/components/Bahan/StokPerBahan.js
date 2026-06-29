@@ -731,35 +731,36 @@ const StokPerBahan = () => {
 
       <section className="ks-board">
         <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
-            <form className="pl-search" onSubmit={applyFilter} style={{ margin: 0, width: "300px" }}>
-              <FaSearch className="pl-search-icon" />
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <form className="ks-search" onSubmit={applyFilter} style={{ margin: 0, width: "300px" }}>
+              <FaSearch className="ks-search-icon" size={14} style={{ position: "absolute", left: "12px", color: "#94a3b8" }} />
               <input
                 type="text"
                 placeholder="Cari nama / warna / grup..."
                 value={draftSearchTerm}
                 onChange={(e) => setDraftSearchTerm(e.target.value)}
-                className="pl-search-input"
+                style={{ paddingLeft: "36px", width: "100%" }}
               />
               <button type="submit" style={{ display: "none" }}>Filter</button>
             </form>
 
-            <div className="stok-bahan-select-group" style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "13px", color: "#64748b" }}>Grup:</span>
-              <div className="stok-bahan-checkselect" ref={bahanMenuRef} style={{ width: "220px", marginBottom: 0 }}>
+            <div className="stok-bahan-select-group" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#64748b", fontWeight: "500" }}>Grup:</span>
+              <div className="stok-bahan-checkselect" ref={bahanMenuRef} style={{ width: "220px", marginBottom: 0, position: "relative" }}>
                 <button
                   type="button"
-                  className="stok-bahan-checkselect-trigger"
+                  className="ks-btn is-secondary"
                   onClick={() => setIsBahanMenuOpen((prev) => !prev)}
                   aria-haspopup="listbox"
                   aria-expanded={isBahanMenuOpen}
-                  style={{ height: "36px", padding: "0 12px" }}
+                  style={{ width: "100%", justifyContent: "space-between", padding: "0 12px", height: "38px" }}
                 >
-                  <span style={{ fontSize: "13px" }}>{selectedBahanLabel}</span>
+                  <span style={{ fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedBahanLabel}</span>
+                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>▼</span>
                 </button>
 
                 {isBahanMenuOpen && (
-                  <div className="stok-bahan-checkselect-menu" role="listbox">
+                  <div className="stok-bahan-checkselect-menu" role="listbox" style={{ position: "absolute", top: "100%", left: 0, width: "100%", zIndex: 10, background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", marginTop: "4px", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
                     <label className="stok-bahan-check-option is-all">
                       <input
                         type="checkbox"
@@ -787,10 +788,10 @@ const StokPerBahan = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", backgroundColor: "#f1f5f9", padding: "2px", borderRadius: "6px", marginLeft: "12px" }}>
+            <div style={{ display: "flex", backgroundColor: "#f1f5f9", padding: "4px", borderRadius: "8px" }}>
               <button
                 className={`ks-btn ${statusFilter === "all" ? "is-primary" : ""}`}
-                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "all" ? undefined : "transparent", color: statusFilter === "all" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "all" ? undefined : "none" }}
+                style={{ minHeight: "32px", padding: "0 16px", fontSize: "13px", background: statusFilter === "all" ? undefined : "transparent", color: statusFilter === "all" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "all" ? undefined : "none" }}
                 onClick={() => setStatusFilter("all")}
                 type="button"
               >
@@ -798,7 +799,7 @@ const StokPerBahan = () => {
               </button>
               <button
                 className={`ks-btn ${statusFilter === "utuh" ? "is-primary" : ""}`}
-                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "utuh" ? undefined : "transparent", color: statusFilter === "utuh" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "utuh" ? undefined : "none" }}
+                style={{ minHeight: "32px", padding: "0 16px", fontSize: "13px", background: statusFilter === "utuh" ? undefined : "transparent", color: statusFilter === "utuh" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "utuh" ? undefined : "none" }}
                 onClick={() => setStatusFilter("utuh")}
                 type="button"
               >
@@ -806,7 +807,7 @@ const StokPerBahan = () => {
               </button>
               <button
                 className={`ks-btn ${statusFilter === "sisa" ? "is-primary" : ""}`}
-                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "sisa" ? undefined : "transparent", color: statusFilter === "sisa" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "sisa" ? undefined : "none" }}
+                style={{ minHeight: "32px", padding: "0 16px", fontSize: "13px", background: statusFilter === "sisa" ? undefined : "transparent", color: statusFilter === "sisa" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "sisa" ? undefined : "none" }}
                 onClick={() => setStatusFilter("sisa")}
                 type="button"
               >
