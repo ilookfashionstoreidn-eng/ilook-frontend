@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "./Bahan.css";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import "../Produk/ProductList.css";
 import API from "../../api";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -1263,93 +1264,39 @@ const Bahan = () => {
   };
 
   return (
-    <div className="bahan-container">
-      <header className="bahan-header">
-        <div className="bahan-header-top">
-          <div className="bahan-title-group">
-            <div className="bahan-brand-icon">
-              <FiBox />
-            </div>
-            <div className="bahan-title-wrap">
-              <div className="bahan-module-pill">Material Module</div>
-              <h1>Master Bahan</h1>
-              <p className="bahan-header-subtitle">Manajemen material, group, warna, harga, dan satuan produksi</p>
-            </div>
-          </div>
-          <div className="bahan-search-wrap">
-            <input
-              type="text"
-              className="bahan-search-input"
-              placeholder="Cari nama bahan..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSelectedBahanName("");
-                setSearchTerm(e.target.value);
-              }}
-            />
-            {searchTerm && (
-              <button className="bahan-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
-                x
-              </button>
-            )}
-          </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Master Bahan</h1>
+          <span className="ks-header-sub">
+            {totalBahan} bahan terdaftar, {totalGroup} group aktif, {totalWarna} warna tercatat, total stok {formatNumber(totalStok)} — Manajemen material, group, warna, harga, dan satuan produksi
+          </span>
         </div>
       </header>
 
-      <main className="bahan-main">
-        <section className="bahan-stats">
-          <article className="bahan-stat-item">
-            <div className="bahan-stat-label">Total Bahan</div>
-            <div className="bahan-stat-value">{totalBahan}</div>
-          </article>
-          <article className="bahan-stat-item">
-            <div className="bahan-stat-label">Group Aktif</div>
-            <div className="bahan-stat-value bahan-stat-value-info">{totalGroup}</div>
-          </article>
-          <article className="bahan-stat-item">
-            <div className="bahan-stat-label">Warna Tercatat</div>
-            <div className="bahan-stat-value bahan-stat-value-success">{totalWarna}</div>
-          </article>
-          <article className="bahan-stat-item">
-            <div className="bahan-stat-label">Total Stok</div>
-            <div className="bahan-stat-value bahan-stat-value-price">{formatNumber(totalStok)}</div>
-          </article>
-        </section>
-
-        <section className="bahan-table-wrapper">
-          <div className="bahan-table-header">
-            <div>
-              <h3>Semua Data Bahan</h3>
-              <p>{isFiltering ? `Menampilkan ${totalRows} data sesuai filter` : `Menampilkan ${currentItems.length} data`}</p>
-            </div>
-            <div className="bahan-table-actions">
-              <button className="bahan-btn-secondary" onClick={handleDownloadTemplate}>
-                <FaDownload /> Template
-              </button>
-              <button className="bahan-btn-secondary" onClick={openExportModal} disabled={exportingPdf}>
-                <FaFilePdf /> Export PDF
-              </button>
-              <label className="bahan-btn-secondary bahan-btn-file">
-                <FaFileImport /> Import Excel
-                <input className="bahan-import-input" type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFileChange} />
-              </label>
-              <button className="bahan-btn-secondary" onClick={openImageModal}>
-                <FaImage /> Tambah Gambar
-              </button>
-              <button
-                className="bahan-btn-primary"
-                onClick={() => {
-                  setShowEditForm(false);
-                  setShowForm(true);
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSelectedBahanName("");
+                  setSearchTerm(e.target.value);
                 }}
-              >
-                <FaPlus /> Tambah Bahan
-              </button>
+                placeholder="Cari nama bahan..."
+                style={{ paddingLeft: "30px" }}
+              />
+              {searchTerm && (
+                <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
+                  <FaTimes />
+                </button>
+              )}
             </div>
-          </div>
-
-          <div className="bahan-filter-section">
-            <div className="bahan-filter-wrap bahan-name-filter-wrap">
+            
+            <div className="bahan-filter-wrap bahan-name-filter-wrap" style={{ flex: 1, minWidth: "200px" }}>
               <Select
                 className="bahan-name-filter-select"
                 classNamePrefix="bahan-name-select"
@@ -1374,234 +1321,190 @@ const Bahan = () => {
                 aria-label="Filter nama bahan"
               />
             </div>
-            <div className="bahan-filter-wrap">
-              <select
-                value={selectedPabrik}
-                onChange={(e) => {
-                  setCurrentPage(1);
-                  setSelectedPabrik(e.target.value);
-                }}
-                className="bahan-filter-select"
-              >
-                <option value="">Semua Pabrik</option>
-                {pabrikOptions.map((pabrik) => (
-                  <option key={pabrik} value={pabrik}>
-                    {pabrik}
-                  </option>
-                ))}
-              </select>
-              {selectedPabrik && (
-                <span
-                  className="bahan-filter-badge"
-                  onClick={() => {
-                    setCurrentPage(1);
-                    setSelectedPabrik("");
-                  }}
-                  title="Hapus filter"
-                >
-                  {selectedPabrik} x
-                </span>
-              )}
-            </div>
-            <div className="bahan-filter-wrap">
-              <select
-                value={selectedSatuan}
-                onChange={(e) => {
-                  setCurrentPage(1);
-                  setSelectedSatuan(e.target.value);
-                }}
-                className="bahan-filter-select"
-              >
-                <option value="">Semua Satuan</option>
-                {SATUAN_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {selectedSatuan && (
-                <span
-                  className="bahan-filter-badge"
-                  onClick={() => {
-                    setCurrentPage(1);
-                    setSelectedSatuan("");
-                  }}
-                  title="Hapus filter"
-                >
-                  {selectedSatuan} x
-                </span>
-              )}
-            </div>
-            <div className="bahan-filter-summary">
-              Stok: {formatNumber(totalStok)}
-            </div>
+            
+            <select
+              value={selectedPabrik}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSelectedPabrik(e.target.value);
+              }}
+              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none" }}
+            >
+              <option value="">Semua Pabrik</option>
+              {pabrikOptions.map((pabrik) => (
+                <option key={pabrik} value={pabrik}>
+                  {pabrik}
+                </option>
+              ))}
+            </select>
+            
+            <select
+              value={selectedSatuan}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSelectedSatuan(e.target.value);
+              }}
+              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none" }}
+            >
+              <option value="">Semua Satuan</option>
+              {SATUAN_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <button className="ks-btn is-secondary" onClick={handleDownloadTemplate} title="Download Template">
+              <FaDownload />
+            </button>
+            <button className="ks-btn is-secondary" onClick={openExportModal} disabled={exportingPdf} title="Export PDF">
+              <FaFilePdf />
+            </button>
+            <label className="ks-btn is-secondary" style={{ cursor: "pointer", margin: 0 }} title="Import Excel">
+              <FaFileImport />
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFileChange} style={{ display: "none" }} />
+            </label>
+            <button className="ks-btn is-secondary" onClick={openImageModal}>
+              <FaImage /> Tambah Gambar
+            </button>
+            <button
+              className="ks-btn is-primary"
+              onClick={() => {
+                setShowEditForm(false);
+                setShowForm(true);
+              }}
+            >
+              <FaPlus /> Tambah Bahan
+            </button>
+          </div>
+        </div>
 
+        <div className="ks-grid-scroll">
           {loading ? (
-            <div className="bahan-loading">
-              <div className="bahan-spinner"></div>
-              <div className="bahan-loading-title">Memuat data bahan...</div>
-              <div className="bahan-loading-subtitle">Mohon tunggu sebentar</div>
-            </div>
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Memuat data bahan...</div>
           ) : error ? (
-            <div className="bahan-empty-state">
-              <div className="bahan-empty-icon">!</div>
-              <h3 className="bahan-empty-title error">Terjadi Kesalahan</h3>
-              <p className="bahan-empty-text">{error}</p>
-              <button className="bahan-btn-primary" onClick={() => window.location.reload()}>
-                Muat Ulang Halaman
-              </button>
-            </div>
+            <div style={{ padding: "40px", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
           ) : currentItems.length === 0 ? (
-            <div className="bahan-empty-state">
-              <div className="bahan-empty-icon">-</div>
-              <h3 className="bahan-empty-title">Belum Ada Data Bahan</h3>
-              <p className="bahan-empty-text">
-                {isFiltering ? "Tidak ada bahan yang sesuai dengan filter yang Anda pilih" : "Mulai dengan menambahkan bahan pertama Anda"}
-              </p>
-              {isFiltering && (
-                <button className="bahan-btn-secondary bahan-empty-cta" onClick={clearFilters}>
-                  Hapus Filter
-                </button>
-              )}
-              {!isFiltering && (
-                <button
-                  className="bahan-btn-primary bahan-empty-cta"
-                  onClick={() => {
-                    setShowEditForm(false);
-                    setShowForm(true);
-                  }}
-                >
-                  <FaPlus /> Tambah Bahan Pertama
-                </button>
-              )}
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>
+              {isFiltering ? "Tidak ada bahan yang sesuai dengan filter yang Anda pilih." : "Belum ada data bahan."}
             </div>
           ) : (
-            <>
-              <div className="bahan-table-panel">
-                <div className="bahan-table-scroll bahan-table-scroll-plain">
-                  <table className="bahan-table">
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>Gambar</th>
-                        <th>Group Bahan</th>
-                        <th>Pabrik</th>
-                        <th>Nama Bahan</th>
-                        <th>Deskripsi</th>
-                        <th>Harga</th>
-                        <th>Satuan</th>
-                        <th>Stok</th>
-                        <th>Warna Bahan</th>
-                        <th className="align-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentItems.length > 0
-                        ? currentItems.map((item) => {
-                            const image = item.bahan_image || item.bahanImage || null;
-                            const imageUrl = image ? getBahanImageUrl(image) : null;
-                            const groupTitle = item.group_bahan || item.nama_bahan;
-                            return (
-                              <tr key={item.id}>
-                                <td>
-                                  <strong>{getItemPageNumber(item)}</strong>
-                                </td>
-                                <td>
-                                  {imageUrl ? (
-                                    <button
-                                      type="button"
-                                      className="bahan-table-image-frame bahan-table-image-button"
-                                      onClick={() => openPreviewImage(imageUrl, groupTitle)}
-                                      title="Klik untuk melihat gambar"
-                                    >
-                                      <img src={imageUrl} alt={groupTitle} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                                    </button>
-                                  ) : (
-                                    <div className="bahan-image-placeholder" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', color: '#94a3b8' }}>
-                                      <FaImage />
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="bahan-plain-cell" title={item.group_bahan || "-"}>
-                                  {item.group_bahan || "-"}
-                                </td>
-                                <td title={item.pabrik_bahan || "-"}>{item.pabrik_bahan || "-"}</td>
-                                <td className="bahan-name-cell" title={item.nama_bahan || "-"}>
-                                  <strong>{item.nama_bahan}</strong>
-                                </td>
-                                <td title={item.deskripsi || "-"}>{item.deskripsi || "-"}</td>
-                                <td>
-                                  <strong className="bahan-harga-value">{formatRupiah(item.harga)}</strong>
-                                </td>
-                                <td>
-                                  <span className="bahan-status-badge bahan-status-satuan">
-                                    <FaTag /> {getSatuanLabel(item.satuan)}
-                                  </span>
-                                </td>
-                                <td>
-                                  <strong className="bahan-stok-value">{formatNumber(item.stok_bahan)}</strong>
-                                </td>
-                                <td className="bahan-plain-cell bahan-color-cell" title={item.warna_bahan || "-"}>
-                                  {item.warna_bahan || "-"}
-                                </td>
-                                <td>
-                                  <div className="bahan-actions">
-                                    <button className="bahan-icon-btn edit" onClick={() => handleEditClick(item)} title="Edit">
-                                      <FaEdit />
-                                    </button>
-                                    <button className="bahan-icon-btn info" onClick={() => handleDetailClick(item)} title="Detail">
-                                      <FaEye />
-                                    </button>
-                                    <button className="bahan-icon-btn delete" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus">
-                                      <FaTrash />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        : renderEmptyTableRow(11, "Tidak ada data bahan.")}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
+            <table className="ks-grid">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Gambar</th>
+                  <th>Group Bahan</th>
+                  <th>Pabrik</th>
+                  <th>Nama Bahan</th>
+                  <th>Deskripsi</th>
+                  <th>Harga</th>
+                  <th>Satuan</th>
+                  <th>Stok</th>
+                  <th>Warna Bahan</th>
+                  <th style={{ width: "120px", textAlign: "center" }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((item) => {
+                  const image = item.bahan_image || item.bahanImage || null;
+                  const imageUrl = image ? getBahanImageUrl(image) : null;
+                  const groupTitle = item.group_bahan || item.nama_bahan;
+                  return (
+                    <tr key={item.id}>
+                      <td className="ks-cell-code">
+                        <strong>{getItemPageNumber(item)}</strong>
+                      </td>
+                      <td>
+                        {imageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => openPreviewImage(imageUrl, groupTitle)}
+                            title="Klik untuk melihat gambar"
+                            style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: "6px", overflow: "hidden" }}
+                          >
+                            <img src={imageUrl} alt={groupTitle} style={{ width: '40px', height: '40px', objectFit: 'cover', display: 'block' }} />
+                          </button>
+                        ) : (
+                          <div style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '6px', color: '#94a3b8' }}>
+                            <FaImage />
+                          </div>
+                        )}
+                      </td>
+                      <td>{item.group_bahan || <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                      <td>{item.pabrik_bahan || <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                      <td>
+                        <span style={{ fontSize: "0.9em", fontWeight: 600 }}>{item.nama_bahan}</span>
+                      </td>
+                      <td>{item.deskripsi || <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                      <td>
+                        <strong style={{ color: "#10b981" }}>{formatRupiah(item.harga)}</strong>
+                      </td>
+                      <td>
+                        <span style={{ display: "inline-block", padding: "2px 6px", background: "#f1f5f9", borderRadius: "4px", fontSize: "11px", color: "#64748b" }}>
+                          <FaTag style={{ marginRight: "4px" }} />
+                          {getSatuanLabel(item.satuan)}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{formatNumber(item.stok_bahan)}</strong>
+                      </td>
+                      <td>{item.warna_bahan || <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                          <button className="ks-icon-btn" onClick={() => handleDetailClick(item)} title="Detail" style={{ border: "none", background: "none", color: "#64748b", cursor: "pointer", padding: "4px" }}>
+                            <FaEye />
+                          </button>
+                          <button className="ks-icon-btn" onClick={() => handleEditClick(item)} title="Edit" style={{ border: "none", background: "none", color: "#3b82f6", cursor: "pointer", padding: "4px" }}>
+                            <FaEdit />
+                          </button>
+                          <button className="ks-icon-btn" onClick={() => handleDelete(item.id, item.nama_bahan)} title="Hapus" style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer", padding: "4px" }}>
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-        </section>
-      </main>
+        </div>
+      </section>
 
       {(showForm || showEditForm) && (
-        <div className="bahan-modal-overlay" onClick={resetForm}>
-          <div className="bahan-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="bahan-modal-header">
-              <h2>{showEditForm ? "Edit Bahan" : "Tambah Bahan"}</h2>
-              <button className="bahan-modal-close" onClick={resetForm} type="button">
+        <div className="product-list-modal-backdrop" onClick={resetForm}>
+          <form className="product-list-modal" onSubmit={showEditForm ? handleFormUpdate : handleFormSubmit} onClick={(e) => e.stopPropagation()}>
+            <div className="product-list-modal-header">
+              <div>
+                <p className="product-list-modal-kicker">Data Bahan</p>
+                <h2>{showEditForm ? "Edit Bahan" : "Tambah Bahan Baru"}</h2>
+              </div>
+              <button className="product-list-icon-button" type="button" onClick={resetForm}>
                 <FaTimes />
               </button>
             </div>
-            <div className="bahan-modal-body">
 
-            <form onSubmit={showEditForm ? handleFormUpdate : handleFormSubmit} className="bahan-modal-form">
-                <div className="bahan-form-group">
-                  <label>Group Bahan</label>
+            <div className="product-list-form-section" style={{ maxHeight: "65vh", overflowY: "auto" }}>
+              <div className="product-list-form-grid">
+                <label className="product-list-field" style={{ gridColumn: "span 1" }}>
+                  <span>Group Bahan</span>
                   <input
                     type="text"
                     name="group_bahan"
                     value={showEditForm ? editItem.group_bahan : newItem.group_bahan}
                     onChange={handleInputChange}
                     placeholder="Contoh: Kain Utama"
-                    className="bahan-form-input"
                   />
-                </div>
+                </label>
 
-                <div className="bahan-form-group">
-                  <label>Pabrik Bahan</label>
+                <label className="product-list-field" style={{ gridColumn: "span 1" }}>
+                  <span>Pabrik Bahan</span>
                   <select
                     name="pabrik_bahan"
                     value={showEditForm ? editItem.pabrik_bahan : newItem.pabrik_bahan}
                     onChange={handleInputChange}
-                    className="bahan-form-select"
                   >
                     {pabrikSelectOptions.map((pabrik) => (
                       <option key={pabrik} value={pabrik}>
@@ -1609,10 +1512,10 @@ const Bahan = () => {
                       </option>
                     ))}
                   </select>
-                </div>
+                </label>
 
-                <div className="bahan-form-group">
-                  <label>Nama Bahan</label>
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Nama Bahan *</span>
                   <input
                     type="text"
                     name="nama_bahan"
@@ -1620,107 +1523,93 @@ const Bahan = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Contoh: Katun Combed"
-                    className="bahan-form-input"
                   />
-                </div>
+                </label>
 
-              {showEditForm ? (
-                <div className="bahan-form-group">
-                  <label>Warna Bahan</label>
+                {showEditForm ? (
+                  <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                    <span>Warna Bahan</span>
+                    <input
+                      type="text"
+                      name="warna_bahan"
+                      value={editItem.warna_bahan}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: Navy"
+                    />
+                  </label>
+                ) : (
+                  <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                    <span>Warna Bahan</span>
+                    <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                      <input
+                        type="text"
+                        placeholder="Masukkan warna..."
+                        value={warnaInput}
+                        onChange={(e) => setWarnaInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddWarna();
+                          }
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <button type="button" className="product-list-primary-button" style={{ padding: "0 12px", whiteSpace: "nowrap" }} onClick={handleAddWarna}>
+                        Tambah
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                      {newItem.warna_bahan && newItem.warna_bahan.length > 0 ? (
+                        newItem.warna_bahan.map((warna, idx) => (
+                          <span key={idx} style={{ background: "#e0f2fe", color: "#0284c7", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
+                            {warna}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveWarna(idx)}
+                              style={{ background: "none", border: "none", color: "#0284c7", cursor: "pointer", fontSize: "14px", lineHeight: 1 }}
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>Belum ada warna yang ditambahkan</span>
+                      )}
+                    </div>
+                  </label>
+                )}
+
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Deskripsi</span>
+                  <textarea
+                    name="deskripsi"
+                    value={showEditForm ? editItem.deskripsi : newItem.deskripsi}
+                    onChange={handleInputChange}
+                    rows="2"
+                    placeholder="Tuliskan detail penggunaan atau karakter bahan"
+                    style={{ width: "100%", padding: "10px", border: "1px solid var(--ks-border, #e2e8f0)", borderRadius: "6px", outline: "none", fontSize: "14px", resize: "vertical" }}
+                  />
+                </label>
+
+                <label className="product-list-field" style={{ gridColumn: "span 1" }}>
+                  <span>Harga (Rp) *</span>
                   <input
                     type="text"
-                    name="warna_bahan"
-                    value={editItem.warna_bahan}
+                    name="harga"
+                    value={showEditForm ? editItem.harga : newItem.harga}
                     onChange={handleInputChange}
-                    placeholder="Contoh: Navy"
-                    className="bahan-form-input"
+                    required
+                    placeholder="Contoh: 50.000"
                   />
-                </div>
-              ) : (
-                <div className="bahan-form-group-full">
-                  <label>Warna Bahan</label>
-                  <div className="bahan-warna-input-row">
-                    <input
-                      type="text"
-                      placeholder="Masukkan warna..."
-                      value={warnaInput}
-                      onChange={(e) => setWarnaInput(e.target.value)}
-                      className="bahan-form-input"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddWarna();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddWarna}
-                      className="bahan-btn-primary bahan-btn-add-warna"
-                    >
-                      Tambah Warna
-                    </button>
-                  </div>
-                  <div className="bahan-warna-tag-container">
-                    {newItem.warna_bahan && newItem.warna_bahan.length > 0 ? (
-                      newItem.warna_bahan.map((warna, idx) => (
-                        <span key={idx} className="bahan-warna-tag">
-                          {warna}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveWarna(idx)}
-                            className="bahan-warna-tag-remove"
-                            title="Hapus warna"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))
-                    ) : (
-                      <span className="bahan-warna-tag-empty">
-                        Belum ada warna yang ditambahkan
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+                </label>
 
-              <div className="bahan-form-group">
-                <label>Deskripsi</label>
-                <textarea
-                  name="deskripsi"
-                  value={showEditForm ? editItem.deskripsi : newItem.deskripsi}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder="Tuliskan detail penggunaan atau karakter bahan"
-                  className="bahan-form-input bahan-form-textarea"
-                />
-              </div>
-
-                <div className="bahan-form-group">
-                  <label>Harga (Rp)</label>
-                  <div className="bahan-price-input-wrap">
-                    <span className="bahan-price-prefix">Rp.</span>
-                    <input
-                      type="text"
-                      name="harga"
-                      value={showEditForm ? editItem.harga : newItem.harga}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Contoh: 50.000"
-                      className="bahan-form-input bahan-input-with-prefix"
-                    />
-                  </div>
-                </div>
-
-                <div className="bahan-form-group">
-                  <label>Satuan</label>
+                <label className="product-list-field" style={{ gridColumn: "span 1" }}>
+                  <span>Satuan</span>
                   <select
                     name="satuan"
                     value={showEditForm ? editItem.satuan : newItem.satuan}
                     onChange={handleInputChange}
                     required
-                    className="bahan-form-select"
                   >
                     {SATUAN_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -1728,120 +1617,105 @@ const Bahan = () => {
                       </option>
                     ))}
                   </select>
-                </div>
+                </label>
 
-                <div className="bahan-form-group">
-                  <label>Stok Bahan</label>
+                <label className="product-list-field" style={{ gridColumn: "span 1" }}>
+                  <span>Stok Bahan</span>
                   <input
                     type="text"
                     name="stok_bahan"
                     value={showEditForm ? editItem.stok_bahan : newItem.stok_bahan}
                     onChange={handleInputChange}
                     placeholder="Contoh: 10"
-                    className="bahan-form-input"
                   />
-                </div>
-
-              <div className="bahan-form-actions">
-                <button type="submit" className="bahan-btn-submit">
-                  {showEditForm ? "Perbarui Data" : "Simpan Data"}
-                </button>
-                <button type="button" className="bahan-btn-cancel" onClick={resetForm}>
-                  Batal
-                </button>
+                </label>
               </div>
-            </form>
             </div>
-          </div>
+
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={resetForm}>
+                Batal
+              </button>
+              <button className="product-list-primary-button" type="submit">
+                {showEditForm ? "Perbarui" : "Simpan"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
       {showExportModal && (
-        <div className="bahan-modal-overlay" onClick={closeExportModal}>
-          <div className="bahan-modal-content bahan-export-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="bahan-modal-header">
+        <div className="product-list-modal-backdrop" onClick={closeExportModal}>
+          <div className="product-list-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <div className="product-list-modal-header">
               <div>
+                <p className="product-list-modal-kicker">Data Bahan</p>
                 <h2>Export PDF Bahan</h2>
-                <p className="bahan-modal-subtitle">Pilih bahan yang ingin dimasukkan ke file PDF.</p>
               </div>
-              <button className="bahan-modal-close" onClick={closeExportModal} type="button" disabled={exportingPdf}>
+              <button className="product-list-icon-button" type="button" onClick={closeExportModal} disabled={exportingPdf}>
                 <FaTimes />
               </button>
             </div>
-            <div className="bahan-modal-body">
-              <div className="bahan-export-toolbar">
-                <div className="bahan-image-search-wrap bahan-export-search-wrap">
-                  <FaSearch />
+            
+            <div className="product-list-form-section" style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "60vh" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <div className="ks-search" style={{ flex: 1 }}>
+                  <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
                   <input
                     type="text"
                     value={exportBahanSearch}
                     onChange={(e) => setExportBahanSearch(e.target.value)}
-                    placeholder="Cari nama bahan, group, pabrik, warna, atau ID..."
+                    placeholder="Cari nama bahan, group..."
+                    style={{ paddingLeft: "30px", width: "100%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "6px" }}
                     disabled={exportingPdf}
                   />
-                  {exportBahanSearch && (
-                    <button type="button" onClick={() => setExportBahanSearch("")} disabled={exportingPdf} title="Hapus pencarian">
-                      <FaTimes />
-                    </button>
-                  )}
                 </div>
-                <div className="bahan-export-toolbar-actions">
-                  <button type="button" className="bahan-btn-secondary" onClick={selectAllVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
-                    Pilih Semua
-                  </button>
-                  <button type="button" className="bahan-btn-secondary" onClick={clearVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
-                    Hapus Pilihan
-                  </button>
-                </div>
+                <button type="button" className="product-list-ghost-button" onClick={selectAllVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
+                  Pilih Semua
+                </button>
+                <button type="button" className="product-list-ghost-button" onClick={clearVisibleExportBahan} disabled={exportingPdf || filteredExportBahanRows.length === 0}>
+                  Hapus
+                </button>
               </div>
 
-              <div className="bahan-export-summary">
-                <span>{selectedExportBahanRows.length} bahan dipilih</span>
-                <strong>{filteredExportBahanRows.length} data tampil</strong>
+              <div style={{ fontSize: "12px", color: "#64748b" }}>
+                <span>{selectedExportBahanRows.length} bahan dipilih dari {filteredExportBahanRows.length} tampil</span>
               </div>
 
-              <div className="bahan-export-select-list">
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: "6px", overflowY: "auto", flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
                 {exportBahanLoading ? (
-                  <div className="bahan-image-list-state">
-                    <div className="bahan-spinner"></div>
-                    <span>Memuat data bahan...</span>
-                  </div>
-                ) : exportBahanRows.length === 0 ? (
-                  <div className="bahan-image-list-state">Belum ada data bahan.</div>
+                  <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>Memuat...</div>
                 ) : filteredExportBahanRows.length === 0 ? (
-                  <div className="bahan-image-list-state">Bahan tidak ditemukan.</div>
+                  <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>Bahan tidak ditemukan.</div>
                 ) : (
                   filteredExportBahanRows.map((item) => {
                     const selected = selectedExportBahanIds.includes(item.id);
-                    const hasImage = Boolean(item.bahan_image_id || item.bahan_image || item.bahanImage);
-
                     return (
-                      <label className={`bahan-image-option bahan-export-option ${selected ? "selected" : ""}`} key={item.id}>
+                      <label key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px", borderRadius: "4px", background: selected ? "#f0f9ff" : "transparent", cursor: "pointer" }}>
                         <input
                           type="checkbox"
                           checked={selected}
                           onChange={() => toggleExportBahanSelection(item.id)}
                           disabled={exportingPdf}
+                          style={{ marginTop: "3px" }}
                         />
-                        <span className="bahan-image-option-copy">
-                          <strong>{item.nama_bahan || "-"}</strong>
-                          <small>
-                            #{item.id} | {item.group_bahan || "-"} | {item.pabrik_bahan || "-"} | {item.warna_bahan || "-"} | Stok {formatNumber(item.stok_bahan)}
-                          </small>
-                        </span>
-                        {hasImage && <em>Ada gambar</em>}
+                        <div style={{ display: "flex", flexDirection: "column", fontSize: "13px" }}>
+                          <strong style={{ color: "#334155" }}>{item.nama_bahan || "-"}</strong>
+                          <span style={{ color: "#64748b", fontSize: "11px" }}>#{item.id} | {item.group_bahan || "-"} | {item.warna_bahan || "-"}</span>
+                        </div>
                       </label>
                     );
                   })
                 )}
               </div>
             </div>
-            <div className="bahan-image-modal-footer">
-              <button type="button" className="bahan-btn-cancel" onClick={closeExportModal} disabled={exportingPdf}>
+
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={closeExportModal} disabled={exportingPdf}>
                 Batal
               </button>
-              <button type="button" className="bahan-btn-submit" onClick={handleExportSelectedPdf} disabled={exportingPdf || selectedExportBahanRows.length === 0}>
-                <FaFilePdf /> {exportingPdf ? "Menyiapkan..." : `Export ${selectedExportBahanRows.length} Bahan`}
+              <button className="product-list-primary-button" type="button" onClick={handleExportSelectedPdf} disabled={exportingPdf || selectedExportBahanRows.length === 0}>
+                <FaFilePdf /> {exportingPdf ? "Menyiapkan PDF..." : `Export ${selectedExportBahanRows.length} Bahan`}
               </button>
             </div>
           </div>
@@ -1849,207 +1723,192 @@ const Bahan = () => {
       )}
 
       {showImageModal && (
-        <div className="bahan-modal-overlay" onClick={closeImageModal}>
-          <div className="bahan-modal-content bahan-image-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="bahan-modal-header">
-              <h2>Tambah Gambar Bahan</h2>
-              <button className="bahan-modal-close" onClick={closeImageModal} type="button" disabled={imageSubmitting}>
+        <div className="product-list-modal-backdrop" onClick={closeImageModal}>
+          <form className="product-list-modal" onSubmit={handleBahanImageSubmit} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <div className="product-list-modal-header">
+              <div>
+                <p className="product-list-modal-kicker">Data Bahan</p>
+                <h2>Tambah Gambar Bahan</h2>
+              </div>
+              <button className="product-list-icon-button" type="button" onClick={closeImageModal} disabled={imageSubmitting}>
                 <FaTimes />
               </button>
             </div>
-            <form onSubmit={handleBahanImageSubmit}>
-              <div className="bahan-modal-body">
-                <div className="bahan-image-steps">
-                  <button
-                    type="button"
-                    className={`bahan-image-step ${imageModalStep === 1 ? "active" : ""} ${imageFile ? "done" : ""}`}
-                    onClick={() => setImageModalStep(1)}
-                    disabled={imageSubmitting}
-                  >
-                    <span>{imageFile ? <FaCheck /> : "1"}</span>
-                    Upload Gambar
-                  </button>
-                  <button
-                    type="button"
-                    className={`bahan-image-step ${imageModalStep === 2 ? "active" : ""} ${selectedImageBahanIds.length > 0 ? "done" : ""}`}
-                    onClick={() => imageFile && setImageModalStep(2)}
-                    disabled={!imageFile || imageSubmitting}
-                  >
-                    <span>{selectedImageBahanIds.length > 0 ? <FaCheck /> : "2"}</span>
-                    Pilih Bahan
-                  </button>
-                </div>
+            
+            <div className="product-list-form-section" style={{ display: "flex", flexDirection: "column", gap: "16px", maxHeight: "60vh", overflowY: "auto" }}>
+              
+              <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setImageModalStep(1)}
+                  disabled={imageSubmitting}
+                  style={{ flex: 1, padding: "8px", border: "none", background: imageModalStep === 1 ? "#eff6ff" : "transparent", color: imageModalStep === 1 ? "#2563eb" : "#64748b", fontWeight: imageModalStep === 1 ? 600 : 400, borderRadius: "6px", cursor: "pointer" }}
+                >
+                  1. Upload Gambar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => imageFile && setImageModalStep(2)}
+                  disabled={!imageFile || imageSubmitting}
+                  style={{ flex: 1, padding: "8px", border: "none", background: imageModalStep === 2 ? "#eff6ff" : "transparent", color: imageModalStep === 2 ? "#2563eb" : "#64748b", fontWeight: imageModalStep === 2 ? 600 : 400, borderRadius: "6px", cursor: imageFile ? "pointer" : "not-allowed", opacity: !imageFile ? 0.5 : 1 }}
+                >
+                  2. Pilih Bahan
+                </button>
+              </div>
 
-                {imageModalStep === 1 ? (
-                  <div className="bahan-image-upload-panel">
-                    <label className={`bahan-image-dropzone ${imagePreview ? "has-preview" : ""}`}>
-                      <input type="file" accept="image/*" onChange={handleBahanImageFileChange} disabled={imageSubmitting} />
-                      {imagePreview ? (
-                        <img src={imagePreview} alt="Preview gambar bahan" />
-                      ) : (
-                        <span className="bahan-image-dropzone-empty">
-                          <FaUpload />
-                          <strong>Upload gambar</strong>
-                          <small>JPG, PNG, atau WEBP maksimal 2 MB</small>
-                        </span>
-                      )}
-                    </label>
-                    {imageFile && (
-                      <div className="bahan-image-file-info">
-                        <span>{imageFile.name}</span>
-                        <strong>{(imageFile.size / 1024 / 1024).toFixed(2)} MB</strong>
-                      </div>
+              {imageModalStep === 1 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "20px 0" }}>
+                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "200px", border: "2px dashed #cbd5e1", borderRadius: "8px", cursor: "pointer", background: "#f8fafc", position: "relative", overflow: "hidden" }}>
+                    <input type="file" accept="image/*" onChange={handleBahanImageFileChange} disabled={imageSubmitting} style={{ display: "none" }} />
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    ) : (
+                      <>
+                        <FaUpload style={{ fontSize: "24px", color: "#94a3b8", marginBottom: "8px" }} />
+                        <span style={{ color: "#475569", fontWeight: 500 }}>Upload gambar</span>
+                        <span style={{ color: "#94a3b8", fontSize: "12px", marginTop: "4px" }}>JPG, PNG, atau WEBP maksimal 2 MB</span>
+                      </>
+                    )}
+                  </label>
+                  {imageFile && (
+                    <div style={{ fontSize: "13px", color: "#475569" }}>
+                      {imageFile.name} ({(imageFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+                  <div className="ks-search">
+                    <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+                    <input
+                      type="text"
+                      value={imageBahanSearch}
+                      onChange={(e) => setImageBahanSearch(e.target.value)}
+                      placeholder="Cari bahan..."
+                      style={{ paddingLeft: "30px", width: "100%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "6px" }}
+                      disabled={imageSubmitting}
+                    />
+                  </div>
+                  
+                  <div style={{ border: "1px solid #e2e8f0", borderRadius: "6px", overflowY: "auto", flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "4px", minHeight: "200px" }}>
+                    {imageBahanLoading ? (
+                      <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>Memuat...</div>
+                    ) : imageBahanOptions.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>Bahan tidak ditemukan.</div>
+                    ) : (
+                      imageBahanOptions.map((item) => {
+                        const selected = selectedImageBahanIds.includes(item.id);
+                        return (
+                          <label key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px", borderRadius: "4px", background: selected ? "#f0f9ff" : "transparent", cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleImageBahanSelection(item.id)}
+                              disabled={imageSubmitting}
+                              style={{ marginTop: "3px" }}
+                            />
+                            <div style={{ display: "flex", flexDirection: "column", fontSize: "13px" }}>
+                              <strong style={{ color: "#334155" }}>{item.nama_bahan || "-"}</strong>
+                              <span style={{ color: "#64748b", fontSize: "11px" }}>{item.group_bahan || "-"} | {item.warna_bahan || "-"}</span>
+                            </div>
+                          </label>
+                        );
+                      })
                     )}
                   </div>
-                ) : (
-                  <div className="bahan-image-select-panel">
-                    <div className="bahan-image-select-header">
-                      <span>
-                        Data bahan
-                        {imageBahanTotal > 0 && (
-                          <small>{imageBahanOptions.length} dari {imageBahanTotal}</small>
-                        )}
-                      </span>
-                      <strong>{selectedImageBahanIds.length} dipilih</strong>
-                    </div>
-                    <div className="bahan-image-search-wrap">
-                      <FaSearch />
-                      <input
-                        type="text"
-                        value={imageBahanSearch}
-                        onChange={(e) => setImageBahanSearch(e.target.value)}
-                        placeholder="Cari nama bahan, group, pabrik, atau warna..."
-                        disabled={imageSubmitting}
-                      />
-                      {imageBahanSearch && (
-                        <button type="button" onClick={() => setImageBahanSearch("")} disabled={imageSubmitting} title="Hapus pencarian">
-                          <FaTimes />
-                        </button>
-                      )}
-                    </div>
-                    <div className="bahan-image-select-list">
-                      {imageBahanLoading ? (
-                        <div className="bahan-image-list-state">
-                          <div className="bahan-spinner"></div>
-                          <span>Mencari data bahan...</span>
-                        </div>
-                      ) : imageBahanError ? (
-                        <div className="bahan-image-list-state error">{imageBahanError}</div>
-                      ) : imageBahanOptions.length === 0 ? (
-                        <div className="bahan-image-list-state">
-                          {debouncedImageBahanSearch ? "Bahan tidak ditemukan." : "Belum ada data bahan."}
-                        </div>
-                      ) : (
-                        imageBahanOptions.map((item) => {
-                          const selected = selectedImageBahanIds.includes(item.id);
-                          const hasImage = Boolean(item.bahan_image_id || item.bahan_image || item.bahanImage);
-                          return (
-                            <label className={`bahan-image-option ${selected ? "selected" : ""}`} key={item.id}>
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleImageBahanSelection(item.id)}
-                                disabled={imageSubmitting}
-                              />
-                              <span className="bahan-image-option-copy">
-                                <strong>{item.nama_bahan || "-"}</strong>
-                                <small>{item.group_bahan || "-"} | {item.pabrik_bahan || "-"} | {item.warna_bahan || "-"}</small>
-                              </span>
-                              {hasImage && <em>Sudah ada gambar</em>}
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="bahan-image-modal-footer">
-                {imageModalStep === 1 ? (
-                  <>
-                    <button type="button" className="bahan-btn-cancel" onClick={closeImageModal} disabled={imageSubmitting}>
-                      Batal
-                    </button>
-                    <button
-                      type="button"
-                      className="bahan-btn-submit"
-                      onClick={() => {
-                        if (!imageFile) {
-                          Swal.fire({ icon: "warning", title: "Pilih gambar", text: "Upload gambar bahan terlebih dahulu.", ...swalButtonColors });
-                          return;
-                        }
-                        setImageModalStep(2);
-                      }}
-                    >
-                      Lanjut Pilih Bahan
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button type="button" className="bahan-btn-secondary" onClick={() => setImageModalStep(1)} disabled={imageSubmitting}>
-                      <FaArrowLeft /> Kembali
-                    </button>
-                    <button type="submit" className="bahan-btn-submit" disabled={imageSubmitting || selectedImageBahanIds.length === 0}>
-                      {imageSubmitting ? "Menyimpan..." : "Simpan Gambar"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </form>
-          </div>
+                </div>
+              )}
+            </div>
+
+            <div className="product-list-modal-actions">
+              {imageModalStep === 1 ? (
+                <>
+                  <button className="product-list-ghost-button" type="button" onClick={closeImageModal} disabled={imageSubmitting}>
+                    Batal
+                  </button>
+                  <button
+                    className="product-list-primary-button"
+                    type="button"
+                    onClick={() => {
+                      if (!imageFile) {
+                        Swal.fire({ icon: "warning", title: "Pilih gambar", text: "Upload gambar bahan terlebih dahulu.", ...swalButtonColors });
+                        return;
+                      }
+                      setImageModalStep(2);
+                    }}
+                  >
+                    Lanjut Pilih Bahan
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="product-list-ghost-button" type="button" onClick={() => setImageModalStep(1)} disabled={imageSubmitting}>
+                    <FaArrowLeft /> Kembali
+                  </button>
+                  <button className="product-list-primary-button" type="submit" disabled={imageSubmitting || selectedImageBahanIds.length === 0}>
+                    {imageSubmitting ? "Menyimpan..." : "Simpan Gambar"}
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
         </div>
       )}
 
       {showDetailModal && detailItem && (
-        <div className="bahan-modal-overlay" onClick={closeDetailModal}>
-          <div className="bahan-modal-content bahan-detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="bahan-modal-header">
-              <h3>Detail Data Bahan</h3>
-              <button className="bahan-modal-close" onClick={closeDetailModal} type="button">
+        <div className="product-list-modal-backdrop" onClick={closeDetailModal}>
+          <div className="product-list-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="product-list-modal-header">
+              <div>
+                <p className="product-list-modal-kicker">Data Bahan</p>
+                <h2>Detail Data Bahan</h2>
+              </div>
+              <button className="product-list-icon-button" type="button" onClick={closeDetailModal}>
                 <FaTimes />
               </button>
             </div>
-            <div className="bahan-detail-body">
-              <div className="bahan-detail-top">
-                <div className="bahan-detail-hero">
-                  <div className="bahan-detail-icon">
-                    <FaBoxOpen />
-                  </div>
-                  <div className="bahan-detail-name">{detailItem.nama_bahan || "-"}</div>
-                  <div className="bahan-detail-badges">
-                    <span className="bahan-badge bahan-badge-primary">{detailItem.group_bahan || "Tanpa Group"}</span>
-                    <span className="bahan-badge bahan-badge-muted">{detailItem.pabrik_bahan || "Tanpa Pabrik"}</span>
-                    <span className="bahan-badge bahan-badge-muted">{detailItem.warna_bahan || "Tanpa Warna"}</span>
-                  </div>
+
+            <div className="product-list-form-section">
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px", color: "#334155" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>ID Bahan</span>
+                  <span>#{detailItem.id}</span>
                 </div>
-                <div className="bahan-detail-summary">
-                  <div className="bahan-detail-summary-item">
-                    <div className="label">ID Bahan</div>
-                    <div className="value">#{detailItem.id}</div>
-                  </div>
-                  <div className="bahan-detail-summary-item">
-                    <div className="label">Satuan</div>
-                    <div className="value">{getSatuanLabel(detailItem.satuan)}</div>
-                  </div>
-                  <div className="bahan-detail-summary-item">
-                    <div className="label">Stok Bahan</div>
-                    <div className="value">{formatNumber(detailItem.stok_bahan)}</div>
-                  </div>
-                  <div className="bahan-detail-summary-item highlight">
-                    <div className="label">Harga</div>
-                    <div className="value big">{formatRupiah(detailItem.harga)}</div>
-                  </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Nama Bahan</span>
+                  <span style={{ fontWeight: 600, color: "#1e293b" }}>{detailItem.nama_bahan || "-"}</span>
                 </div>
-              </div>
-              <div className="bahan-detail-section">
-                <h4>Deskripsi Bahan</h4>
-                <div className="bahan-feedback-box">
-                  <p>{detailItem.deskripsi || "Tidak ada deskripsi untuk bahan ini."}</p>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Group</span>
+                  <span>{detailItem.group_bahan || "-"}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Pabrik</span>
+                  <span>{detailItem.pabrik_bahan || "-"}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Warna</span>
+                  <span>{detailItem.warna_bahan || "-"}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Stok</span>
+                  <span>{formatNumber(detailItem.stok_bahan)} {getSatuanLabel(detailItem.satuan)}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Harga</span>
+                  <span style={{ fontWeight: 600, color: "#10b981" }}>{formatRupiah(detailItem.harga)}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: "#64748b" }}>Deskripsi</span>
+                  <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                    {detailItem.deskripsi || <span style={{ color: "#94a3b8" }}>Tidak ada deskripsi</span>}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="bahan-detail-footer">
-              <button type="button" className="bahan-btn-close" onClick={closeDetailModal}>
+
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={closeDetailModal}>
                 Tutup
               </button>
             </div>
@@ -2058,16 +1917,20 @@ const Bahan = () => {
       )}
 
       {previewImage && (
-        <div className="bahan-modal-overlay" onClick={closePreviewImage}>
-          <div className="bahan-modal-content bahan-image-preview-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="bahan-modal-header">
-              <h3>{previewImage.title}</h3>
-              <button className="bahan-modal-close" onClick={closePreviewImage} type="button">
+        <div className="product-list-modal-backdrop" onClick={closePreviewImage}>
+          <div className="product-list-modal" onClick={(e) => e.stopPropagation()} style={{ background: "transparent", boxShadow: "none", border: "none" }}>
+            <div style={{ position: "relative", display: "inline-block", background: "#fff", padding: "8px", borderRadius: "8px" }}>
+              <button
+                type="button"
+                onClick={closePreviewImage}
+                style={{ position: "absolute", top: "-12px", right: "-12px", width: "30px", height: "30px", borderRadius: "15px", background: "#fff", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10, color: "#64748b" }}
+              >
                 <FaTimes />
               </button>
-            </div>
-            <div className="bahan-image-preview-body">
-              <img src={previewImage.url} alt={previewImage.title} />
+              <img src={previewImage.url} alt={previewImage.title} style={{ maxWidth: "80vw", maxHeight: "80vh", objectFit: "contain", display: "block", borderRadius: "4px" }} />
+              <div style={{ padding: "8px 4px 4px", fontSize: "14px", fontWeight: 500, color: "#334155", textAlign: "center" }}>
+                {previewImage.title}
+              </div>
             </div>
           </div>
         </div>
