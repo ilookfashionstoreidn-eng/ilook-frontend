@@ -321,7 +321,7 @@ const Pabrik = () => {
                 <tr>
                   <th>ID</th>
                   <th>Nama Pabrik</th>
-                  <th>Lokasi</th>
+                  <th style={{ maxWidth: "400px" }}>Lokasi</th>
                   <th>Kontak</th>
                   <th>KTP</th>
                   <th style={{ width: "120px", textAlign: "center" }}>Aksi</th>
@@ -332,7 +332,9 @@ const Pabrik = () => {
                   <tr key={pabrik.id}>
                     <td>{pabrik.id}</td>
                     <td><strong>{pabrik.nama_pabrik}</strong></td>
-                    <td>{pabrik.lokasi || "-"}</td>
+                    <td style={{ maxWidth: "400px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pabrik.lokasi}>
+                      {pabrik.lokasi || "-"}
+                    </td>
                     <td>{pabrik.kontak || "-"}</td>
                     <td>
                       {pabrik.ktp ? (
