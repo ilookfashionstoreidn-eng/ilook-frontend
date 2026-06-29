@@ -6,7 +6,7 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "../Produk/ProductList.css";
 
-const Pabrik = () => {
+const PabrikList = () => {
   const [pabriks, setPabriks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -308,7 +308,7 @@ const Pabrik = () => {
           </div>
         </div>
 
-        <div className="ks-grid-scroll">
+        <div className="pl-table-wrapper">
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Memuat data...</div>
           ) : error ? (
@@ -316,12 +316,12 @@ const Pabrik = () => {
           ) : filteredPabriks.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Belum ada data pabrik.</div>
           ) : (
-            <table className="ks-grid">
+            <table className="pl-table">
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Nama Pabrik</th>
-                  <th style={{ maxWidth: "400px" }}>Lokasi</th>
+                  <th>Lokasi</th>
                   <th>Kontak</th>
                   <th>KTP</th>
                   <th style={{ width: "120px", textAlign: "center" }}>Aksi</th>
@@ -332,9 +332,7 @@ const Pabrik = () => {
                   <tr key={pabrik.id}>
                     <td>{pabrik.id}</td>
                     <td><strong>{pabrik.nama_pabrik}</strong></td>
-                    <td style={{ maxWidth: "400px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pabrik.lokasi}>
-                      {pabrik.lokasi || "-"}
-                    </td>
+                    <td>{pabrik.lokasi || "-"}</td>
                     <td>{pabrik.kontak || "-"}</td>
                     <td>
                       {pabrik.ktp ? (
@@ -346,14 +344,14 @@ const Pabrik = () => {
                       )}
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                        <button className="ks-btn pl-act-btn info" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
+                      <div className="pl-table-actions" style={{ justifyContent: "center" }}>
+                        <button className="product-list-icon-button" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
                           <FaEye />
                         </button>
-                        <button className="ks-btn pl-act-btn" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
+                        <button className="product-list-icon-button" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
                           <FaEdit />
                         </button>
-                        <button className="ks-btn pl-act-btn danger" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik">
+                        <button className="product-list-icon-button" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik" style={{ color: "#ef4444" }}>
                           <FaTrash />
                         </button>
                       </div>
@@ -371,4 +369,4 @@ const Pabrik = () => {
   );
 };
 
-export default Pabrik;
+export default PabrikList;
