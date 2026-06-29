@@ -2242,75 +2242,72 @@ const ProductList = () => {
           <table className="ks-grid">
             <thead>
               <tr>
-                <th>SKU Name</th>
-                <th>Product</th>
-                <th>Product Group</th>
-                <th>Product Size</th>
-                <th>Product Source</th>
-                <th>Product Colour</th>
-                <th>Material Group 1</th>
-                <th>Colour 1</th>
-                <th>Material Group 2</th>
-                <th>Colour 2</th>
-                <th>Accessories</th>
-                <th>Accessories Colour</th>
-                <th>Estimasi Cutting</th>
-                <th>Estimasi Combi</th>
-                <th>Berat Panjang</th>
-                <th>Satuan Berat Panjang</th>
-                <th>Berat Panjang Combi</th>
-                <th>Satuan Berat Panjang Combi</th>
-                <th>LD</th>
-                <th>PJ Dress</th>
-                <th>PJ Celana</th>
-                <th>PJ Baju</th>
+                <th>Produk & SKU</th>
+                <th>Material Utama</th>
+                <th>Kombinasi & Aksesoris</th>
+                <th>Estimasi Bahan</th>
+                <th>Berat / Panjang</th>
+                <th>Dimensi (LD/PJ)</th>
+                <th>Harga</th>
                 <th>Notes SPK</th>
-                <th>Price CMT</th>
-                <th>Price Cutting</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="26" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="9" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Memuat data Product List...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan="26" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="9" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Belum ada data Product List.
                   </td>
                 </tr>
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td className="ks-cell-code">{tableValue(item.sku_name)}</td>
-                    <td className="ks-cell-product">{tableValue(item.product)}</td>
-                    <td>{tableValue(item.product_group)}</td>
-                    <td>{tableValue(item.product_size)}</td>
-                    <td>{tableValue(item.product_source)}</td>
-                    <td>{tableValue(item.product_colour)}</td>
-                    <td>{getMaterialTableValue(item.materials, 0, "material_group")}</td>
-                    <td>{getMaterialTableValue(item.materials, 0, "colour")}</td>
-                    <td>{getMaterialTableValue(item.materials, 1, "material_group")}</td>
-                    <td>{getMaterialTableValue(item.materials, 1, "colour")}</td>
-                    <td>{tableValue(item.product_accecories)}</td>
-                    <td>{tableValue(item.product_accecories_colour)}</td>
-                    <td>{tableValue(item.estimasi_cutting)}</td>
-                    <td>{tableValue(item.estimasi_combi)}</td>
-                    <td>{tableValue(item.berat_panjang)}</td>
-                    <td>{tableValue(item.satuan_berat_panjang)}</td>
-                    <td>{tableValue(item.berat_panjang_combi)}</td>
-                    <td>{tableValue(item.satuan_berat_panjang_combi)}</td>
-                    <td>{tableValue(item.LD)}</td>
-                    <td>{tableValue(item.pj_dress)}</td>
-                    <td>{tableValue(item.pj_celana)}</td>
-                    <td>{tableValue(item.pj_baju)}</td>
+                    <td>
+                      <strong className="ks-cell-code">{item.sku_name || "-"}</strong><br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                        {item.product_group || "-"} | {item.product || "-"}
+                      </span><br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                        Warna: {item.product_colour || "-"} | Size: {item.product_size || "-"}
+                      </span>
+                    </td>
+                    <td>
+                      {getMaterialTableValue(item.materials, 0, "material_group")}<br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                        Warna: {getMaterialTableValue(item.materials, 0, "colour")}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Kombi:</span> {getMaterialTableValue(item.materials, 1, "material_group")} <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>({getMaterialTableValue(item.materials, 1, "colour")})</span><br />
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Aks:</span> {item.product_accecories || "-"} <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>({item.product_accecories_colour || "-"})</span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Cut:</span> {item.estimasi_cutting || "-"}<br />
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Com:</span> {item.estimasi_combi || "-"}
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Utama:</span> {item.berat_panjang || "-"} {item.satuan_berat_panjang || ""}<br />
+                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Combi:</span> {item.berat_panjang_combi || "-"} {item.satuan_berat_panjang_combi || ""}
+                    </td>
+                    <td>
+                      {item.LD && <><span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>LD:</span> {item.LD} <br/></>}
+                      {item.pj_dress && <><span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>PJ Dress:</span> {item.pj_dress} <br/></>}
+                      {item.pj_baju && <><span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>PJ Baju:</span> {item.pj_baju} <br/></>}
+                      {item.pj_celana && <><span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>PJ Celana:</span> {item.pj_celana}</>}
+                      {(!item.LD && !item.pj_dress && !item.pj_baju && !item.pj_celana) && "-"}
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>CMT:</span> {formatCurrency(item.price_cmt)}<br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>Cut:</span> {formatCurrency(item.price_cutting)}
+                    </td>
                     <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>{item.notes_spk || "-"}</td>
-                    <td>{tableValue(item.price_cmt)}</td>
-                    <td>{tableValue(item.price_cutting)}</td>
                     <td>
                       <div style={{ display: "flex", gap: "6px" }}>
                         <button className="ks-btn pl-act-btn info" type="button" onClick={() => openDetailModal(item)} title="Detail">
@@ -2318,7 +2315,7 @@ const ProductList = () => {
                         </button>
                         <button className="ks-btn pl-act-btn" type="button" onClick={() => handleDuplicate(item)} title="Duplikat">
                           <FiCopy />
-                        </button>{/* [DUPLIKAT] - ditambahkan */}
+                        </button>
                         <button className="ks-btn pl-act-btn" type="button" onClick={() => openEditModal(item)} title="Edit">
                           <FaEdit />
                         </button>
