@@ -379,39 +379,52 @@ const StokOpnameBahan = () => {
   }
 
   return (
-    <div className="opname-bahan-container">
-      <div className="opname-bahan-header-section">
-        <h1 className="opname-bahan-title">Stok Opname Bahan</h1>
-        <p className="opname-bahan-subtitle">Generate barcode untuk bahan yang sudah ada fisiknya di gudang</p>
-      </div>
-
-      <div className="opname-bahan-top-controls">
-        <div className="opname-bahan-search-box">
-          <FaSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Cari nama bahan..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && <FaTimes className="clear-icon" onClick={() => setSearchTerm("")} />}
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Stok Opname Bahan</h1>
+          <span className="ks-header-sub">
+            Generate barcode untuk bahan yang sudah ada fisiknya di gudang
+          </span>
         </div>
-        <button className="opname-bahan-btn-primary" onClick={() => setShowForm(true)}>
-          <FaPlus /> Tambah Opname
-        </button>
-      </div>
+      </header>
 
-      <div className="opname-bahan-card">
-        <div className="opname-bahan-table-responsive">
-          <table className="opname-bahan-table">
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="pl-search">
+              <FaSearch className="pl-search-icon" />
+              <input
+                type="text"
+                placeholder="Cari nama bahan..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-search-input"
+              />
+              {searchTerm && (
+                <button className="pl-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+              <FaPlus /> Tambah Opname
+            </button>
+          </div>
+        </div>
+
+        <div className="ks-grid-scroll">
+          <table className="ks-grid">
             <thead>
               <tr>
                 <th>Tanggal</th>
                 <th>Keterangan</th>
                 <th>Bahan</th>
-                <th>Total Rol</th>
+                <th style={{ textAlign: "right" }}>Total Rol</th>
                 <th>Gudang / Pabrik</th>
-                <th className="opname-bahan-text-center">Aksi</th>
+                <th style={{ textAlign: "center" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -419,36 +432,38 @@ const StokOpnameBahan = () => {
                 currentItems.map((item) => (
                   <tr key={item.id}>
                     <td>{new Date(item.tanggal_kirim).toLocaleDateString("id-ID")}</td>
-                    <td><span className="opname-badge">{item.keterangan}</span></td>
+                    <td><span style={{ backgroundColor: "#f1f5f9", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", color: "#475569", fontWeight: "600" }}>{item.keterangan}</span></td>
                     <td>
-                      <div className="bahan-info">
-                        <strong>{getBahanName(item)}</strong>
-                        <span className="small-text">{item.gramasi} / {item.lebar_kain}</span>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <strong style={{ color: "#0f172a" }}>{getBahanName(item)}</strong>
+                        <span style={{ fontSize: "12px", color: "#64748b" }}>{item.gramasi} / {item.lebar_kain}</span>
                       </div>
                     </td>
-                    <td>{calculateTotalRoll(item.warna)} rol</td>
+                    <td style={{ textAlign: "right", fontWeight: "600" }}>{calculateTotalRoll(item.warna)} rol</td>
                     <td>
-                      <div className="gudang-pabrik">
-                        <span><i className="fas fa-warehouse"></i> {item.gudang?.nama_gudang || "-"}</span>
-                        <span><i className="fas fa-industry"></i> {item.pabrik?.nama_pabrik || "-"}</span>
+                      <div style={{ display: "flex", flexDirection: "column", fontSize: "12px", color: "#475569" }}>
+                        <span><i className="fas fa-warehouse" style={{ width: "16px", color: "#94a3b8" }}></i> {item.gudang?.nama_gudang || "-"}</span>
+                        <span style={{ marginTop: "2px" }}><i className="fas fa-industry" style={{ width: "16px", color: "#94a3b8" }}></i> {item.pabrik?.nama_pabrik || "-"}</span>
                       </div>
                     </td>
-                    <td className="opname-bahan-actions">
-                      <button className="opname-bahan-btn-icon opname-bahan-btn-info" title="Detail" onClick={() => { setDetailItem(item); setShowDetail(true); }}>
-                        <FaEye />
-                      </button>
-                      <button className="opname-bahan-btn-icon opname-bahan-btn-success" title="Cetak Barcode" onClick={() => handleCetakBarcode(item.id)}>
-                        <FaBarcode />
-                      </button>
-                      <button className="opname-bahan-btn-icon opname-bahan-btn-danger" title="Hapus" style={{ backgroundColor: '#ef4444', color: 'white', marginLeft: '4px', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(item.id)}>
-                        <FaTrash />
-                      </button>
+                    <td>
+                      <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                        <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#3b82f6" }} title="Detail" onClick={() => { setDetailItem(item); setShowDetail(true); }}>
+                          <FaEye />
+                        </button>
+                        <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#10b981" }} title="Cetak Barcode" onClick={() => handleCetakBarcode(item.id)}>
+                          <FaBarcode />
+                        </button>
+                        <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#ef4444" }} title="Hapus" onClick={() => handleDelete(item.id)}>
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="opname-bahan-text-center opname-bahan-empty">
+                  <td colSpan="6" style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>
                     Tidak ada data opname.
                   </td>
                 </tr>
@@ -457,13 +472,13 @@ const StokOpnameBahan = () => {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="opname-bahan-pagination">
-            <button disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)}>Prev</button>
-            <span>Halaman {currentPage} dari {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)}>Next</button>
+          <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
+            <button className="ks-btn is-secondary" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)}>Prev</button>
+            <span style={{ display: "flex", alignItems: "center", fontSize: "14px", color: "#64748b" }}>Halaman {currentPage} dari {totalPages}</span>
+            <button className="ks-btn is-secondary" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)}>Next</button>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Modal Tambah */}
       {showForm && (
@@ -574,7 +589,7 @@ const StokOpnameBahan = () => {
                           />
                         )}
                       </div>
-                      <button type="button" className="opname-bahan-btn-icon opname-bahan-btn-danger" onClick={() => handleRemoveWarna(wIdx)}>
+                      <button type="button" className="ks-btn is-secondary" style={{ color: "#ef4444" }} onClick={() => handleRemoveWarna(wIdx)}>
                         <FaTimes /> Hapus Warna
                       </button>
                     </div>
@@ -601,20 +616,20 @@ const StokOpnameBahan = () => {
                           </div>
                         ))}
                       </div>
-                      <button type="button" className="opname-bahan-btn-add-small" onClick={() => handleAddRol(wIdx)}>
+                      <button type="button" className="ks-btn is-secondary" style={{ marginTop: "12px", width: "100%" }} onClick={() => handleAddRol(wIdx)}>
                         <FaPlus /> Tambah Rol (Enter)
                       </button>
                     </div>
                   </div>
                 ))}
 
-                <button type="button" className="opname-bahan-btn-add-warna" onClick={handleAddWarna}>
+                <button type="button" className="ks-btn is-primary" style={{ marginTop: "20px", width: "100%" }} onClick={handleAddWarna}>
                   <FaPlus /> Tambah Warna
                 </button>
 
-                <div className="opname-bahan-modal-footer">
-                  <button type="button" className="opname-bahan-btn-secondary" onClick={() => setShowForm(false)}>Batal</button>
-                  <button type="submit" className="opname-bahan-btn-primary">Simpan Opname</button>
+                <div className="opname-bahan-modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "24px" }}>
+                  <button type="button" className="ks-btn is-secondary" onClick={() => setShowForm(false)}>Batal</button>
+                  <button type="submit" className="ks-btn is-primary">Simpan Opname</button>
                 </div>
               </form>
             </div>
@@ -661,18 +676,18 @@ const StokOpnameBahan = () => {
                           </div>
                           <div className="rol-actions">
                             <button 
-                              className="opname-bahan-btn-icon opname-bahan-edit"
+                              className="ks-btn is-secondary"
                               onClick={() => handleEditRol(rol)}
                               title="Edit Rol"
-                              style={{ background: "none", border: "none", color: "var(--erp-primary, #3b82f6)", cursor: "pointer", fontSize: "14px" }}
+                              style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#3b82f6" }}
                             >
                               <FaEdit />
                             </button>
                             <button 
-                              className="opname-bahan-btn-icon opname-bahan-delete"
+                              className="ks-btn is-secondary"
                               onClick={() => handleDeleteRol(rol.id)}
                               title="Hapus Rol"
-                              style={{ background: "none", border: "none", color: "var(--erp-danger)", cursor: "pointer", fontSize: "14px" }}
+                              style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#ef4444" }}
                             >
                               <FaTrash />
                             </button>
