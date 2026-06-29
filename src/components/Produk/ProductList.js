@@ -246,6 +246,7 @@ const ProductList = () => {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [syncScope, setSyncScope] = useState("none");
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalStep, setImageModalStep] = useState(1);
   const [imageFile, setImageFile] = useState(null);
@@ -704,10 +705,11 @@ const ProductList = () => {
     if (saving && !force) return;
     setModalMode(null);
     setSelectedItem(null);
-    setIsDuplicate(false); // [DUPLIKAT] - ditambahkan
-    setDuplicateSourceSkuName(""); // [DUPLIKAT] - ditambahkan
+    setIsDuplicate(false);
+    setDuplicateSourceSkuName("");
     setForm(initialForm);
     setIsMultiSkuMode(false);
+    setSyncScope("none");
   };
 
   const handleInputChange = (event) => {
@@ -778,7 +780,7 @@ const ProductList = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (isDuplicate && normalizeSkuNameValue(form.sku_name) === normalizeSkuNameValue(duplicateSourceSkuName)) { // [DUPLIKAT] - dimodifikasi
+    if (isDuplicate && normalizeSkuNameValue(form.sku_name) === normalizeSkuNameValue(duplicateSourceSkuName)) {
       await showErrorAlert(
         "SKU Name Belum Diubah",
         "SKU Name harus diubah dulu sebelum duplikat disimpan."
@@ -863,8 +865,12 @@ const ProductList = () => {
       } else {
         // Single Insert / Update Mode
         const payload = buildPayload();
+        
+        if (modalMode === "edit") {
+          payload.sync_scope = syncScope;
+        }
 
-        if (!isDuplicate && modalMode === "edit" && selectedItem?.id) { // [DUPLIKAT] - dimodifikasi
+        if (!isDuplicate && modalMode === "edit" && selectedItem?.id) {
           await API.put(`/product-list/${selectedItem.id}`, payload);
           closeModal(true);
           await fetchProductLists();
@@ -1708,6 +1714,35 @@ const ProductList = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {modalMode === "edit" && (
+            <div className="product-list-form-section" style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+              <h3 style={{ fontSize: "14px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <FaLayerGroup style={{ color: "#3b82f6" }} /> Terapkan perubahan ini (Update Massal) ke:
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px" }}>
+                  <input type="radio" name="syncScope" value="none" checked={syncScope === "none"} onChange={() => setSyncScope("none")} />
+                  Hanya SKU ini saja (Default)
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px" }}>
+                  <input type="radio" name="syncScope" value="same_colour" checked={syncScope === "same_colour"} onChange={() => setSyncScope("same_colour")} />
+                  Semua <strong>Size lain</strong> (Untuk Produk & Warna yang sama)
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px" }}>
+                  <input type="radio" name="syncScope" value="same_size" checked={syncScope === "same_size"} onChange={() => setSyncScope("same_size")} />
+                  Semua <strong>Warna lain</strong> (Untuk Produk & Size yang sama)
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px" }}>
+                  <input type="radio" name="syncScope" value="all_variants" checked={syncScope === "all_variants"} onChange={() => setSyncScope("all_variants")} />
+                  Seluruh varian di Produk ini (Semua Warna & Size)
+                </label>
+              </div>
+              <p style={{ fontSize: "12px", color: "#64748b", marginTop: "10px" }}>
+                * Catatan: Data yang ikut disinkronisasi adalah Material Utama, Kombinasi, Aksesoris, Estimasi Bahan, Dimensi, Berat, Harga, dan Notes SPK.
+              </p>
             </div>
           )}
 
