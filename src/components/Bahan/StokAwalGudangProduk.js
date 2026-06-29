@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaClipboardCheck, FaQrcode } from "react-icons/fa";
+import { FaClipboardCheck, FaQrcode, FaCheckCircle, FaChevronLeft, FaMapMarkerAlt, FaBarcode } from "react-icons/fa";
 import API from "../../api";
 import "./GudangProdukWorkspace.css";
 import {
@@ -11,7 +11,6 @@ import {
   GudangStatCard,
   buildSlotHeadline,
 } from "./GudangProdukSharedV2";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import useGudangProdukWorkspace from "./useGudangProdukWorkspace";
 import {
   buildGudangWorkspaceErrorMessage,
@@ -57,17 +56,54 @@ const parseScannedSerialCode = (value) => {
 
 const SCAN_AUTO_SUBMIT_DELAY_MS = 200;
 
+const STEP_SELECT_LOCATION = 1;
+const STEP_SCAN = 2;
+
+const STEP_ITEMS = [
+  { num: 1, label: "Pilih Lokasi", icon: FaMapMarkerAlt },
+  { num: 2, label: "Scan Seri", icon: FaBarcode },
+];
+
+const StepSegment = ({ current, onJump }) => (
+  <div className="sog-tabbar">
+    <div className="ks-segment">
+      {STEP_ITEMS.map(({ num, label, icon: Icon }) => {
+        const done = current > num;
+        const reachable = num <= current;
+        return (
+          <button
+            key={num}
+            type="button"
+            className={`ks-seg-btn sog-seg-btn ${current === num ? "is-active" : ""} ${
+              done ? "is-done" : ""
+            }`}
+            disabled={!reachable}
+            onClick={() => reachable && onJump(num)}
+          >
+            {done ? <FaCheckCircle size={12} /> : <Icon size={12} />} {label}{" "}
+            <em>{num}</em>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const StokAwalGudangProduk = () => {
   const { state, setState, isLoading, error, refresh } = useGudangProdukWorkspace({
     includeCatalog: true,
     activityLimit: 500,
   });
+
+  const [step, setStep] = useState(STEP_SELECT_LOCATION);
+
   const [layoutId, setLayoutId] = useState("");
   const [floorId, setFloorId] = useState("");
   const [blockId, setBlockId] = useState("");
   const [rackId, setRackId] = useState("");
   const [rowNumber, setRowNumber] = useState("");
   const [notes, setNotes] = useState("");
+
   const [serialCache, setSerialCache] = useState(new Map());
   const [serialScanValue, setSerialScanValue] = useState("");
   const [serialLoading, setSerialLoading] = useState(false);
@@ -509,181 +545,261 @@ const StokAwalGudangProduk = () => {
     };
   }, []);
 
+  const handleNextStep = () => {
+    if (!selectedSlot) {
+      showGudangWarning("Lokasi belum lengkap", "Harap pilih lokasi gudang sampai ke baris rak terlebih dahulu.");
+      return;
+    }
+    setStep(STEP_SCAN);
+    setTimeout(() => {
+      serialScanInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleJumpStep = (num) => {
+    if (num === STEP_SELECT_LOCATION) setStep(STEP_SELECT_LOCATION);
+    // num === current step -> no-op
+  };
+
   return (
-    <GudangProdukBaseShell
-      title="Stok Awal"
-      subtitle="Input stok awal per lokasi gudang. Pilih lantai, bilik/blok, rak, lalu masukkan beberapa SKU dalam satu sesi."
-      icon={FaClipboardCheck}
-      statusLabel={
-        isLoading
-          ? "Memuat workspace..."
-          : isSubmitting
-            ? "Menyimpan stok awal..."
-            : selectedSlot
-              ? `Lokasi ${selectedSlot.slotCode}`
-              : "Pilih Lokasi Stok Awal"
-      }
-    >
-      {error ? (
-        <div className="gudang-ui-empty-panel" style={{ marginBottom: 20 }}>
-          {error}
+    <div className="ks-page sog-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Stok Awal Gudang</h1>
+          <span className="ks-header-sub">
+            Input stok awal per lokasi gudang. Pilih lantai, bilik, rak, lalu scan seri.
+          </span>
         </div>
-      ) : null}
+        <div className="ks-header-actions">
+          <span className={`sog-status-pill`}>
+            <span className="sog-status-dot" />
+            Langkah {step} dari 2
+          </span>
+          <button type="button" className="ks-btn" onClick={resetSession}>
+            Reset Sesi
+          </button>
+        </div>
+      </header>
 
-      <div className="gudang-ui-stat-grid">
-        <GudangStatCard label="Stok Awal Masuk" value={`${totalQty} pcs`} helper={`${scannedRows.length} kode seri sesi ini`} />
-        <GudangStatCard label="Scan Berhasil" value={scannedRows.length} helper="kode seri masuk stok awal" />
-        <GudangStatCard label="Lokasi Dipilih" value={selectedSlot?.slotCode || "-"} helper="slot tujuan stok" />
-        <GudangStatCard label="Isi Slot Saat Ini" value={selectedSlotSummary?.qty || 0} helper="pcs sebelum input stok awal" />
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Langkah</span>
+          <span className="ks-stat-value">{step}/2</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Stok Awal Masuk</span>
+          <span className="ks-stat-value">
+            {totalQty} pcs
+          </span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Lokasi Dipilih</span>
+          <span className="ks-stat-value">
+            {selectedSlot?.slotCode || "—"}
+          </span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Status</span>
+          <span className="ks-stat-value">
+            {isLoading ? "Memuat..." : isSubmitting ? "Menyimpan..." : "Siap"}
+          </span>
+        </div>
       </div>
 
-      <div className="gudang-ui-grid split-hero">
-        <section className="gudang-ui-form-card">
-          <div className="gudang-ui-section-head">
-            <div>
-              <h2>1. Lokasi Stok Awal</h2>
-              <p>Pilih area fisik gudang tempat stok awal dimasukkan.</p>
-            </div>
-          </div>
+      <StepSegment current={step} onJump={handleJumpStep} />
 
-          <div className="gudang-ui-form-grid">
-            <label className="gudang-ui-field">
-              <span>Gudang Produk</span>
-              <select value={layoutId} onChange={(event) => setLayoutId(event.target.value)}>
-                {state.layouts.map((layout) => (
-                  <option key={layout.id} value={layout.id}>
-                    {layout.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+      <section className="ks-board sog-board">
+        <div className="sog-scroll">
+          <div className="opname-page">
+            
+            {step === STEP_SELECT_LOCATION ? (
+              <div className="opname-step-content">
+                <div className="opname-section-header">
+                  <h2>
+                    <FaMapMarkerAlt className="opname-section-icon" />
+                    1. Lokasi Stok Awal
+                  </h2>
+                  <p>Pilih area fisik gudang tempat stok awal dimasukkan.</p>
+                </div>
 
-            <label className="gudang-ui-field">
-              <span>Lantai</span>
-              <select value={floorId} onChange={(event) => setFloorId(event.target.value)}>
-                {floors.map((floor) => (
-                  <option key={floor.id} value={floor.id}>
-                    {floor.label || `Lantai ${floor.number}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {error && <div className="opname-callout opname-callout-error">{error}</div>}
 
-            <label className="gudang-ui-field">
-              <span>Bilik / Blok</span>
-              <select value={blockId} onChange={(event) => setBlockId(event.target.value)}>
-                {blocks.map((block) => (
-                  <option key={block.id} value={block.id}>
-                    {block.label || `Blok ${block.code}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <div className="gudang-ui-form-grid" style={{ padding: "0 16px 16px", gap: "12px" }}>
+                  <label className="gudang-ui-field">
+                    <span>Gudang Produk</span>
+                    <select className="ks-input" value={layoutId} onChange={(event) => setLayoutId(event.target.value)}>
+                      {state.layouts.map((layout) => (
+                        <option key={layout.id} value={layout.id}>
+                          {layout.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            <label className="gudang-ui-field">
-              <span>Rak</span>
-              <select value={rackId} onChange={(event) => setRackId(event.target.value)}>
-                {racks.map((rack) => (
-                  <option key={rack.id} value={rack.id}>
-                    {rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  <label className="gudang-ui-field">
+                    <span>Lantai</span>
+                    <select className="ks-input" value={floorId} onChange={(event) => setFloorId(event.target.value)}>
+                      {floors.map((floor) => (
+                        <option key={floor.id} value={floor.id}>
+                          {floor.label || `Lantai ${floor.number}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            <label className="gudang-ui-field">
-              <span>Baris Rak</span>
-              <select value={rowNumber} onChange={(event) => setRowNumber(event.target.value)}>
-                {Array.from({ length: Number(selectedRack?.rows || 0) }, (_, index) => index + 1).map((number) => (
-                  <option key={number} value={number}>
-                    Baris {number}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  <label className="gudang-ui-field">
+                    <span>Bilik / Blok</span>
+                    <select className="ks-input" value={blockId} onChange={(event) => setBlockId(event.target.value)}>
+                      {blocks.map((block) => (
+                        <option key={block.id} value={block.id}>
+                          {block.label || `Blok ${block.code}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            <label className="gudang-ui-field">
-              <span>Catatan Sesi</span>
-              <input
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Opsional, contoh: stok awal Mei"
-              />
-            </label>
-          </div>
+                  <label className="gudang-ui-field">
+                    <span>Rak</span>
+                    <select className="ks-input" value={rackId} onChange={(event) => setRackId(event.target.value)}>
+                      {racks.map((rack) => (
+                        <option key={rack.id} value={rack.id}>
+                          {rack.label || `Rak ${String(rack.number).padStart(2, "0")}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-          <div className="gudang-ui-empty-panel" style={{ marginTop: 14, textAlign: "left" }}>
-            {selectedSlot ? buildSlotHeadline(selectedSlot) : "Lokasi belum lengkap."}
-          </div>
-        </section>
+                  <label className="gudang-ui-field">
+                    <span>Baris Rak</span>
+                    <select className="ks-input" value={rowNumber} onChange={(event) => setRowNumber(event.target.value)}>
+                      {Array.from({ length: Number(selectedRack?.rows || 0) }, (_, index) => index + 1).map((number) => (
+                        <option key={number} value={number}>
+                          Baris {number}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-        <section className="gudang-ui-form-card">
-          <div className="gudang-ui-section-head">
-            <div>
-              <h2>2. Scan Stok Awal</h2>
-              <p>Scan kode seri, lalu sistem otomatis mengambil SKU dan memasukkannya ke lokasi stok awal.</p>
-            </div>
-          </div>
+                  <label className="gudang-ui-field">
+                    <span>Catatan Sesi</span>
+                    <input
+                      className="ks-input"
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                      placeholder="Opsional, contoh: stok awal Mei"
+                    />
+                  </label>
+                </div>
 
-          <label className="gudang-ui-field">
-            <span>Kode Seri</span>
-            <div className="gudang-stok-awal-scan-row">
-              <input
-                ref={serialScanInputRef}
-                value={serialScanValue}
-                onChange={handleSerialInputChange}
-                onKeyDown={handleSerialKeyDown}
-                placeholder="Scan kode seri"
-                disabled={serialLoading}
-                autoComplete="off"
-              />
-              <button
-                className="gudang-ui-button"
-                type="button"
-                onClick={() => handleScanSerial()}
-                disabled={serialLoading || !serialScanValue.trim()}
-              >
-                <FaQrcode /> Scan Masuk
-              </button>
-            </div>
-          </label>
+                <div className="opname-callout opname-callout-info" style={{ margin: "0 16px 16px" }}>
+                  {selectedSlot ? buildSlotHeadline(selectedSlot) : "Lokasi belum lengkap."}
+                </div>
+                
+                <div style={{ padding: "0 16px 16px" }}>
+                  <button 
+                    className="ks-btn ks-btn-primary" 
+                    onClick={handleNextStep}
+                    disabled={!selectedSlot}
+                  >
+                    Lanjut ke Scan Seri <FaChevronLeft style={{ transform: "rotate(180deg)", marginLeft: 6 }} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="opname-step-content">
+                <div className="opname-scan-header">
+                  <button
+                    type="button"
+                    className="ks-btn opname-back-btn"
+                    onClick={() => setStep(STEP_SELECT_LOCATION)}
+                    disabled={isSubmitting}
+                  >
+                    <FaChevronLeft /> Kembali ke Lokasi
+                  </button>
 
-          <div className="gudang-stok-awal-scan-status">
-            {serialLoading
-              ? "Memuat data kode seri..."
-              : scanMessage || "Scanner siap. Pastikan lokasi stok awal sudah dipilih."}
-          </div>
+                  <div className="opname-scan-meta">
+                    <div className="opname-scan-meta-item">
+                      <span className="opname-scan-meta-label">Lokasi Terpilih</span>
+                      <span className="opname-scan-meta-value">{selectedSlot?.slotCode}</span>
+                    </div>
+                    <div className="opname-scan-meta-item">
+                      <span className="opname-scan-meta-label">Isi Slot Saat Ini</span>
+                      <span className="opname-scan-meta-value">
+                        {selectedSlotSummary?.qty || 0} pcs
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-          <div className="gudang-stok-awal-session-summary">
-            <span>Sudah discan sesi ini</span>
-            <strong>{scannedRows.length}</strong>
-            <small>{totalQty} pcs stok awal sudah masuk ke gudang.</small>
-          </div>
+                <div className="opname-scan-input-group">
+                  <input
+                    ref={serialScanInputRef}
+                    type="text"
+                    className="opname-scan-input"
+                    value={serialScanValue}
+                    onChange={handleSerialInputChange}
+                    onKeyDown={handleSerialKeyDown}
+                    placeholder="Scan kode seri ke kotak ini..."
+                    disabled={serialLoading || isSubmitting}
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    className="ks-btn ks-btn-primary"
+                    onClick={() => handleScanSerial()}
+                    disabled={serialLoading || isSubmitting || !serialScanValue.trim()}
+                  >
+                    {isSubmitting ? "Menyimpan..." : "Submit"}
+                  </button>
+                </div>
 
-          <div className="gudang-ui-form-actions">
-            <button className="gudang-ui-button-secondary" type="button" onClick={resetSession}>
-              Reset Sesi
-            </button>
-          </div>
-        </section>
-      </div>
+                {scanMessage && (
+                  <div className="opname-callout opname-callout-info" style={{ marginTop: 12 }}>
+                    {scanMessage}
+                  </div>
+                )}
 
-      <section className="gudang-ui-panel" style={{ marginTop: 20 }}>
-        <div className="gudang-ui-section-head">
-          <div>
-            <h2>Riwayat Stok Masuk Terbaru</h2>
-            <p>Stok awal tersimpan sebagai stok masuk pada lokasi yang dipilih.</p>
+                <div className="opname-scanned-list">
+                  <div className="opname-scanned-header">
+                    <h3>
+                      Seri yang masuk di sesi ini ({scannedRows.length} qty)
+                    </h3>
+                  </div>
+                  {scannedRows.length === 0 ? (
+                    <div className="opname-empty" style={{ padding: "20px" }}>
+                      Belum ada seri yang di-scan pada sesi ini.
+                    </div>
+                  ) : (
+                    <ul className="opname-scanned-items" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {scannedRows.map((row) => (
+                        <li key={row.id} className="opname-scanned-item" style={{ padding: "8px 12px", borderBottom: "1px solid var(--ks-line)" }}>
+                          <FaCheckCircle style={{ color: "var(--ks-safe)", marginRight: "8px" }} />
+                          {row.nomorSeri} ({row.qty} pcs)
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 32 }}>
+                  <div className="opname-section-header">
+                    <h2>Riwayat Stok Masuk Terbaru</h2>
+                  </div>
+                  <GudangActivityTable
+                    rows={activityRows}
+                    resolveSlotLabel={(slotId) => allSlots.find((slot) => String(slot.id) === String(slotId))?.slotCode || "-"}
+                    resolveSkuLabel={(skuId) =>
+                      state.skus.find((sku) => String(sku.id) === String(skuId))?.label || skuId
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            
           </div>
         </div>
-        <GudangActivityTable
-          rows={activityRows}
-          resolveSlotLabel={(slotId) => allSlots.find((slot) => String(slot.id) === String(slotId))?.slotCode || "-"}
-          resolveSkuLabel={(skuId) =>
-            state.skus.find((sku) => String(sku.id) === String(skuId))?.label || skuId
-          }
-        />
       </section>
-    </GudangProdukBaseShell>
+    </div>
   );
 };
 

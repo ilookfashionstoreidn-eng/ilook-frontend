@@ -637,68 +637,18 @@ export const fetchOpnameProducts = async (params = {}) => {
  * @param {object|number|string} product
  */
 export const fetchOpnameSkus = async (product) => {
-  const workspace = await fetchGudangProdukWorkspace({ activityLimit: 0 });
-  const productListRows = await findProductListRowsForProduct(product);
-  const productListSkuKeys = new Set(
-    productListRows
-      .map((item) => normalizeProductListSkuKey(getProductListSkuName(item)))
-      .filter(Boolean)
-  );
-  const productListBySkuKey = new Map(
-    productListRows.map((item) => [
-      normalizeProductListSkuKey(getProductListSkuName(item)),
-      item,
-    ])
-  );
-  const slots = getAllSlots(workspace);
-  const slotsById = new Map(slots.map((slot) => [String(slot.id), slot]));
-  const layoutsById = new Map(
-    (workspace.layouts || []).map((layout) => [String(layout.id), layout])
-  );
-  const skusById = new Map(
-    (workspace.skus || []).map((sku) => [String(sku.id), sku])
-  );
+  if (!product) return [];
 
-  return (workspace.stockEntries || [])
-    .filter((entry) => Number(entry?.qty) > 0)
-    .map((entry) => {
-      const sku = skusById.get(String(entry?.skuId));
-      const skuKey = normalizeProductListSkuKey(sku?.code);
-      if (!sku || !productListSkuKeys.has(skuKey)) {
-        return null;
-      }
-
-      const productListItem = productListBySkuKey.get(skuKey) || {};
-      const slot = slotsById.get(String(entry?.slotId));
-      const layout = layoutsById.get(String(entry?.layoutId));
-      const variant = [
-        productListItem.product_colour,
-        productListItem.product_size,
-      ]
-        .filter(Boolean)
-        .join(" ");
-
-      return {
-        entryId: entry.id || `${entry.slotId}_${entry.skuId}`,
-        skuId: sku.id,
-        skuCode: sku.code,
-        warna: productListItem.product_colour || "",
-        ukuran: productListItem.product_size || "",
-        variant,
-        slotId: entry.slotId,
-        slotCode: slot?.alias || slot?.slotCode || entry.slotId,
-        layoutId: entry.layoutId,
-        layoutName: slot?.layoutName || layout?.name || "-",
-        qtyGudang: Number(entry.qty) || 0,
-        updatedAt: entry.updatedAt || null,
-      };
-    })
-    .filter(Boolean)
-    .sort((left, right) =>
-      String(left.skuCode).localeCompare(String(right.skuCode)) ||
-      String(left.layoutName).localeCompare(String(right.layoutName)) ||
-      String(left.slotCode).localeCompare(String(right.slotCode))
-    );
+  if (product.source === 'product-list' || String(product.id).startsWith('product-list:')) {
+    const response = await API.get(`/gudang-produk-workspace/opname/product-list-skus`, {
+      params: { product_name: product.name }
+    });
+    return Array.isArray(response?.data?.data) ? response.data.data : [];
+  } else {
+    if (!product.id) return [];
+    const response = await API.get(`/gudang-produk-workspace/opname/products/${product.id}/skus`);
+    return Array.isArray(response?.data?.data) ? response.data.data : [];
+  }
 };
 
 /**

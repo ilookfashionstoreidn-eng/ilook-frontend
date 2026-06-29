@@ -5,8 +5,8 @@ import React, {
   useRef,
   useState,
 } from "react";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "./StokOpnameGudang.css";
-import GudangProdukBaseShell from "./GudangProdukBaseShell";
 import {
   buildGudangWorkspaceErrorMessage,
   fetchOpnameProducts,
@@ -26,6 +26,7 @@ import {
   FaLayerGroup,
   FaMapMarkerAlt,
   FaArrowRight,
+  FaTrash,
 } from "react-icons/fa";
 import { FiPackage } from "react-icons/fi";
 
@@ -61,35 +62,34 @@ const getSizeSortValue = (size) => {
 
 // ─── Sub-Components ──────────────────────────────────────────────────────────
 
-const StepIndicator = ({ current }) => (
-  <div className="opname-steps">
-    {[
-      { num: 1, label: "Pilih Produk" },
-      { num: 2, label: "Pilih SKU" },
-      { num: 3, label: "Scan Seri" },
-    ].map(({ num, label }) => (
-      <React.Fragment key={num}>
-        <div
-          className={`opname-step ${
-            current === num
-              ? "active"
-              : current > num
-              ? "done"
-              : ""
-          }`}
-        >
-          <div className="opname-step-circle">
-            {current > num ? <FaCheckCircle size={14} /> : num}
-          </div>
-          <span>{label}</span>
-        </div>
-        {num < 3 && (
-          <div
-            className={`opname-step-line ${current > num ? "done" : ""}`}
-          />
-        )}
-      </React.Fragment>
-    ))}
+const STEP_ITEMS = [
+  { num: 1, label: "Pilih Produk", icon: FaBoxes },
+  { num: 2, label: "Pilih SKU", icon: FaLayerGroup },
+  { num: 3, label: "Scan Seri", icon: FaBarcode },
+];
+
+const StepSegment = ({ current, onJump }) => (
+  <div className="sog-tabbar">
+    <div className="ks-segment">
+      {STEP_ITEMS.map(({ num, label, icon: Icon }) => {
+        const done = current > num;
+        const reachable = num <= current;
+        return (
+          <button
+            key={num}
+            type="button"
+            className={`ks-seg-btn sog-seg-btn ${current === num ? "is-active" : ""} ${
+              done ? "is-done" : ""
+            }`}
+            disabled={!reachable}
+            onClick={() => reachable && onJump(num)}
+          >
+            {done ? <FaCheckCircle size={12} /> : <Icon size={12} />} {label}{" "}
+            <em>{num}</em>
+          </button>
+        );
+      })}
+    </div>
   </div>
 );
 
@@ -195,7 +195,7 @@ const SelectProductStep = ({ onSelect }) => {
           {!showAll && (
             <button
               type="button"
-              className="opname-btn opname-btn-secondary"
+              className="ks-btn"
               onClick={() => setShowAll(true)}
             >
               Tampilkan Semua Produk
@@ -237,12 +237,49 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError]         = useState("");
   const [search, setSearch]       = useState("");
+  const [activeRack, setActiveRack] = useState("Semua Rak");
+  const [deletingRowId, setDeletingRowId] = useState(null);
+
+  const getRackName = (slotCode) => {
+    if (!slotCode) return "Unknown";
+    return String(slotCode).split("/")[0];
+  };
+
+  const availableRacks = useMemo(() => {
+    const racks = new Set(skuRows.map(row => getRackName(row.slotCode)).filter(Boolean));
+    return ["Semua Rak", ...Array.from(racks).sort()];
+  }, [skuRows]);
+
+  const handleDeleteStock = async (e, row) => {
+    e.stopPropagation();
+    if (!window.confirm(`Hapus stok untuk ${row.skuCode} di lokasi ${row.slotCode}?`)) {
+      return;
+    }
+
+    setDeletingRowId(row.entryId);
+    try {
+      await commitOpname({
+        skuId: row.skuId,
+        slotId: String(row.slotId),
+        layoutId: row.layoutId,
+        scannedQty: 0,
+        scannedSeries: [],
+        notes: "Dihapus dari halaman opname",
+      });
+      setSkuRows((prev) => prev.filter((r) => r.entryId !== row.entryId));
+    } catch (err) {
+      alert(buildGudangWorkspaceErrorMessage(err, "Gagal menghapus stok."));
+    } finally {
+      setDeletingRowId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setError("");
     setSearch("");
+    setActiveRack("Semua Rak");
 
     fetchOpnameSkus(product)
       .then((data) => {
@@ -262,6 +299,10 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
   }, [product.id]);
 
   const filteredSkuRows = skuRows.filter((row) => {
+    if (activeRack !== "Semua Rak" && getRackName(row.slotCode) !== activeRack) {
+      return false;
+    }
+
     const term = search.trim().toLowerCase();
     if (!term) return true;
 
@@ -315,7 +356,7 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
 
       <button
         type="button"
-        className="opname-btn opname-btn-ghost opname-back-btn"
+        className="ks-btn opname-back-btn"
         onClick={onBack}
       >
         <FaChevronLeft /> Ganti Produk
@@ -331,7 +372,7 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
           <p>Produk ini belum memiliki stok di gudang.</p>
           <button
             type="button"
-            className="opname-btn opname-btn-secondary"
+            className="ks-btn"
             onClick={onBack}
           >
             <FaChevronLeft /> Kembali
@@ -339,6 +380,19 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
         </div>
       ) : (
         <>
+          <div className="opname-layout-tabs">
+            {availableRacks.map((rack) => (
+              <button
+                key={rack}
+                type="button"
+                className={`opname-layout-tab ${activeRack === rack ? "active" : ""}`}
+                onClick={() => setActiveRack(rack)}
+              >
+                {rack}
+              </button>
+            ))}
+          </div>
+
           <div className="opname-search-bar">
             <FaSearch className="opname-search-icon" />
             <input
@@ -394,8 +448,23 @@ const SelectSkuStep = ({ product, onSelect, onBack }) => {
                             {row.layoutName} — {row.slotCode}
                           </span>
                         </span>
-                        <span className="opname-sku-qty">
-                          Stok: <strong>{row.qtyGudang}</strong>
+                        <span className="opname-sku-qty-container">
+                          {row.isOpnamed ? (
+                            <span className="opname-badge-done">Sudah Diopname</span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="ks-btn sog-del-btn"
+                              onClick={(e) => handleDeleteStock(e, row)}
+                              disabled={deletingRowId === row.entryId}
+                              title="Hapus stok ini"
+                            >
+                              {deletingRowId === row.entryId ? "Menghapus..." : <FaTrash />}
+                            </button>
+                          )}
+                          <span className="opname-sku-qty">
+                            Stok: <strong>{row.qtyGudang}</strong>
+                          </span>
                         </span>
                       </button>
                     ))}
@@ -507,7 +576,7 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
       <div className="opname-scan-header">
         <button
           type="button"
-          className="opname-btn opname-btn-ghost opname-back-btn"
+          className="ks-btn opname-back-btn"
           onClick={onBack}
           disabled={isCommitting}
         >
@@ -579,7 +648,7 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
           />
           <button
             type="button"
-            className="opname-btn opname-btn-scan"
+            className="ks-btn is-primary"
             onClick={() => handleScan(inputValue)}
             disabled={!inputValue.trim() || isCommitting}
           >
@@ -618,7 +687,7 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
             Daftar Seri ({scannedCount})
             <button
               type="button"
-              className="opname-btn opname-btn-ghost opname-reset-mini"
+              className="ks-btn opname-reset-mini"
               onClick={handleReset}
               disabled={isCommitting}
             >
@@ -654,7 +723,7 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
       <div className="opname-action-bar">
         <button
           type="button"
-          className="opname-btn opname-btn-secondary"
+          className="ks-btn"
           onClick={handleReset}
           disabled={isCommitting || scannedCount === 0}
         >
@@ -663,7 +732,7 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
         <button
           type="button"
           id="opname-commit-btn"
-          className="opname-btn opname-btn-primary"
+          className="ks-btn is-primary"
           onClick={handleCommit}
           disabled={isCommitting}
         >
@@ -730,7 +799,7 @@ const ResultScreen = ({ result, onNewOpname }) => (
     <button
       type="button"
       id="opname-new-btn"
-      className="opname-btn opname-btn-primary opname-result-cta"
+      className="ks-btn is-primary opname-result-cta"
       onClick={onNewOpname}
     >
       <FaRedo /> Opname Produk Lain
@@ -779,6 +848,12 @@ const StokOpnameGudang = () => {
     setSelectedSkuRow(null);
   };
 
+  const handleJumpStep = (num) => {
+    if (num === STEP_SELECT_PRODUCT) handleBackToProduct();
+    else if (num === STEP_SELECT_SKU) handleBackToSku();
+    // num === current step → no-op
+  };
+
   const statusLabel = result
     ? "Opname Selesai"
     : step === STEP_SELECT_PRODUCT
@@ -787,38 +862,84 @@ const StokOpnameGudang = () => {
     ? "Langkah 2 dari 3"
     : "Langkah 3 dari 3";
 
-  return (
-    <GudangProdukBaseShell
-      title="Stok Opname"
-      subtitle="Lakukan penyesuaian stok gudang berdasarkan scan seri fisik satu per satu."
-      icon={FaClipboardCheck}
-      statusLabel={statusLabel}
-    >
-      <div className="opname-page">
-        {!result && <StepIndicator current={step} />}
+  const inProgress = !result && (selectedProduct || selectedSkuRow);
 
-        <div className="opname-body">
-          {result ? (
-            <ResultScreen result={result} onNewOpname={handleNewOpname} />
-          ) : step === STEP_SELECT_PRODUCT ? (
-            <SelectProductStep onSelect={handleSelectProduct} />
-          ) : step === STEP_SELECT_SKU ? (
-            <SelectSkuStep
-              product={selectedProduct}
-              onSelect={handleSelectSku}
-              onBack={handleBackToProduct}
-            />
-          ) : (
-            <ScanStep
-              product={selectedProduct}
-              skuRow={selectedSkuRow}
-              onBack={handleBackToSku}
-              onDone={handleDone}
-            />
+  return (
+    <div className="ks-page sog-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Stok Opname</h1>
+          <span className="ks-header-sub">
+            Penyesuaian stok gudang berdasarkan scan seri fisik satu per satu.
+          </span>
+        </div>
+        <div className="ks-header-actions">
+          <span className={`sog-status-pill ${result ? "is-done" : ""}`}>
+            <span className="sog-status-dot" />
+            {statusLabel}
+          </span>
+          {(inProgress || result) && (
+            <button type="button" className="ks-btn" onClick={handleNewOpname}>
+              <FaRedo /> Mulai Ulang
+            </button>
           )}
         </div>
+      </header>
+
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Langkah</span>
+          <span className="ks-stat-value">{result ? 3 : step}/3</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Produk</span>
+          <span className="ks-stat-value" title={selectedProduct?.name || ""}>
+            {selectedProduct?.name || "—"}
+          </span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">SKU / Lokasi</span>
+          <span className="ks-stat-value">
+            {selectedSkuRow
+              ? `${selectedSkuRow.skuCode} · ${selectedSkuRow.slotCode}`
+              : "—"}
+          </span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Status</span>
+          <span className={`ks-stat-value ${result ? "tone-safe" : ""}`}>
+            {result ? "Selesai" : "Proses"}
+          </span>
+        </div>
       </div>
-    </GudangProdukBaseShell>
+
+      {!result && <StepSegment current={step} onJump={handleJumpStep} />}
+
+      <section className="ks-board sog-board">
+        <div className="sog-scroll">
+          <div className="opname-page">
+            {result ? (
+              <ResultScreen result={result} onNewOpname={handleNewOpname} />
+            ) : step === STEP_SELECT_PRODUCT ? (
+              <SelectProductStep onSelect={handleSelectProduct} />
+            ) : step === STEP_SELECT_SKU ? (
+              <SelectSkuStep
+                product={selectedProduct}
+                onSelect={handleSelectSku}
+                onBack={handleBackToProduct}
+              />
+            ) : (
+              <ScanStep
+                product={selectedProduct}
+                skuRow={selectedSkuRow}
+                onBack={handleBackToSku}
+                onDone={handleDone}
+              />
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 };
 

@@ -25,13 +25,17 @@ API.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("foto");
-      localStorage.removeItem("loginTimestamp"); // Hapus timestamp login
-      window.location.href = "/";
+      // Prevent reload if the 401 is from a login request
+      const isLoginRequest = error.config && error.config.url && error.config.url.endsWith('login');
+      if (!isLoginRequest) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("role");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("foto");
+        localStorage.removeItem("loginTimestamp"); // Hapus timestamp login
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   }
