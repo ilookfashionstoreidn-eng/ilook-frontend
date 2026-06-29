@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import "../Produk/ProductList.css";
 import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import API from "../../api";
+import Select from "react-select";
 import {
   FaImage,
   FaPrint,
@@ -534,7 +535,6 @@ const fetchLegacyBahanGroups = async () => {
 const BahanList = () => {
   const [bahanGroups, setBahanGroups] = useState([]);
   const [selectedBahanKey, setSelectedBahanKey] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastSyncAt, setLastSyncAt] = useState(null);
@@ -573,27 +573,18 @@ const BahanList = () => {
     loadData();
   }, [loadData]);
 
-  const filteredBahanGroups = useMemo(() => {
-    const query = normalizeText(searchTerm);
-    if (!query) return bahanGroups;
-
-    return bahanGroups.filter((group) =>
-      normalizeText(group.nama_bahan_list?.join(" ")).includes(query)
-    );
-  }, [bahanGroups, searchTerm]);
-
   useEffect(() => {
-    if (filteredBahanGroups.length === 0) {
+    if (bahanGroups.length === 0) {
       setSelectedBahanKey("");
       return;
     }
 
     setSelectedBahanKey((currentKey) =>
-      filteredBahanGroups.some((group) => group.key === currentKey)
+      bahanGroups.some((group) => group.key === currentKey)
         ? currentKey
-        : filteredBahanGroups[0].key
+        : bahanGroups[0].key
     );
-  }, [filteredBahanGroups]);
+  }, [bahanGroups]);
 
   const selectedMaterial = useMemo(
     () => bahanGroups.find((group) => group.key === selectedBahanKey) || null,
@@ -659,20 +650,20 @@ const BahanList = () => {
             dipesan, dan grand total per warna.
           </p>
         </div>
-        <div className="ks-header-stats">
-          <div className="ks-stat-item">
-            <span className="ks-stat-label">Terakhir Sinkron</span>
-            <span className="ks-stat-value">{formatDateTime(lastSyncAt)}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Terakhir Sinkron</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{formatDateTime(lastSyncAt)}</span>
           </div>
           {selectedMaterial && (
-            <div className="ks-stat-item">
-              <span className="ks-stat-label">Group Terpilih</span>
-              <span className="ks-stat-value">{selectedMaterial.group_bahan}</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+              <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Group Terpilih</span>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{selectedMaterial.group_bahan}</span>
             </div>
           )}
-          <div className="ks-stat-item">
-            <span className="ks-stat-label">Total Warna</span>
-            <span className="ks-stat-value">{visibleRows.length} warna</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Warna</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{visibleRows.length} warna</span>
           </div>
         </div>
       </header>
@@ -680,40 +671,39 @@ const BahanList = () => {
       <section className="ks-board">
         <div className="ks-toolbar">
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
-            <div className="ks-search" style={{ flex: 1, minWidth: "200px" }}>
-              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Cari warna..."
-                style={{ paddingLeft: "30px", width: "100%" }}
+            <div style={{ flex: 1, minWidth: "300px" }}>
+              <Select
+                value={bahanGroups.length > 0 ? { value: selectedBahanKey, label: selectedMaterial ? `${selectedMaterial.group_bahan} (${selectedMaterial.total_warna} warna)` : "Pilih Group Bahan..." } : null}
+                onChange={(option) => setSelectedBahanKey(option ? option.value : "")}
+                isDisabled={loading || bahanGroups.length === 0}
+                placeholder="Cari nama bahan atau group..."
+                options={bahanGroups.map((group) => ({
+                  value: group.key,
+                  label: `${group.group_bahan} (${group.total_warna} warna)`,
+                  group_bahan: group.group_bahan,
+                  nama_bahan_list: group.nama_bahan_list,
+                }))}
+                filterOption={(option, inputValue) => {
+                  const query = inputValue.toLowerCase();
+                  if (!query) return true;
+                  const groupMatch = option.data.group_bahan?.toLowerCase().includes(query);
+                  const listMatch = option.data.nama_bahan_list?.join(" ").toLowerCase().includes(query);
+                  return groupMatch || listMatch;
+                }}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: "36px",
+                    borderRadius: "6px",
+                    borderColor: "#e2e8f0",
+                    fontSize: "13px",
+                    boxShadow: "none",
+                    "&:hover": { borderColor: "#cbd5e1" }
+                  }),
+                  menu: (base) => ({ ...base, fontSize: "13px", zIndex: 100 })
+                }}
               />
-              {searchTerm && (
-                <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
-                  <FaTimes />
-                </button>
-              )}
             </div>
-
-            <select
-              value={selectedBahanKey}
-              onChange={(event) => setSelectedBahanKey(event.target.value)}
-              disabled={loading || bahanGroups.length === 0}
-              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none", minWidth: "250px" }}
-            >
-              {bahanGroups.length === 0 ? (
-                <option value="">Tidak ada data group bahan</option>
-              ) : filteredBahanGroups.length === 0 ? (
-                <option value="">Group bahan tidak ditemukan</option>
-              ) : (
-                filteredBahanGroups.map((group) => (
-                  <option key={group.key} value={group.key}>
-                    {group.group_bahan} ({group.total_warna} warna)
-                  </option>
-                ))
-              )}
-            </select>
           </div>
           
           <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
@@ -744,7 +734,7 @@ const BahanList = () => {
           <div style={{ padding: "40px", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
         ) : !selectedMaterial ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>
-            {searchTerm ? "Group bahan tidak ditemukan." : "Belum ada data group bahan yang bisa ditampilkan."}
+            {"Belum ada data group bahan yang bisa ditampilkan."}
           </div>
         ) : (
           <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap", padding: "16px" }}>
