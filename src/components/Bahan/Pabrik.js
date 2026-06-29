@@ -1,43 +1,20 @@
 import React, { useEffect, useState } from "react";
 import API from "../../api";
-import "./Pabrik.css";
-import {
-  FaPlus,
-  FaEdit,
-  FaEye,
-  FaBuilding,
-  FaUpload,
-  FaTrash,
-  FaSearch,
-  FaIdCard,
-  FaPhoneAlt,
-  FaMapMarkerAlt,
-  FaTimes,
-  FaExclamationTriangle,
-} from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { FaPlus, FaEdit, FaEye, FaSearch, FaTimes, FaSave, FaUpload, FaTrash } from "react-icons/fa";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import "../Produk/ProductList.css";
 
-const PabrikList = () => {
+const Pabrik = () => {
   const [pabriks, setPabriks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [selectedPabrik, setSelectedPabrik] = useState(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
-
-  const [newPabrik, setNewPabrik] = useState({
-    nama_pabrik: "",
-    lokasi: "",
-    kontak: "",
-    ktp: null,
-  });
-
-  const [editPabrik, setEditPabrik] = useState({
+  
+  const [modalMode, setModalMode] = useState(null); // 'add' or 'edit'
+  const [form, setForm] = useState({
     id: null,
     nama_pabrik: "",
     lokasi: "",
@@ -46,141 +23,39 @@ const PabrikList = () => {
     ktp_path: "",
   });
 
-  const [newFileName, setNewFileName] = useState("");
-  const [editFileName, setEditFileName] = useState("");
+  const fetchPabriks = async () => {
+    try {
+      setLoading(true);
+      const response = await API.get("/pabrik");
+      setPabriks(response.data);
+    } catch (err) {
+      setError("Gagal memuat data pabrik.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPabriks = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get("/pabrik");
-        setPabriks(response.data);
-      } catch (err) {
-        setError("Gagal memuat data pabrik.");
-        toast.error("Gagal memuat data pabrik.");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPabriks();
   }, []);
 
-  const filteredPabriks = pabriks.filter((p) => p.nama_pabrik.toLowerCase().includes(searchTerm.toLowerCase()));
-  const totalPabrik = pabriks.length;
-  const withContact = pabriks.filter((p) => Boolean(p.kontak && p.kontak.trim())).length;
-  const withKtp = pabriks.filter((p) => Boolean(p.ktp)).length;
+  const filteredPabriks = pabriks.filter((p) =>
+    p.nama_pabrik.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (showEditForm) {
-      setEditPabrik((prev) => ({ ...prev, [name]: value }));
-    } else {
-      setNewPabrik((prev) => ({ ...prev, [name]: value }));
-    }
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (showEditForm) {
-        setEditPabrik((prev) => ({ ...prev, ktp: file }));
-        setEditFileName(file.name);
-      } else {
-        setNewPabrik((prev) => ({ ...prev, ktp: file }));
-        setNewFileName(file.name);
-      }
-    }
+    setForm((prev) => ({ ...prev, ktp: file }));
   };
 
-  const handleRemoveFile = () => {
-    if (showEditForm) {
-      setEditPabrik((prev) => ({ ...prev, ktp: null }));
-      setEditFileName("");
-    } else {
-      setNewPabrik((prev) => ({ ...prev, ktp: null }));
-      setNewFileName("");
-    }
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("nama_pabrik", newPabrik.nama_pabrik);
-    if (newPabrik.lokasi) formData.append("lokasi", newPabrik.lokasi);
-    if (newPabrik.kontak) formData.append("kontak", newPabrik.kontak);
-    if (newPabrik.ktp) formData.append("ktp", newPabrik.ktp);
-
-    try {
-      const response = await API.post("/pabrik", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setPabriks((prev) => [...prev, response.data]);
-      setNewFileName("");
-      resetAndCloseForm();
-      toast.success("Pabrik berhasil ditambahkan!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Gagal menambah pabrik.");
-      console.error(err);
-    }
-  };
-
-  const handleFormUpdate = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("nama_pabrik", editPabrik.nama_pabrik);
-    if (editPabrik.lokasi) formData.append("lokasi", editPabrik.lokasi);
-    if (editPabrik.kontak) formData.append("kontak", editPabrik.kontak);
-    if (editPabrik.ktp) formData.append("ktp", editPabrik.ktp);
-    formData.append("_method", "PUT");
-
-    try {
-      const response = await API.post(`/pabrik/${editPabrik.id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setPabriks((prev) => prev.map((p) => (p.id === editPabrik.id ? response.data : p)));
-      setEditFileName("");
-      resetAndCloseForm();
-      toast.success("Pabrik berhasil diperbarui!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Gagal memperbarui pabrik.");
-      console.error(err);
-    }
-  };
-
-  const openDeleteModal = (pabrik) => {
-    setItemToDelete(pabrik);
-    setShowDeleteModal(true);
-  };
-
-  const closeDeleteModal = () => {
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  };
-
-  const handleDeletePabrik = async () => {
-    if (!itemToDelete) return;
-
-    try {
-      await API.delete(`/pabrik/${itemToDelete.id}`);
-      setPabriks((prev) => prev.filter((p) => p.id !== itemToDelete.id));
-
-      if (selectedPabrik?.id === itemToDelete.id) {
-        closeDetail();
-      }
-
-      closeDeleteModal();
-      toast.success("Data pabrik berhasil dihapus.");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Gagal menghapus data pabrik.");
-      console.error(err);
-    }
-  };
-
-  const resetAndCloseForm = () => {
-    setNewPabrik({ nama_pabrik: "", lokasi: "", kontak: "", ktp: null });
-    setEditPabrik({
+  const openAddModal = () => {
+    setForm({
       id: null,
       nama_pabrik: "",
       lokasi: "",
@@ -188,14 +63,11 @@ const PabrikList = () => {
       ktp: null,
       ktp_path: "",
     });
-    setNewFileName("");
-    setEditFileName("");
-    setShowForm(false);
-    setShowEditForm(false);
+    setModalMode("add");
   };
 
-  const handleEditClick = (pabrik) => {
-    setEditPabrik({
+  const openEditModal = (pabrik) => {
+    setForm({
       id: pabrik.id,
       nama_pabrik: pabrik.nama_pabrik,
       lokasi: pabrik.lokasi || "",
@@ -203,365 +75,298 @@ const PabrikList = () => {
       ktp: null,
       ktp_path: pabrik.ktp || "",
     });
-    setEditFileName("");
-    setShowEditForm(true);
+    setModalMode("edit");
+  };
+
+  const closeModal = (force = false) => {
+    if (saving && !force) return;
+    setModalMode(null);
+  };
+
+  const getApiErrorMessage = (err, defaultMsg) => {
+    return err.response?.data?.message || defaultMsg;
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("nama_pabrik", form.nama_pabrik);
+    if (form.lokasi) formData.append("lokasi", form.lokasi);
+    if (form.kontak) formData.append("kontak", form.kontak);
+    if (form.ktp) formData.append("ktp", form.ktp);
+
+    if (modalMode === "edit") {
+      formData.append("_method", "PUT");
+    }
+
+    try {
+      setSaving(true);
+      if (modalMode === "add") {
+        await API.post("/pabrik", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        await Swal.fire({ icon: "success", title: "Berhasil", text: "Pabrik berhasil ditambahkan." });
+      } else if (modalMode === "edit") {
+        await API.post(`/pabrik/${form.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        await Swal.fire({ icon: "success", title: "Berhasil", text: "Pabrik berhasil diperbarui." });
+      }
+      closeModal(true);
+      fetchPabriks();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Gagal Menyimpan", text: getApiErrorMessage(err, "Data gagal disimpan.") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDetailClick = (pabrik) => {
-    setSelectedPabrik(pabrik);
-    setIsDetailOpen(true);
+    const ktpUrl = getKtpUrl(pabrik.ktp);
+    let htmlContent = `
+      <div style="text-align: left; font-size: 14px; line-height: 1.6;">
+        <p><strong>ID:</strong> ${pabrik.id}</p>
+        <p><strong>Nama Pabrik:</strong> ${pabrik.nama_pabrik}</p>
+        <p><strong>Lokasi:</strong> ${pabrik.lokasi || "-"}</p>
+        <p><strong>Kontak:</strong> ${pabrik.kontak || "-"}</p>
+      </div>
+    `;
+
+    if (ktpUrl) {
+      htmlContent += `
+        <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+          <p style="margin-bottom: 8px;"><strong>KTP:</strong></p>
+          <a href="${ktpUrl}" target="_blank" style="display: block;">
+            <img src="${ktpUrl}" alt="KTP Pabrik" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"/>
+            <span style="display: none; color: #2563eb; text-decoration: underline;">Lihat KTP Document</span>
+          </a>
+        </div>
+      `;
+    }
+
+    Swal.fire({
+      title: "Detail Pabrik",
+      html: htmlContent,
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#3b82f6",
+      width: 500
+    });
   };
 
-  const closeDetail = () => {
-    setIsDetailOpen(false);
-    setSelectedPabrik(null);
+  const handleDelete = async (pabrik) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Hapus Pabrik?",
+      text: `Data "${pabrik.nama_pabrik}" akan dihapus permanen.`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#be123c",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await API.delete(`/pabrik/${pabrik.id}`);
+      await fetchPabriks();
+      Swal.fire({ icon: "success", title: "Terhapus", text: "Pabrik berhasil dihapus." });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Gagal Menghapus", text: getApiErrorMessage(err, "Pabrik gagal dihapus.") });
+    }
   };
 
   const getKtpUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
-    const base = (process.env.REACT_APP_API_URL || "").replace(/\/api\/?$/, "");
-    return `${base}/storage/${path}`;
+    return `${process.env.REACT_APP_FILE_URL || ""}/storage/${path}`;
+  };
+
+  const renderModal = () => {
+    if (!modalMode) return null;
+    return (
+      <div className="product-list-modal-backdrop" onClick={() => closeModal()}>
+        <form className="product-list-modal" onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()}>
+          <div className="product-list-modal-header">
+            <div>
+              <p className="product-list-modal-kicker">Data Pabrik</p>
+              <h2>{modalMode === "add" ? "Tambah Pabrik Baru" : "Edit Pabrik"}</h2>
+            </div>
+            <button className="product-list-icon-button" type="button" onClick={() => closeModal()} disabled={saving}>
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="product-list-form-section">
+            <div className="product-list-form-grid">
+              <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                <span>Nama Pabrik *</span>
+                <input
+                  type="text"
+                  name="nama_pabrik"
+                  value={form.nama_pabrik}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan nama pabrik"
+                  required
+                  disabled={saving}
+                />
+              </label>
+
+              <label className="product-list-field">
+                <span>Lokasi</span>
+                <input
+                  type="text"
+                  name="lokasi"
+                  value={form.lokasi}
+                  onChange={handleInputChange}
+                  placeholder="Lokasi pabrik"
+                  disabled={saving}
+                />
+              </label>
+
+              <label className="product-list-field">
+                <span>Kontak</span>
+                <input
+                  type="text"
+                  name="kontak"
+                  value={form.kontak}
+                  onChange={handleInputChange}
+                  placeholder="No. HP / Telepon"
+                  disabled={saving}
+                />
+              </label>
+
+              <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                <span>Upload KTP (Opsional)</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleFileChange}
+                    disabled={saving}
+                    style={{ padding: "8px", border: "1px dashed #cbd5e1", borderRadius: "6px", cursor: "pointer" }}
+                  />
+                  {form.ktp_path && (
+                    <div style={{ fontSize: "12px", color: "#64748b", display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span>KTP saat ini:</span>
+                      <a href={getKtpUrl(form.ktp_path)} target="_blank" rel="noopener noreferrer" style={{ color: "#3b82f6", textDecoration: "underline" }}>
+                        Lihat File
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div className="product-list-modal-actions">
+            <button className="product-list-ghost-button" type="button" onClick={() => closeModal()} disabled={saving}>
+              Batal
+            </button>
+            <button className="product-list-primary-button" type="submit" disabled={saving}>
+              <FaSave /> {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
   };
 
   return (
-    <div className="pabrik-page">
-      <ToastContainer position="top-right" autoClose={2500} hideProgressBar theme="colored" />
-
-      <header className="pabrik-header">
-        <div className="pabrik-title-group">
-          <div className="pabrik-header-icon">
-            <FaBuilding />
-          </div>
-          <div>
-            <h1>Master Data Pabrik</h1>
-            <p>Kelola data pabrik pemasok, kontak operasional, dan dokumen pendukung.</p>
-          </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Pabrik</h1>
+          <span className="ks-header-sub">{pabriks.length} pabrik terdaftar — Kelola data identitas dan kontak pabrik/vendor CMT</span>
         </div>
-        <button className="pabrik-btn-add" onClick={() => setShowForm(true)}>
-          <FaPlus /> Tambah Pabrik
-        </button>
       </header>
 
-      <section className="pabrik-kpi-grid">
-        <article className="pabrik-kpi-card">
-          <span>Total Pabrik</span>
-          <strong>{totalPabrik}</strong>
-          <p>Data terdaftar di sistem</p>
-        </article>
-        <article className="pabrik-kpi-card">
-          <span>Kontak Tersedia</span>
-          <strong>{withContact}</strong>
-          <p>Siap dihubungi tim procurement</p>
-        </article>
-        <article className="pabrik-kpi-card">
-          <span>Dokumen KTP</span>
-          <strong>{withKtp}</strong>
-          <p>File identitas sudah diunggah</p>
-        </article>
-      </section>
-
-      <section className="pabrik-table-container">
-        <div className="pabrik-filter-header">
-          <div className="pabrik-table-title">
-            <h2>Daftar Pabrik</h2>
-            <p>{filteredPabriks.length} data ditampilkan</p>
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari nama pabrik..."
+                style={{ paddingLeft: "30px" }}
+              />
+              {searchTerm && (
+                <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="pabrik-search-bar">
-            <FaSearch className="pabrik-search-icon" />
-            <input type="text" placeholder="Cari nama pabrik..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <div className="ks-toolbar-actions">
+            <button className="ks-action-btn primary" onClick={openAddModal}>
+              <FaPlus /> Tambah Pabrik
+            </button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="pabrik-state">
-            <p className="pabrik-loading">Memuat data pabrik...</p>
-          </div>
-        ) : error ? (
-          <div className="pabrik-state">
-            <p className="pabrik-error">{error}</p>
-          </div>
-        ) : filteredPabriks.length === 0 ? (
-          <div className="pabrik-state">
-            <p className="pabrik-loading">Belum ada data pabrik yang sesuai pencarian.</p>
-          </div>
-        ) : (
-          <table className="pabrik-table">
-            <thead>
-              <tr>
-                <th>Nomor</th>
-                <th>Nama Pabrik</th>
-                <th>Lokasi</th>
-                <th>Kontak</th>
-                <th>Dokumen KTP</th>
-                <th style={{ textAlign: "right" }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPabriks.map((pabrik, index) => (
-                <tr key={pabrik.id}>
-                  <td className="pabrik-id-cell">{index + 1}</td>
-                  <td>
-                    <div className="pabrik-name-cell">
-                      <span>{pabrik.nama_pabrik}</span>
-                    </div>
-                  </td>
-                  <td>{pabrik.lokasi || "-"}</td>
-                  <td>{pabrik.kontak || "-"}</td>
-                  <td>
-                    {pabrik.ktp ? (
-                      <button
-                        type="button"
-                        className="pabrik-btn-icon download"
-                        onClick={() => {
-                          const url = getKtpUrl(pabrik.ktp);
-                          if (url) window.open(url, "_blank", "noopener,noreferrer");
-                        }}
-                      >
-                        <FaIdCard /> Lihat
-                      </button>
-                    ) : (
-                      <span className="pabrik-empty-mark">Tidak ada</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="pabrik-actions">
-                      <button className="pabrik-btn-icon view" onClick={() => handleDetailClick(pabrik)} title="Detail">
-                        <FaEye />
-                      </button>
-                      <button className="pabrik-btn-icon edit" onClick={() => handleEditClick(pabrik)} title="Edit">
-                        <FaEdit />
-                      </button>
-                      <button className="pabrik-btn-icon delete" onClick={() => openDeleteModal(pabrik)} title="Hapus">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
+        <div className="pl-table-wrapper">
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Memuat data...</div>
+          ) : error ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#ef4444" }}>{error}</div>
+          ) : filteredPabriks.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Belum ada data pabrik.</div>
+          ) : (
+            <table className="pl-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama Pabrik</th>
+                  <th>Lokasi</th>
+                  <th>Kontak</th>
+                  <th>KTP</th>
+                  <th style={{ width: "120px", textAlign: "center" }}>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {filteredPabriks.map((pabrik) => (
+                  <tr key={pabrik.id}>
+                    <td>{pabrik.id}</td>
+                    <td><strong>{pabrik.nama_pabrik}</strong></td>
+                    <td>{pabrik.lokasi || "-"}</td>
+                    <td>{pabrik.kontak || "-"}</td>
+                    <td>
+                      {pabrik.ktp ? (
+                        <a href={getKtpUrl(pabrik.ktp)} target="_blank" rel="noopener noreferrer" style={{ color: "#3b82f6", textDecoration: "underline", fontSize: "13px" }}>
+                          Lihat KTP
+                        </a>
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>-</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="pl-table-actions" style={{ justifyContent: "center" }}>
+                        <button className="product-list-icon-button" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
+                          <FaEye />
+                        </button>
+                        <button className="product-list-icon-button" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
+                          <FaEdit />
+                        </button>
+                        <button className="product-list-icon-button" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik" style={{ color: "#ef4444" }}>
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </section>
 
-      {showForm && (
-        <div className="pabrik-modal" onClick={resetAndCloseForm}>
-          <div className="pabrik-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="pabrik-modal-header">
-              <div>
-                <h2>Tambah Pabrik Baru</h2>
-                <p>Isi data pabrik untuk menambah master data supplier.</p>
-              </div>
-              <button type="button" className="pabrik-close-btn" onClick={resetAndCloseForm} title="Tutup">
-                <FaTimes />
-              </button>
-            </div>
-            <form onSubmit={handleFormSubmit} className="pabrik-form">
-              <div className="pabrik-form-group">
-                <label>Nama Pabrik *</label>
-                <input type="text" name="nama_pabrik" value={newPabrik.nama_pabrik} onChange={handleInputChange} placeholder="Masukkan nama pabrik" required />
-              </div>
-              <div className="pabrik-form-row">
-                <div className="pabrik-form-group">
-                  <label>Lokasi</label>
-                  <input type="text" name="lokasi" value={newPabrik.lokasi} onChange={handleInputChange} placeholder="Alamat lokasi pabrik" />
-                </div>
-                <div className="pabrik-form-group">
-                  <label>Kontak</label>
-                  <input type="text" name="kontak" value={newPabrik.kontak} onChange={handleInputChange} placeholder="Nomor telepon / WhatsApp" />
-                </div>
-              </div>
-              <div className="pabrik-form-group">
-                <label>Upload KTP (opsional)</label>
-                <div className="file-upload-wrapper">
-                  <div className={`file-upload-area ${newFileName ? "has-file" : ""}`}>
-                    <div className="file-upload-icon">
-                      <FaUpload />
-                    </div>
-                    <div className="file-upload-text">Upload File</div>
-                    <div className="file-upload-hint">JPG, PNG, atau PDF (Max 5MB)</div>
-                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} className="file-upload-input" />
-                  </div>
-                  {newFileName && (
-                    <div className="uploaded-file">
-                      <span className="uploaded-file-name">{newFileName}</span>
-                      <button type="button" onClick={handleRemoveFile} className="pabrik-btn pabrik-btn-danger" title="Hapus file">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="pabrik-form-actions">
-                <button type="submit" className="pabrik-btn pabrik-btn-primary">
-                  Simpan
-                </button>
-                <button type="button" onClick={resetAndCloseForm} className="pabrik-btn pabrik-btn-secondary">
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditForm && (
-        <div className="pabrik-modal" onClick={resetAndCloseForm}>
-          <div className="pabrik-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="pabrik-modal-header">
-              <div>
-                <h2>Edit Pabrik</h2>
-                <p>Perbarui data pabrik tanpa mengubah histori transaksi.</p>
-              </div>
-              <button type="button" className="pabrik-close-btn" onClick={resetAndCloseForm} title="Tutup">
-                <FaTimes />
-              </button>
-            </div>
-            <form onSubmit={handleFormUpdate} className="pabrik-form">
-              <div className="pabrik-form-group">
-                <label>Nama Pabrik *</label>
-                <input type="text" name="nama_pabrik" value={editPabrik.nama_pabrik} onChange={handleInputChange} placeholder="Masukkan nama pabrik" required />
-              </div>
-              <div className="pabrik-form-row">
-                <div className="pabrik-form-group">
-                  <label>Lokasi</label>
-                  <input type="text" name="lokasi" value={editPabrik.lokasi} onChange={handleInputChange} placeholder="Alamat lokasi pabrik" />
-                </div>
-                <div className="pabrik-form-group">
-                  <label>Kontak</label>
-                  <input type="text" name="kontak" value={editPabrik.kontak} onChange={handleInputChange} placeholder="Nomor telepon / WhatsApp" />
-                </div>
-              </div>
-              <div className="pabrik-form-group">
-                <label>Upload KTP Baru (opsional)</label>
-                <div className="file-upload-wrapper">
-                  <div className={`file-upload-area ${editFileName ? "has-file" : ""}`}>
-                    <div className="file-upload-icon">
-                      <FaUpload />
-                    </div>
-                    <div className="file-upload-text">Upload File</div>
-                    <div className="file-upload-hint">JPG, PNG, atau PDF (Max 5MB)</div>
-                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} className="file-upload-input" />
-                  </div>
-                  {editFileName && (
-                    <div className="uploaded-file">
-                      <span className="uploaded-file-name">{editFileName}</span>
-                      <button type="button" onClick={handleRemoveFile} className="pabrik-btn pabrik-btn-danger" title="Hapus file">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {editPabrik.ktp_path && !editFileName && (
-                  <div className="file-preview">
-                    <p>KTP saat ini:</p>
-                    <a href={getKtpUrl(editPabrik.ktp_path)} target="_blank" rel="noopener noreferrer">
-                      Lihat File
-                    </a>
-                  </div>
-                )}
-              </div>
-              <div className="pabrik-form-actions">
-                <button type="submit" className="pabrik-btn pabrik-btn-primary">
-                  Perbarui
-                </button>
-                <button type="button" onClick={resetAndCloseForm} className="pabrik-btn pabrik-btn-secondary">
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isDetailOpen && selectedPabrik && (
-        <div className="pabrik-modal" onClick={closeDetail}>
-          <div className="pabrik-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="pabrik-modal-header">
-              <div>
-                <h2>Detail Pabrik</h2>
-                <p>Ringkasan informasi legal dan operasional pabrik.</p>
-              </div>
-              <button type="button" className="pabrik-close-btn" onClick={closeDetail} title="Tutup">
-                <FaTimes />
-              </button>
-            </div>
-            <div className="pabrik-detail-grid">
-              <div className="pabrik-detail-item">
-                <strong>Nomor</strong>
-                <span>{selectedPabrik.id}</span>
-              </div>
-              <div className="pabrik-detail-item">
-                <strong>Nama Pabrik</strong>
-                <span>{selectedPabrik.nama_pabrik}</span>
-              </div>
-              <div className="pabrik-detail-item">
-                <strong>Lokasi</strong>
-                <span>{selectedPabrik.lokasi || <span className="pabrik-empty-mark">Tidak ada</span>}</span>
-              </div>
-              <div className="pabrik-detail-item">
-                <strong>Kontak</strong>
-                <span>{selectedPabrik.kontak || <span className="pabrik-empty-mark">Tidak ada</span>}</span>
-              </div>
-              <div className="pabrik-detail-item">
-                <strong>KTP</strong>
-                <span>
-                  {selectedPabrik.ktp ? (
-                    <a href={getKtpUrl(selectedPabrik.ktp)} target="_blank" rel="noopener noreferrer">
-                      Lihat Dokumen
-                    </a>
-                  ) : (
-                    <span className="pabrik-empty-mark">Tidak ada</span>
-                  )}
-                </span>
-              </div>
-            </div>
-            <div className="pabrik-detail-metadata">
-              <div>
-                <FaMapMarkerAlt />
-                <span>Lokasi terverifikasi jika alamat terisi lengkap.</span>
-              </div>
-              <div>
-                <FaPhoneAlt />
-                <span>Kontak digunakan untuk koordinasi operasional harian.</span>
-              </div>
-              <div>
-                <FaIdCard />
-                <span>Dokumen KTP mendukung validasi data mitra.</span>
-              </div>
-            </div>
-            <div className="pabrik-form-actions pabrik-detail-actions">
-              <button onClick={closeDetail} className="pabrik-btn pabrik-btn-secondary">
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && itemToDelete && (
-        <div className="pabrik-modal" onClick={closeDeleteModal}>
-          <div className="pabrik-modal-content pabrik-delete-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="pabrik-delete-icon">
-              <FaExclamationTriangle />
-            </div>
-            <h3>Konfirmasi Hapus Data</h3>
-            <p className="pabrik-delete-text">
-              Data pabrik <strong>{itemToDelete.nama_pabrik}</strong> akan dihapus permanen. Lanjutkan?
-            </p>
-            <div className="pabrik-delete-actions">
-              <button type="button" className="pabrik-btn pabrik-btn-secondary" onClick={closeDeleteModal}>
-                Batal
-              </button>
-              <button type="button" className="pabrik-btn pabrik-btn-danger-solid" onClick={handleDeletePabrik}>
-                Ya, Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderModal()}
     </div>
   );
 };
 
-export default PabrikList;
+export default Pabrik;
