@@ -14,54 +14,64 @@ const GudangProdukBaseShell = ({
   children,
 }) => {
   return (
-    <div className="gudang-ui-page">
-      <div className="gudang-ui-shell">
-        <header className="gudang-ui-topbar">
-          <div className="gudang-ui-title-group">
-            <div className="gudang-ui-brand-icon">{Icon ? <Icon /> : null}</div>
-            <div className="gudang-ui-title-wrap">
-              <span className="gudang-ui-module-pill">{moduleLabel}</span>
-              <h1>{title}</h1>
-              <p>{subtitle}</p>
-            </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {Icon && <Icon style={{ color: "#2458ce" }} />}
+            <h1>{title}</h1>
           </div>
+          <span className="ks-header-sub">{subtitle}</span>
+        </div>
 
-          <div className="gudang-ui-topbar-right">
-            {typeof onSearchChange === "function" ? (
-              <label className="gudang-ui-search-wrap">
-                <FiSearch className="gudang-ui-search-icon" />
-                <input
-                  className="gudang-ui-search-input"
-                  value={searchValue}
-                  onChange={(event) => onSearchChange(event.target.value)}
-                  placeholder={searchPlaceholder}
-                />
-              </label>
-            ) : null}
+        <div className="ks-header-actions">
+          {typeof onSearchChange === "function" ? (
+            <label className="ks-search" style={{ width: "250px", margin: 0 }}>
+              <FiSearch className="ks-search-icon" size={14} style={{ position: "absolute", left: "12px", color: "#94a3b8" }} />
+              <input
+                className="ks-search-input"
+                style={{ width: "100%", paddingLeft: "36px" }}
+                value={searchValue}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder={searchPlaceholder}
+              />
+            </label>
+          ) : null}
 
-            <span className="gudang-ui-status-pill">{statusLabel}</span>
+          {moduleLabel && (
+            <span style={{ fontSize: "11px", fontWeight: "700", padding: "4px 8px", background: "#f1f5f9", borderRadius: "6px", color: "#64748b" }}>
+              {moduleLabel}
+            </span>
+          )}
 
-            {headerActions.map((action) => {
-              const ActionIcon = action.icon;
-              return (
-                <button
-                  key={action.key || action.label}
-                  type="button"
-                  className={`gudang-ui-header-action ${action.variant || "secondary"}`}
-                  onClick={action.onClick}
-                  disabled={Boolean(action.disabled)}
-                  title={action.label}
-                >
-                  {ActionIcon ? <ActionIcon /> : null}
-                  <span>{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </header>
+          {statusLabel && (
+            <span style={{ fontSize: "11px", fontWeight: "700", padding: "4px 8px", background: "#ecfccb", borderRadius: "6px", color: "#3f6212" }}>
+              {statusLabel}
+            </span>
+          )}
 
-        <main className="gudang-ui-main">{children}</main>
-      </div>
+          {headerActions.map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <button
+                key={action.key || action.label}
+                type="button"
+                className={`ks-btn ${action.variant === "primary" ? "is-primary" : "is-secondary"}`}
+                onClick={action.onClick}
+                disabled={Boolean(action.disabled)}
+                title={action.label}
+              >
+                {ActionIcon && <ActionIcon />}
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      <main style={{ flex: 1, padding: "24px", overflowY: "auto", background: "var(--ks-bg)", display: "flex", flexDirection: "column" }}>
+        {children}
+      </main>
     </div>
   );
 };

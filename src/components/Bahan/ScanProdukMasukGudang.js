@@ -1333,58 +1333,30 @@ const ScanProdukMasukGudang = () => {
 
 
       {/* Main Tabs Navigation */}
-      <div className="gudang-ui-tabs" style={{ marginBottom: 20, display: "flex", gap: 8, borderBottom: "1px solid #e2e8f0", paddingBottom: 8 }}>
-        <button
-          type="button"
-          onClick={() => { setActiveMainTab("scan"); setSelectedSessionIds([]); setSlotId(""); }}
-          style={{
-            padding: "8px 16px",
-            background: activeMainTab === "scan" ? "#7c3aed" : "transparent",
-            color: activeMainTab === "scan" ? "#fff" : "#64748b",
-            border: activeMainTab === "scan" ? "none" : "1px solid transparent",
-            borderRadius: 8,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontSize: 14,
-            transition: "all 0.2s ease",
-          }}
-        >
-          Scan Barcode Masuk
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMainTab("putaway")}
-          style={{
-            padding: "8px 16px",
-            background: activeMainTab === "putaway" ? "#7c3aed" : "transparent",
-            color: activeMainTab === "putaway" ? "#fff" : "#64748b",
-            border: activeMainTab === "putaway" ? "none" : "1px solid transparent",
-            borderRadius: 8,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontSize: 14,
-            transition: "all 0.2s ease",
-          }}
-        >
-          Penempatan Sesi
-        </button>
-        <button
-          type="button"
-          onClick={() => { setActiveMainTab("history"); setSelectedSessionIds([]); setSlotId(""); }}
-          style={{
-            padding: "8px 16px",
-            background: activeMainTab === "history" ? "#7c3aed" : "transparent",
-            color: activeMainTab === "history" ? "#fff" : "#64748b",
-            border: activeMainTab === "history" ? "none" : "1px solid transparent",
-            borderRadius: 8,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontSize: 14,
-            transition: "all 0.2s ease",
-          }}
-        >
-          Riwayat Penempatan
-        </button>
+      <div style={{ marginBottom: "20px" }}>
+        <div className="ks-segment">
+          <button
+            type="button"
+            className={`ks-seg-btn ${activeMainTab === "scan" ? "is-active" : ""}`}
+            onClick={() => { setActiveMainTab("scan"); setSelectedSessionIds([]); setSlotId(""); }}
+          >
+            Scan Barcode Masuk
+          </button>
+          <button
+            type="button"
+            className={`ks-seg-btn ${activeMainTab === "putaway" ? "is-active" : ""}`}
+            onClick={() => setActiveMainTab("putaway")}
+          >
+            Penempatan Sesi
+          </button>
+          <button
+            type="button"
+            className={`ks-seg-btn ${activeMainTab === "history" ? "is-active" : ""}`}
+            onClick={() => { setActiveMainTab("history"); setSelectedSessionIds([]); setSlotId(""); }}
+          >
+            Riwayat Penempatan
+          </button>
+        </div>
       </div>
 
       <div className="gudang-master-workspace-grid" style={{ gridTemplateColumns: activeMainTab !== "scan" ? "1fr" : undefined }}>
@@ -1392,8 +1364,8 @@ const ScanProdukMasukGudang = () => {
 
           {/* ── Scene 1: Scan & Simpan Sesi ── */}
           {activeMainTab === "scan" && (
-            <section className="gudang-ui-panel">
-              <div className="gudang-ui-panel-head" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <section className="ks-board" style={{ margin: 0, overflow: "visible" }}>
+              <div className="ks-toolbar" style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <h2>Scan Barcode Produk Masuk</h2>
                   <p>
@@ -1421,7 +1393,7 @@ const ScanProdukMasukGudang = () => {
                   )}
                   <button
                     type="button"
-                    className="gudang-ui-button"
+                    className="ks-btn is-primary"
                     style={{ background: "#7c3aed", color: "#fff", display: "inline-flex", alignItems: "center", gap: 8, height: "40px" }}
                     disabled={isSavingSession || !scannedBarcodes.length}
                     onClick={handleSaveSession}
@@ -1454,7 +1426,7 @@ const ScanProdukMasukGudang = () => {
                     />
                     <button
                       type="button"
-                      className="gudang-ui-button"
+                      className="ks-btn is-primary"
                       onClick={() => processScan()}
                       style={{ minWidth: 64, justifyContent: "center", padding: "0 20px", background: "#7c3aed", color: "#fff", borderRadius: 12, border: "none" }}
                     >
@@ -1644,8 +1616,8 @@ const ScanProdukMasukGudang = () => {
             <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: 20, height: "calc(100vh - 200px)" }}>
               
               {/* Kolom 1: Daftar Sesi Pending */}
-              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
-                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+              <section className="ks-board" style={{ margin: 0, overflow: "visible",  height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <div className="ks-toolbar" style={{ marginBottom: 16 }}>
                   <div>
                     <h2>Sesi Scan Pending</h2>
                     <p>
@@ -1805,8 +1777,8 @@ const ScanProdukMasukGudang = () => {
               </section>
 
               {/* Kolom 2: Lokasi Penempatan & Map */}
-              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
-                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+              <section className="ks-board" style={{ margin: 0, overflow: "visible",  height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
+                <div className="ks-toolbar" style={{ marginBottom: 16 }}>
                   <h2>Pilih Lokasi Tujuan</h2>
                 </div>
 
@@ -1912,8 +1884,8 @@ const ScanProdukMasukGudang = () => {
               </section>
 
               {/* Kolom 3: Eksekusi */}
-              <section className="gudang-ui-panel" style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
-                <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+              <section className="ks-board" style={{ margin: 0, overflow: "visible",  height: "100%", display: "flex", flexDirection: "column", minHeight: 0, opacity: selectedSessionIds.length ? 1 : 0.6, pointerEvents: selectedSessionIds.length ? "auto" : "none" }}>
+                <div className="ks-toolbar" style={{ marginBottom: 16 }}>
                   <h2>Eksekusi Penempatan</h2>
                 </div>
 
@@ -1950,7 +1922,7 @@ const ScanProdukMasukGudang = () => {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <button
                     type="button"
-                    className="gudang-ui-button"
+                    className="ks-btn is-primary"
                     style={{ background: "#7c3aed", color: "#fff", display: "flex", justifyContent: "center", alignItems: "center", gap: 8, padding: "12px", fontSize: 14 }}
                     disabled={isExecuting || !slotId || !selectedSessionIds.length}
                     onClick={handleExecuteSession}
@@ -2048,8 +2020,8 @@ const ScanProdukMasukGudang = () => {
 
                 {historyTab === "detail" && (
                   <>
-                    <div className="spm-gudang-table-wrap">
-                      <table className="spm-gudang-table">
+                    <div className="ks-grid-scroll">
+                      <table className="ks-grid">
                         <thead>
                           <tr>
                             <th className="spm-gudang-table-no">No</th>
@@ -2110,8 +2082,8 @@ const ScanProdukMasukGudang = () => {
 
                 {historyTab === "summary" && (
                   <>
-                    <div className="spm-gudang-table-wrap">
-                      <table className="spm-gudang-table">
+                    <div className="ks-grid-scroll">
+                      <table className="ks-grid">
                         <thead>
                           <tr>
                             <th className="spm-gudang-table-no">No</th>
@@ -2152,8 +2124,8 @@ const ScanProdukMasukGudang = () => {
         {activeMainTab === "scan" && (
           <div className="spm-gudang-right-col" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Tiket Penempatan */}
-          <aside className="gudang-ui-panel">
-            <div className="gudang-ui-panel-head" style={{ marginBottom: 16 }}>
+          <aside className="ks-board" style={{ margin: 0, overflow: "visible" }}>
+            <div className="ks-toolbar" style={{ marginBottom: 16 }}>
               <div>
                 <h2 style={{ color: "#7c3aed" }}>Tiket Scan Masuk</h2>
                 <p>Ringkasan alur masuk produk.</p>
