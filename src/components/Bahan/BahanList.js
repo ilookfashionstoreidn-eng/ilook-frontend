@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "./BahanList.css";
+import "../Produk/ProductList.css";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import API from "../../api";
 import {
   FaImage,
@@ -7,6 +8,7 @@ import {
   FaSearch,
   FaSync,
   FaWarehouse,
+  FaTimes,
 } from "react-icons/fa";
 
 const PAGE_SIZE = 100;
@@ -648,50 +650,57 @@ const BahanList = () => {
   }, [downloadingPdf, loading, selectedMaterial]);
 
   return (
-    <div className="bahan-list-page">
-      <div className="bahan-list-shell">
-        <header className="bahan-list-topbar">
-          <div className="bahan-list-title-side">
-            <p className="bahan-list-breadcrumb">Gudang Bahan / List Bahan</p>
-            <div className="bahan-list-title-row">
-              <div className="bahan-list-title-icon">
-                <FaWarehouse />
-              </div>
-              <div>
-                <h1>Bahan List</h1>
-                <p>Ringkasan stok gudang awal, total dipesan, dan grand total per warna.</p>
-              </div>
-            </div>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-title">
+          <h1>Bahan List</h1>
+          <p>
+            Gudang Bahan / List Bahan &bull; Ringkasan stok gudang awal, total
+            dipesan, dan grand total per warna.
+          </p>
+        </div>
+        <div className="ks-header-stats">
+          <div className="ks-stat-item">
+            <span className="ks-stat-label">Terakhir Sinkron</span>
+            <span className="ks-stat-value">{formatDateTime(lastSyncAt)}</span>
           </div>
-
-          <div className="bahan-list-meta-side">
-            <div className="bahan-list-meta-card">
-              <span>Terakhir Sinkron</span>
-              <strong>{formatDateTime(lastSyncAt)}</strong>
+          {selectedMaterial && (
+            <div className="ks-stat-item">
+              <span className="ks-stat-label">Group Terpilih</span>
+              <span className="ks-stat-value">{selectedMaterial.group_bahan}</span>
             </div>
-            <button
-              type="button"
-              className="bahan-list-print-btn"
-              onClick={handleDownloadPdf}
-              disabled={loading || downloadingPdf || !selectedMaterial}
-            >
-              <FaPrint />
-              {downloadingPdf ? "Mengunduh..." : "Download PDF"}
-            </button>
-            <button type="button" className="bahan-list-refresh-btn" onClick={loadData} disabled={loading}>
-              <FaSync className={loading ? "is-spinning" : ""} />
-              Refresh
-            </button>
+          )}
+          <div className="ks-stat-item">
+            <span className="ks-stat-label">Total Warna</span>
+            <span className="ks-stat-value">{visibleRows.length} warna</span>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <section className="bahan-list-toolbar">
-          <label className="bahan-list-select-wrap">
-            <span>Group Bahan</span>
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search" style={{ flex: 1, minWidth: "200px" }}>
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari warna..."
+                style={{ paddingLeft: "30px", width: "100%" }}
+              />
+              {searchTerm && (
+                <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+
             <select
               value={selectedBahanKey}
               onChange={(event) => setSelectedBahanKey(event.target.value)}
               disabled={loading || bahanGroups.length === 0}
+              style={{ padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "13px", outline: "none", minWidth: "250px" }}
             >
               {bahanGroups.length === 0 ? (
                 <option value="">Tidak ada data group bahan</option>
@@ -705,145 +714,139 @@ const BahanList = () => {
                 ))
               )}
             </select>
-          </label>
-
-          <label className="bahan-list-search-wrap">
-            <FaSearch />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Cari nama bahan..."
-            />
-          </label>
-        </section>
+          </div>
+          
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <button
+              type="button"
+              className="ks-btn is-secondary"
+              onClick={loadData}
+              disabled={loading}
+              title="Refresh"
+            >
+              <FaSync className={loading ? "is-spinning" : ""} /> Refresh
+            </button>
+            <button
+              type="button"
+              className="ks-btn is-secondary"
+              onClick={handleDownloadPdf}
+              disabled={loading || downloadingPdf || !selectedMaterial}
+            >
+              <FaPrint />
+              {downloadingPdf ? "Mengunduh..." : "Download PDF"}
+            </button>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="bahan-list-state">Memuat data bahan list...</div>
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Memuat data bahan list...</div>
         ) : error ? (
-          <div className="bahan-list-state error">{error}</div>
+          <div style={{ padding: "40px", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
         ) : !selectedMaterial ? (
-          <div className="bahan-list-state">
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>
             {searchTerm ? "Group bahan tidak ditemukan." : "Belum ada data group bahan yang bisa ditampilkan."}
           </div>
         ) : (
-          <>
-            <section className="bahan-list-content-card">
-              <div className="bahan-list-card-head">
-                <div>
-                  <h3>Tabel Stok Bahan</h3>
-                  <p>Group bahan: {selectedMaterial.group_bahan}</p>
-                </div>
+          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap", padding: "16px" }}>
+            <div className="ks-grid-scroll" style={{ flex: "2 1 600px", padding: 0 }}>
+              <table className="ks-grid">
+                <colgroup>
+                  <col style={{ width: "5%" }} />
+                  <col style={{ width: "30%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "25%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th className="cell-no" style={{ textAlign: "center" }}>No</th>
+                    <th>Warna</th>
+                    <th style={{ textAlign: "right" }}>Stok Gudang - Total</th>
+                    <th style={{ textAlign: "right" }}>Dipesan - Total</th>
+                    <th style={{ textAlign: "right" }}>Grand Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleRows.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                        Tidak ada warna yang sesuai pencarian.
+                      </td>
+                    </tr>
+                  ) : (
+                    visibleRows.map((row, index) => {
+                      const warnaStyle = resolveWarnaStyle(row.warna);
 
-                <div className="bahan-list-content-meta">
-                  <span>{formatDateTime(lastSyncAt)}</span>
-                  <span>{materialPabrikLabel}</span>
-                  <span>{visibleRows.length} warna</span>
-                </div>
-              </div>
-
-              <div className="bahan-list-content-grid">
-                <article className="bahan-list-table-panel">
-                  <div className="bahan-list-table-wrap">
-                    <table className="bahan-list-table">
-                      <colgroup>
-                        <col style={{ width: "5%" }} />
-                        <col style={{ width: "30%" }} />
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "25%" }} />
-                      </colgroup>
-                      <thead>
-                        {/* FIXED: alignment */}
-                        <tr>
-                          <th className="cell-no">No</th>
-                          <th>Warna</th>
-                          <th>Stok Gudang - Total</th>
-                          <th>Dipesan - Total</th>
-                          <th>Grand Total</th>
+                      return (
+                        <tr key={row.key}>
+                          <td className="ks-cell-code" style={{ textAlign: "center" }}>{index + 1}</td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  width: "14px",
+                                  height: "14px",
+                                  borderRadius: "50%",
+                                  backgroundColor: warnaStyle.backgroundColor,
+                                  border: `1px solid ${warnaStyle.borderColor}`,
+                                  flexShrink: 0
+                                }}
+                              />
+                              <strong style={{ fontSize: "13px" }}>{row.warna}</strong>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "right" }}>{formatRoll(row.stok_gudang)}</td>
+                          <td style={{ textAlign: "right" }}>{formatRoll(row.dipesan)}</td>
+                          <td style={{ textAlign: "right", fontWeight: "700", color: row.grand_total === 0 ? "#94a3b8" : row.grand_total < 10 ? "#ef4444" : "#10b981" }}>
+                            {formatRoll(row.grand_total)}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {visibleRows.length === 0 ? (
-                          <tr>
-                            <td colSpan="5" className="bahan-list-empty-cell">
-                              Tidak ada warna yang sesuai pencarian.
-                            </td>
-                          </tr>
-                        ) : (
-                          visibleRows.map((row, index) => {
-                            const warnaStyle = resolveWarnaStyle(row.warna);
+                      );
+                    })
+                  )}
+                </tbody>
+                {visibleRows.length > 0 && (
+                  <tfoot>
+                    <tr>
+                      <td colSpan="2" style={{ fontWeight: 700, background: "#f8fafc" }}>TOTAL</td>
+                      <td style={{ textAlign: "right", fontWeight: 700, background: "#f8fafc" }}>{formatRoll(visibleTotals.stok)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 700, background: "#f8fafc" }}>{formatRoll(visibleTotals.dipesan)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 700, background: "#f8fafc", color: visibleTotals.grand === 0 ? "#94a3b8" : visibleTotals.grand < 10 ? "#ef4444" : "#10b981" }}>
+                        {formatRoll(visibleTotals.grand)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
 
-                            return (
-                              /* FIXED: alignment */
-                              <tr key={row.key}>
-                                <td className="cell-no">{index + 1}</td>
-                                <td className="bahan-list-warna-cell">
-                                  <span
-                                    className="bahan-list-warna-dot"
-                                    style={{
-                                      backgroundColor: warnaStyle.backgroundColor,
-                                      borderColor: warnaStyle.borderColor,
-                                    }}
-                                  />
-                                  <strong>{row.warna}</strong>
-                                </td>
-                                <td className="bahan-list-number-cell">{formatRoll(row.stok_gudang)}</td>
-                                <td className="bahan-list-number-cell">{formatRoll(row.dipesan)}</td>
-                                <td
-                                  className={`bahan-list-number-cell bahan-list-grand-cell ${getGrandTotalToneClass(row.grand_total)}`}
-                                >
-                                  {formatRoll(row.grand_total)}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                      {visibleRows.length > 0 && (
-                        <tfoot>
-                          {/* FIXED: alignment */}
-                          <tr>
-                            <td colSpan="2" className="bahan-list-total-label">TOTAL</td>
-                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.stok)}</td>
-                            <td className="bahan-list-number-cell">{formatRoll(visibleTotals.dipesan)}</td>
-                            <td
-                              className={`bahan-list-number-cell bahan-list-grand-cell ${getGrandTotalToneClass(visibleTotals.grand)}`}
-                            >
-                              {formatRoll(visibleTotals.grand)}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      )}
-                    </table>
-                  </div>
-                </article>
-
-                <aside className="bahan-list-preview-panel">
-                  <div className="bahan-list-preview-grid">
-                    {!selectedPreviewRow ? (
-                      <div className="bahan-list-palette-empty">Tidak ada preview gambar.</div>
-                    ) : (
-                      <div
-                        className="bahan-list-image-preview"
-                        title={`${selectedMaterial.group_bahan}: ${formatRoll(visibleTotals.grand)}`}
-                      >
-                        {selectedPreviewRow.image_url ? (
-                          <img src={selectedPreviewRow.image_url} alt={`Preview ${selectedMaterial.group_bahan}`} />
-                        ) : (
-                          <div className="bahan-list-image-placeholder">
-                            <FaImage />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </aside>
+            <div style={{ flex: "1 1 300px", maxWidth: "400px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", minHeight: "300px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#475569", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
+                Preview Gambar Bahan
               </div>
-            </section>
-          </>
+              {!selectedPreviewRow ? (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "13px", fontWeight: "600", minHeight: "200px" }}>
+                  Tidak ada preview gambar.
+                </div>
+              ) : (
+                <div
+                  title={`${selectedMaterial.group_bahan}: ${formatRoll(visibleTotals.grand)}`}
+                  style={{ width: "100%", height: "auto", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: "8px", background: "#fff", flex: 1 }}
+                >
+                  {selectedPreviewRow.image_url ? (
+                    <img src={selectedPreviewRow.image_url} alt={`Preview ${selectedMaterial.group_bahan}`} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "#cbd5e1" }}>
+                      <FaImage size={48} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

@@ -1277,7 +1277,7 @@ const Bahan = () => {
       <section className="ks-board">
         <div className="ks-toolbar">
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
-            <div className="ks-search">
+            <div className="ks-search" style={{ flex: 1, minWidth: "200px" }}>
               <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
               <input
                 type="text"
@@ -1286,40 +1286,14 @@ const Bahan = () => {
                   setSelectedBahanName("");
                   setSearchTerm(e.target.value);
                 }}
-                placeholder="Cari nama bahan..."
-                style={{ paddingLeft: "30px" }}
+                placeholder="Cari nama bahan, group, atau warna..."
+                style={{ paddingLeft: "30px", width: "100%" }}
               />
               {searchTerm && (
                 <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
                   <FaTimes />
                 </button>
               )}
-            </div>
-            
-            <div className="bahan-filter-wrap bahan-name-filter-wrap" style={{ flex: 1, minWidth: "200px" }}>
-              <Select
-                className="bahan-name-filter-select"
-                classNamePrefix="bahan-name-select"
-                value={selectedBahanNameOption}
-                options={bahanNameOptions}
-                onChange={(option) => {
-                  setCurrentPage(1);
-                  setSearchTerm("");
-                  setSelectedBahanName(option?.value || "");
-                }}
-                placeholder="Semua Nama Bahan"
-                isSearchable
-                isClearable
-                isLoading={bahanNameLoading}
-                loadingMessage={() => "Memuat nama bahan..."}
-                noOptionsMessage={({ inputValue }) =>
-                  inputValue ? `Nama bahan "${inputValue}" tidak ditemukan` : "Belum ada nama bahan"
-                }
-                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
-                menuPosition="fixed"
-                styles={bahanNameSelectStyles}
-                aria-label="Filter nama bahan"
-              />
             </div>
             
             <select
