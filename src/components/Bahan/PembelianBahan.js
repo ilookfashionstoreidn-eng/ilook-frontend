@@ -1122,70 +1122,62 @@ const PembelianBahan = () => {
   const visibleRows = currentItems.length;
 
   return (
-    <div className="pembelian-bahan-page">
-      <header className="pembelian-bahan-header">
-        <div className="pembelian-bahan-header-top">
-          <div className="pembelian-bahan-title-group">
-            <div className="pembelian-bahan-brand-icon">
-              <FaShoppingCart />
-            </div>
-            <div className="pembelian-bahan-title-wrap">
-              <div className="pembelian-bahan-module-pill">Material Module</div>
-              <h1>Pembelian Bahan</h1>
-              <p className="pembelian-bahan-header-subtitle">Kelola pembelian, roll bahan, dan dokumen penerimaan</p>
-            </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Pembelian Bahan</h1>
+          <span className="ks-header-sub">
+            Kelola pembelian, roll bahan, dan dokumen penerimaan.
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Transaksi</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{filtered.length}</span>
           </div>
-          <div className="pembelian-bahan-search-bar pembelian-bahan-search-header">
-            <FaSearch className="pembelian-bahan-search-icon" />
-            <input type="text" placeholder="Cari keterangan atau SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            {searchTerm && (
-              <button className="pembelian-bahan-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian" type="button">
-                <FaTimes />
-              </button>
-            )}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Ditampilkan</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{visibleRows}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Roll</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#10b981" }}>{totalRollPembelian}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Nilai Pembelian</span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#3b82f6" }}>{formatRupiah(totalNilaiPembelian)}</span>
           </div>
         </div>
       </header>
 
-      <main className="pembelian-bahan-main">
-        <section className="pembelian-bahan-stats">
-          <article className="pembelian-bahan-stat-item">
-            <div className="pembelian-bahan-stat-label">Total Transaksi</div>
-            <div className="pembelian-bahan-stat-value">{filtered.length}</div>
-          </article>
-          <article className="pembelian-bahan-stat-item">
-            <div className="pembelian-bahan-stat-label">Ditampilkan</div>
-            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-info">{visibleRows}</div>
-          </article>
-          <article className="pembelian-bahan-stat-item">
-            <div className="pembelian-bahan-stat-label">Total Roll</div>
-            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-success">{totalRollPembelian}</div>
-          </article>
-          <article className="pembelian-bahan-stat-item">
-            <div className="pembelian-bahan-stat-label">Nilai Pembelian</div>
-            <div className="pembelian-bahan-stat-value pembelian-bahan-stat-value-info">{formatRupiah(totalNilaiPembelian)}</div>
-          </article>
-        </section>
-
-        <div className="pembelian-bahan-table-container">
-          <div className="pembelian-bahan-table-heading">
-            <div>
-              <h3>Semua Data Pembelian Bahan</h3>
-              <p>{isFiltering ? `Menampilkan ${visibleRows} data sesuai pencarian` : `Menampilkan ${visibleRows} data pada halaman ini`}</p>
-            </div>
-            <div className="pembelian-bahan-toolbar-actions">
-              <button className="pembelian-bahan-btn-add" onClick={() => setShowForm(true)}>
-                <FaPlus /> Tambah Pembelian
-              </button>
-              <button className="pembelian-bahan-btn-add pembelian-bahan-btn-add-scan" onClick={() => setShowScanBarcode(true)}>
-                <FaBarcode /> Update Berat Roll
-              </button>
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="pl-search">
+              <FaSearch className="pl-search-icon" />
+              <input
+                type="text"
+                placeholder="Cari keterangan atau SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-search-input"
+              />
+              {searchTerm && (
+                <button className="pl-search-clear" onClick={() => setSearchTerm("")} title="Hapus pencarian">
+                  <FaTimes />
+                </button>
+              )}
             </div>
           </div>
-
-          <div className="pembelian-bahan-filter-header">
-            <span className="pembelian-bahan-filter-summary">{isFiltering ? `Filter aktif: ${searchTerm}` : "Semua transaksi pembelian"}</span>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button className="ks-btn is-secondary" onClick={() => setShowScanBarcode(true)}>
+              <FaBarcode /> Update Berat Roll
+            </button>
+            <button className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+              <FaPlus /> Tambah Pembelian
+            </button>
           </div>
+        </div>
 
           {loading ? (
             <div className="pembelian-bahan-loading">
@@ -1211,53 +1203,53 @@ const PembelianBahan = () => {
               <h3 className="pembelian-bahan-empty-title">Belum Ada Data Pembelian</h3>
               <p className="pembelian-bahan-empty-text">{searchTerm ? "Tidak ada transaksi yang sesuai dengan pencarian Anda" : "Mulai dengan menambahkan pembelian bahan pertama"}</p>
               {searchTerm ? (
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary pembelian-bahan-empty-cta" onClick={() => setSearchTerm("")}>
+                <button type="button" className="ks-btn is-secondary pembelian-bahan-empty-cta" onClick={() => setSearchTerm("")}>
                   Hapus Pencarian
                 </button>
               ) : (
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary pembelian-bahan-empty-cta" onClick={() => setShowForm(true)}>
+                <button type="button" className="ks-btn is-primary pembelian-bahan-empty-cta" onClick={() => setShowForm(true)}>
                   <FaPlus /> Tambah Pembelian
                 </button>
               )}
             </div>
           ) : (
             <>
-              <div className="pembelian-bahan-table-scroll">
-                <table className="pembelian-bahan-table">
+              <div className="ks-grid-scroll">
+                <table className="ks-grid">
                   <thead>
                     <tr>
-                      <th>No</th>
-                      <th>SPK Bahan</th>
+                      <th style={{ width: "4%", textAlign: "right" }}>No</th>
+                      <th style={{ width: "12%" }}>SPK Bahan</th>
                       <th>Nama Bahan</th>
-                      <th>Harga</th>
+                      <th style={{ textAlign: "right" }}>Harga</th>
                       <th>Gudang</th>
                       <th>Pabrik</th>
                       <th>Tgl Diterima</th>
-                      <th>Barcode</th>
-                      <th>Aksi</th>
+                      <th style={{ width: "8%", textAlign: "center" }}>Barcode</th>
+                      <th style={{ width: "8%", textAlign: "center" }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentItems.map((b, index) => (
                       <tr key={b.id}>
-                        <td><strong>{indexOfFirstItem + index + 1}</strong></td>
-                        <td>{b.spk ? <span className="pembelian-bahan-badge">SPK #{b.spk.id}</span> : "-"}</td>
+                        <td style={{ textAlign: "right", color: "#64748b" }}>{indexOfFirstItem + index + 1}</td>
+                        <td>{b.spk ? <span style={{ fontWeight: 600, color: "#2563eb", backgroundColor: "#eff6ff", padding: "4px 8px", borderRadius: "4px", fontSize: "12px" }}>SPK #{b.spk.id}</span> : "-"}</td>
                         <td>{getBahanName(b)}</td>
-                        <td className="pembelian-bahan-price">{formatRupiah(b.harga)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{formatRupiah(b.harga)}</td>
                         <td>{getNamaById(gudangList, b.gudang_id, "nama_gudang")}</td>
                         <td>{getNamaById(pabrikList, b.pabrik_id, "nama_pabrik")}</td>
                         <td>{b.tanggal_kirim}</td>
-                        <td>
-                          <button className="pembelian-bahan-btn-icon download" onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
+                        <td style={{ textAlign: "center" }}>
+                          <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px" }} onClick={() => handleDownloadBarcode(b)} title="Download Barcode">
                             <FaDownload />
                           </button>
                         </td>
                         <td>
-                          <div className="pembelian-bahan-action-buttons">
-                            <button className="pembelian-bahan-btn-icon view" title="Lihat Detail" onClick={() => handleDetailClick(b)}>
+                          <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                            <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#3b82f6" }} title="Lihat Detail" onClick={() => handleDetailClick(b)}>
                               <FaEye />
                             </button>
-                            <button className="pembelian-bahan-btn-icon edit" title="Edit" onClick={() => handleEditClick(b)}>
+                            <button className="ks-btn is-secondary" style={{ padding: "6px", minHeight: "auto", fontSize: "12px", color: "#f59e0b" }} title="Edit" onClick={() => handleEditClick(b)}>
                               <FaEdit />
                             </button>
                           </div>
@@ -1270,8 +1262,8 @@ const PembelianBahan = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="pembelian-bahan-pagination">
-                  <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
+                  <button className="ks-btn is-secondary" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                     Previous
                   </button>
 
@@ -1284,21 +1276,23 @@ const PembelianBahan = () => {
                       );
                     }
                     return (
-                      <button key={page} className={currentPage === page ? "active" : ""} onClick={() => goToPage(page)}>
+                      <button 
+                        key={page} 
+                        className={`ks-btn ${currentPage === page ? "is-primary" : "is-secondary"}`} 
+                        onClick={() => goToPage(page)}
+                      >
                         {page}
                       </button>
                     );
                   })}
-
-                  <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                  <button className="ks-btn is-secondary" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
                     Next
                   </button>
                 </div>
               )}
             </>
           )}
-        </div>
-      </main>
+      </section>
 
       {/* Modal Tambah */}
       {showForm && (
@@ -1451,7 +1445,7 @@ const PembelianBahan = () => {
                             />
                             <button
                               type="button"
-                              className="pembelian-bahan-btn pembelian-bahan-btn-danger"
+                              className="ks-btn is-secondary" style={{ color: "#ef4444" }}
                               onClick={() => removeRolFromWarna(warna.id, ri)}
                             >
                               Hapus
@@ -1460,7 +1454,7 @@ const PembelianBahan = () => {
                         ))}
                         <button
                           type="button"
-                          className="pembelian-bahan-btn pembelian-bahan-btn-primary"
+                          className="ks-btn is-primary"
                           onClick={() => addRolToWarna(warna.id)}
                         >
                           <FaPlus /> Tambah Rol
@@ -1509,10 +1503,10 @@ const PembelianBahan = () => {
               )}
 
               <div className="pembelian-bahan-form-actions">
-                <button type="submit" className="pembelian-bahan-btn pembelian-bahan-btn-primary">
+                <button type="submit" className="ks-btn is-primary">
                   Simpan
                 </button>
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary" onClick={() => setShowForm(false)}>
+                <button type="button" className="ks-btn is-secondary" onClick={() => setShowForm(false)}>
                   Batal
                 </button>
               </div>
@@ -1802,8 +1796,8 @@ const PembelianBahan = () => {
               {detailItem && (
                 <button
                   type="button"
-                  className="pembelian-bahan-btn"
-                  style={{ backgroundColor: "#f59e0b", color: "white", marginRight: "8px" }}
+                  className="ks-btn is-primary"
+                  style={{ backgroundColor: "#f59e0b", borderColor: "#f59e0b", color: "white", marginRight: "8px" }}
                   onClick={() => handleOpenReturnForm(detailItem)}
                 >
                   <FaUndo style={{ marginRight: "4px" }} />
@@ -1812,7 +1806,7 @@ const PembelianBahan = () => {
               )}
               <button
                 type="button"
-                className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
+                className="ks-btn is-secondary"
                 onClick={() => {
                   setShowDetail(false);
                   setDetailItem(null);
@@ -1935,7 +1929,7 @@ const PembelianBahan = () => {
                 <div key={wi} className="pembelian-bahan-warna-section">
                   <div className="pembelian-bahan-warna-header">
                     <h4>Warna {wi + 1}</h4>
-                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeWarnaEdit(wi)}>
+                    <button type="button" className="ks-btn is-secondary" style={{ color: "#ef4444" }} onClick={() => removeWarnaEdit(wi)}>
                       Hapus Warna
                     </button>
                   </div>
@@ -1973,19 +1967,19 @@ const PembelianBahan = () => {
                       <div key={ri} className="pembelian-bahan-rol-item">
                         <label>Berat {ri + 1} (kg)</label>
                         <input type="number" placeholder={`Berat ${ri + 1} (kg)`} value={berat} onChange={(e) => handleRolChangeEdit(wi, ri, e.target.value)} />
-                        <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-danger" onClick={() => removeRolEdit(wi, ri)}>
+                        <button type="button" className="ks-btn is-secondary" style={{ color: "#ef4444" }} onClick={() => removeRolEdit(wi, ri)}>
                           Hapus
                         </button>
                       </div>
                     ))}
-                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={() => addRolEdit(wi)}>
+                    <button type="button" className="ks-btn is-primary" onClick={() => addRolEdit(wi)}>
                       <FaPlus /> Tambah Rol
                     </button>
                   </div>
                 </div>
               ))}
               <div className="pembelian-bahan-add-warna-row">
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-success" onClick={addWarnaEdit}>
+                <button type="button" className="ks-btn is-primary" style={{ backgroundColor: "#10b981", borderColor: "#10b981" }} onClick={addWarnaEdit}>
                   <FaPlus /> Tambah Warna
                 </button>
               </div>
@@ -2018,10 +2012,10 @@ const PembelianBahan = () => {
               </div>
 
               <div className="pembelian-bahan-form-actions">
-                <button type="submit" className="pembelian-bahan-btn pembelian-bahan-btn-primary">
+                <button type="submit" className="ks-btn is-primary">
                   Perbarui
                 </button>
-                <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-secondary" onClick={() => setShowEditForm(false)}>
+                <button type="button" className="ks-btn is-secondary" onClick={() => setShowEditForm(false)}>
                   Batal
                 </button>
               </div>
@@ -2055,7 +2049,7 @@ const PembelianBahan = () => {
                     style={{ flex: 1 }}
                     autoFocus
                   />
-                  <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={handleScanBarcode} disabled={scanLoading || !scannedBarcode.trim()}>
+                  <button type="button" className="ks-btn is-primary" onClick={handleScanBarcode} disabled={scanLoading || !scannedBarcode.trim()}>
                     {scanLoading ? "Memproses..." : "Scan"}
                   </button>
                 </div>
@@ -2119,12 +2113,12 @@ const PembelianBahan = () => {
                   </div>
 
                   <div style={{ marginTop: "20px", display: "flex", gap: "12px" }}>
-                    <button type="button" className="pembelian-bahan-btn pembelian-bahan-btn-primary" onClick={handleUpdateBerat} disabled={scanLoading || !beratInput || parseFloat(beratInput) <= 0} style={{ flex: 1 }}>
+                    <button type="button" className="ks-btn is-primary" onClick={handleUpdateBerat} disabled={scanLoading || !beratInput || parseFloat(beratInput) <= 0} style={{ flex: 1 }}>
                       {scanLoading ? "Menyimpan..." : "Simpan Berat"}
                     </button>
                     <button
                       type="button"
-                      className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
+                      className="ks-btn is-secondary"
                       onClick={() => {
                         setScannedBarcode("");
                         setScannedRoll(null);
@@ -2232,14 +2226,14 @@ const PembelianBahan = () => {
               <div className="pembelian-bahan-form-actions">
                 <button
                   type="submit"
-                  className="pembelian-bahan-btn pembelian-bahan-btn-primary"
+                  className="ks-btn is-primary"
                   disabled={loadingReturn}
                 >
                   {loadingReturn ? "Menyimpan..." : "Simpan"}
                 </button>
                 <button
                   type="button"
-                  className="pembelian-bahan-btn pembelian-bahan-btn-secondary"
+                  className="ks-btn is-secondary"
                   onClick={() => setShowReturnForm(false)}
                 >
                   Batal
