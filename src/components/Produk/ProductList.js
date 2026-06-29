@@ -2244,7 +2244,8 @@ const ProductList = () => {
               <tr>
                 <th>Produk & SKU</th>
                 <th>Material Utama</th>
-                <th>Kombinasi & Aksesoris</th>
+                <th>Material Kombinasi</th>
+                <th>Aksesoris</th>
                 <th>Estimasi Bahan</th>
                 <th>Berat / Panjang</th>
                 <th>Dimensi (LD/PJ)</th>
@@ -2256,13 +2257,13 @@ const ProductList = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="10" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Memuat data Product List...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
+                  <td colSpan="10" style={{ height: "132px", textAlign: "center", color: "var(--ks-muted, #9a9aa3)", fontWeight: 600 }}>
                     Belum ada data Product List.
                   </td>
                 </tr>
@@ -2285,8 +2286,16 @@ const ProductList = () => {
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Kombi:</span> {getMaterialTableValue(item.materials, 1, "material_group")} <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>({getMaterialTableValue(item.materials, 1, "colour")})</span><br />
-                      <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Aks:</span> {item.product_accecories || "-"} <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>({item.product_accecories_colour || "-"})</span>
+                      {getMaterialTableValue(item.materials, 1, "material_group")}<br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                        Warna: {getMaterialTableValue(item.materials, 1, "colour")}
+                      </span>
+                    </td>
+                    <td>
+                      {item.product_accecories || "-"}<br />
+                      <span style={{ fontSize: "0.85em", color: "var(--ks-text-soft, #6b6b73)" }}>
+                        Warna: {item.product_accecories_colour || "-"}
+                      </span>
                     </td>
                     <td>
                       <span style={{ fontSize: "0.85em", fontWeight: 600 }}>Cut:</span> {item.estimasi_cutting || "-"}<br />
