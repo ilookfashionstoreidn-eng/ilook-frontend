@@ -41,17 +41,25 @@ const formatNumber = (value) => {
   return Number.isFinite(parsed) ? parsed.toLocaleString("id-ID") : "0";
 };
 
+const getTodayParam = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 const RiwayatStokOpnameGudang = () => {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [searchInput, setSearchInput] = useState("");
   const deferredSearchInput = useDeferredValue(searchInput);
-  const [query, setQuery] = useState({
-    page: 1,
-    perPage: 50,
-    search: "",
-    startDate: "",
-    endDate: "",
+  const [query, setQuery] = useState(() => {
+    const today = getTodayParam();
+    return {
+      page: 1,
+      perPage: 50,
+      search: "",
+      startDate: today,
+      endDate: today,
+    };
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);

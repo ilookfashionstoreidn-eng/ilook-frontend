@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Spinner, Form, Table } from 'react-bootstrap';
+import { Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -378,39 +378,42 @@ const PackingMonitoring = () => {
     }), []);
 
     return (
-        <div className="packing-dashboard-page">
-            <div className="packing-dashboard-header">
-                <div className="packing-title-row">
-                    <button className="packing-back-btn" onClick={() => navigate('/packing')} title="Kembali">
+        <div className="ks-page">
+            <header className="ks-header">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                    <button className="ks-btn" onClick={() => navigate('/packing')} title="Kembali" style={{ height: '36px', width: '36px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <FontAwesomeIcon icon={faArrowLeft} />
                     </button>
-                    <div className="packing-dashboard-title">
-                        <h1>Monitoring Hasil Packing</h1>
-                        <div className="packing-dashboard-subtitle">
+                    <div className="ks-header-id" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>Monitoring Hasil Packing</h1>
+                        <span className="ks-header-sub">
                             <FontAwesomeIcon icon={faCalendarAlt} className="me-2" style={{ color: '#0ea5e9' }} />
                             Pantau pergerakan status pesanan secara real-time
-                        </div>
+                        </span>
                     </div>
                 </div>
-
-                <div className="packing-dashboard-controls">
-                    <Form.Control 
-                        type="date" 
-                        value={startDate} 
-                        onChange={(e) => setStartDate(e.target.value)} 
-                        style={{ border: '1px solid rgba(148, 163, 184, 0.6)', borderRadius: '999px', padding: '8px 16px', fontSize: '14px', fontWeight: '500', color: '#0f172a', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)', width: '150px' }}
-                        title="Tanggal Mulai"
-                    />
-                    <span style={{ color: '#64748b', fontWeight: '600' }}>-</span>
-                    <Form.Control 
-                        type="date" 
-                        value={endDate} 
-                        onChange={(e) => setEndDate(e.target.value)} 
-                        style={{ border: '1px solid rgba(148, 163, 184, 0.6)', borderRadius: '999px', padding: '8px 16px', fontSize: '14px', fontWeight: '500', color: '#0f172a', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)', width: '150px' }}
-                        title="Tanggal Akhir"
-                    />
+                <div className="ks-header-actions">
+                    <div className="ks-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', color: '#64748b' }}>Mulai:</span>
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={(e) => setStartDate(e.target.value)} 
+                            style={{ height: '36px', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#fff' }}
+                            title="Tanggal Mulai"
+                        />
+                        <span style={{ color: '#64748b', fontWeight: '600', margin: '0 4px' }}>-</span>
+                        <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={(e) => setEndDate(e.target.value)} 
+                            style={{ height: '36px', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#fff' }}
+                            title="Tanggal Akhir"
+                        />
+                    </div>
                 </div>
-            </div>
+            </header>
 
             {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
@@ -419,7 +422,7 @@ const PackingMonitoring = () => {
                 </div>
             ) : (
                 <>
-                    <div className="packing-dashboard-top-grid">
+                    <div className="ks-statrail" style={{ marginTop: '16px', padding: '0 20px', gap: '16px' }}>
                         {[
                             { key: 'ALL', label: 'Total Dipacking', value: summary.total, icon: faBoxOpen, grad: 'bg-blue-gradient', ring: '#0ea5e9' },
                             { key: 'SHIPPING', label: 'Dalam Perjalanan', value: summary.shipping, icon: faTruck, grad: 'bg-green-gradient', ring: '#10b981' },
@@ -429,186 +432,157 @@ const PackingMonitoring = () => {
                         ].map((card) => (
                             <div
                                 key={card.key}
-                                className="packing-card packing-card-clickable"
+                                className="ks-board"
                                 onClick={() => setStatusFilter(card.key)}
-                                style={statusFilter === card.key ? { borderColor: card.ring, boxShadow: `0 0 0 2px ${card.ring}33`, cursor: 'pointer' } : { cursor: 'pointer' }}
+                                style={{ 
+                                    padding: '16px 20px', 
+                                    cursor: 'pointer', 
+                                    flex: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                    border: statusFilter === card.key ? `2px solid ${card.ring}` : '1px solid #e2e8f0',
+                                    backgroundColor: statusFilter === card.key ? `${card.ring}0d` : '#fff',
+                                    boxShadow: statusFilter === card.key ? `0 4px 12px ${card.ring}22` : '0 1px 2px rgba(15, 23, 42, 0.06)',
+                                    transition: 'all 0.2s ease'
+                                }}
                                 title={`Lacak pesanan: ${card.label}`}
                             >
-                                <div className="packing-card-header">
-                                    <span className="packing-card-label">{card.label}</span>
-                                    <div className={`packing-icon-wrapper ${card.grad}`}>
-                                        <FontAwesomeIcon icon={card.icon} size="lg" />
-                                    </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748b' }}>{card.label}</span>
+                                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1 }}>{formatNum(card.value)}</div>
                                 </div>
-                                <div className="packing-card-main-value">{formatNum(card.value)}</div>
+                                <div className={`packing-icon-wrapper ${card.grad}`} style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', color: '#fff' }}>
+                                    <FontAwesomeIcon icon={card.icon} size="lg" />
+                                </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="packing-insight-row">
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-purple-gradient"><FontAwesomeIcon icon={faPercent} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Tingkat Selesai</span>
-                                <span className="chip-value">{analytics.completionRate.toFixed(1)}%</span>
-                                <span className="chip-sub">{formatNum(summary.delivered)} pesanan terkirim</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', padding: '0 20px', margin: '0 0 16px 0' }}>
+                        {[
+                            { label: 'Tingkat Selesai', val: analytics.completionRate.toFixed(1) + '%', sub: formatNum(summary.delivered) + ' terkirim', icon: faPercent, grad: 'bg-purple-gradient' },
+                            { label: 'Tingkat Reject', val: analytics.cancelRate.toFixed(1) + '%', sub: formatNum(summary.cancelled) + ' batal', icon: faTimesCircle, grad: 'bg-red-gradient' },
+                            { label: 'Tunggu Kurir', val: analytics.awaitingRate.toFixed(1) + '%', sub: formatNum(summary.other) + ' blm pickup', icon: faBoxOpen, grad: 'bg-yellow-gradient' },
+                            { label: 'Dlm Perjalanan', val: analytics.inTransitRate.toFixed(1) + '%', sub: formatNum(summary.shipping) + ' otw', icon: faTruck, grad: 'bg-green-gradient' },
+                            { label: 'Rata-rata/Hari', val: formatNum(Math.round(analytics.avgPerDay)), sub: analytics.activeDays + ' hari aktif', icon: faChartLine, grad: 'bg-teal-gradient' },
+                            { label: 'Hari Tertinggi', val: analytics.peak ? formatNum(analytics.peak.qty) : '-', sub: analytics.peak ? dayjs(analytics.peak.date).format('DD MMM') : 'Belum ada data', icon: faBolt, grad: 'bg-blue-gradient' }
+                        ].map((insight, idx) => (
+                            <div key={idx} className="ks-board" style={{ padding: '16px', display: 'flex', flexDirection: 'row', gap: '14px', alignItems: 'center', borderRadius: '12px', margin: 0 }}>
+                                <div className={`chip-icon ${insight.grad}`} style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                                    <FontAwesomeIcon icon={insight.icon} size="lg" />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{insight.label}</span>
+                                    <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', lineHeight: 1 }}>{insight.val}</span>
+                                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '500' }}>{insight.sub}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-red-gradient"><FontAwesomeIcon icon={faTimesCircle} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Tingkat Reject</span>
-                                <span className="chip-value">{analytics.cancelRate.toFixed(1)}%</span>
-                                <span className="chip-sub">{formatNum(summary.cancelled)} pesanan batal</span>
-                            </div>
-                        </div>
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-yellow-gradient"><FontAwesomeIcon icon={faBoxOpen} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Tunggu Kurir</span>
-                                <span className="chip-value">{analytics.awaitingRate.toFixed(1)}%</span>
-                                <span className="chip-sub">{formatNum(summary.other)} blm dipickup</span>
-                            </div>
-                        </div>
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-green-gradient"><FontAwesomeIcon icon={faTruck} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Dlm Perjalanan</span>
-                                <span className="chip-value">{analytics.inTransitRate.toFixed(1)}%</span>
-                                <span className="chip-sub">{formatNum(summary.shipping)} otw</span>
-                            </div>
-                        </div>
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-teal-gradient"><FontAwesomeIcon icon={faChartLine} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Rata-rata / Hari</span>
-                                <span className="chip-value">{formatNum(Math.round(analytics.avgPerDay))}</span>
-                                <span className="chip-sub">{analytics.activeDays} hari aktif packing</span>
-                            </div>
-                        </div>
-                        <div className="packing-insight-chip">
-                            <div className="chip-icon bg-blue-gradient"><FontAwesomeIcon icon={faBolt} /></div>
-                            <div className="chip-body">
-                                <span className="chip-label">Hari Tertinggi</span>
-                                <span className="chip-value">{analytics.peak ? formatNum(analytics.peak.qty) : '-'}</span>
-                                <span className="chip-sub">
-                                    <FontAwesomeIcon icon={faCalendarDay} className="me-1" />
-                                    {analytics.peak ? dayjs(analytics.peak.date).format('DD MMM YYYY') : 'Belum ada data'}
-                                </span>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
-                    <div className="packing-analytics-grid mt-2" style={{ gridTemplateColumns: '7fr 1.2fr 1.2fr 1.2fr' }}>
-                        <div className="packing-card packing-card-chart">
-                            <div className="packing-card-header">
-                                <span className="packing-card-label">Grafik Produksi Harian</span>
-                            </div>
-                            <div className="packing-chart-wrapper compact">
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '16px', padding: '16px 20px' }}>
+                        <div className="ks-board" style={{ padding: '16px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Grafik Produksi Harian</div>
+                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
                                 {!dailyChartData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
                                         Belum ada data hasil packing
                                     </div>
                                 ) : (
-                                    <Line data={dailyChartData} options={dailyChartOptions} />
+                                    <Line data={dailyChartData} options={{...dailyChartOptions, maintainAspectRatio: false}} />
                                 )}
                             </div>
                         </div>
 
-                        <div className="packing-card">
-                            <div className="packing-card-header">
-                                <span className="packing-card-label">Distribusi Status</span>
-                            </div>
-                            <div className="packing-chart-wrapper compact">
+                        <div className="ks-board" style={{ padding: '16px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Distribusi Status</div>
+                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
                                 {!statusDoughnutData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
                                         Belum ada data status
                                     </div>
                                 ) : (
-                                    <Doughnut data={statusDoughnutData} options={doughnutOptions} />
+                                    <Doughnut data={statusDoughnutData} options={{...doughnutOptions, maintainAspectRatio: false}} />
                                 )}
                             </div>
                         </div>
-                        <div className="packing-card">
-                            <div className="packing-card-header">
-                                <span className="packing-card-label">Durasi Menunggu Kurir</span>
-                            </div>
-                            <div className="packing-chart-wrapper compact">
+
+                        <div className="ks-board" style={{ padding: '16px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Durasi Menunggu Kurir</div>
+                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
                                 {!awaitingScatterData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
                                         Semua pesanan sudah dibawa kurir
                                     </div>
                                 ) : (
-                                    <Scatter data={awaitingScatterData} options={scatterOptions} />
+                                    <Scatter data={awaitingScatterData} options={{...scatterOptions, maintainAspectRatio: false}} />
                                 )}
                             </div>
                         </div>
 
-                        <div className="packing-card">
-                            <div className="packing-card-header">
-                                <span className="packing-card-label">Durasi Dalam Perjalanan</span>
-                            </div>
-                            <div className="packing-chart-wrapper compact">
+                        <div className="ks-board" style={{ padding: '16px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Durasi Dalam Perjalanan</div>
+                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
                                 {!shippingScatterData ? (
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
                                         Belum ada data pengiriman aktif
                                     </div>
                                 ) : (
-                                    <Scatter data={shippingScatterData} options={scatterOptions} />
+                                    <Scatter data={shippingScatterData} options={{...scatterOptions, maintainAspectRatio: false}} />
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="packing-card mt-2" style={{ padding: '20px' }}>
-                        <div className="packing-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                            <span className="packing-card-label">
+                    <div className="ks-board" style={{ margin: '16px 20px 20px', padding: '16px' }}>
+                        <div className="ks-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                            <span style={{ fontWeight: '600', color: '#0f172a', fontSize: '15px' }}>
                                 <FontAwesomeIcon icon={faListUl} className="me-2" style={{ color: '#0ea5e9' }} />
                                 Detail Pesanan untuk Dilacak ({formatNum(filteredOrders.length)})
                             </span>
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ position: 'relative' }}>
-                                    <FontAwesomeIcon icon={faSearch} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }} />
-                                    <Form.Control
+                                    <FontAwesomeIcon icon={faSearch} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }} />
+                                    <input
                                         type="text"
                                         placeholder="Cari order / resi / pelanggan..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 14px 8px 38px', fontSize: '13px', width: '260px', backgroundColor: '#f8fafc' }}
+                                        style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 12px 0 34px', fontSize: '13px', width: '240px', backgroundColor: '#f8fafc', height: '36px', outline: 'none' }}
                                     />
                                 </div>
-                                <Form.Select
+                                <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    style={{ borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '600', color: '#475569', padding: '8px 36px 8px 14px', cursor: 'pointer', backgroundColor: '#f8fafc', width: 'auto' }}
+                                    style={{ borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '500', color: '#475569', padding: '0 32px 0 12px', cursor: 'pointer', backgroundColor: '#f8fafc', height: '36px', outline: 'none', appearance: 'none', background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center', backgroundSize: '12px' }}
                                 >
                                     {STATUS_FILTERS.map((f) => (
                                         <option key={f.key} value={f.key}>{f.label} ({formatNum(statusCounts[f.key] || 0)})</option>
                                     ))}
-                                </Form.Select>
+                                </select>
                             </div>
                         </div>
 
-                        <div className="table-responsive" style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                            <Table hover style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
+                        <div className="ks-grid-scroll" style={{ maxHeight: '420px' }}>
+                            <table className="ks-grid">
                                 <thead>
                                     <tr>
                                         {['No. Order', 'No. Resi', 'Kurir', 'Pelanggan', 'Qty', 'Status', 'Tanggal Beli', 'Tanggal Kirim', 'Notes'].map((h, i) => (
-                                            <th key={i} style={{ backgroundColor: '#f8fafc', color: '#64748b', fontWeight: '600', padding: '12px', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 10, fontSize: '12.5px', textAlign: (h === 'Qty' || h === 'Status' || h === 'Kurir') ? 'center' : 'left' }}>{h}</th>
+                                            <th key={i} style={{ textAlign: (h === 'Qty' || h === 'Status' || h === 'Kurir') ? 'center' : 'left' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9" className="text-center" style={{ padding: '28px', color: '#94a3b8' }}>
+                                            <td colSpan="9" style={{ textAlign: 'center', padding: '28px', color: '#94a3b8' }}>
                                                 Tidak ada pesanan pada status / pencarian ini.
                                             </td>
                                         </tr>
                                     ) : (
                                         filteredOrders.map((order) => (
                                             <tr key={order.id}>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>
+                                                <td style={{ fontWeight: '600' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                         <span>{order.order_number || '-'}</span>
                                                         {order.order_type === 'PRE_ORDER' && (
@@ -616,18 +590,18 @@ const PackingMonitoring = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontFamily: 'monospace', fontSize: '12.5px', color: '#334155' }}>{order.tracking_number || '-'}</td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                <td style={{ fontFamily: 'monospace', color: '#334155' }}>{order.tracking_number || '-'}</td>
+                                                <td style={{ textAlign: 'center' }}>
                                                     <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#475569', whiteSpace: 'nowrap' }}>{getCourier(order.tracking_number)}</span>
                                                 </td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontSize: '13px', color: '#334155' }}>{order.customer_name || '-'}</td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center', fontWeight: '600', color: '#475569', fontSize: '13px' }}>{order.total_qty}</td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                <td>{order.customer_name || '-'}</td>
+                                                <td style={{ textAlign: 'center', fontWeight: '600', color: '#475569' }}>{order.total_qty}</td>
+                                                <td style={{ textAlign: 'center' }}>
                                                     <span style={statusBadgeStyle(order.status)}>{order.status || '-'}</span>
                                                 </td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontSize: '12.5px', color: '#64748b' }}>{order.order_date ? dayjs(order.order_date).format('DD MMM YYYY, HH:mm') : '-'}</td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontSize: '12.5px', color: '#64748b' }}>{order.picked_at ? dayjs(order.picked_at).format('DD MMM YYYY, HH:mm') : '-'}</td>
-                                                <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', fontSize: '12.5px', color: '#64748b', fontWeight: '500' }}>
+                                                <td style={{ color: '#64748b' }}>{order.order_date ? dayjs(order.order_date).format('DD MMM YYYY, HH:mm') : '-'}</td>
+                                                <td style={{ color: '#64748b' }}>{order.picked_at ? dayjs(order.picked_at).format('DD MMM YYYY, HH:mm') : '-'}</td>
+                                                <td style={{ color: '#64748b', fontWeight: '500' }}>
                                                     {order.status === 'SHIPPING' && order.picked_at ? (
                                                         <span style={{ color: '#ea580c', backgroundColor: '#ffedd5', padding: '4px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
                                                             <FontAwesomeIcon icon={faTruck} className="me-1" />
@@ -644,7 +618,7 @@ const PackingMonitoring = () => {
                                         ))
                                     )}
                                 </tbody>
-                            </Table>
+                            </table>
                         </div>
                     </div>
                 </>

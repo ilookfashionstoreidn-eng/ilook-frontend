@@ -19,7 +19,6 @@ import Swal from "sweetalert2";
 import "./GudangProdukWorkspace.css";
 import {
   buildGudangWorkspaceErrorMessage,
-  fetchGudangProdukWorkspace,
   fetchGudangProdukWorkspaceStockList,
   fetchStokSeriDetail,
 } from "./GudangProdukWorkspaceApi";
@@ -313,13 +312,13 @@ const ListStokProductGudang = () => {
     endDate: today,
     layoutId: "",
     location: "",
+    opnameStatus: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState("");
   const [seriModalRow, setSeriModalRow] = useState(null);
   const [layouts, setLayouts] = useState([]);
-  const [isLayoutsLoading, setIsLayoutsLoading] = useState(false);
   const [locations, setLocations] = useState([]);
 
   const customSelectStyles = {
@@ -363,31 +362,23 @@ const ListStokProductGudang = () => {
     })
   };
 
-  useEffect(() => {
-    let ignore = false;
-    const loadLayouts = async () => {
-      setIsLayoutsLoading(true);
-      try {
-        const workspaceData = await fetchGudangProdukWorkspace({
-          includeCatalog: false,
-          activityLimit: 0,
-        });
-        if (!ignore) {
-          setLayouts(workspaceData.layouts || []);
-        }
-      } catch (err) {
-        console.error("Failed to load layouts", err);
-      } finally {
-        if (!ignore) {
-          setIsLayoutsLoading(false);
-        }
-      }
-    };
-    loadLayouts();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  // Compact, consistent style shared by every toolbar dropdown
+  const selectStyles = {
+    ...customSelectStyles,
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    control: (base, state) => ({
+      ...base,
+      minHeight: '38px',
+      height: '38px',
+      borderRadius: '8px',
+      borderColor: state.isFocused ? '#2458ce' : '#e0e0e4',
+      boxShadow: state.isFocused ? '0 0 0 3px rgba(36, 88, 206, 0.12)' : 'none',
+      fontSize: '13px',
+      minWidth: 0,
+      backgroundColor: '#fff',
+      '&:hover': { borderColor: state.isFocused ? '#2458ce' : '#cfcfd6' },
+    }),
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -426,6 +417,7 @@ const ListStokProductGudang = () => {
           end_date: query.endDate,
           layout_id: query.layoutId,
           location: query.location,
+          opname_status: query.opnameStatus,
         });
 
         if (ignore) {
@@ -434,6 +426,9 @@ const ListStokProductGudang = () => {
 
         setRows(result.data);
         setLocations(result.locations || []);
+        if (Array.isArray(result.layouts) && result.layouts.length > 0) {
+          setLayouts(result.layouts);
+        }
         setSummary(result.summary);
         setPagination(result.pagination);
         setError("");
@@ -546,6 +541,17 @@ const ListStokProductGudang = () => {
     });
   };
 
+  const handleOpnameStatusChange = (event) => {
+    const val = event.target.value || "";
+    startTransition(() => {
+      setQuery((current) => ({
+        ...current,
+        opnameStatus: val,
+        page: 1,
+      }));
+    });
+  };
+
   const clearFilters = () => {
     setSearchInput("");
     setStartDate(today);
@@ -559,6 +565,7 @@ const ListStokProductGudang = () => {
         endDate: today,
         layoutId: "",
         location: "",
+        opnameStatus: "",
         page: 1,
       }));
     });
@@ -633,142 +640,106 @@ const ListStokProductGudang = () => {
       </div>
 
       <section className="ks-board">
-        <div className="ks-toolbar" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-          <label className="ks-search" style={{ width: '250px', margin: 0 }}>
-            <FaSearch className="ks-search-icon" size={14} />
-            <input
-              type="text"
-              placeholder="Cari SKU, produk..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              style={{ width: '100%' }}
-            />
-          </label>
+        <div className="lsp-toolbar">
+          <div className="lsp-filters">
+            <label className="lsp-search">
+              <FaSearch className="lsp-search-icon" size={14} />
+              <input
+                type="text"
+                placeholder="Cari SKU, produk..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </label>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#64748b' }}>Mulai:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={handleStartDateChange}
-              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', color: '#0f172a' }}
-            />
-          </div>
+            <div className="lsp-date">
+              <span>Mulai:</span>
+              <input type="date" value={startDate} onChange={handleStartDateChange} />
+            </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={handleEndDateChange}
-              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', color: '#0f172a' }}
-            />
-          </div>
+            <div className="lsp-date">
+              <span>Sampai:</span>
+              <input type="date" value={endDate} onChange={handleEndDateChange} />
+            </div>
 
-          <div style={{ width: '180px' }}>
+            <div className="lsp-field">
               <Select
                 options={[
                   { value: "", label: "Semua Gudang" },
-                  ...layouts.map((layout) => ({
-                    value: layout.id,
-                    label: layout.name,
-                  })),
+                  ...layouts.map((layout) => ({ value: layout.id, label: layout.name })),
                 ]}
                 value={
                   [
                     { value: "", label: "Semua Gudang" },
-                    ...layouts.map((layout) => ({
-                      value: layout.id,
-                      label: layout.name,
-                    })),
+                    ...layouts.map((layout) => ({ value: layout.id, label: layout.name })),
                   ].find((opt) => opt.value === query.layoutId) || { value: "", label: "Semua Gudang" }
                 }
-                onChange={(selected) => {
-                  handleLayoutChange({ target: { value: selected ? selected.value : "" } });
-                }}
-                isLoading={isLayoutsLoading}
+                onChange={(selected) => handleLayoutChange({ target: { value: selected ? selected.value : "" } })}
+                isLoading={isInitialLoading}
                 placeholder="Semua Gudang"
                 isSearchable
-                styles={{
-                  ...customSelectStyles,
-                  control: (base) => ({
-                    ...base,
-                    minHeight: '36px',
-                    borderRadius: '6px',
-                    borderColor: '#e2e8f0',
-                    boxShadow: 'none',
-                    '&:hover': { borderColor: '#cbd5e1' }
-                  })
-                }}
+                menuPortalTarget={document.body}
+                styles={selectStyles}
               />
-          </div>
+            </div>
 
-          <div style={{ width: '180px' }}>
+            <div className="lsp-field">
               <Select
                 options={[
                   { value: "", label: "Semua Lokasi" },
-                  ...locations.map((loc) => ({
-                    value: loc,
-                    label: loc,
-                  })),
+                  ...locations.map((loc) => ({ value: loc, label: loc })),
                 ]}
                 value={
                   [
                     { value: "", label: "Semua Lokasi" },
-                    ...locations.map((loc) => ({
-                      value: loc,
-                      label: loc,
-                    })),
+                    ...locations.map((loc) => ({ value: loc, label: loc })),
                   ].find((opt) => opt.value === query.location) || { value: "", label: "Semua Lokasi" }
                 }
-                onChange={(selected) => {
-                  handleLocationChange({ target: { value: selected ? selected.value : "" } });
-                }}
+                onChange={(selected) => handleLocationChange({ target: { value: selected ? selected.value : "" } })}
                 placeholder="Semua Lokasi"
                 isSearchable
-                styles={{
-                  ...customSelectStyles,
-                  control: (base) => ({
-                    ...base,
-                    minHeight: '36px',
-                    borderRadius: '6px',
-                    borderColor: '#e2e8f0',
-                    boxShadow: 'none',
-                    '&:hover': { borderColor: '#cbd5e1' }
-                  })
-                }}
+                menuPortalTarget={document.body}
+                styles={selectStyles}
               />
+            </div>
+
+            <div className="lsp-field">
+              <Select
+                options={[
+                  { value: "", label: "Semua Status" },
+                  { value: "sudah", label: "Sudah Opname" },
+                  { value: "belum", label: "Belum Opname" },
+                ]}
+                value={
+                  [
+                    { value: "", label: "Semua Status" },
+                    { value: "sudah", label: "Sudah Opname" },
+                    { value: "belum", label: "Belum Opname" },
+                  ].find((opt) => opt.value === query.opnameStatus) || { value: "", label: "Semua Status" }
+                }
+                onChange={(selected) => handleOpnameStatusChange({ target: { value: selected ? selected.value : "" } })}
+                placeholder="Semua Status"
+                isSearchable={false}
+                menuPortalTarget={document.body}
+                styles={selectStyles}
+              />
+            </div>
+
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
-            <select 
-              value={query.perPage} 
-              onChange={handlePerPageChange} 
-              style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', color: '#0f172a', cursor: 'pointer' }}
-            >
+          <div className="lsp-actions">
+            <select className="lsp-perpage" value={query.perPage} onChange={handlePerPageChange}>
               {PAGE_SIZE_OPTIONS.map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize} baris
-                </option>
+                <option key={pageSize} value={pageSize}>{pageSize} baris</option>
               ))}
             </select>
-            
-            <button
-              type="button"
-              className="ks-btn primary"
-              style={{ padding: '6px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '500', cursor: 'pointer' }}
-              onClick={applyFilter}
-            >
+
+            <button type="button" className="lsp-btn lsp-btn-apply" onClick={applyFilter}>
               Tampilkan
             </button>
-            
+
             {(activeSearch || query.layoutId || query.location || startDate !== today || endDate !== today) && (
-              <button
-                type="button"
-                className="ks-btn"
-                style={{ padding: '6px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', fontWeight: '500', cursor: 'pointer' }}
-                onClick={clearFilters}
-              >
+              <button type="button" className="lsp-btn lsp-btn-reset" onClick={clearFilters}>
                 Reset
               </button>
             )}
@@ -802,6 +773,7 @@ const ListStokProductGudang = () => {
                     <th className="align-right">Qty Sisa</th>
                     <th>Gudang</th>
                     <th>Lokasi</th>
+                    <th>Status Opname</th>
                     <th style={{ textAlign: 'center' }}>Aksi</th>
                   </tr>
                 </thead>
@@ -879,6 +851,20 @@ const ListStokProductGudang = () => {
                           <td style={{ borderBottom: '1px solid #e2e8f0' }}>
                             <span className="ks-badge">{highlightText(row.namaGudang, activeSearch)}</span>
                           </td>
+                          <td style={{ borderBottom: '1px solid #e2e8f0', verticalAlign: 'top', padding: '12px 8px' }}>
+                            {row.isOpnamed ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span className="ks-badge" style={{ background: '#ecfdf5', color: '#10b981', borderColor: '#a7f3d0', width: 'fit-content' }}>Sudah Opname</span>
+                                {row.lastOpnameDate && (
+                                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                    Terakhir: {formatDate(row.lastOpnameDate)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="ks-badge" style={{ background: '#fffbeb', color: '#f59e0b', borderColor: '#fde68a', width: 'fit-content' }}>Belum Opname</span>
+                            )}
+                          </td>
                           <td style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>
                             <button
                               type="button"
@@ -896,33 +882,6 @@ const ListStokProductGudang = () => {
                   ))}
                 </tbody>
               </table>
-
-              {pagination.last_page > 1 ? (
-                <div className="ks-footer">
-                  <div className="ks-footer-info">
-                    Menampilkan <strong>{formatNumber((pagination.current_page - 1) * pagination.per_page + 1)}</strong> - <strong>{formatNumber(Math.min(pagination.current_page * pagination.per_page, pagination.total))}</strong> dari <strong>{formatNumber(pagination.total)}</strong> baris
-                  </div>
-                  <div className="ks-pagination">
-                    <button
-                      className="ks-page-btn"
-                      onClick={() => goToPage(pagination.current_page - 1)}
-                      disabled={pagination.current_page <= 1}
-                    >
-                      <FaChevronLeft size={12} />
-                    </button>
-                    <span className="ks-page-info">
-                      Halaman {formatNumber(pagination.current_page)} dari {formatNumber(pagination.last_page)}
-                    </span>
-                    <button
-                      className="ks-page-btn"
-                      onClick={() => goToPage(pagination.current_page + 1)}
-                      disabled={pagination.current_page >= pagination.last_page}
-                    >
-                      <FaChevronRight size={12} />
-                    </button>
-                  </div>
-                </div>
-              ) : null}
             </>
           ) : (
             <div className="ks-empty">
@@ -935,6 +894,33 @@ const ListStokProductGudang = () => {
             </div>
           )}
         </div>
+
+        {hasRows && pagination.last_page > 1 ? (
+          <div className="ks-footer">
+            <div className="ks-footer-info">
+              Menampilkan <strong>{formatNumber((pagination.current_page - 1) * pagination.per_page + 1)}</strong> - <strong>{formatNumber(Math.min(pagination.current_page * pagination.per_page, pagination.total))}</strong> dari <strong>{formatNumber(pagination.total)}</strong> baris
+            </div>
+            <div className="ks-pagination">
+              <button
+                className="ks-page-btn"
+                onClick={() => goToPage(pagination.current_page - 1)}
+                disabled={pagination.current_page <= 1}
+              >
+                <FaChevronLeft size={12} />
+              </button>
+              <span className="ks-page-info">
+                Halaman {formatNumber(pagination.current_page)} dari {formatNumber(pagination.last_page)}
+              </span>
+              <button
+                className="ks-page-btn"
+                onClick={() => goToPage(pagination.current_page + 1)}
+                disabled={pagination.current_page >= pagination.last_page}
+              >
+                <FaChevronRight size={12} />
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {seriModalRow ? (

@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./DashboardCutting.css";
 import API from "../../../api";
-import { Line } from "react-chartjs-2";
+import { Line, Doughnut } from "react-chartjs-2";
 import "chart.js/auto";
-import { FaCalendarAlt, FaExclamationTriangle, FaClock, FaCheckCircle, FaBoxOpen, FaFire } from "react-icons/fa";
+import {
+  FaCalendarAlt, FaExclamationTriangle, FaClock, FaBoxOpen, FaFire,
+  FaArrowUp, FaArrowDown, FaMinus, FaSyncAlt, FaBullseye, FaLayerGroup,
+} from "react-icons/fa";
 
 const formatDateParam = (date) => {
   const d = new Date(date);
@@ -16,13 +19,14 @@ const formatLongDate = (date) =>
 const formatRupiah = (value) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value || 0);
 
+const nf = (value) => Number(value || 0).toLocaleString("id-ID");
+
 const createEmptySummary = () => ({
   all: 0,
   belum_diambil: { count: 0, total_asumsi_produk: 0 },
   sudah_diambil: 0,
   selesai: 0,
-  in_progress_weekly: { count: 0, total_asumsi_produk: 0, target: 50000, remaining: 50000 },
-  in_progress_daily: { count: 0, total_asumsi_produk: 0, target: 7143, remaining: 7143 },
+  chart_data: [],
 });
 
 const DashboardCutting = () => {
@@ -33,9 +37,9 @@ const DashboardCutting = () => {
   const [performance, setPerformance] = useState([]);
   const [performanceLoading, setPerformanceLoading] = useState(false);
   const [performanceRange, setPerformanceRange] = useState("today");
-  const [performanceFilterOpen, setPerformanceFilterOpen] = useState(false);
   const [incomeList, setIncomeList] = useState([]);
   const [incomeLoading, setIncomeLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [cuttingStats, setCuttingStats] = useState({
     monthly_target: 250000, monthly_total: 0,
     weekly_target: 50000, weekly_total: 0,
@@ -131,30 +135,50 @@ const DashboardCutting = () => {
     } catch { setIncomeList([]); } finally { setIncomeLoading(false); }
   };
 
-  useEffect(() => { fetchDashboard(); fetchCuttingStats(); }, []);
-  useEffect(() => { fetchPerformance(); }, [performanceRange]);
-  useEffect(() => { fetchIncomeWeekly(); }, []);
+  const refreshAll = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchDashboard(), fetchCuttingStats(), fetchPerformance(), fetchIncomeWeekly()]);
+    setRefreshing(false);
+  };
 
-  // Derived values
+  useEffect(() => { fetchDashboard(); fetchCuttingStats(); fetchIncomeWeekly(); }, []);
+  useEffect(() => { fetchPerformance(); }, [performanceRange]);
+
+  // ── Derived values ──
   const totalBelum = summary.belum_diambil?.count || 0;
   const totalBelumQty = summary.belum_diambil?.total_asumsi_produk || 0;
   const totalProses = summary.sudah_diambil || 0;
   const totalSelesai = summary.selesai || 0;
   const totalSpk = summary.all || 0;
+  const completionPct = totalSpk > 0 ? (totalSelesai / totalSpk) * 100 : 0;
 
   const dailyTotal = cuttingStats.daily_total || 0;
   const dailyTarget = cuttingStats.daily_target || 8333;
   const dailyPct = dailyTarget > 0 ? Math.min(100, (dailyTotal / dailyTarget) * 100) : 0;
+  const dailyRemaining = Math.max(0, dailyTarget - dailyTotal);
 
   const weeklyTotal = cuttingStats.weekly_total || 0;
   const weeklyTarget = cuttingStats.weekly_target || 50000;
   const weeklyPct = weeklyTarget > 0 ? Math.min(100, (weeklyTotal / weeklyTarget) * 100) : 0;
+  const weeklyRemaining = Math.max(0, weeklyTarget - weeklyTotal);
 
   const monthlyTotal = cuttingStats.monthly_total || 0;
   const monthlyTarget = cuttingStats.monthly_target || 250000;
   const monthlyPct = monthlyTarget > 0 ? Math.min(100, (monthlyTotal / monthlyTarget) * 100) : 0;
 
-  // Deadline urgency from spkList (belum diambil)
+  // Monthly projection (analytics): extrapolate current pace to end of month
+  const projection = useMemo(() => {
+    const dayOfMonth = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const projected = dayOfMonth > 0 ? Math.round((monthlyTotal / dayOfMonth) * daysInMonth) : 0;
+    const onTrack = projected >= monthlyTarget;
+    const daysLeft = daysInMonth - dayOfMonth;
+    const remaining = Math.max(0, monthlyTarget - monthlyTotal);
+    const paceNeeded = daysLeft > 0 ? Math.ceil(remaining / daysLeft) : remaining;
+    return { projected, onTrack, paceNeeded, daysLeft };
+  }, [monthlyTotal, monthlyTarget, today]);
+
+  // ── Deadline urgency from spkList (belum diambil) ──
   const deadlineGroups = useMemo(() => {
     const over = [], urgent = [], safe = [];
     spkList.forEach(item => {
@@ -170,320 +194,416 @@ const DashboardCutting = () => {
 
   const alertItems = useMemo(() => [...deadlineGroups.over, ...deadlineGroups.urgent].slice(0, 8), [deadlineGroups]);
 
-  // Chart
-  const dailyChartData = useMemo(() => {
-    const raw = summary.chart_data;
-    if (!Array.isArray(raw) || raw.length === 0) return null;
-    const labels = raw.map(i => new Date(i.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }));
-    const values = raw.map(i => Number(i.total_qty) || 0);
-    if (!values.some(v => v > 0)) return null;
+  // ── Trend analytics from chart_data (14 days) ──
+  const trend = useMemo(() => {
+    const raw = Array.isArray(summary.chart_data) ? summary.chart_data : [];
+    if (raw.length === 0) return null;
+    const vals = raw.map(i => Number(i.total_qty) || 0);
+    if (!vals.some(v => v > 0)) return null;
+    const total = vals.reduce((a, b) => a + b, 0);
+    const avg = Math.round(total / vals.length);
+    const max = Math.max(...vals);
+    const maxIdx = vals.indexOf(max);
+    const last = vals[vals.length - 1] ?? 0;
+    const prev = vals[vals.length - 2] ?? 0;
+    const delta = last - prev;
+    const deltaPct = prev > 0 ? (delta / prev) * 100 : null;
+    return { raw, vals, total, avg, max, bestDate: raw[maxIdx]?.date, delta, deltaPct };
+  }, [summary]);
+
+  const trendChartData = useMemo(() => {
+    if (!trend) return null;
+    const labels = trend.raw.map(i => new Date(i.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }));
     return {
       labels,
       datasets: [
         {
-          label: "Produksi",
-          data: values,
-          borderColor: "#2563eb",
-          backgroundColor: "rgba(37,99,235,0.12)",
-          borderWidth: 2.5,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          pointBackgroundColor: "#2563eb",
+          label: "Volume", data: trend.vals,
+          borderColor: "#2458ce", backgroundColor: (ctx) => {
+            const { chart } = ctx;
+            const g = chart.ctx.createLinearGradient(0, 0, 0, chart.height);
+            g.addColorStop(0, "rgba(36,88,206,0.18)");
+            g.addColorStop(1, "rgba(36,88,206,0)");
+            return g;
+          },
+          borderWidth: 2.5, fill: true, tension: 0.4,
+          pointRadius: 0, pointHoverRadius: 6, pointBackgroundColor: "#2458ce", pointHoverBorderColor: "#fff", pointHoverBorderWidth: 2,
         },
         {
-          label: "Target Harian",
-          data: raw.map(() => dailyTarget),
-          borderColor: "rgba(239,68,68,0.5)",
-          borderWidth: 1.5,
-          borderDash: [6, 4],
-          fill: false,
-          pointRadius: 0,
-          tension: 0,
+          label: "Rata² 14h", data: trend.raw.map(() => trend.avg),
+          borderColor: "rgba(148,163,184,0.8)", borderWidth: 1.5, borderDash: [5, 4],
+          fill: false, pointRadius: 0, tension: 0,
         },
       ],
     };
-  }, [summary, dailyTarget]);
+  }, [trend]);
 
   const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { display: false },
-      tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("id-ID")} pcs` } },
+      tooltip: {
+        backgroundColor: "#1c1c1f", padding: 10, cornerRadius: 8, titleFont: { size: 12 }, bodyFont: { size: 12 },
+        callbacks: { label: ctx => `${ctx.dataset.label}: ${nf(ctx.parsed.y)} pcs` },
+      },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#6b7280", font: { size: 11 } } },
-      y: { beginAtZero: true, grid: { color: "rgba(148,163,184,0.15)" }, ticks: { color: "#6b7280", font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { color: "#9a9aa3", font: { size: 10.5 } } },
+      y: { beginAtZero: true, grid: { color: "rgba(148,163,184,0.12)" }, ticks: { color: "#9a9aa3", font: { size: 10.5 }, maxTicksLimit: 5 } },
     },
   }), []);
 
-  const maxPerfProduk = useMemo(() => performance.reduce((m, i) => i.total_produk > m ? i.total_produk : m, 0), [performance]);
+  // ── Status distribution donut ──
+  const donutData = useMemo(() => ({
+    labels: ["Antrian", "Proses", "Selesai"],
+    datasets: [{
+      data: [totalBelum, totalProses, totalSelesai],
+      backgroundColor: ["#f59e0b", "#2458ce", "#22c55e"],
+      borderWidth: 0, hoverOffset: 4,
+    }],
+  }), [totalBelum, totalProses, totalSelesai]);
 
-  const perfFilterLabel = performanceRange === "today" ? "Hari Ini" : performanceRange === "week" ? "Minggu Ini" : "Bulan Ini";
+  const donutOptions = useMemo(() => ({
+    responsive: true, maintainAspectRatio: false, cutout: "70%",
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#1c1c1f", padding: 10, cornerRadius: 8,
+        callbacks: {
+          label: ctx => {
+            const pct = totalSpk > 0 ? ((ctx.parsed / totalSpk) * 100).toFixed(1) : 0;
+            return `${ctx.label}: ${nf(ctx.parsed)} (${pct}%)`;
+          },
+        },
+      },
+    },
+  }), [totalSpk]);
+
+  const statusLegend = [
+    { label: "Antrian", value: totalBelum, color: "#f59e0b" },
+    { label: "Proses", value: totalProses, color: "#2458ce" },
+    { label: "Selesai", value: totalSelesai, color: "#22c55e" },
+  ];
+
+  const maxPerfProduk = useMemo(() => performance.reduce((m, i) => i.total_produk > m ? i.total_produk : m, 0), [performance]);
+  const perfRanges = [{ k: "today", l: "Hari Ini" }, { k: "week", l: "Minggu Ini" }, { k: "month", l: "Bulan Ini" }];
 
   const getDeadlineBadge = (sisa) => {
-    if (sisa < 0) return { label: `${Math.abs(sisa)}h terlambat`, cls: "dbd-over" };
-    if (sisa === 0) return { label: "Hari ini!", cls: "dbd-warn" };
+    if (sisa < 0) return { label: `${Math.abs(sisa)}h telat`, cls: "dbd-over" };
+    if (sisa === 0) return { label: "Hari ini", cls: "dbd-warn" };
     if (sisa <= 3) return { label: `${sisa} hari`, cls: "dbd-warn" };
     return { label: `${sisa} hari`, cls: "dbd-safe" };
   };
 
+  const DeltaChip = ({ delta, pct }) => {
+    if (delta === 0 || delta == null) return <span className="dc-delta dc-delta-flat"><FaMinus />0</span>;
+    const up = delta > 0;
+    return (
+      <span className={`dc-delta ${up ? "dc-delta-up" : "dc-delta-down"}`}>
+        {up ? <FaArrowUp /> : <FaArrowDown />}
+        {pct != null ? `${Math.abs(pct).toFixed(0)}%` : nf(Math.abs(delta))}
+      </span>
+    );
+  };
+
   return (
-    <div className="ks-page pl-page">
+    <div className="ks-page dc-page">
       {/* Header */}
       <header className="ks-header">
         <div className="ks-header-id">
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <FaCalendarAlt style={{ color: "#2458ce" }} />
+          <div className="dc-title">
+            <FaLayerGroup style={{ color: "#2458ce" }} />
             <h1>Dashboard Produksi Cutting</h1>
           </div>
           <span className="ks-header-sub">{formatLongDate(today)}</span>
         </div>
+        <div className="ks-header-actions">
+          <button className="ks-btn" onClick={refreshAll} disabled={refreshing}>
+            <FaSyncAlt className={refreshing ? "is-spinning" : ""} />
+            <span>Segarkan</span>
+          </button>
+        </div>
       </header>
 
-      <main style={{ flex: 1, padding: "24px", overflowY: "auto", background: "var(--ks-bg)", display: "flex", flexDirection: "column", gap: "24px" }}>
-        {error && <div className="cutting-dashboard-error" style={{ marginBottom: "0" }}><span>{error}</span></div>}
+      <main className="dc-main">
+        {error && <div className="dc-error"><FaExclamationTriangle /><span>{error}</span></div>}
 
-        {/* ── Row 1: 5 stat cards ── */}
-      <div className="dc-stat-row">
+        {/* ── Row 1: KPI cards ── */}
+        <section className="dc-kpi-row">
 
-        {/* SPK Overview */}
-        <div className="ks-board dc-stat-card dc-stat-spk">
-          <div className="dc-stat-icon"><FaCheckCircle /></div>
-          <div className="dc-stat-body">
-            <div className="dc-stat-label">Total SPK</div>
-            <div className="dc-stat-value">{totalSpk.toLocaleString("id-ID")}</div>
-            <div className="dc-stat-pills">
-              <span className="dc-pill dc-pill-orange">Antrian {totalBelum}</span>
-              <span className="dc-pill dc-pill-blue">Proses {totalProses}</span>
-              <span className="dc-pill dc-pill-green">Selesai {totalSelesai}</span>
+          {/* Produksi Hari Ini */}
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-blue"><FaFire /></span>
+              <span className="dc-kpi-label">Produksi Hari Ini</span>
             </div>
-          </div>
-        </div>
-
-        {/* Antrian + estimasi qty */}
-        <div className="ks-board dc-stat-card dc-stat-antrian">
-          <div className="dc-stat-icon dc-icon-orange"><FaBoxOpen /></div>
-          <div className="dc-stat-body">
-            <div className="dc-stat-label">Antrian Belum Diambil</div>
-            <div className="dc-stat-value dc-val-orange">{totalBelum.toLocaleString("id-ID")} <span className="dc-stat-unit">SPK</span></div>
-            <div className="dc-stat-sub">Est. <strong>{totalBelumQty.toLocaleString("id-ID")}</strong> pcs belum cutting</div>
-          </div>
-        </div>
-
-        {/* Produksi Hari Ini */}
-        <div className="ks-board dc-stat-card dc-stat-daily">
-          <div className="dc-stat-icon dc-icon-blue"><FaFire /></div>
-          <div className="dc-stat-body">
-            <div className="dc-stat-label">Produksi Hari Ini</div>
-            <div className="dc-stat-value">{dailyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+            <div className="dc-kpi-value">{nf(dailyTotal)} <span className="dc-unit">pcs</span></div>
             <div className="dc-progress-wrap">
-              <div className="dc-progress-track">
-                <div className="dc-progress-fill dc-fill-blue" style={{ width: `${dailyPct}%` }} />
-              </div>
+              <div className="dc-progress-track"><div className="dc-progress-fill dc-fill-blue" style={{ width: `${dailyPct}%` }} /></div>
               <span className="dc-progress-pct">{Math.round(dailyPct)}%</span>
             </div>
-            <div className="dc-stat-sub">Target {dailyTarget.toLocaleString("id-ID")} pcs</div>
+            <div className="dc-kpi-foot">
+              {dailyRemaining > 0 ? <>Sisa <strong>{nf(dailyRemaining)}</strong> dari target {nf(dailyTarget)}</> : <span className="dc-ok">Target harian tercapai ✓</span>}
+            </div>
           </div>
-        </div>
 
-        {/* Progress Mingguan */}
-        <div className="ks-board dc-stat-card dc-stat-weekly">
-          <div className="dc-stat-icon dc-icon-green"><FaClock /></div>
-          <div className="dc-stat-body">
-            <div className="dc-stat-label">Produksi Minggu Ini</div>
-            <div className="dc-stat-value">{weeklyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+          {/* Produksi Minggu Ini */}
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-green"><FaClock /></span>
+              <span className="dc-kpi-label">Produksi Minggu Ini</span>
+            </div>
+            <div className="dc-kpi-value">{nf(weeklyTotal)} <span className="dc-unit">pcs</span></div>
             <div className="dc-progress-wrap">
-              <div className="dc-progress-track">
-                <div className="dc-progress-fill dc-fill-green" style={{ width: `${weeklyPct}%` }} />
-              </div>
+              <div className="dc-progress-track"><div className="dc-progress-fill dc-fill-green" style={{ width: `${weeklyPct}%` }} /></div>
               <span className="dc-progress-pct">{Math.round(weeklyPct)}%</span>
             </div>
-            <div className="dc-stat-sub">Target {weeklyTarget.toLocaleString("id-ID")} pcs</div>
+            <div className="dc-kpi-foot">
+              {weeklyRemaining > 0 ? <>Sisa <strong>{nf(weeklyRemaining)}</strong> dari target {nf(weeklyTarget)}</> : <span className="dc-ok">Target mingguan tercapai ✓</span>}
+            </div>
           </div>
-        </div>
 
-        {/* Progress Bulanan */}
-        <div className="ks-board dc-stat-card dc-stat-monthly">
-          <div className="dc-stat-icon dc-icon-purple"><FaCalendarAlt /></div>
-          <div className="dc-stat-body">
-            <div className="dc-stat-label">Produksi Bulan Ini</div>
-            <div className="dc-stat-value">{monthlyTotal.toLocaleString("id-ID")} <span className="dc-stat-unit">pcs</span></div>
+          {/* Produksi Bulan Ini + Proyeksi */}
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-purple"><FaCalendarAlt /></span>
+              <span className="dc-kpi-label">Produksi Bulan Ini</span>
+              <span className={`dc-track-badge ${projection.onTrack ? "is-ontrack" : "is-behind"}`}>
+                {projection.onTrack ? "On track" : "Di bawah"}
+              </span>
+            </div>
+            <div className="dc-kpi-value">{nf(monthlyTotal)} <span className="dc-unit">pcs</span></div>
             <div className="dc-progress-wrap">
-              <div className="dc-progress-track">
-                <div className="dc-progress-fill dc-fill-purple" style={{ width: `${monthlyPct}%` }} />
-              </div>
+              <div className="dc-progress-track"><div className="dc-progress-fill dc-fill-purple" style={{ width: `${monthlyPct}%` }} /></div>
               <span className="dc-progress-pct">{Math.round(monthlyPct)}%</span>
             </div>
-            <div className="dc-stat-sub">Target {monthlyTarget.toLocaleString("id-ID")} pcs</div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Row 2: Chart + Deadline Alert ── */}
-      <div className="dc-mid-row">
-
-        {/* Grafik harian */}
-        <div className="ks-board cutting-card dc-chart-card">
-          <div className="ks-board cutting-card-header">
-            <span className="ks-board cutting-card-label">Grafik Produksi Harian</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "#64748b" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 3, background: "#2563eb", borderRadius: 2 }} /> Aktual</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 2, borderTop: "2px dashed rgba(239,68,68,0.6)" }} /> Target</span>
+            <div className="dc-kpi-foot">
+              <FaBullseye style={{ marginRight: 4, color: "#9a9aa3" }} />
+              Proyeksi <strong>{nf(projection.projected)}</strong> / target {nf(monthlyTarget)}
             </div>
           </div>
-          <div style={{ height: 240, marginTop: 8 }}>
-            {loading && <div className="cutting-empty-text">Memuat grafik…</div>}
-            {!loading && !dailyChartData && <div className="cutting-empty-text">Belum ada data produksi</div>}
-            {!loading && dailyChartData && <Line data={dailyChartData} options={chartOptions} />}
-          </div>
-        </div>
 
-        {/* Deadline Alert */}
-        <div className="ks-board cutting-card dc-alert-card">
-          <div className="ks-board cutting-card-header">
-            <span className="ks-board cutting-card-label">
-              <FaExclamationTriangle style={{ color: "#f59e0b", marginRight: 6 }} />
-              SPK Deadline Mepet
-            </span>
-            <div style={{ display: "flex", gap: 6, fontSize: 11 }}>
-              {deadlineGroups.over.length > 0 && <span className="dc-badge-over">{deadlineGroups.over.length} lewat</span>}
-              {deadlineGroups.urgent.length > 0 && <span className="dc-badge-warn">{deadlineGroups.urgent.length} mepet</span>}
+          {/* Antrian belum diambil */}
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-orange"><FaBoxOpen /></span>
+              <span className="dc-kpi-label">Antrian Belum Diambil</span>
+            </div>
+            <div className="dc-kpi-value dc-val-orange">{nf(totalBelum)} <span className="dc-unit">SPK</span></div>
+            <div className="dc-kpi-foot dc-foot-lg">
+              Est. <strong>{nf(totalBelumQty)}</strong> pcs menunggu cutting
+            </div>
+            <div className="dc-kpi-foot">
+              {deadlineGroups.over.length > 0 && <span className="dc-mini-over">{deadlineGroups.over.length} lewat deadline</span>}
+              {deadlineGroups.urgent.length > 0 && <span className="dc-mini-warn">{deadlineGroups.urgent.length} mepet</span>}
+              {deadlineGroups.over.length === 0 && deadlineGroups.urgent.length === 0 && <span className="dc-ok">Tidak ada yang mepet</span>}
             </div>
           </div>
-          {alertItems.length === 0 ? (
-            <div className="cutting-empty-text" style={{ height: 200 }}>
-              {loading ? "Memuat…" : "Semua SPK aman ✓"}
-            </div>
-          ) : (
-            <div className="dc-alert-list">
-              {alertItems.map((item, i) => {
-                const badge = getDeadlineBadge(item.sisa_hari);
-                const produk = item.nama_produk || item.produk?.nama_produk || "-";
-                return (
-                  <div key={i} className={`dc-alert-item ${item.sisa_hari < 0 ? "dc-alert-over" : "dc-alert-urgent"}`}>
-                    <div className="dc-alert-left">
-                      <div className="dc-alert-id">#{item.kode_seri || item.id || i + 1}</div>
-                      <div className="dc-alert-product">{produk}</div>
-                      <div className="dc-alert-penjahit">{item.penjahit?.nama_penjahit || item.nama_penjahit || "—"}</div>
-                    </div>
-                    <span className={`dc-deadline-badge ${badge.cls}`}>{badge.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
-      </div>
+        </section>
 
-      {/* ── Row 3: Performa + Pendapatan ── */}
-      <div className="cutting-performance-section">
+        {/* ── Row 2: Trend chart + Status donut ── */}
+        <section className="dc-analytics-row">
 
-        {/* Performa Tukang */}
-        <div className="ks-board cutting-card cutting-card-performance">
-          <div className="ks-board cutting-card-header performance-header-row">
-            <span className="ks-board cutting-card-label">Performa Tukang</span>
-            <div className="ks-btn is-secondary" onClick={() => setPerformanceFilterOpen(o => !o)}>
-              <span>{perfFilterLabel}</span>
+          {/* Trend chart */}
+          <div className="dc-card dc-chart-card">
+            <div className="dc-card-head">
+              <span className="dc-card-title">Tren Volume Produksi · 14 Hari</span>
+              <div className="dc-legend-inline">
+                <span><i className="dc-sw dc-sw-line" /> Volume</span>
+                <span><i className="dc-sw dc-sw-dash" /> Rata²</span>
+              </div>
             </div>
-          </div>
-          {performanceFilterOpen && (
-            <div className="performance-filter-dropdown">
-              {["today", "week", "month"].map(r => (
-                <button key={r} type="button"
-                  className={`performance-filter-option${performanceRange === r ? " performance-filter-option-active" : ""}`}
-                  onClick={() => { setPerformanceRange(r); setPerformanceFilterOpen(false); }}>
-                  {r === "today" ? "Hari Ini" : r === "week" ? "Minggu Ini" : "Bulan Ini"}
-                </button>
-              ))}
+            <div className="dc-chart-area">
+              {loading && <div className="dc-empty">Memuat grafik…</div>}
+              {!loading && !trendChartData && <div className="dc-empty">Belum ada data produksi</div>}
+              {!loading && trendChartData && <Line data={trendChartData} options={chartOptions} />}
             </div>
-          )}
-          <div className="performance-table-wrapper">
-            {performanceLoading ? (
-              <div className="cutting-empty-text">Memuat performa…</div>
-            ) : performance.length === 0 ? (
-              <div className="cutting-empty-text">Belum ada data performa</div>
-            ) : (
-              <table className="ks-grid">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Tukang</th>
-                    <th style={{ textAlign: "center" }}>SPK</th>
-                    <th>Total Pcs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {performance.map((item, idx) => {
-                    const pct = maxPerfProduk > 0 ? Math.max(8, (item.total_produk / maxPerfProduk) * 100) : 0;
-                    const colors = ["dc-fill-blue", "dc-fill-green", "dc-fill-purple", "dc-fill-orange", "dc-fill-red", "dc-fill-teal"];
-                    const name = item.nama_tukang_cutting || "-";
-                    return (
-                      <tr key={item.tukang_cutting_id || idx}>
-                        <td style={{ color: "#94a3b8", fontWeight: 700, fontSize: 12, width: 28 }}>{idx + 1}</td>
-                        <td>
-                          <div className="performance-user-cell">
-                            <div className={`performance-avatar dc-avatar-${idx % 6}`}>
-                              <span>{name.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <span className="performance-name">{name}</span>
-                          </div>
-                        </td>
-                        <td className="performance-number">{item.jumlah_spk}</td>
-                        <td>
-                          <div className="performance-pcs-cell">
-                            <div className="performance-pcs-bar">
-                              <div className={`performance-pcs-bar-fill ${colors[idx % colors.length]}`} style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="performance-pcs-value">{item.total_produk.toLocaleString("id-ID")}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {trend && (
+              <div className="dc-chart-foot">
+                <div className="dc-foot-stat">
+                  <span className="dc-foot-label">Total 14 hari</span>
+                  <span className="dc-foot-value">{nf(trend.total)}</span>
+                </div>
+                <div className="dc-foot-stat">
+                  <span className="dc-foot-label">Rata² / hari</span>
+                  <span className="dc-foot-value">{nf(trend.avg)}</span>
+                </div>
+                <div className="dc-foot-stat">
+                  <span className="dc-foot-label">Tertinggi</span>
+                  <span className="dc-foot-value">{nf(trend.max)}</span>
+                </div>
+                <div className="dc-foot-stat">
+                  <span className="dc-foot-label">Hari ini vs kemarin</span>
+                  <span className="dc-foot-value"><DeltaChip delta={trend.delta} pct={trend.deltaPct} /></span>
+                </div>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Pendapatan Tukang */}
-        <div className="ks-board cutting-card cutting-card-income">
-          <div className="ks-board cutting-card-header performance-header-row">
-            <span className="ks-board cutting-card-label">Pendapatan Tukang</span>
-            <div className="ks-btn is-secondary income-filter-pill"><span>Minggu Ini</span></div>
-          </div>
-          <div className="income-list-wrapper">
-            {incomeLoading ? (
-              <div className="cutting-empty-text">Memuat pendapatan…</div>
-            ) : incomeList.length === 0 ? (
-              <div className="cutting-empty-text">Belum ada data pendapatan</div>
-            ) : (
-              <ul className="income-list">
-                {incomeList.map((item, idx) => {
-                  const name = item.nama_tukang_cutting || "-";
-                  const colorCls = ["income-amount-green", "income-amount-blue", "income-amount-orange", "income-amount-red"][idx] || "income-amount-green";
+          {/* Status donut */}
+          <div className="dc-card dc-donut-card">
+            <div className="dc-card-head">
+              <span className="dc-card-title">Distribusi Status SPK</span>
+            </div>
+            <div className="dc-donut-area">
+              <div className="dc-donut-wrap">
+                {totalSpk > 0 ? <Doughnut data={donutData} options={donutOptions} /> : <div className="dc-empty">—</div>}
+                <div className="dc-donut-center">
+                  <span className="dc-donut-total">{nf(totalSpk)}</span>
+                  <span className="dc-donut-cap">Total SPK</span>
+                </div>
+              </div>
+              <ul className="dc-legend">
+                {statusLegend.map((s) => {
+                  const pct = totalSpk > 0 ? (s.value / totalSpk) * 100 : 0;
                   return (
-                    <li key={item.tukang_cutting_id || idx} className="income-item">
-                      <span className="income-rank">{idx + 1}.</span>
-                      <div className="income-user">
-                        <div className="income-avatar"><span>{name.charAt(0).toUpperCase()}</span></div>
-                        <span className="income-name">{name}</span>
-                      </div>
-                      <span className={`income-amount ${colorCls}`}>{formatRupiah(item.total_transfer)}</span>
+                    <li key={s.label}>
+                      <span className="dc-legend-dot" style={{ background: s.color }} />
+                      <span className="dc-legend-name">{s.label}</span>
+                      <span className="dc-legend-val">{nf(s.value)}</span>
+                      <span className="dc-legend-pct">{pct.toFixed(0)}%</span>
                     </li>
                   );
                 })}
               </ul>
+            </div>
+            <div className="dc-donut-foot">
+              Tingkat penyelesaian <strong>{completionPct.toFixed(1)}%</strong>
+            </div>
+          </div>
+
+        </section>
+
+        {/* ── Row 3: Performance + Income + Deadline ── */}
+        <section className="dc-bottom-row">
+
+          {/* Performa Tukang */}
+          <div className="dc-card dc-perf-card">
+            <div className="dc-card-head">
+              <span className="dc-card-title">Performa Tukang</span>
+              <div className="ks-segment">
+                {perfRanges.map(r => (
+                  <button key={r.k} type="button"
+                    className={`ks-seg-btn${performanceRange === r.k ? " is-active" : ""}`}
+                    onClick={() => setPerformanceRange(r.k)}>
+                    {r.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="dc-table-wrap">
+              {performanceLoading ? (
+                <div className="dc-empty">Memuat performa…</div>
+              ) : performance.length === 0 ? (
+                <div className="dc-empty">Belum ada data performa</div>
+              ) : (
+                <table className="dc-grid">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 28 }}>#</th>
+                      <th>Tukang</th>
+                      <th style={{ textAlign: "center", width: 56 }}>SPK</th>
+                      <th>Total Pcs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {performance.map((item, idx) => {
+                      const pct = maxPerfProduk > 0 ? Math.max(6, (item.total_produk / maxPerfProduk) * 100) : 0;
+                      const colors = ["dc-fill-blue", "dc-fill-green", "dc-fill-purple", "dc-fill-orange", "dc-fill-red", "dc-fill-teal"];
+                      const name = item.nama_tukang_cutting || "-";
+                      return (
+                        <tr key={item.tukang_cutting_id || idx}>
+                          <td className="dc-rank">{idx + 1}</td>
+                          <td>
+                            <div className="dc-user-cell">
+                              <div className={`dc-avatar dc-avatar-${idx % 6}`}><span>{name.charAt(0).toUpperCase()}</span></div>
+                              <span className="dc-user-name">{name}</span>
+                            </div>
+                          </td>
+                          <td className="dc-num">{item.jumlah_spk}</td>
+                          <td>
+                            <div className="dc-pcs-cell">
+                              <div className="dc-pcs-bar"><div className={`dc-pcs-fill ${colors[idx % colors.length]}`} style={{ width: `${pct}%` }} /></div>
+                              <span className="dc-pcs-value">{nf(item.total_produk)}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Pendapatan Tukang */}
+          <div className="dc-card dc-income-card">
+            <div className="dc-card-head">
+              <span className="dc-card-title">Pendapatan Tukang</span>
+              <span className="dc-tag">Minggu Ini</span>
+            </div>
+            <div className="dc-income-wrap">
+              {incomeLoading ? (
+                <div className="dc-empty">Memuat pendapatan…</div>
+              ) : incomeList.length === 0 ? (
+                <div className="dc-empty">Belum ada data pendapatan</div>
+              ) : (
+                <ul className="dc-income-list">
+                  {incomeList.map((item, idx) => {
+                    const name = item.nama_tukang_cutting || "-";
+                    return (
+                      <li key={item.tukang_cutting_id || idx} className="dc-income-item">
+                        <span className="dc-rank">{idx + 1}</span>
+                        <div className="dc-user-cell">
+                          <div className={`dc-avatar dc-avatar-${idx % 6}`}><span>{name.charAt(0).toUpperCase()}</span></div>
+                          <span className="dc-user-name">{name}</span>
+                        </div>
+                        <span className="dc-income-amount">{formatRupiah(item.total_transfer)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Deadline Alert */}
+          <div className="dc-card dc-alert-card">
+            <div className="dc-card-head">
+              <span className="dc-card-title">
+                <FaExclamationTriangle style={{ color: "#d99019", marginRight: 6 }} />
+                SPK Deadline Mepet
+              </span>
+              <div className="dc-alert-badges">
+                {deadlineGroups.over.length > 0 && <span className="dc-badge-over">{deadlineGroups.over.length} lewat</span>}
+                {deadlineGroups.urgent.length > 0 && <span className="dc-badge-warn">{deadlineGroups.urgent.length} mepet</span>}
+              </div>
+            </div>
+            {alertItems.length === 0 ? (
+              <div className="dc-empty" style={{ flex: 1 }}>{loading ? "Memuat…" : "Semua SPK aman ✓"}</div>
+            ) : (
+              <div className="dc-alert-list">
+                {alertItems.map((item, i) => {
+                  const badge = getDeadlineBadge(item.sisa_hari);
+                  const produk = item.nama_produk || item.produk?.nama_produk || "-";
+                  return (
+                    <div key={i} className={`dc-alert-item ${item.sisa_hari < 0 ? "dc-alert-over" : "dc-alert-urgent"}`}>
+                      <div className="dc-alert-left">
+                        <div className="dc-alert-id">#{item.kode_seri || item.id || i + 1}</div>
+                        <div className="dc-alert-product">{produk}</div>
+                        <div className="dc-alert-penjahit">{item.penjahit?.nama_penjahit || item.nama_penjahit || "—"}</div>
+                      </div>
+                      <span className={`dc-deadline-badge ${badge.cls}`}>{badge.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-        </div>
 
-      </div>
+        </section>
       </main>
     </div>
   );

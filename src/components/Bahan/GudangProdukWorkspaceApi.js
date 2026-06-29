@@ -72,6 +72,7 @@ const normalizeWorkspaceState = (payload = {}) => ({
 const normalizeGudangStockListPayload = (payload = {}) => ({
   data: Array.isArray(payload.data) ? payload.data : [],
   locations: Array.isArray(payload.locations) ? payload.locations : [],
+  layouts: Array.isArray(payload.layouts) ? payload.layouts : [],
   summary: {
     ...emptyGudangStockListSummary,
     ...(payload.summary || {}),
@@ -228,6 +229,24 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
         slot?.alias || slot?.slotCode,
       ].filter(Boolean);
 
+      const opnameLogs = state.activityLog.filter(
+        (activity) =>
+          areIdsEqual(activity?.skuId, entry.skuId) &&
+          (String(activity?.toSlotId || "") === String(entry.slotId || "") || String(activity?.fromSlotId || "") === String(entry.slotId || "")) &&
+          String(activity?.notes || "").startsWith("Stok Opname")
+      );
+      const isOpnamed = opnameLogs.length > 0;
+      let lastOpnameDate = null;
+      if (isOpnamed) {
+        lastOpnameDate = opnameLogs.reduce((latest, log) => {
+          const logDate = new Date(log.createdAt);
+          if (!latest || logDate > new Date(latest)) {
+            return log.createdAt;
+          }
+          return latest;
+        }, null);
+      }
+
       return {
         id: entry.id || `${entry.slotId}_${entry.skuId}`,
         skuId: entry.skuId,
@@ -241,11 +260,16 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
         namaGudang: locationParts.join(" - ") || entry.slotId || "-",
         updatedAt: entry.updatedAt || null,
         layoutId: slot?.layoutId || entry.layoutId || "",
+        isOpnamed,
+        lastOpnameDate,
       };
     })
     .filter((row) => {
       if (filterLayoutId && row.layoutId !== filterLayoutId) return false;
       if (filterLocation && row.namaGudang !== filterLocation) return false;
+      if (params.opname_status === 'sudah' && !row.isOpnamed) return false;
+      if (params.opname_status === 'belum' && row.isOpnamed) return false;
+
       if (!search) return true;
 
       return [
@@ -254,7 +278,19 @@ const buildGudangStockListFromWorkspace = (workspacePayload = {}, params = {}) =
         row.namaGudang,
       ].some((value) => normalizeSearchText(value).includes(search));
     })
-    .sort((left, right) => String(left.sku).localeCompare(String(right.sku)));
+    .sort((left, right) => {
+      if (params.sort_by === 'sku') {
+        const cmp = String(left.sku).localeCompare(String(right.sku));
+        if (cmp !== 0) return cmp;
+      } else if (params.sort_by === 'size') {
+        const cmp = String(left.ukuran).localeCompare(String(right.ukuran));
+        if (cmp !== 0) return cmp;
+      } else if (params.sort_by === 'warna') {
+        const cmp = String(left.warna || '').localeCompare(String(right.warna || ''));
+        if (cmp !== 0) return cmp;
+      }
+      return String(left.sku).localeCompare(String(right.sku));
+    });
 
   const total = allRows.length;
   const paginatedRows = allRows.slice((page - 1) * perPage, page * perPage);

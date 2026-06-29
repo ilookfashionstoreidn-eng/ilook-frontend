@@ -6046,4 +6046,135 @@ button,
   font-size: 13px;
 }
 
+/* ═══════════════════════════════════════════════════════
+   List Stok Product — toolbar (clean, aligned, responsive)
+   ═══════════════════════════════════════════════════════ */
+.lsp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid var(--ks-line, #ececef);
+  border-radius: 10px;
+}
+
+/* left zone: all the filters, wraps internally */
+.lsp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* right zone: stays together, drops to its own line as a unit */
+.lsp-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+/* shared control sizing */
+.lsp-search,
+.lsp-date input,
+.lsp-perpage,
+.lsp-btn {
+  height: 38px;
+  border: 1px solid var(--ks-line-strong, #e0e0e4);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ks-text, #1c1c1f);
+  background: #fff;
+  box-sizing: border-box;
+  outline: none;
+}
+
+/* search */
+.lsp-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 0;
+}
+.lsp-search .lsp-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--ks-muted, #9a9aa3);
+  pointer-events: none;
+}
+.lsp-search input {
+  width: 100%;
+  height: 100%;
+  padding: 0 12px 0 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ks-text, #1c1c1f);
+  outline: none;
+}
+.lsp-search:focus-within,
+.lsp-date input:focus,
+.lsp-perpage:focus {
+  border-color: var(--ks-accent, #2458ce);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
+
+/* date range */
+.lsp-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+.lsp-date > span {
+  font-size: 13px;
+  color: var(--ks-text-soft, #6b6b73);
+  white-space: nowrap;
+}
+.lsp-date input { padding: 0 10px; }
+
+/* select wrapper (react-select lives inside) */
+.lsp-field {
+  flex: 0 0 auto;
+  width: 168px;
+}
+
+/* page size + buttons */
+.lsp-perpage { padding: 0 12px; cursor: pointer; }
+
+.lsp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
+}
+.lsp-btn-apply {
+  background: var(--ks-accent, #2458ce);
+  border-color: var(--ks-accent, #2458ce);
+  color: #fff;
+}
+.lsp-btn-apply:hover { background: #1e4cb5; border-color: #1e4cb5; }
+.lsp-btn-reset {
+  background: var(--ks-hover, #f6f7f9);
+  color: var(--ks-text-soft, #6b6b73);
+}
+.lsp-btn-reset:hover { background: #eceef2; color: var(--ks-text, #1c1c1f); }
+
 
