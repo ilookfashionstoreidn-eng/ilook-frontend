@@ -308,7 +308,7 @@ const Pabrik = () => {
           </div>
         </div>
 
-        <div className="pl-table-wrapper">
+        <div className="ks-grid-scroll">
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Memuat data...</div>
           ) : error ? (
@@ -316,7 +316,7 @@ const Pabrik = () => {
           ) : filteredPabriks.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Belum ada data pabrik.</div>
           ) : (
-            <table className="pl-table">
+            <table className="ks-grid">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -344,14 +344,14 @@ const Pabrik = () => {
                       )}
                     </td>
                     <td>
-                      <div className="pl-table-actions" style={{ justifyContent: "center" }}>
-                        <button className="product-list-icon-button" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        <button className="ks-btn pl-act-btn info" onClick={() => handleDetailClick(pabrik)} title="Lihat Detail">
                           <FaEye />
                         </button>
-                        <button className="product-list-icon-button" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
+                        <button className="ks-btn pl-act-btn" onClick={() => openEditModal(pabrik)} title="Edit Pabrik">
                           <FaEdit />
                         </button>
-                        <button className="product-list-icon-button" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik" style={{ color: "#ef4444" }}>
+                        <button className="ks-btn pl-act-btn danger" onClick={() => handleDelete(pabrik)} title="Hapus Pabrik">
                           <FaTrash />
                         </button>
                       </div>
