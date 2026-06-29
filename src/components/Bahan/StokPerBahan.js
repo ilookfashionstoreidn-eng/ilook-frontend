@@ -653,47 +653,45 @@ const StokPerBahan = () => {
             </div>
           </div>
 
-          <div className="stok-bahan-table-section">
-            <div className="stok-bahan-table-wrapper">
-              <table className="stok-bahan-table">
-                <thead>
-                  <tr>
-                    <th className="cell-no">No</th>
-                    <th>Nama Bahan</th>
-                    <th>Warna Bahan</th>
-                    <th>Stok</th>
-                    <th>Berat</th>
-                    <th>Pabrik</th>
+          <div className="ks-grid-scroll" style={{ marginTop: "16px" }}>
+            <table className="ks-grid">
+              <thead>
+                <tr>
+                  <th style={{ width: "60px", textAlign: "center" }}>No</th>
+                  <th>Nama Bahan</th>
+                  <th>Warna Bahan</th>
+                  <th style={{ textAlign: "right" }}>Stok</th>
+                  <th style={{ textAlign: "right" }}>Berat</th>
+                  <th>Pabrik</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.rows.map((row, index) => (
+                  <tr key={`${row.id}-${index}`}>
+                    <td style={{ textAlign: "center", color: "#64748b" }}>{index + 1}</td>
+                    <td style={{ fontWeight: "500", color: "#0f172a" }}>{row.nama_bahan}</td>
+                    <td>
+                      <span className="stok-bahan-warna-chip" style={resolveWarnaColor(row.warna)}>
+                        {row.warna}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right", color: row.stok <= 0 ? "#ef4444" : "#1e293b", fontWeight: "600" }}>
+                      {formatNumber(row.stok)}
+                    </td>
+                    <td style={{ textAlign: "right", color: "#1e293b" }}>{formatWeight(row.berat)}</td>
+                    <td style={{ color: "#475569" }}>{row.pabrik}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {group.rows.map((row, index) => (
-                    <tr key={`${row.id}-${index}`}>
-                      <td className="cell-no">{index + 1}</td>
-                      <td className="cell-name">{row.nama_bahan}</td>
-                      <td>
-                        <span className="stok-bahan-warna-chip" style={resolveWarnaColor(row.warna)}>
-                          {row.warna}
-                        </span>
-                      </td>
-                      <td className={row.stok <= 0 ? "cell-alert" : "cell-number"}>
-                        {formatNumber(row.stok)}
-                      </td>
-                      <td className="cell-number">{formatWeight(row.berat)}</td>
-                      <td>{row.pabrik}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan="3">Total {group.nama_bahan}</td>
-                    <td>{formatNumber(group.totalStok)}</td>
-                    <td>{formatWeight(group.totalBerat)}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan="3" style={{ textAlign: "right", fontWeight: "600", color: "#0f172a" }}>Total {group.nama_bahan}</td>
+                  <td style={{ textAlign: "right", fontWeight: "600", color: "#0f172a" }}>{formatNumber(group.totalStok)}</td>
+                  <td style={{ textAlign: "right", fontWeight: "600", color: "#0f172a" }}>{formatWeight(group.totalBerat)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </section>
       </div>
@@ -701,157 +699,141 @@ const StokPerBahan = () => {
   };
 
   return (
-    <div className="stok-bahan-page">
-      <div className="stok-bahan-shell">
-        <header className="stok-bahan-report-toolbar">
-          <Link to="/home" className="stok-bahan-dashboard-link">
-            <FaArrowLeft />
-            <span>Dashboard</span>
-          </Link>
-
-          <form className="stok-bahan-report-search" onSubmit={applyFilter}>
-            <FaSearch className="stok-bahan-search-icon" />
-            <input
-              type="text"
-              placeholder="Cari nama / warna / grup..."
-              value={draftSearchTerm}
-              onChange={(e) => setDraftSearchTerm(e.target.value)}
-            />
-            <button type="submit">
-              <FaFilter />
-              <span>Filter</span>
-            </button>
-          </form>
-
-          <button
-            type="button"
-            className="stok-bahan-print-btn"
-            onClick={handleDownloadPdf}
-            disabled={loading || reportGroups.length === 0}
-          >
-            <FaFilePdf />
-            <span>Download PDF</span>
-          </button>
-        </header>
-
-        <div className="stok-bahan-page-header">
-          <div>
-            <p className="stok-bahan-report-kicker">Laporan bahan</p>
-            <h1>Stok Per Bahan</h1>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Stok Per Bahan</h1>
+          <span className="ks-header-sub">
+            Laporan ketersediaan bahan per varian warna
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "flex-end", flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "8px 16px", backgroundColor: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+            <span style={{ fontSize: "12px", color: "#64748b" }}>Total Bahan</span>
+            <strong style={{ fontSize: "16px", color: "#0f172a" }}>{formatNumber(dashboardStats.total_bahan)}</strong>
           </div>
-          <div className="stok-bahan-report-meta">
-            <span>Tanggal: {formatDate(lastSyncAt || new Date())}</span>
-            <span>Total varian: {formatNumber(reportRows.length)} item</span>
-            <span>Halaman {currentPage} dari {totalPages || 1}</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "8px 16px", backgroundColor: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+            <span style={{ fontSize: "12px", color: "#166534" }}>Total Roll</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "baseline" }}>
+              <strong style={{ fontSize: "16px", color: "#15803d" }}>{formatNumber(dashboardStats.total_roll)}</strong>
+              <span style={{ fontSize: "11px", color: "#16a34a" }}>({formatNumber(dashboardStats.total_roll_utuh)} Utuh / {formatNumber(dashboardStats.total_roll_sisa)} Sisa)</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "8px 16px", backgroundColor: "#eff6ff", borderRadius: "8px", border: "1px solid #bfdbfe" }}>
+            <span style={{ fontSize: "12px", color: "#1e40af" }}>Total Berat</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "baseline" }}>
+              <strong style={{ fontSize: "16px", color: "#1d4ed8" }}>{formatWeight(dashboardStats.total_berat_kg)} KG</strong>
+              <span style={{ fontSize: "11px", color: "#3b82f6" }}>({formatWeight(dashboardStats.total_berat_yard)} Yard)</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <form className="pl-search" onSubmit={applyFilter} style={{ margin: 0, width: "300px" }}>
+              <FaSearch className="pl-search-icon" />
+              <input
+                type="text"
+                placeholder="Cari nama / warna / grup..."
+                value={draftSearchTerm}
+                onChange={(e) => setDraftSearchTerm(e.target.value)}
+                className="pl-search-input"
+              />
+              <button type="submit" style={{ display: "none" }}>Filter</button>
+            </form>
+
+            <div className="stok-bahan-select-group" style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#64748b" }}>Grup:</span>
+              <div className="stok-bahan-checkselect" ref={bahanMenuRef} style={{ width: "220px", marginBottom: 0 }}>
+                <button
+                  type="button"
+                  className="stok-bahan-checkselect-trigger"
+                  onClick={() => setIsBahanMenuOpen((prev) => !prev)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isBahanMenuOpen}
+                  style={{ height: "36px", padding: "0 12px" }}
+                >
+                  <span style={{ fontSize: "13px" }}>{selectedBahanLabel}</span>
+                </button>
+
+                {isBahanMenuOpen && (
+                  <div className="stok-bahan-checkselect-menu" role="listbox">
+                    <label className="stok-bahan-check-option is-all">
+                      <input
+                        type="checkbox"
+                        checked={isAllBahanSelected}
+                        onChange={toggleAllBahan}
+                      />
+                      <span>Semua grup terpilih</span>
+                    </label>
+
+                    {bahanOptions.map((namaBahan) => {
+                      const checked = isAllBahanSelected || selectedBahanSet.has(namaBahan);
+                      return (
+                        <label className="stok-bahan-check-option" key={namaBahan}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleBahanSelection(namaBahan)}
+                          />
+                          <span>{namaBahan}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", backgroundColor: "#f1f5f9", padding: "2px", borderRadius: "6px", marginLeft: "12px" }}>
+              <button
+                className={`ks-btn ${statusFilter === "all" ? "is-primary" : ""}`}
+                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "all" ? undefined : "transparent", color: statusFilter === "all" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "all" ? undefined : "none" }}
+                onClick={() => setStatusFilter("all")}
+                type="button"
+              >
+                Semua ({formatNumber(summaryRoll.total_semua)})
+              </button>
+              <button
+                className={`ks-btn ${statusFilter === "utuh" ? "is-primary" : ""}`}
+                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "utuh" ? undefined : "transparent", color: statusFilter === "utuh" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "utuh" ? undefined : "none" }}
+                onClick={() => setStatusFilter("utuh")}
+                type="button"
+              >
+                Utuh ({formatNumber(summaryRoll.total_utuh)})
+              </button>
+              <button
+                className={`ks-btn ${statusFilter === "sisa" ? "is-primary" : ""}`}
+                style={{ minHeight: "auto", padding: "6px 12px", background: statusFilter === "sisa" ? undefined : "transparent", color: statusFilter === "sisa" ? undefined : "#64748b", border: "none", boxShadow: statusFilter === "sisa" ? undefined : "none" }}
+                onClick={() => setStatusFilter("sisa")}
+                type="button"
+              >
+                Sisa ({formatNumber(summaryRoll.total_sisa)})
+              </button>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              type="button"
+              className="ks-btn is-secondary"
+              onClick={handleDownloadPdf}
+              disabled={loading || reportGroups.length === 0}
+            >
+              <FaFilePdf /> Download PDF
+            </button>
           </div>
         </div>
 
-        <section className="stok-bahan-report-filters">
-          <label className="stok-bahan-select-group">
-            <span>Pilih grup untuk dilihat / print:</span>
-            <div className="stok-bahan-checkselect" ref={bahanMenuRef}>
-              <button
-                type="button"
-                className="stok-bahan-checkselect-trigger"
-                onClick={() => setIsBahanMenuOpen((prev) => !prev)}
-                aria-haspopup="listbox"
-                aria-expanded={isBahanMenuOpen}
-              >
-                <span>{selectedBahanLabel}</span>
-              </button>
-
-              {isBahanMenuOpen && (
-                <div className="stok-bahan-checkselect-menu" role="listbox">
-                  <label className="stok-bahan-check-option is-all">
-                    <input
-                      type="checkbox"
-                      checked={isAllBahanSelected}
-                      onChange={toggleAllBahan}
-                    />
-                    <span>Semua grup terpilih</span>
-                  </label>
-
-                  {bahanOptions.map((namaBahan) => {
-                    const checked = isAllBahanSelected || selectedBahanSet.has(namaBahan);
-
-                    return (
-                      <label className="stok-bahan-check-option" key={namaBahan}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleBahanSelection(namaBahan)}
-                        />
-                        <span>{namaBahan}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </label>
-
-          <div className="stok-bahan-status-actions" aria-label="Filter status roll">
-            <button
-              className={`stok-bahan-status-filter ${statusFilter === "all" ? "active" : ""}`}
-              onClick={() => setStatusFilter("all")}
-              type="button"
-            >
-              Semua <strong>{formatNumber(summaryRoll.total_semua)}</strong>
-            </button>
-            <button
-              className={`stok-bahan-status-filter ${statusFilter === "utuh" ? "active" : ""}`}
-              onClick={() => setStatusFilter("utuh")}
-              type="button"
-            >
-              Utuh <strong>{formatNumber(summaryRoll.total_utuh)}</strong>
-            </button>
-            <button
-              className={`stok-bahan-status-filter ${statusFilter === "sisa" ? "active" : ""}`}
-              onClick={() => setStatusFilter("sisa")}
-              type="button"
-            >
-              Sisa <strong>{formatNumber(summaryRoll.total_sisa)}</strong>
-            </button>
-          </div>
-        </section>
-
-        <section className="stok-bahan-summary-strip">
-          <div>
-            <FaWarehouse />
-            <span>Total Bahan</span>
-            <strong>{formatNumber(dashboardStats.total_bahan)}</strong>
-          </div>
-          <div>
-            <FaBoxes />
-            <span>Total Roll</span>
-            <strong>{formatNumber(dashboardStats.total_roll)}</strong>
-          </div>
-          <div>
-            <span>Utuh</span>
-            <strong>{formatNumber(dashboardStats.total_roll_utuh)}</strong>
-          </div>
-          <div>
-            <span>Sisa</span>
-            <strong>{formatNumber(dashboardStats.total_roll_sisa)}</strong>
-          </div>
-          <div>
-            <span>Berat KG</span>
-            <strong>{formatWeight(dashboardStats.total_berat_kg)}</strong>
-          </div>
-          <div>
-            <span>Yard</span>
-            <strong>{formatWeight(dashboardStats.total_berat_yard)}</strong>
-          </div>
-        </section>
-
         {loading ? (
-          <p className="stok-bahan-loading">Memuat data stok...</p>
+          <p style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>Memuat data stok...</p>
         ) : error ? (
-          <p className="stok-bahan-error">{error}</p>
+          <p style={{ textAlign: "center", padding: "24px", color: "#ef4444" }}>{error}</p>
         ) : (
           <>
             {reportGroups.length === 0 ? (
-              <div className="stok-bahan-empty-state">Tidak ada data stok yang sesuai filter.</div>
+              <div style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>Tidak ada data stok yang sesuai filter.</div>
             ) : (
               <div className="stok-bahan-report-pages">
                 {reportGroups.map(renderReportGroup)}
@@ -859,8 +841,8 @@ const StokPerBahan = () => {
             )}
 
             {totalPages > 1 && (
-              <div className="stok-bahan-pagination">
-                <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "24px", paddingBottom: "24px" }}>
+                <button type="button" className="ks-btn is-secondary" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
                 {Array.from({ length: totalPages }, (_, pageIndex) => pageIndex + 1)
@@ -868,11 +850,11 @@ const StokPerBahan = () => {
                   .map((page, index, pages) => (
                     <React.Fragment key={page}>
                       {index > 0 && page - pages[index - 1] > 1 && (
-                        <span className="stok-bahan-ellipsis">...</span>
+                        <span style={{ color: "#94a3b8" }}>...</span>
                       )}
                       <button
                         type="button"
-                        className={currentPage === page ? "active" : ""}
+                        className={`ks-btn ${currentPage === page ? "is-primary" : "is-secondary"}`}
                         onClick={() => goToPage(page)}
                       >
                         {page}
@@ -881,19 +863,20 @@ const StokPerBahan = () => {
                   ))}
                 <button
                   type="button"
+                  className="ks-btn is-secondary"
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
                   Next
                 </button>
-                <span className="stok-bahan-pagination-info">
+                <span style={{ marginLeft: "16px", fontSize: "14px", color: "#64748b" }}>
                   Halaman {currentPage} dari {totalPages} ({GROUPS_PER_PAGE} grup per halaman)
                 </span>
               </div>
             )}
           </>
         )}
-      </div>
+      </section>
     </div>
   );
 };
