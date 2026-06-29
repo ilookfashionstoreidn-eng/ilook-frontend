@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import "./Gudang.css";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
+import "../Produk/ProductList.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaEye, FaTrash, FaWarehouse, FaSearch, FaUserTie, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEdit, FaEye, FaTrash, FaSearch, FaUserTie, FaMapMarkerAlt, FaTimes, FaSave } from "react-icons/fa";
 
 const INITIAL_FORM = { nama_gudang: "", alamat: "", pic: "" };
 
@@ -55,7 +56,6 @@ const Gudang = () => {
 
   const withPic = useMemo(() => gudangs.filter((g) => Boolean(g.pic && g.pic.trim())).length, [gudangs]);
   const withAlamat = useMemo(() => gudangs.filter((g) => Boolean(g.alamat && g.alamat.trim())).length, [gudangs]);
-  const totalGudang = gudangs.length;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,7 +63,6 @@ const Gudang = () => {
       setEditGudang((prev) => ({ ...prev, [name]: value }));
       return;
     }
-
     setNewGudang((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -130,7 +129,6 @@ const Gudang = () => {
     } catch (_) {
       setSelectedGudang(gudang);
     }
-
     setDetailLoading(false);
   };
 
@@ -141,248 +139,305 @@ const Gudang = () => {
   };
 
   return (
-    <div className="gudang-page">
-      <header className="gudang-header">
-        <div className="gudang-title-group">
-          <div className="gudang-header-icon">
-            <FaWarehouse />
-          </div>
-          <div>
-            <h1>Master Data Gudang</h1>
-            <p>Kelola data gudang, alamat operasional, dan penanggung jawab lokasi.</p>
-          </div>
+    <div className="ks-page pl-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Master Gudang</h1>
+          <span className="ks-header-sub">
+            {gudangs.length} gudang terdaftar, {withPic} dengan PIC, {withAlamat} dengan alamat — Kelola data gudang, alamat operasional, dan penanggung jawab lokasi
+          </span>
         </div>
-        <button className="gudang-btn-add" onClick={() => setShowForm(true)}>
-          <FaPlus /> Tambah Gudang
-        </button>
       </header>
 
-      <section className="gudang-kpi-grid">
-        <article className="gudang-kpi-card">
-          <span>Total Gudang</span>
-          <strong>{totalGudang}</strong>
-          <p>Data aktif pada sistem</p>
-        </article>
-        <article className="gudang-kpi-card">
-          <span>PIC Tersedia</span>
-          <strong>{withPic}</strong>
-          <p>Sudah ada penanggung jawab</p>
-        </article>
-        <article className="gudang-kpi-card">
-          <span>Alamat Terisi</span>
-          <strong>{withAlamat}</strong>
-          <p>Siap dipakai untuk distribusi</p>
-        </article>
-      </section>
-
-      <section className="gudang-table-container">
-        <div className="gudang-filter-header">
-          <div className="gudang-table-title">
-            <h2>Daftar Gudang</h2>
-            <p>{filteredGudangs.length} data ditampilkan</p>
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari nama gudang, alamat, PIC, atau ID..."
+                style={{ paddingLeft: "30px" }}
+              />
+              {searchTerm && (
+                <button type="button" className="pl-search-clear" onClick={() => setSearchTerm("")}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="gudang-search-bar">
-            <FaSearch className="gudang-search-icon" />
-            <input
-              type="text"
-              placeholder="Cari nama gudang, alamat, PIC, atau ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+            <button className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+              <FaPlus /> Tambah Gudang
+            </button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="gudang-state">
-            <p className="gudang-loading">Memuat data gudang...</p>
-          </div>
-        ) : error ? (
-          <div className="gudang-state">
-            <p className="gudang-error">{error}</p>
-          </div>
-        ) : filteredGudangs.length === 0 ? (
-          <div className="gudang-state">
-            <p className="gudang-loading">Belum ada data gudang yang sesuai pencarian.</p>
-          </div>
-        ) : (
-          <table className="gudang-table">
-            <thead>
-              <tr>
-                <th>Nomor</th>
-                <th>Nama Gudang</th>
-                <th>Alamat</th>
-                <th>PIC</th>
-                <th style={{ textAlign: "right" }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredGudangs.map((gudang, index) => (
-                <tr key={gudang.id}>
-                  <td className="gudang-id-cell">{index + 1}</td>
-                  <td>
-                    <div className="gudang-name-cell">
-                      <span>{gudang.nama_gudang}</span>
-                    </div>
-                  </td>
-                  <td>{gudang.alamat || <span className="gudang-empty-mark">Tidak ada</span>}</td>
-                  <td>
-                    {gudang.pic ? (
-                      <span className="gudang-pic-chip">
-                        <FaUserTie /> {gudang.pic}
-                      </span>
-                    ) : (
-                      <span className="gudang-empty-mark">Belum diisi</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="gudang-actions">
-                      <button className="gudang-btn-icon view" onClick={() => handleDetailClick(gudang)} title="Detail">
-                        <FaEye />
-                      </button>
-                      <button className="gudang-btn-icon edit" onClick={() => handleEditClick(gudang)} title="Edit">
-                        <FaEdit />
-                      </button>
-                      <button className="gudang-btn-icon delete" onClick={() => handleDelete(gudang)} title="Hapus">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
+        <div className="ks-grid-scroll">
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Memuat data gudang...</div>
+          ) : error ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
+          ) : filteredGudangs.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontWeight: 600 }}>Belum ada data gudang yang sesuai pencarian.</div>
+          ) : (
+            <table className="ks-grid">
+              <thead>
+                <tr>
+                  <th>Nomor</th>
+                  <th>Nama Gudang</th>
+                  <th>Alamat</th>
+                  <th>PIC</th>
+                  <th style={{ width: "120px", textAlign: "center" }}>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {filteredGudangs.map((gudang, index) => (
+                  <tr key={gudang.id}>
+                    <td className="ks-cell-code">
+                      <strong>{index + 1}</strong>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.9em", fontWeight: 600 }}>{gudang.nama_gudang}</span>
+                    </td>
+                    <td>{gudang.alamat || <span style={{ color: "#94a3b8" }}>Tidak ada</span>}</td>
+                    <td>
+                      {gudang.pic ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <FaUserTie style={{ color: "#64748b" }} /> <span>{gudang.pic}</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>Belum diisi</span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                        <button className="ks-icon-btn" onClick={() => handleDetailClick(gudang)} title="Lihat Detail" style={{ border: "none", background: "none", color: "#64748b", cursor: "pointer", padding: "4px" }}>
+                          <FaEye />
+                        </button>
+                        <button className="ks-icon-btn" onClick={() => handleEditClick(gudang)} title="Edit Gudang" style={{ border: "none", background: "none", color: "#3b82f6", cursor: "pointer", padding: "4px" }}>
+                          <FaEdit />
+                        </button>
+                        <button className="ks-icon-btn" onClick={() => handleDelete(gudang)} title="Hapus Gudang" style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer", padding: "4px" }}>
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </section>
 
+      {/* MODAL TAMBAH */}
       {showForm && (
-        <div className="gudang-modal" onClick={resetAndCloseForm}>
-          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="gudang-modal-header">
+        <div className="product-list-modal-backdrop" onClick={resetAndCloseForm}>
+          <form className="product-list-modal" onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()}>
+            <div className="product-list-modal-header">
               <div>
+                <p className="product-list-modal-kicker">Data Gudang</p>
                 <h2>Tambah Gudang Baru</h2>
-                <p>Isi data gudang untuk menambah master data lokasi penyimpanan.</p>
               </div>
-              <button type="button" className="gudang-close-btn" onClick={resetAndCloseForm} title="Tutup">
+              <button className="product-list-icon-button" type="button" onClick={resetAndCloseForm}>
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="gudang-form">
-              <div className="gudang-form-group">
-                <label>Nama Gudang *</label>
-                <input type="text" name="nama_gudang" value={newGudang.nama_gudang} onChange={handleInputChange} placeholder="Masukkan nama gudang" required />
-              </div>
+            <div className="product-list-form-section">
+              <div className="product-list-form-grid">
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Nama Gudang *</span>
+                  <input
+                    type="text"
+                    name="nama_gudang"
+                    value={newGudang.nama_gudang}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan nama gudang"
+                    required
+                  />
+                </label>
 
-              <div className="gudang-form-group">
-                <label>Alamat</label>
-                <textarea name="alamat" value={newGudang.alamat} onChange={handleInputChange} placeholder="Alamat lengkap gudang" rows="3" />
-              </div>
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Alamat</span>
+                  <textarea
+                    name="alamat"
+                    value={newGudang.alamat}
+                    onChange={handleInputChange}
+                    placeholder="Alamat lengkap gudang"
+                    rows="3"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid var(--ks-border, #e2e8f0)",
+                      borderRadius: "6px",
+                      outline: "none",
+                      fontSize: "14px",
+                      resize: "vertical"
+                    }}
+                  />
+                </label>
 
-              <div className="gudang-form-group">
-                <label>PIC</label>
-                <input type="text" name="pic" value={newGudang.pic} onChange={handleInputChange} placeholder="Nama penanggung jawab" />
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>PIC</span>
+                  <input
+                    type="text"
+                    name="pic"
+                    value={newGudang.pic}
+                    onChange={handleInputChange}
+                    placeholder="Nama penanggung jawab"
+                  />
+                </label>
               </div>
+            </div>
 
-              <div className="gudang-form-actions">
-                <button type="submit" className="gudang-btn gudang-btn-primary">
-                  Simpan
-                </button>
-                <button type="button" onClick={resetAndCloseForm} className="gudang-btn gudang-btn-secondary">
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={resetAndCloseForm}>
+                Batal
+              </button>
+              <button className="product-list-primary-button" type="submit">
+                <FaSave /> Simpan
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
+      {/* MODAL EDIT */}
       {showEditForm && (
-        <div className="gudang-modal" onClick={resetAndCloseForm}>
-          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="gudang-modal-header">
+        <div className="product-list-modal-backdrop" onClick={resetAndCloseForm}>
+          <form className="product-list-modal" onSubmit={handleFormUpdate} onClick={(e) => e.stopPropagation()}>
+            <div className="product-list-modal-header">
               <div>
+                <p className="product-list-modal-kicker">Data Gudang</p>
                 <h2>Edit Gudang</h2>
-                <p>Perbarui informasi gudang tanpa mengubah histori transaksi.</p>
               </div>
-              <button type="button" className="gudang-close-btn" onClick={resetAndCloseForm} title="Tutup">
+              <button className="product-list-icon-button" type="button" onClick={resetAndCloseForm}>
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleFormUpdate} className="gudang-form">
-              <div className="gudang-form-group">
-                <label>Nama Gudang *</label>
-                <input type="text" name="nama_gudang" value={editGudang.nama_gudang} onChange={handleInputChange} placeholder="Masukkan nama gudang" required />
-              </div>
+            <div className="product-list-form-section">
+              <div className="product-list-form-grid">
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Nama Gudang *</span>
+                  <input
+                    type="text"
+                    name="nama_gudang"
+                    value={editGudang.nama_gudang}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan nama gudang"
+                    required
+                  />
+                </label>
 
-              <div className="gudang-form-group">
-                <label>Alamat</label>
-                <textarea name="alamat" value={editGudang.alamat} onChange={handleInputChange} placeholder="Alamat lengkap gudang" rows="3" />
-              </div>
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>Alamat</span>
+                  <textarea
+                    name="alamat"
+                    value={editGudang.alamat}
+                    onChange={handleInputChange}
+                    placeholder="Alamat lengkap gudang"
+                    rows="3"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid var(--ks-border, #e2e8f0)",
+                      borderRadius: "6px",
+                      outline: "none",
+                      fontSize: "14px",
+                      resize: "vertical"
+                    }}
+                  />
+                </label>
 
-              <div className="gudang-form-group">
-                <label>PIC</label>
-                <input type="text" name="pic" value={editGudang.pic} onChange={handleInputChange} placeholder="Nama penanggung jawab" />
+                <label className="product-list-field" style={{ gridColumn: "1 / -1" }}>
+                  <span>PIC</span>
+                  <input
+                    type="text"
+                    name="pic"
+                    value={editGudang.pic}
+                    onChange={handleInputChange}
+                    placeholder="Nama penanggung jawab"
+                  />
+                </label>
               </div>
+            </div>
 
-              <div className="gudang-form-actions">
-                <button type="submit" className="gudang-btn gudang-btn-primary">
-                  Perbarui
-                </button>
-                <button type="button" onClick={resetAndCloseForm} className="gudang-btn gudang-btn-secondary">
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={resetAndCloseForm}>
+                Batal
+              </button>
+              <button className="product-list-primary-button" type="submit">
+                <FaSave /> Perbarui
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
+      {/* MODAL DETAIL */}
       {isDetailOpen && selectedGudang && (
-        <div className="gudang-modal" onClick={closeDetail}>
-          <div className="gudang-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="gudang-modal-header">
+        <div className="product-list-modal-backdrop" onClick={closeDetail}>
+          <div className="product-list-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="product-list-modal-header">
               <div>
+                <p className="product-list-modal-kicker">Data Gudang</p>
                 <h2>Detail Gudang</h2>
-                <p>{detailLoading ? "Memuat detail terbaru..." : "Ringkasan informasi legal dan operasional gudang."}</p>
               </div>
-              <button type="button" className="gudang-close-btn" onClick={closeDetail} title="Tutup">
+              <button className="product-list-icon-button" type="button" onClick={closeDetail}>
                 <FaTimes />
               </button>
             </div>
 
-            <div className="gudang-detail-grid">
-              <div className="gudang-detail-item">
-                <strong>Nomor</strong>
-                <span>{selectedGudang.id}</span>
-              </div>
-              <div className="gudang-detail-item">
-                <strong>Nama Gudang</strong>
-                <span>{selectedGudang.nama_gudang}</span>
-              </div>
-              <div className="gudang-detail-item">
-                <strong>Alamat</strong>
-                <span>{selectedGudang.alamat || <span className="gudang-empty-mark">Tidak ada</span>}</span>
-              </div>
-              <div className="gudang-detail-item">
-                <strong>PIC</strong>
-                <span>{selectedGudang.pic || <span className="gudang-empty-mark">Belum diisi</span>}</span>
-              </div>
+            <div className="product-list-form-section">
+              {detailLoading ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>Memuat detail terbaru...</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px", color: "#334155" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                    <span style={{ fontWeight: 600, color: "#64748b" }}>Nomor</span>
+                    <span>{selectedGudang.id}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                    <span style={{ fontWeight: 600, color: "#64748b" }}>Nama</span>
+                    <span style={{ fontWeight: 500 }}>{selectedGudang.nama_gudang}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                    <span style={{ fontWeight: 600, color: "#64748b" }}>Alamat</span>
+                    <span>
+                      {selectedGudang.alamat ? (
+                        <>
+                          <FaMapMarkerAlt style={{ marginRight: "6px", color: "#94a3b8" }} />
+                          {selectedGudang.alamat}
+                        </>
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>Tidak ada</span>
+                      )}
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px" }}>
+                    <span style={{ fontWeight: 600, color: "#64748b" }}>PIC</span>
+                    <span>
+                      {selectedGudang.pic ? (
+                        <>
+                          <FaUserTie style={{ marginRight: "6px", color: "#94a3b8" }} />
+                          {selectedGudang.pic}
+                        </>
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>Belum diisi</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="gudang-detail-metadata">
-              <div>
-                <FaMapMarkerAlt />
-                <span>Alamat gudang digunakan sebagai acuan pergerakan stok dan distribusi.</span>
-              </div>
-              <div>
-                <FaUserTie />
-                <span>PIC membantu koordinasi penerimaan, penyimpanan, dan pengeluaran barang.</span>
-              </div>
-            </div>
-
-            <div className="gudang-form-actions gudang-detail-actions">
-              <button onClick={closeDetail} className="gudang-btn gudang-btn-secondary">
+            <div className="product-list-modal-actions">
+              <button className="product-list-ghost-button" type="button" onClick={closeDetail}>
                 Tutup
               </button>
             </div>
