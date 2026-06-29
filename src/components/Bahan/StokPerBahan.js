@@ -836,13 +836,13 @@ const StokPerBahan = () => {
             {reportGroups.length === 0 ? (
               <div style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>Tidak ada data stok yang sesuai filter.</div>
             ) : (
-              <div className="stok-bahan-report-pages">
+              <div className="stok-bahan-report-pages" style={{ flex: 1, overflowY: "auto", minHeight: 0, paddingBottom: "24px" }}>
                 {reportGroups.map(renderReportGroup)}
               </div>
             )}
 
             {totalPages > 1 && (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "24px", paddingBottom: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "16px", borderTop: "1px solid var(--ks-line)", background: "var(--ks-surface)" }}>
                 <button type="button" className="ks-btn is-secondary" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
                   Previous
                 </button>
