@@ -231,25 +231,26 @@ const DashboardCutting = () => {
   };
 
   return (
-    <div className="cutting-dashboard-page">
+    <div className="ks-page pl-page">
       {/* Header */}
-      <div className="cutting-dashboard-header">
-        <div className="cutting-dashboard-title">
-          <h1>Dashboard Produksi Cutting</h1>
-          <div className="cutting-dashboard-date">
-            <FaCalendarAlt />
-            <span>{formatLongDate(today)}</span>
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <FaCalendarAlt style={{ color: "#2458ce" }} />
+            <h1>Dashboard Produksi Cutting</h1>
           </div>
+          <span className="ks-header-sub">{formatLongDate(today)}</span>
         </div>
-      </div>
+      </header>
 
-      {error && <div className="cutting-dashboard-error"><span>{error}</span></div>}
+      <main style={{ flex: 1, padding: "24px", overflowY: "auto", background: "var(--ks-bg)", display: "flex", flexDirection: "column", gap: "24px" }}>
+        {error && <div className="cutting-dashboard-error" style={{ marginBottom: "0" }}><span>{error}</span></div>}
 
-      {/* ── Row 1: 5 stat cards ── */}
+        {/* ── Row 1: 5 stat cards ── */}
       <div className="dc-stat-row">
 
         {/* SPK Overview */}
-        <div className="dc-stat-card dc-stat-spk">
+        <div className="ks-board dc-stat-card dc-stat-spk">
           <div className="dc-stat-icon"><FaCheckCircle /></div>
           <div className="dc-stat-body">
             <div className="dc-stat-label">Total SPK</div>
@@ -263,7 +264,7 @@ const DashboardCutting = () => {
         </div>
 
         {/* Antrian + estimasi qty */}
-        <div className="dc-stat-card dc-stat-antrian">
+        <div className="ks-board dc-stat-card dc-stat-antrian">
           <div className="dc-stat-icon dc-icon-orange"><FaBoxOpen /></div>
           <div className="dc-stat-body">
             <div className="dc-stat-label">Antrian Belum Diambil</div>
@@ -273,7 +274,7 @@ const DashboardCutting = () => {
         </div>
 
         {/* Produksi Hari Ini */}
-        <div className="dc-stat-card dc-stat-daily">
+        <div className="ks-board dc-stat-card dc-stat-daily">
           <div className="dc-stat-icon dc-icon-blue"><FaFire /></div>
           <div className="dc-stat-body">
             <div className="dc-stat-label">Produksi Hari Ini</div>
@@ -289,7 +290,7 @@ const DashboardCutting = () => {
         </div>
 
         {/* Progress Mingguan */}
-        <div className="dc-stat-card dc-stat-weekly">
+        <div className="ks-board dc-stat-card dc-stat-weekly">
           <div className="dc-stat-icon dc-icon-green"><FaClock /></div>
           <div className="dc-stat-body">
             <div className="dc-stat-label">Produksi Minggu Ini</div>
@@ -305,7 +306,7 @@ const DashboardCutting = () => {
         </div>
 
         {/* Progress Bulanan */}
-        <div className="dc-stat-card dc-stat-monthly">
+        <div className="ks-board dc-stat-card dc-stat-monthly">
           <div className="dc-stat-icon dc-icon-purple"><FaCalendarAlt /></div>
           <div className="dc-stat-body">
             <div className="dc-stat-label">Produksi Bulan Ini</div>
@@ -326,9 +327,9 @@ const DashboardCutting = () => {
       <div className="dc-mid-row">
 
         {/* Grafik harian */}
-        <div className="cutting-card dc-chart-card">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">Grafik Produksi Harian</span>
+        <div className="ks-board cutting-card dc-chart-card">
+          <div className="ks-board cutting-card-header">
+            <span className="ks-board cutting-card-label">Grafik Produksi Harian</span>
             <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "#64748b" }}>
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 3, background: "#2563eb", borderRadius: 2 }} /> Aktual</span>
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ display: "inline-block", width: 22, height: 2, borderTop: "2px dashed rgba(239,68,68,0.6)" }} /> Target</span>
@@ -342,9 +343,9 @@ const DashboardCutting = () => {
         </div>
 
         {/* Deadline Alert */}
-        <div className="cutting-card dc-alert-card">
-          <div className="cutting-card-header">
-            <span className="cutting-card-label">
+        <div className="ks-board cutting-card dc-alert-card">
+          <div className="ks-board cutting-card-header">
+            <span className="ks-board cutting-card-label">
               <FaExclamationTriangle style={{ color: "#f59e0b", marginRight: 6 }} />
               SPK Deadline Mepet
             </span>
@@ -383,10 +384,10 @@ const DashboardCutting = () => {
       <div className="cutting-performance-section">
 
         {/* Performa Tukang */}
-        <div className="cutting-card cutting-card-performance">
-          <div className="cutting-card-header performance-header-row">
-            <span className="cutting-card-label">Performa Tukang</span>
-            <div className="performance-filter-pill" onClick={() => setPerformanceFilterOpen(o => !o)}>
+        <div className="ks-board cutting-card cutting-card-performance">
+          <div className="ks-board cutting-card-header performance-header-row">
+            <span className="ks-board cutting-card-label">Performa Tukang</span>
+            <div className="ks-btn is-secondary" onClick={() => setPerformanceFilterOpen(o => !o)}>
               <span>{perfFilterLabel}</span>
             </div>
           </div>
@@ -407,7 +408,7 @@ const DashboardCutting = () => {
             ) : performance.length === 0 ? (
               <div className="cutting-empty-text">Belum ada data performa</div>
             ) : (
-              <table className="performance-table">
+              <table className="ks-grid">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -451,10 +452,10 @@ const DashboardCutting = () => {
         </div>
 
         {/* Pendapatan Tukang */}
-        <div className="cutting-card cutting-card-income">
-          <div className="cutting-card-header performance-header-row">
-            <span className="cutting-card-label">Pendapatan Tukang</span>
-            <div className="performance-filter-pill income-filter-pill"><span>Minggu Ini</span></div>
+        <div className="ks-board cutting-card cutting-card-income">
+          <div className="ks-board cutting-card-header performance-header-row">
+            <span className="ks-board cutting-card-label">Pendapatan Tukang</span>
+            <div className="ks-btn is-secondary income-filter-pill"><span>Minggu Ini</span></div>
           </div>
           <div className="income-list-wrapper">
             {incomeLoading ? (
@@ -483,6 +484,7 @@ const DashboardCutting = () => {
         </div>
 
       </div>
+      </main>
     </div>
   );
 };
