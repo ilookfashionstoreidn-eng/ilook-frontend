@@ -94,6 +94,8 @@ import StokAwalGudangProduk from "./components/Bahan/StokAwalGudangProduk";
 import StokLokasiGudang from "./components/Bahan/StokLokasiGudang";
 import ListStokProductGudang from "./components/Bahan/ListStokProductGudang";
 import MutasiGudangProduk from "./components/Bahan/MutasiGudangProduk";
+import ScanSampleGudang from "./components/Bahan/ScanSampleGudang";
+import RiwayatSampleGudang from "./components/Bahan/RiwayatSampleGudang";
 import HistoryProdukGudang from "./components/Bahan/HistoryProdukGudang";
 import HistoryMutasiGudang from "./components/Bahan/HistoryMutasiGudang";
 import RiwayatStokOpnameGudang from "./components/Bahan/RiwayatStokOpnameGudang";
@@ -266,6 +268,9 @@ const App = () => {
             <Route path="history-out-check-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:history_out_check"><HistoryOutCheckGudang /></MenuProtectedRoute>} />
             <Route path="picking-queue" element={<MenuProtectedRoute menuKey="gudang_produk:picking_queue"><PickingQueue /></MenuProtectedRoute>} />
             <Route path="pencarian-seri-gudang" element={<MenuProtectedRoute menuKey="gudang_produk:pencarian_seri"><PencarianSeriGudang /></MenuProtectedRoute>} />
+            
+            <Route path="scan-sample" element={<MenuProtectedRoute menuKey="gudang_produk:sample"><ScanSampleGudang /></MenuProtectedRoute>} />
+            <Route path="riwayat-sample" element={<MenuProtectedRoute menuKey="gudang_produk:sample"><RiwayatSampleGudang /></MenuProtectedRoute>} />
           </Route>
 
           {/* Quality Control Group */}

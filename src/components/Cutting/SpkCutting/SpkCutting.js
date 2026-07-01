@@ -363,6 +363,9 @@ const SpkCutting = () => {
   // Baca jenis_spk dari URL
   const [jenisSpkFilter, setJenisSpkFilter] = useState(searchParams.get("jenis_spk") || "");
 
+  // State untuk filter status scan
+  const [scanFilter, setScanFilter] = useState("semua");
+
   // Filter periode untuk card In Progress (juga digunakan untuk filter tabel)
   const [weeklyStart, setWeeklyStart] = useState("");
   const [weeklyEnd, setWeeklyEnd] = useState("");
@@ -809,6 +812,11 @@ const SpkCutting = () => {
         params.progress_status = "all"; // Tampilkan semua di grafik jika filter "Semua"
       }
 
+      // Tambahkan parameter scan_status
+      if (scanFilter && scanFilter !== "semua") {
+        params.scan_status = scanFilter;
+      }
+
       const response = await API.get("/spk_cutting", { params });
 
       // ✅ DEBUG: Log response untuk troubleshooting
@@ -882,7 +890,7 @@ const SpkCutting = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate]);
+  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, scanFilter]);
 
   // Update statusFilter dan jenisSpkFilter dari URL saat component mount atau URL berubah
   useEffect(() => {
@@ -1065,7 +1073,7 @@ const SpkCutting = () => {
     } else {
       fetchSpkCutting(1);
     }
-  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, fetchSpkCutting]);
+  }, [statusFilter, jenisSpkFilter, weeklyStart, weeklyEnd, dailyDate, scanFilter, fetchSpkCutting]);
 
   // ✅ OPTIMASI: Debounce search yang BENAR
   useEffect(() => {
@@ -2683,6 +2691,27 @@ const SpkCutting = () => {
             <button className="ks-btn" onClick={() => setShowExportModal(true)}>
               <FaFileExcel size={13} /> Export Excel
             </button>
+
+            <div className="ks-segment" style={{ marginLeft: "12px" }}>
+              <button
+                className={`ks-seg-btn ${scanFilter === "semua" ? "is-active" : ""}`}
+                onClick={() => { setScanFilter("semua"); setCurrentPage(1); }}
+              >
+                Semua
+              </button>
+              <button
+                className={`ks-seg-btn ${scanFilter === "sudah_discan" ? "is-active" : ""}`}
+                onClick={() => { setScanFilter("sudah_discan"); setCurrentPage(1); }}
+              >
+                Sudah Discan
+              </button>
+              <button
+                className={`ks-seg-btn ${scanFilter === "belum_discan" ? "is-active" : ""}`}
+                onClick={() => { setScanFilter("belum_discan"); setCurrentPage(1); }}
+              >
+                Belum Discan
+              </button>
+            </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "auto" }}>

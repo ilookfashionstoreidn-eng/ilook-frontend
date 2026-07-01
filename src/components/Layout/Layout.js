@@ -797,7 +797,10 @@ const Layout = () => {
                     "history-produk-masuk-gudang",
                     "history-out-check-gudang",
                     "stok-opname-gudang",
+                    "stok-opname-gudang",
                     "pencarian-seri-gudang",
+                    "scan-sample",
+                    "riwayat-sample",
                   ].includes(activeMenu)
                     ? "active"
                     : ""
@@ -818,13 +821,13 @@ const Layout = () => {
                     )}
 
                     <div className="dropdown-group-label">Operasional</div>
-                    {hasAccess("gudang_produk:input_sku") && (
+                    {/* {hasAccess("gudang_produk:input_sku") && (
                       <li>
                         <Link to="input-sku-gudang" className={`dropdown-link ${activeMenu === "input-sku-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("input-sku-gudang")}>
                           <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input SKU Gudang
                         </Link>
                       </li>
-                    )}
+                    )} */}
                     {hasAccess("gudang_produk:scan_masuk") && (
                       <li>
                         <Link to="scan-produk-masuk-gudang" className={`dropdown-link ${activeMenu === "scan-produk-masuk-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("scan-produk-masuk-gudang")}>
@@ -839,13 +842,13 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("gudang_produk:picking_queue") && (
+                    {/* {hasAccess("gudang_produk:picking_queue") && (
                       <li>
                         <Link to="picking-queue" className={`dropdown-link ${activeMenu === "picking-queue" ? "active" : ""}`} onClick={() => handleMenuClick("picking-queue")}>
                           <FaClipboardCheck className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Picking Queue
                         </Link>
                       </li>
-                    )}
+                    )} */}
 
                     <div className="dropdown-group-label">Stok & Opname</div>
                     {hasAccess("gudang_produk:stok_awal") && (
@@ -926,6 +929,22 @@ const Layout = () => {
                           <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pencarian Seri
                         </Link>
                       </li>
+                    )}
+
+                    <div className="dropdown-group-label">Manajemen Sample</div>
+                    {hasAccess("gudang_produk:sample") && (
+                      <>
+                        <li>
+                          <Link to="scan-sample" className={`dropdown-link ${activeMenu === "scan-sample" ? "active" : ""}`} onClick={() => handleMenuClick("scan-sample")}>
+                            <FaBarcode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Scan Sample (Pinjam/Kembali)
+                          </Link>
+                        </li>
+                        <li>
+                          <Link to="riwayat-sample" className={`dropdown-link ${activeMenu === "riwayat-sample" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-sample")}>
+                            <FaHistory className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Sample Gudang
+                          </Link>
+                        </li>
+                      </>
                     )}
                   </ul>
                 )}
