@@ -3,8 +3,8 @@ import "./UserManagement.css";
 import API from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaSearch, FaTimes, FaPlus, FaEdit, FaTrash, FaUsers, FaChevronDown, FaCheck,
-  FaTachometerAlt, FaFileInvoice, FaShieldAlt, FaFlask, FaGem, FaBox, FaWarehouse, FaCut, FaTools, FaTshirt, FaBoxes, FaBoxOpen, FaUndo
+  FaSearch, FaTimes, FaPlus, FaEdit, FaTrash, FaUsers, FaChevronDown, FaChevronRight, FaCheck,
+  FaTachometerAlt, FaFileInvoice, FaShieldAlt, FaFlask, FaGem, FaBox, FaWarehouse, FaCut, FaTools, FaTshirt, FaBoxes, FaBoxOpen, FaUndo, FaMapMarkerAlt
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -189,12 +189,14 @@ const ROLES = [
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [cmtList, setCmtList] = useState([]);
+  const [layouts, setLayouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [expandedGudangs, setExpandedGudangs] = useState({});
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     id: null,
@@ -203,12 +205,14 @@ const UserManagement = () => {
     password: "",
     role: "staff",
     id_penjahit: "",
-    menus: []
+    menus: [],
+    gudang_access: []
   });
 
   useEffect(() => {
     fetchUsers();
     fetchCmtList();
+    fetchLayouts();
   }, []);
 
   const fetchUsers = async () => {
@@ -230,6 +234,82 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Gagal mengambil data penjahit:", error);
     }
+  };
+
+  const fetchLayouts = async () => {
+    try {
+      const response = await API.get("/gudang-produk-workspace?without_catalog=true&activity_limit=0");
+      setLayouts(response.data?.data?.layouts || []);
+    } catch (error) {
+      console.error("Gagal mengambil data gudang:", error);
+    }
+  };
+
+  const getLayoutAllRacks = (layout) => {
+    let racks = [];
+    layout.floors?.forEach(f => {
+      f.blocks?.forEach(b => {
+        b.racks?.forEach(r => racks.push(r.id));
+      });
+    });
+    return racks;
+  };
+
+  const getLayoutAccessState = (layout, currentAccess) => {
+    if (currentAccess.includes(layout.id)) return 'checked';
+    const allRacks = getLayoutAllRacks(layout);
+    if (allRacks.length === 0) return 'unchecked';
+    const checkedRacks = allRacks.filter(r => currentAccess.includes(r));
+    if (checkedRacks.length === 0) return 'unchecked';
+    if (checkedRacks.length === allRacks.length) return 'checked';
+    return 'indeterminate';
+  };
+
+  const toggleGudangMenu = (menuKey, e) => {
+    e.stopPropagation();
+    setExpandedGudangs((prev) => ({
+      ...prev,
+      [menuKey]: !prev[menuKey],
+    }));
+  };
+
+  const toggleLayoutAccess = (layout) => {
+    setFormData(prev => {
+      const state = getLayoutAccessState(layout, prev.gudang_access);
+      let newAccess = prev.gudang_access.filter(id => id !== layout.id && !getLayoutAllRacks(layout).includes(id));
+      if (state !== 'checked') {
+        newAccess.push(layout.id); // Add full layout
+      }
+      return { ...prev, gudang_access: newAccess };
+    });
+  };
+
+  const toggleRackAccess = (layout, rackId) => {
+    setFormData(prev => {
+      let newAccess = [...prev.gudang_access];
+      const hasFullLayout = newAccess.includes(layout.id);
+      const allRacks = getLayoutAllRacks(layout);
+      
+      if (hasFullLayout) {
+        newAccess = newAccess.filter(id => id !== layout.id);
+        allRacks.forEach(r => {
+          if (r !== rackId) newAccess.push(r);
+        });
+      } else {
+        if (newAccess.includes(rackId)) {
+          newAccess = newAccess.filter(id => id !== rackId);
+        } else {
+          newAccess.push(rackId);
+        }
+        
+        const checkedRacks = allRacks.filter(r => newAccess.includes(r));
+        if (checkedRacks.length === allRacks.length && allRacks.length > 0) {
+          newAccess = newAccess.filter(id => !allRacks.includes(id));
+          newAccess.push(layout.id);
+        }
+      }
+      return { ...prev, gudang_access: newAccess };
+    });
   };
 
   const stats = useMemo(() => {
@@ -344,7 +424,8 @@ const UserManagement = () => {
       email: formData.email,
       role: formData.role,
       id_penjahit: formData.role === "penjahit" ? formData.id_penjahit : null,
-      menus: formData.role === "super-admin" ? [] : formData.menus
+      menus: formData.role === "super-admin" ? [] : formData.menus,
+      gudang_access: formData.role === "super-admin" ? [] : formData.gudang_access
     };
 
     if (formData.password) {
@@ -404,7 +485,8 @@ const UserManagement = () => {
       password: "",
       role: item.role || "staff",
       id_penjahit: item.id_penjahit || "",
-      menus: item.menus || []
+      menus: item.menus || [],
+      gudang_access: item.gudang_access || []
     });
     setIsEdit(true);
     setShowForm(true);
@@ -420,7 +502,8 @@ const UserManagement = () => {
       password: "",
       role: "staff",
       id_penjahit: "",
-      menus: []
+      menus: [],
+      gudang_access: []
     });
   };
 
@@ -439,150 +522,159 @@ const UserManagement = () => {
   );
 
   return (
-    <div className="um-container">
+    <div className="ks-page">
       <ToastContainer position="top-right" autoClose={2600} hideProgressBar theme="colored" />
 
-      <header className="um-header">
-        <div className="um-header-top">
-          <div className="um-title-group">
-            <div className="um-brand-icon">
-              <FaUsers size={20} color="#fff" />
-            </div>
-            <div className="um-title-wrap">
-              <div className="um-module-pill">Admin Console</div>
-              <h1>User Management</h1>
-              <p className="um-header-subtitle">Kelola data akun pengguna, role jabatan, dan pembatasan hak akses menu sistem</p>
-            </div>
-          </div>
-
-          <div className="um-search-wrap">
-            <FaSearch className="um-search-icon" />
-            <input
-              type="text"
-              className="um-search-input"
-              placeholder="Cari nama atau email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                className="um-search-clear"
-                onClick={() => setSearchTerm("")}
-              >
-                <FaTimes />
-              </button>
-            )}
-          </div>
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>
+            User Management
+          </h1>
+          <span className="ks-header-sub">Kelola data akun pengguna, role jabatan, dan pembatasan hak akses menu sistem</span>
         </div>
       </header>
 
-      <main className="um-main">
-        <section className="um-stats">
-          <div className="um-stat-item">
-            <h4 className="um-stat-label">Total Akun</h4>
-            <div className="um-stat-value primary">{stats.total}</div>
-          </div>
-          <div className="um-stat-item">
-            <h4 className="um-stat-label">Super Admin</h4>
-            <div className="um-stat-value success">{stats.superAdmins}</div>
-          </div>
-          <div className="um-stat-item">
-            <h4 className="um-stat-label">Staff / Lainnya</h4>
-            <div className="um-stat-value muted">{stats.otherUsers}</div>
-          </div>
-        </section>
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Akun</span>
+          <span className="ks-stat-value">{stats.total}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Super Admin</span>
+          <span className="ks-stat-value">{stats.superAdmins}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Staff / Lainnya</span>
+          <span className="ks-stat-value">{stats.otherUsers}</span>
+        </div>
+      </div>
 
-        <motion.div
-          className="um-table-wrapper"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, type: "spring" }}
-        >
-          <div className="um-table-header">
-            <div>
-              <h3>Daftar Pengguna Sistem</h3>
-              <p>Total akun terdaftar: {users.length} user</p>
+      <section className="ks-board" style={{ margin: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+            <div className="ks-search">
+              <FaSearch style={{ position: "absolute", left: "10px", color: "var(--ks-muted, #9a9aa3)", pointerEvents: "none", fontSize: "12px" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari nama atau email..."
+                style={{ paddingLeft: "30px" }}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#94a3b8"
+                  }}
+                >
+                  <FaTimes />
+                </button>
+              )}
             </div>
-            <button className="um-btn-primary" onClick={() => setShowForm(true)}>
-              <FaPlus size={12} /> Tambah User
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button className="ks-btn ks-btn-primary" onClick={() => setShowForm(true)}>
+              <FaPlus /> Tambah User
             </button>
           </div>
-
-          <div className="um-table-scroll">
-            <table className="um-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '60px', textAlign: 'center' }}>No</th>
-                  <th>Nama</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Hak Akses Menu</th>
-                  <th style={{ width: '120px', textAlign: 'right', paddingRight: '20px' }}>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((item, index) => (
-                      <motion.tr
-                        key={item.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ delay: index * 0.05 }}
-                        layout
-                      >
-                        <td style={{ textAlign: 'center', color: '#64748b', fontFamily: 'monospace' }}>
-                          {index + 1}
-                        </td>
-                        <td style={{ fontWeight: 600, color: '#2458ce' }}>{item.name}</td>
-                        <td>{item.email}</td>
-                        <td>
-                          <span className={`um-role-badge ${item.role}`}>
-                            {item.role}
-                          </span>
-                        </td>
-                        <td>
-                          {item.role === "super-admin" ? (
-                            <span className="um-menu-tag super">Semua Menu (Bypass)</span>
-                          ) : item.menus && item.menus.length > 0 ? (
-                            <div className="um-menu-tags-container">
-                              {item.menus.map((key) => (
-                                <span key={key} className="um-menu-tag">
-                                  {getMenuLabel(key)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span style={{ color: '#64748b', fontStyle: 'italic' }}>Tidak ada akses menu</span>
-                          )}
-                        </td>
-                        <td style={{ paddingRight: '20px' }}>
-                          <div className="um-action-buttons">
-                            <button className="um-btn-icon edit" title="Edit" onClick={() => openEditModal(item)}>
-                              <FaEdit />
-                            </button>
-                            <button className="um-btn-icon danger" title="Hapus" onClick={() => confirmDelete(item)}>
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="empty-state">
-                        {loading ? "Memuat data..." : "Tidak ada data user ditemukan."}
+        </div>
+        <div className="ks-grid-scroll" style={{ flex: 1, overflowY: "auto" }}>
+          <table className="ks-grid" style={{ whiteSpace: "nowrap" }}>
+            <thead>
+              <tr>
+                <th style={{ width: '60px', textAlign: 'center' }}>NO</th>
+                <th>NAMA</th>
+                <th>EMAIL</th>
+                <th>ROLE</th>
+                <th>HAK AKSES MENU</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>AKSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((item, index) => (
+                    <motion.tr
+                      key={item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ delay: index * 0.05 }}
+                      layout
+                    >
+                      <td style={{ textAlign: 'center', color: 'var(--ks-muted)', fontFamily: 'monospace' }}>
+                        {index + 1}
                       </td>
-                    </tr>
-                  )}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-      </main>
+                      <td style={{ fontWeight: 600, color: 'var(--ks-text)' }}>{item.name}</td>
+                      <td>{item.email}</td>
+                      <td>
+                        <span className={`um-role-badge ${item.role}`}>
+                          {item.role}
+                        </span>
+                      </td>
+                      <td>
+                        {item.role === "super-admin" ? (
+                          <span className="um-menu-tag super" style={{ background: "#ecfdf5", color: "#047857", padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: "bold" }}>Semua Menu (Bypass)</span>
+                        ) : item.menus && item.menus.length > 0 ? (
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            {item.menus.slice(0, 2).map((key) => (
+                              <span key={key} style={{ background: "#edf2f7", color: "#475569", padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: "bold", border: "1px solid #cbd5e1" }}>
+                                {getMenuLabel(key)}
+                              </span>
+                            ))}
+                            {item.menus.length > 2 && (
+                              <span style={{ background: "#f8fafc", color: "#64748b", padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: "bold", border: "1px dashed #cbd5e1" }}>
+                                +{item.menus.length - 2} Lainnya
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#64748b', fontStyle: 'italic', fontSize: 12 }}>Tidak ada akses menu</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                          <button 
+                            className="ks-btn" 
+                            style={{ padding: "4px 8px" }} 
+                            title="Edit" 
+                            onClick={() => openEditModal(item)}
+                          >
+                            <FaEdit color="#0f766e" />
+                          </button>
+                          <button 
+                            className="ks-btn" 
+                            style={{ padding: "4px 8px" }} 
+                            title="Hapus" 
+                            onClick={() => confirmDelete(item)}
+                          >
+                            <FaTrash color="#be123c" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontStyle: 'italic' }}>
+                      {loading ? "Memuat data..." : "Tidak ada data user ditemukan."}
+                    </td>
+                  </tr>
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <AnimatePresence>
         {showForm && (
@@ -612,9 +704,11 @@ const UserManagement = () => {
               </div>
 
               <form onSubmit={handleFormSubmit} className="um-modal-form">
-                <div className="um-form-row">
-                  <div className="um-field-group">
-                    <label>Nama Lengkap <span className="text-danger">*</span></label>
+                <div className="um-modal-columns">
+                  <div className="um-modal-col">
+                    <h3 className="um-col-title">Detail Pengguna</h3>
+                    <div className="um-field-group">
+                      <label>Nama Lengkap <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       name="name"
@@ -636,9 +730,7 @@ const UserManagement = () => {
                       onChange={handleInputChange}
                     />
                   </div>
-                </div>
 
-                <div className="um-form-row">
                   <div className="um-field-group">
                     <label>Password {!isEdit && <span className="text-danger">*</span>}</label>
                     <input
@@ -666,7 +758,6 @@ const UserManagement = () => {
                       ))}
                     </select>
                   </div>
-                </div>
 
                 {formData.role === "penjahit" && (
                   <div className="um-field-group full-width">
@@ -686,16 +777,17 @@ const UserManagement = () => {
                     </select>
                   </div>
                 )}
+                </div> {/* End Column 1 */}
 
                 {formData.role !== "super-admin" && (
-                  <div className="um-permissions-section">
-                    <div className="um-permissions-header">
-                      <label>Pilih Hak Akses Menu</label>
+                  <div className="um-modal-col">
+                    <h3 className="um-col-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
+                      Hak Akses Menu
                       <button type="button" className="um-select-all-btn" onClick={handleSelectAllMenus}>
                         {formData.menus.length === getAllMenuKeys().length ? "Hapus Semua" : "Pilih Semua"}
                       </button>
-                    </div>
-                    <div className="um-permissions-tree">
+                    </h3>
+                    <div className="um-permissions-tree" style={{ marginTop: '12px' }}>
                       {AVAILABLE_MENUS.map((menu) => {
                         const isChecked = isParentChecked(menu);
                         const isIndeterminate = isParentIndeterminate(menu);
@@ -838,9 +930,99 @@ const UserManagement = () => {
                   </div>
                 )}
 
-                <div className="um-modal-bottom">
-                  <button type="button" className="um-btn-cancel" onClick={closeModal}>Batal</button>
-                  <button type="submit" className="um-btn-primary">
+                {formData.role !== "super-admin" && layouts.length > 0 && (
+                  <div className="um-modal-col">
+                    <h3 className="um-col-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
+                      Akses Gudang / Layout
+                      <button 
+                        type="button" 
+                        className="um-select-all-btn" 
+                        onClick={() => {
+                          const allSelected = layouts.every(l => formData.gudang_access.includes(l.id));
+                          setFormData(prev => ({
+                            ...prev,
+                            gudang_access: allSelected ? [] : layouts.map(l => l.id)
+                          }));
+                        }}
+                      >
+                        {layouts.every(l => formData.gudang_access.includes(l.id)) ? "Hapus Semua" : "Pilih Semua"}
+                      </button>
+                    </h3>
+                    <div className="um-permissions-tree" style={{ marginTop: '12px' }}>
+                      {layouts.map((layout) => {
+                        const layoutState = getLayoutAccessState(layout, formData.gudang_access);
+                        const isExpanded = expandedGudangs[layout.id];
+                        return (
+                          <div key={layout.id} className="um-permission-group">
+                            <div className="um-permission-group-header" onClick={() => toggleLayoutAccess(layout)} style={{ cursor: "pointer" }}>
+                              <div className="um-permission-group-left">
+                                <button type="button" className="um-expand-btn" onClick={(e) => toggleGudangMenu(layout.id, e)}>
+                                  {isExpanded ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+                                </button>
+                                {layoutState === 'checked' ? (
+                                  <div className="custom-chk checked"><FaCheck size={9} color="#fff" /></div>
+                                ) : layoutState === 'indeterminate' ? (
+                                  <div className="custom-chk checked"><div style={{width: 8, height: 2, background: '#fff', borderRadius: 1}} /></div>
+                                ) : (
+                                  <div className="custom-chk" />
+                                )}
+                                <span className="um-permission-group-icon"><FaMapMarkerAlt size={12} /></span>
+                                <span className="um-permission-group-label">{layout.name}</span>
+                              </div>
+                            </div>
+
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  style={{ overflow: "hidden" }}
+                                >
+                                  {layout.floors?.map(floor => (
+                                    <div key={floor.id} style={{ paddingLeft: 24, marginTop: 4 }}>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', padding: '4px 0' }}>Lantai {floor.number}</div>
+                                      {floor.blocks?.map(block => (
+                                        <div key={block.id} style={{ paddingLeft: 12 }}>
+                                          <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', padding: '4px 0' }}>Blok {block.code}</div>
+                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, paddingLeft: 12, marginBottom: 8 }}>
+                                            {block.racks?.map(rack => {
+                                              const isRackChecked = formData.gudang_access.includes(layout.id) || formData.gudang_access.includes(rack.id);
+                                              return (
+                                                <div 
+                                                  key={rack.id} 
+                                                  style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 8px', background: isRackChecked ? '#eff6ff' : '#f8fafc', border: `1px solid ${isRackChecked ? '#bfdbfe' : '#e2e8f0'}`, borderRadius: 4 }}
+                                                  onClick={() => toggleRackAccess(layout, rack.id)}
+                                                >
+                                                  {isRackChecked ? (
+                                                    <div className="custom-chk checked" style={{ width: 14, height: 14, minWidth: 14 }}><FaCheck size={8} color="#fff" /></div>
+                                                  ) : (
+                                                    <div className="custom-chk" style={{ width: 14, height: 14, minWidth: 14 }} />
+                                                  )}
+                                                  <span style={{ fontSize: 12, color: isRackChecked ? '#1e40af' : '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rack.label || `Rak ${rack.number}`}</span>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                </div> {/* End um-modal-columns */}
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", paddingTop: "16px", borderTop: "1px solid #e2e8f0", marginTop: "8px" }}>
+                  <button type="button" className="ks-btn" onClick={closeModal}>Batal</button>
+                  <button type="submit" className="ks-btn ks-btn-primary">
                     Simpan Data
                   </button>
                 </div>
@@ -866,25 +1048,26 @@ const UserManagement = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              style={{ width: 400 }}
             >
-              <div className="um-modal-top borderless center-header">
-                <button type="button" className="close-btn absolute-right" onClick={closeDeleteModal}>
+              <div className="um-modal-top borderless center-header" style={{ flexDirection: "column", alignItems: "center", padding: "24px 24px 12px", borderBottom: "none" }}>
+                <button type="button" className="close-btn" style={{ position: "absolute", right: 16, top: 16 }} onClick={closeDeleteModal}>
                   <FaTimes />
                 </button>
-                <div className="danger-icon-wrap">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 56, height: 56, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "50%", color: "#dc2626", fontSize: 24, marginBottom: 12 }}>
                   <FaTrash />
                 </div>
               </div>
 
-              <div className="um-modal-form center-text pt-0">
-                <h2>Hapus Data Pengguna?</h2>
-                <p className="delete-desc">
+              <div style={{ textAlign: "center", padding: "0 24px 24px" }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#0f172a" }}>Hapus Data Pengguna?</h2>
+                <p style={{ fontSize: 13, color: "#64748b", margin: "8px 0 24px" }}>
                   Apakah Anda yakin ingin menghapus akun <strong>{itemToDelete.name}</strong> ({itemToDelete.email})? Tindakan ini akan mencabut akses sistem secara permanen.
                 </p>
 
-                <div className="um-modal-bottom evenly">
-                  <button type="button" className="um-btn-cancel flex-1" onClick={closeDeleteModal}>Batal</button>
-                  <button type="button" className="um-btn-danger flex-1" onClick={handleDelete}>
+                <div style={{ display: "flex", gap: "12px", width: "100%" }}>
+                  <button type="button" className="ks-btn" style={{ flex: 1, justifyContent: "center" }} onClick={closeDeleteModal}>Batal</button>
+                  <button type="button" className="ks-btn ks-btn-danger" style={{ flex: 1, justifyContent: "center", background: "#e11d48", color: "#fff" }} onClick={handleDelete}>
                     Ya, Hapus
                   </button>
                 </div>
