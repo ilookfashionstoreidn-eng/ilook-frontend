@@ -498,22 +498,39 @@ const ScanStep = ({ product, skuRow, onBack, onDone }) => {
     focusScanInput();
   }, [focusScanInput]);
 
+  const playSound = (type) => {
+    const soundMap = {
+      success: "/sounds/scanmasukberhasil.mp3",
+      error: "/sounds/scanmasukgagal.mp3",
+    };
+    const targetSound = soundMap[type];
+    if (!targetSound) return;
+
+    const audio = new Audio(targetSound);
+    audio.play().catch(() => {});
+  };
+
   const handleScan = useCallback(
     (raw) => {
       const serial = normalizeSerial(raw);
-      if (!serial) return;
+      if (!serial) {
+        playSound("error");
+        return;
+      }
 
       setDuplicateAlert("");
 
       if (scannedList.includes(serial)) {
         setDuplicateAlert(`Seri "${serial}" sudah di-scan sebelumnya!`);
         setInputValue("");
+        playSound("error");
         focusScanInput();
         return;
       }
 
       setScannedList((prev) => [serial, ...prev]);
       setInputValue("");
+      playSound("success");
       focusScanInput();
     },
     [scannedList, focusScanInput]

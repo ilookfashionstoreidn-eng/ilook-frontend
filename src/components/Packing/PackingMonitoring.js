@@ -434,12 +434,7 @@ const PackingMonitoring = () => {
                                 key={card.key}
                                 className="ks-board"
                                 onClick={() => setStatusFilter(card.key)}
-                                style={{ 
-                                    padding: '16px 20px', 
-                                    cursor: 'pointer', 
-                                    flex: 1, 
-                                    display: 'flex', 
-                                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                style={{ margin: 0, padding: '16px 20px', cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                                     border: statusFilter === card.key ? `2px solid ${card.ring}` : '1px solid #e2e8f0',
                                     backgroundColor: statusFilter === card.key ? `${card.ring}0d` : '#fff',
                                     boxShadow: statusFilter === card.key ? `0 4px 12px ${card.ring}22` : '0 1px 2px rgba(15, 23, 42, 0.06)',

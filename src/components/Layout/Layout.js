@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   FaBars,
   FaTimes,
@@ -64,6 +64,26 @@ const Layout = () => {
   }, []);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Sync active menu with current path
+  useEffect(() => {
+    const path = location.pathname.replace(/^\//, '');
+    if (path) {
+      setActiveMenu(path);
+      // Auto open menus based on path
+      if (['packing', 'packing-random', 'packing-pendingan', 'packing-belum-barcode', 'packing-no-data-ginee', 'packing-inject', 'seri', 'monitoring', 'packing-printed', 'packing-daily-report', 'packing-daily-packing-report', 'logs'].includes(path)) setIsPackingOpen(true);
+      if (['gudang', 'list-stok-gudang', 'gudang-logs', 'scan-masuk-gudang'].includes(path)) setIsGudangOpen(true);
+      if (['list-stok-product', 'riwayat-opname-product', 'riwayat-masuk-product', 'riwayat-keluar-product', 'riwayat-scan-pengiriman'].includes(path)) setIsGudangProdukOpen(true);
+      if (['jahit', 'jahit-spk', 'pengiriman', 'jahit-hutang', 'jahit-cashbon', 'jahit-pendapatan', 'jahit-deadline', 'jahit-status', 'kinerja', 'kinerja-detail', 'jahit-riwayat-pendapatan'].includes(path)) setIsCmtOpen(true);
+      if (['cutting', 'tukang-pola', 'spk-cutting', 'hasil-cutting', 'history-hasil-cutting', 'spk-distribusi-history', 'hutang-cutting', 'cashbon-cutting', 'pendapatan-cutting', 'history-pendapatan-cutting', 'markeran-produk'].includes(path)) setIsCuttingOpen(true);
+      if (['tukang-jasa', 'spk-jasa', 'hasil-jasa', 'cashbon-jasa', 'hutang-jasa', 'pendapatan-jasa', 'history-pendapatan-jasa'].includes(path)) setIsJasaOpen(true);
+      if (['qc-lolos', 'qc-reject'].includes(path)) setIsQcOpen(true);
+      if (['return', 'return-logs'].includes(path)) setIsReturnOpen(true);
+    } else {
+      setActiveMenu('home');
+    }
+  }, [location.pathname]);
   const handleLogout = useCallback(async () => {
     try {
       await API.post("/logout");
@@ -116,18 +136,7 @@ const Layout = () => {
 
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  // Auto collapse sidebar after 10 seconds of inactivity
-  useEffect(() => {
-    let timer;
-    if (!isSidebarCollapsed && !isSidebarHovered) {
-      timer = setTimeout(() => {
-        setIsSidebarCollapsed(true);
-      }, 10000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isSidebarCollapsed, isSidebarHovered]);
+  // Auto collapse removed for better UX
 
   const hasAccess = (menuKey) => {
     if (role === "super-admin") return true;
