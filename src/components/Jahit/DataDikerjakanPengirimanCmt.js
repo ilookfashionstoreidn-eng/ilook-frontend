@@ -13,6 +13,7 @@ import {
     FiTrendingUp,
     FiTruck,
     FiUsers,
+    FiList,
 } from "react-icons/fi";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -58,6 +59,7 @@ const DataDikerjakanPengirimanCmt = () => {
     const [weekRange, setWeekRange] = useState(5);
     const [periodeInfo, setPeriodeInfo] = useState([]);
     const [lastUpdated, setLastUpdated] = useState("");
+    const [activeTab, setActiveTab] = useState("chart");
 
     const selectedPeriods = useMemo(() => {
         const periods = [];
@@ -526,7 +528,23 @@ const DataDikerjakanPengirimanCmt = () => {
                 ))}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", padding: "20px" }}>
+            <div style={{ padding: "0 20px", marginTop: "20px", display: "flex", gap: "24px", borderBottom: "1px solid var(--ks-line)" }}>
+                <button
+                    onClick={() => setActiveTab("chart")}
+                    style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "chart" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "chart" ? "#155eef" : "#64748b", fontWeight: activeTab === "chart" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
+                >
+                    <FiBarChart2 style={{ marginRight: "8px" }} /> Ringkasan & Grafik
+                </button>
+                <button
+                    onClick={() => setActiveTab("table")}
+                    style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "table" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "table" ? "#155eef" : "#64748b", fontWeight: activeTab === "table" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
+                >
+                    <FiList style={{ marginRight: "8px" }} /> Detail Data
+                </button>
+            </div>
+
+            {activeTab === "chart" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", padding: "20px" }}>
                 <section className="ks-board">
                     <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--ks-line)" }}>
                         <h2 style={{ fontSize: "14px", fontWeight: 600, color: "var(--ks-text-dark)", margin: 0 }}>Top performa pengiriman per CMT</h2>
@@ -554,8 +572,10 @@ const DataDikerjakanPengirimanCmt = () => {
                     </div>
                 </section>
             </div>
+            )}
 
-                <section className="ks-board" style={{ margin: "0 20px 20px" }}>
+            {activeTab === "table" && (
+                <section className="ks-board" style={{ margin: "20px" }}>
                     <div className="ks-toolbar">
                         <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", width: "100%" }}>
                             <div className="ks-search">
@@ -757,6 +777,7 @@ const DataDikerjakanPengirimanCmt = () => {
                         )}
                     </div>
                 </section>
+            )}
         </div>
     );
 };

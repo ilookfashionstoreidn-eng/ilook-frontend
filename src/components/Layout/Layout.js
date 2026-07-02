@@ -231,7 +231,7 @@ const Layout = () => {
             {hasAccess("dashboard") && (
               <li>
                 <Link to="/home" className={`sidebar-link ${activeMenu === "home" ? "active" : ""}`} onClick={() => handleMenuClick("home")}>
-                  <FaHome className="icon" /> Dashboard
+                  <FaHome className="icon" /> Home
                 </Link>
               </li>
             )}
@@ -384,7 +384,9 @@ const Layout = () => {
                 </div>
                 {isGudangOpen && (
                   <ul className="dropdown-menu show dropdown-menu-grouped">
-                    <div className="dropdown-group-label">Master Data</div>
+                    {(hasAccess("gudang_bahan:pabrik") || hasAccess("gudang_bahan:gudang") || hasAccess("gudang_bahan:bahan") || hasAccess("gudang_bahan:list_bahan")) && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
                     {hasAccess("gudang_bahan:pabrik") && (
                       <li>
                         <Link to="pabrik" className={`dropdown-link ${activeMenu === "pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pabrik")}>
@@ -414,7 +416,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Operasional</div>
+                    {(hasAccess("gudang_bahan:pemesanan") || hasAccess("gudang_bahan:pengiriman") || hasAccess("gudang_bahan:return") || hasAccess("gudang_bahan:opname")) && (
+                      <div className="dropdown-group-label">Operasional</div>
+                    )}
                     {hasAccess("gudang_bahan:pemesanan") && (
                       <li>
                         <Link to="spk-bahan" className={`dropdown-link ${activeMenu === "spk-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("spk-bahan")}>
@@ -444,7 +448,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Inventory</div>
+                    {(hasAccess("gudang_bahan:stok") || hasAccess("gudang_bahan:scan_masuk") || hasAccess("gudang_bahan:scan_keluar") || hasAccess("gudang_bahan:history_keluar")) && (
+                      <div className="dropdown-group-label">Inventory</div>
+                    )}
                     {hasAccess("gudang_bahan:stok") && (
                       <li>
                         <Link to="stok-per-bahan" className={`dropdown-link ${activeMenu === "stok-per-bahan" ? "active" : ""}`} onClick={() => handleMenuClick("stok-per-bahan")}>
@@ -474,7 +480,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Keuangan</div>
+                    {(hasAccess("gudang_bahan:hutang_pabrik") || hasAccess("gudang_bahan:history_hutang_pabrik")) && (
+                      <div className="dropdown-group-label">Keuangan</div>
+                    )}
                     {hasAccess("gudang_bahan:hutang_pabrik") && (
                       <li>
                         <Link to="pendapatan-pabrik" className={`dropdown-link ${activeMenu === "pendapatan-pabrik" ? "active" : ""}`} onClick={() => handleMenuClick("pendapatan-pabrik")}>
@@ -502,7 +510,9 @@ const Layout = () => {
                 </div>
                 {isCuttingOpen && (
                   <ul className="dropdown-menu show dropdown-menu-grouped">
-                    <div className="dropdown-group-label">Utama</div>
+                    {hasAccess("cutting:dashboard") && (
+                      <div className="dropdown-group-label">Utama</div>
+                    )}
                     {hasAccess("cutting:dashboard") && (
                       <li>
                         <Link to="dashboardCutting" className={`dropdown-link ${activeMenu === "dashboardCutting" ? "active" : ""}`} onClick={() => handleMenuClick("dashboardCutting")}>
@@ -511,7 +521,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Master Data</div>
+                    {hasAccess("cutting:tukang") && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
                     {hasAccess("cutting:tukang") && (
                       <li>
                         <Link to="tukangCutting" className={`dropdown-link ${activeMenu === "tukangCutting" ? "active" : ""}`} onClick={() => handleMenuClick("tukangCutting")}>
@@ -521,7 +533,9 @@ const Layout = () => {
                     )}
 
 
-                    <div className="dropdown-group-label">Operasional</div>
+                    {(hasAccess("cutting:spk") || hasAccess("cutting:hasil") || hasAccess("cutting:laporan") || hasAccess("cutting:acuan") || hasAccess("cutting:history_hasil") || hasAccess("cutting:history_distribusi")) && (
+                      <div className="dropdown-group-label">Operasional</div>
+                    )}
                     {hasAccess("cutting:spk") && (
                       <li>
                         <Link to="spkcutting" className={`dropdown-link ${activeMenu === "spkcutting" ? "active" : ""}`} onClick={() => handleMenuClick("spkcutting")}>
@@ -565,7 +579,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Keuangan</div>
+                    {(hasAccess("cutting:hutang") || hasAccess("cutting:cashbon") || hasAccess("cutting:piutang") || hasAccess("cutting:history_pembayaran")) && (
+                      <div className="dropdown-group-label">Keuangan</div>
+                    )}
                     {hasAccess("cutting:hutang") && (
                       <li>
                         <Link to="hutangc" className={`dropdown-link ${activeMenu === "hutangc" ? "active" : ""}`} onClick={() => handleMenuClick("hutangc")}>
@@ -811,7 +827,9 @@ const Layout = () => {
                 </div>
                 {isGudangProdukOpen && (
                   <ul className="dropdown-menu show dropdown-menu-grouped">
-                    <div className="dropdown-group-label">Master</div>
+                    {hasAccess("gudang_produk:master_layout") && (
+                      <div className="dropdown-group-label">Master</div>
+                    )}
                     {hasAccess("gudang_produk:master_layout") && (
                       <li>
                         <Link to="master-gudang-produk" className={`dropdown-link ${activeMenu === "master-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("master-gudang-produk")}>
@@ -820,7 +838,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Operasional</div>
+                    {(hasAccess("gudang_produk:scan_masuk") || hasAccess("gudang_produk:mutasi")) && (
+                      <div className="dropdown-group-label">Operasional</div>
+                    )}
                     {/* {hasAccess("gudang_produk:input_sku") && (
                       <li>
                         <Link to="input-sku-gudang" className={`dropdown-link ${activeMenu === "input-sku-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("input-sku-gudang")}>
@@ -850,7 +870,9 @@ const Layout = () => {
                       </li>
                     )} */}
 
-                    <div className="dropdown-group-label">Stok & Opname</div>
+                    {(hasAccess("gudang_produk:stok_awal") || hasAccess("gudang_produk:stok_opname") || hasAccess("gudang_produk:stok_lokasi") || hasAccess("gudang_produk:list_stok")) && (
+                      <div className="dropdown-group-label">Stok & Opname</div>
+                    )}
                     {hasAccess("gudang_produk:stok_awal") && (
                       <li>
                         <Link to="stok-awal-gudang-produk" className={`dropdown-link ${activeMenu === "stok-awal-gudang-produk" ? "active" : ""}`} onClick={() => handleMenuClick("stok-awal-gudang-produk")}>
@@ -880,7 +902,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">History & Lainnya</div>
+                    {(hasAccess("gudang_produk:stok_opname") || hasAccess("gudang_produk:history_mutasi") || hasAccess("gudang_produk:history_produk") || hasAccess("gudang_produk:history_stok_awal") || hasAccess("gudang_produk:history_produk_masuk") || hasAccess("gudang_produk:history_out_check") || hasAccess("gudang_produk:pencarian_seri")) && (
+                      <div className="dropdown-group-label">History & Lainnya</div>
+                    )}
                     {hasAccess("gudang_produk:stok_opname") && (
                       <li>
                         <Link to="riwayat-stok-opname-gudang" className={`dropdown-link ${activeMenu === "riwayat-stok-opname-gudang" ? "active" : ""}`} onClick={() => handleMenuClick("riwayat-stok-opname-gudang")}>
@@ -931,7 +955,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Manajemen Sample</div>
+                    {hasAccess("gudang_produk:sample") && (
+                      <div className="dropdown-group-label">Manajemen Sample</div>
+                    )}
                     {hasAccess("gudang_produk:sample") && (
                       <>
                         <li>
@@ -962,7 +988,9 @@ const Layout = () => {
                 </div>
                 {isPackingOpen && (
                   <ul className="dropdown-menu show dropdown-menu-grouped">
-                    <div className="dropdown-group-label">Operasional</div>
+                    {(hasAccess("packing:packing") || hasAccess("packing:random") || hasAccess("packing:pendingan") || hasAccess("packing:belum_barcode") || hasAccess("packing:no_data_ginee") || hasAccess("packing:inject") || hasAccess("packing:seri")) && (
+                      <div className="dropdown-group-label">Operasional</div>
+                    )}
                     {hasAccess("packing:packing") && (
                       <li>
                         <Link to="packing" className={`dropdown-link ${activeMenu === "packing" ? "active" : ""}`} onClick={() => handleMenuClick("packing")}>
@@ -1013,7 +1041,9 @@ const Layout = () => {
                       </li>
                     )}
 
-                    <div className="dropdown-group-label">Monitoring &amp; Laporan</div>
+                    {hasAccess("packing:logs") && (
+                      <div className="dropdown-group-label">Monitoring &amp; Laporan</div>
+                    )}
                     {hasAccess("packing:logs") && (
                       <li>
                         <Link to="monitoring" className={`dropdown-link ${activeMenu === "monitoring" ? "active" : ""}`} onClick={() => handleMenuClick("monitoring")}>
