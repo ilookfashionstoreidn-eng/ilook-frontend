@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import "../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "./Seri.css";
 import API from "../../api";
 import { 
@@ -380,195 +381,193 @@ const Seri = () => {
   const isFiltering = searchTerm.trim().length > 0;
 
   return (
-    <div className="seri-page">
-          <header className="seri-topbar">
-            <div className="seri-title-group">
-              <div className="brand-icon">
-                <FiBox size={24} color="#fff" />
-              </div>
-              <div className="brand-text">
-                 <h1>Data Seri Directory</h1>
-              </div>
-            </div>
-          </header>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Data Seri Directory</h1>
+          <span className="ks-header-sub">Kelola dan pantau semua nomor seri produk Anda di sini.</span>
+        </div>
+        <div className="ks-header-actions">
+           <button className="ks-btn is-primary" onClick={() => setShowForm(true)}>
+             <FiPlus size={16} style={{ marginRight: 8 }} /> Tambah Seri
+           </button>
+        </div>
+      </header>
 
-          <main className="seri-main">
-            <section className="seri-kpi-grid">
-              <article className="seri-kpi-card">
-                <div className="kpi-icon"><FiDatabase size={16} /></div>
-                <div>
-                  <p>Total Seri (Halaman)</p>
-                  <h3>{totalRows}</h3>
-                </div>
-              </article>
-              <article className="seri-kpi-card">
-                <div className="kpi-icon"><FiFilter size={16} /></div>
-                <div>
-                  <p>Hasil Pencarian</p>
-                  <h3>{visibleRows}</h3>
-                </div>
-              </article>
-              <article className="seri-kpi-card">
-                <div className="kpi-icon"><FiGrid size={16} /></div>
-                <div>
-                  <p>Posisi Halaman</p>
-                  <h3>{currentPage} / {lastPage}</h3>
-                </div>
-              </article>
-            </section>
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Seri (Halaman)</span>
+          <span className="ks-stat-value">{totalRows}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Hasil Pencarian</span>
+          <span className="ks-stat-value">{visibleRows}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Posisi Halaman</span>
+          <span className="ks-stat-value">{currentPage} / {lastPage}</span>
+        </div>
+      </div>
 
-            <div className="table-card">
-              <div className="seri-tabs-container">
-                <div className="seri-tabs">
-                  <button className={`seri-tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Semua</button>
-                  <button className={`seri-tab-btn ${activeTab === 'unscanned' ? 'active' : ''}`} onClick={() => handleTabChange('unscanned')}>Belum Di-scan</button>
-                  <button className={`seri-tab-btn ${activeTab === 'scanned' ? 'active' : ''}`} onClick={() => handleTabChange('scanned')}>Sudah Di-scan</button>
-                </div>
-              </div>
+      <section className="ks-board" style={{ margin: "20px" }}>
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", width: "100%", flexWrap: "wrap" }}>
+             <div className="ks-search">
+                <FiSearch className="ks-search-icon" />
+                <input
+                   type="text"
+                   placeholder="Cari nomor seri, SKU..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   onKeyDown={handleSearchKeyDown}
+                />
+             </div>
+             <button type="button" className="ks-btn is-primary" onClick={handleSearchSubmit}>
+                Cari
+             </button>
+          </div>
+        </div>
 
-              <div className="table-header">
-                <div>
-                  <h3>Semua Data Seri</h3>
-                </div>
-                <div className="table-header-actions">
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #dde3ed', borderRight: 'none', borderRadius: '8px 0 0 8px', background: '#f8fafc', paddingLeft: '12px', transition: 'border-color 0.2s, background 0.2s' }}>
-                      <FiSearch color="#94a3b8" size={15} style={{ flexShrink: 0 }} />
-                      <input 
-                        type="text" 
-                        placeholder="Cari nomor seri, SKU..." 
-                        style={{ border: 'none', background: 'transparent', outline: 'none', padding: '8px 12px', width: '210px', fontSize: '13px', margin: 0 }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={handleSearchKeyDown}
-                      />
-                    </div>
-                    <button className="search-btn" onClick={handleSearchSubmit}>Cari</button>
-                  </div>
-                  <button className="btn-primary" onClick={() => setShowForm(true)}>
-                     <FiPlus size={18} /> Tambah Seri
-                  </button>
-                </div>
-              </div>
+        <div style={{ padding: "0 20px", display: "flex", gap: "24px", borderBottom: "1px solid var(--ks-line)", marginBottom: "16px" }}>
+            <button
+                onClick={() => handleTabChange('all')}
+                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "all" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "all" ? "#155eef" : "#64748b", fontWeight: activeTab === "all" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
+            >
+                Semua
+            </button>
+            <button
+                onClick={() => handleTabChange('unscanned')}
+                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "unscanned" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "unscanned" ? "#155eef" : "#64748b", fontWeight: activeTab === "unscanned" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
+            >
+                Belum Di-scan
+            </button>
+            <button
+                onClick={() => handleTabChange('scanned')}
+                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "scanned" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "scanned" ? "#155eef" : "#64748b", fontWeight: activeTab === "scanned" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
+            >
+                Sudah Di-scan
+            </button>
+        </div>
 
-              <div className="table-container">
-                <table className="modern-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '5%', textAlign: 'center', whiteSpace: 'nowrap' }}>No</th>
-                      <th style={{ paddingLeft: '24px', width: '35%' }}>Nomor Seri</th>
-                      <th style={{ width: '25%' }}>Informasi SKU</th>
-                      <th style={{ width: '15%', whiteSpace: 'nowrap' }}>Tanggal Dibuat</th>
-                      <th style={{ width: '15%', whiteSpace: 'nowrap' }}>Status Scan</th>
-                      <th className="text-right" style={{ paddingRight: '24px', width: '5%', whiteSpace: 'nowrap' }}>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                      {loading ? (
-                        <tr className="empty-row">
-                            <td colSpan="6" className="empty-state" style={{ textAlign: 'center' }}>Memuat data seri...</td>
-                        </tr>
-                      ) : error ? (
-                        <tr className="empty-row">
-                            <td colSpan="6" className="empty-state text-accent" style={{ textAlign: 'center' }}>{error}</td>
-                        </tr>
-                      ) : (
-                        <AnimatePresence>
-                          {sortedData.map((item, index) => (
-                            <motion.tr 
-                              key={item.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, x: -10 }}
-                              transition={{ duration: 0.2, delay: index * 0.05 }}
-                              className="seri-table-row"
-                            >
-                              <td className="text-muted font-mono" style={{ textAlign: 'center' }}>
-                                 {index + 1}
-                              </td>
-                              <td style={{ paddingLeft: '24px' }}>
-                                <div className="serial-pill">
-                                  <span className="status-dot-sm"></span>
-                                  <span className="font-semibold text-accent">{item.nomor_seri}</span>
-                                </div>
-                              </td>
-                              <td>
-                                <span className="sku-inline">
-                                    <FiLayers className="text-muted" />
-                                    <span className="sku-chip">{item.sku}</span>
-                                </span>
-                              </td>
-                              <td>
-                                <span className="text-muted font-semibold" style={{ fontSize: '13px' }}>
-                                  {dayjs(item.created_at).format('DD MMM YYYY')}
-                                </span>
-                              </td>
-                              <td>
-                                {item.scanned_count > 0 ? (
-                                  <div className="scanned-status-pill success" title={
-                                    item.scanned_details?.map(d => `${d.barcode}: ${d.source}`).join("\n")
-                                  }>
-                                    <div className="scanned-dot-wrapper">
-                                      <span className="scanned-dot green"></span>
-                                      <span className="scanned-text font-semibold text-success">
-                                        {item.scanned_count} / {item.jumlah} Di-scan
-                                      </span>
-                                    </div>
-                                    <div className="scanned-origins">
-                                      {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
-                                        <span key={source} className="scanned-source-badge">{source}</span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="scanned-status-pill neutral">
-                                    <div className="scanned-dot-wrapper">
-                                      <span className="scanned-dot gray"></span>
-                                      <span className="scanned-text text-muted">Belum di-scan</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </td>
-                              <td className="text-right" style={{ paddingRight: '24px' }}>
-                                 <div className="action-buttons-group">
-                                   <button className="btn-download-blue" onClick={() => downloadQR(item.id, item.nomor_seri)} title="Unduh QR">
-                                      <FiDownload />
-                                   </button>
-                                   <button className="btn-delete-red" onClick={() => handleDelete(item.id, item.nomor_seri)} title="Hapus Seri">
-                                      <FiTrash2 />
-                                   </button>
-                                 </div>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </AnimatePresence>
-                      )}
-                    {!loading && sortedData.length === 0 && !error && (
-                      <tr className="empty-row">
-                        <td colSpan="6" className="empty-state">
-                          Tidak ada data seri yang sesuai dengan kriteria.
+        <div className="ks-grid-scroll" style={{ padding: '0 20px' }}>
+          <table className="ks-grid">
+            <thead>
+              <tr>
+                <th style={{ width: '5%', textAlign: 'center' }}>No</th>
+                <th style={{ width: '30%' }}>Nomor Seri</th>
+                <th style={{ width: '20%' }}>Informasi SKU</th>
+                <th style={{ width: '15%' }}>Tanggal Dibuat</th>
+                <th style={{ width: '15%' }}>Status Scan</th>
+                <th style={{ width: '10%' }}>Lokasi / Sumber</th>
+                <th style={{ width: '5%', textAlign: 'right' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+                {loading ? (
+                  <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '32px' }}>Memuat data seri...</td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#ef4444' }}>{error}</td>
+                  </tr>
+                ) : (
+                  <AnimatePresence>
+                    {sortedData.map((item, index) => (
+                      <motion.tr 
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
+                      >
+                        <td style={{ textAlign: 'center' }}>
+                            {index + 1}
                         </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {!loading && sortedData.length > 0 && (
-                <div className="seri-pagination">
-                  <button disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1, searchTerm)}>
-                    Sebelumnya
-                  </button>
-                  <span>
-                    Halaman {currentPage} dari {lastPage}
-                  </span>
-                  <button disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1, searchTerm)}>
-                    Selanjutnya
-                  </button>
-                </div>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#155eef' }}></span>
+                            <span style={{ fontWeight: 600, color: '#155eef' }}>{item.nomor_seri}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', border: '1px solid #dde3ed', width: 'fit-content' }}>
+                              <FiLayers color="#64748b" />
+                              <span style={{ color: '#334155' }}>{item.sku}</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
+                            {dayjs(item.created_at).format('DD MMM YYYY')}
+                          </span>
+                        </td>
+                        <td>
+                          {item.scanned_count > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span>
+                                <span style={{ color: '#10b981', fontWeight: 600, fontSize: '13px' }}>
+                                  {item.scanned_count} / {item.jumlah} Di-scan
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#94a3b8' }}></span>
+                              <span style={{ color: '#64748b', fontSize: '13px' }}>Belum di-scan</span>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {item.scanned_count > 0 ? (
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
+                                  <span key={source} style={{ fontSize: '11px', background: '#ecfdf5', color: '#059669', padding: '2px 6px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>{source}</span>
+                                ))}
+                              </div>
+                          ) : (
+                              <span style={{ color: '#94a3b8', fontSize: '13px' }}>-</span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => downloadQR(item.id, item.nomor_seri)} title="Unduh QR" style={{ padding: '6px', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                                <FiDownload size={16} />
+                              </button>
+                              <button onClick={() => handleDelete(item.id, item.nomor_seri)} title="Hapus Seri" style={{ padding: '6px', background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                                <FiTrash2 size={16} />
+                              </button>
+                            </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                )}
+              {!loading && sortedData.length === 0 && !error && (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                    Tidak ada data seri yang sesuai dengan kriteria.
+                  </td>
+                </tr>
               )}
-            </div>
-      </main>
+            </tbody>
+          </table>
+        </div>
+
+        {!loading && sortedData.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid var(--ks-line)' }}>
+            <button className="ks-btn" disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1, searchTerm)}>
+              Sebelumnya
+            </button>
+            <span style={{ fontSize: '13px', color: 'var(--ks-text-soft)' }}>
+              Halaman {currentPage} dari {lastPage}
+            </span>
+            <button className="ks-btn" disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1, searchTerm)}>
+              Selanjutnya
+            </button>
+          </div>
+        )}
+      </section>
 
       {showForm && (
           <div className="modal-overlay">

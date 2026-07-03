@@ -183,19 +183,19 @@ const getSpkWarnaDetail = (spk) => {
               const totalRollQty = parseFloat(bah.qty) || 0;
               
               if (Array.isArray(bah.skus) && bah.skus.length > 0) {
-                const sizesInBahan = Array.from(new Set(bah.skus.map(s => s.product_size || s.ukuran || "-")));
-                const rollQtyPerSize = sizesInBahan.length > 0 ? totalRollQty / sizesInBahan.length : totalRollQty;
+                const rollQtyPerSku = totalRollQty / bah.skus.length;
                 
-                sizesInBahan.forEach(sizeLabel => {
-                  const key = `${trimmedColor}___${sizeLabel}`;
-                  if (!colorMap[key]) {
-                    colorMap[key] = { qty: 0, estimasi: 0, skus: [], warna: trimmedColor, size: sizeLabel };
-                  }
-                  colorMap[key].qty += rollQtyPerSize;
-                  colorMap[key].estimasi += rollQtyPerSize * multiplier;
+                bah.skus.forEach(sku => {
+                  const sizeLabel = sku.product_size || sku.ukuran || "-";
+                  const skuIdentifier = sku.id || sku.sku_name || sizeLabel;
+                  const key = `${trimmedColor}___${skuIdentifier}`;
                   
-                  const matchingSkus = bah.skus.filter(s => (s.product_size || s.ukuran || "-") === sizeLabel);
-                  colorMap[key].skus.push(...matchingSkus);
+                  if (!colorMap[key]) {
+                    colorMap[key] = { qty: 0, estimasi: 0, skus: [], warna: trimmedColor, size: sizeLabel, skuIdentifier };
+                  }
+                  colorMap[key].qty += rollQtyPerSku;
+                  colorMap[key].estimasi += rollQtyPerSku * multiplier;
+                  colorMap[key].skus.push(sku);
                 });
               } else {
                 const sizeLabel = spk?.sku?.product_size || spk?.sku?.ukuran || spk?.productList?.product_size || spk?.produk?.product_size || spk?.ukuran || "-";
@@ -227,7 +227,8 @@ const getSpkWarnaDetail = (spk) => {
       estimasi: Math.round(data.estimasi),
       totalJasa: Math.round(data.estimasi) * (parseFloat(spk.harga_per_pcs) || 0),
       skus: uniqueSkus,
-      sizeLabel: data.size
+      sizeLabel: data.size,
+      skuIdentifier: data.skuIdentifier
     };
   });
 };
@@ -2766,12 +2767,12 @@ const SpkCutting = () => {
                   const sizeKeys = [];
                   if (hasDetails) {
                     warnaDetails.forEach(item => {
-                      const sizeLabel = item.sizeLabel || getSpkSizeLabel(spk);
-                      if (!sizeGroups[sizeLabel]) {
-                        sizeGroups[sizeLabel] = [];
-                        sizeKeys.push(sizeLabel);
+                      const groupKey = item.sizeLabel || getSpkSizeLabel(spk);
+                      if (!sizeGroups[groupKey]) {
+                        sizeGroups[groupKey] = [];
+                        sizeKeys.push(groupKey);
                       }
-                      sizeGroups[sizeLabel].push(item);
+                      sizeGroups[groupKey].push(item);
                     });
                   }
                   
@@ -2829,7 +2830,7 @@ const SpkCutting = () => {
                                     </span>
                                   </td>
                                   <td>{getSpkProductLabel(spk)}</td>
-                                  <td>{sizeKey}</td>
+                                  <td>{item.sizeLabel || sizeKey}</td>
                                   <td>{item.skus?.length > 0 ? item.skus.map(s => s.sku_name || s.sku || "-").join(", ") : getSpkSkuLabel(spk)}</td>
                                   <td>{item.warna}</td>
                                   <td>{Number.isInteger(item.qty) ? item.qty : Number(item.qty).toFixed(2)}</td>

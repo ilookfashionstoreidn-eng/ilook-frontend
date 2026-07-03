@@ -219,6 +219,27 @@ const SpkCmt = () => {
     jenis_harga_jasa: "per_barang",
   });
 
+  const resetNewSpk = useCallback(() => {
+    setNewSpk({
+      source_type: "cutting",
+      source_id: "",
+      deadline: "",
+      tanggal_ambil: "",
+      id_penjahit: "",
+      keterangan: "",
+      catatan: "",
+      markeran: "",
+      aksesoris: [],
+      handtag: "",
+      merek: "",
+      harga_barang_dasar: "",
+      jenis_harga_barang: "per_pcs",
+      harga_per_jasa: "",
+      jenis_harga_jasa: "per_barang",
+    });
+    setPreviewData(null);
+  }, []);
+
   const ensureSweetAlert = useCallback(
     () =>
       new Promise((resolve, reject) => {
@@ -2069,20 +2090,19 @@ const SpkCmt = () => {
 
   return (
     <div className="ks-page">
-      {!showForm ? (
-        <>
-        <header className="ks-header">
-          <div className="ks-header-id">
-            <h1>Data SPK CMT</h1>
-            <span className="ks-header-sub">Manajemen SPK CMT, deadline produksi, pengiriman, dan dokumen kerja</span>
-          </div>
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Manajemen SPK CMT</h1>
+          <span className="ks-header-sub">Manajemen SPK CMT, deadline produksi, pengiriman, dan dokumen kerja</span>
+        </div>
 
-          <div className="ks-header-actions">
+        <div className="ks-header-actions">
+          {!showForm && (
             <div className="ks-search">
               <FiSearch className="ks-search-icon" />
               <input
                 type="text"
-                placeholder="Cari produk, nomor seri, penjahit..."
+                placeholder="Cari produk, nomor seri..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -2098,6 +2118,8 @@ const SpkCmt = () => {
                 </button>
               )}
             </div>
+          )}
+
             <button
               type="button"
               className="ks-btn"
@@ -2171,10 +2193,18 @@ const SpkCmt = () => {
               </div>
             )}
           </div>
-        </header>
+      </header>
 
-        <div className="ks-statrail">
-          <div className="ks-stat">
+      <div style={{ display: "flex", gap: "32px", borderBottom: "1px solid var(--ks-line)", padding: "0 24px", background: "var(--ks-page)", flexShrink: 0 }}>
+        <button onClick={() => { setShowForm(false); resetNewSpk(); setSelectedSpk(null); }} style={{ padding: "16px 4px", border: "none", background: "none", borderBottom: !showForm ? "2px solid var(--ks-accent)" : "2px solid transparent", color: !showForm ? "var(--ks-text)" : "var(--ks-text-soft)", fontWeight: !showForm ? 600 : 500, cursor: "pointer", transition: "all 0.2s", marginBottom: "-1px", fontSize: "14px" }}>Data SPK CMT</button>
+        <button onClick={() => setShowForm(true)} style={{ padding: "16px 4px", border: "none", background: "none", borderBottom: showForm ? "2px solid var(--ks-accent)" : "2px solid transparent", color: showForm ? "var(--ks-text)" : "var(--ks-text-soft)", fontWeight: showForm ? 600 : 500, cursor: "pointer", transition: "all 0.2s", marginBottom: "-1px", fontSize: "14px" }}>{selectedSpk ? "Edit SPK CMT" : "Tambah SPK CMT"}</button>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+        {!showForm ? (
+          <>
+          <div className="ks-statrail">
+            <div className="ks-stat">
             <span className="ks-stat-label">Total SPK</span>
             <span className="ks-stat-value">{statusCount.total_spk || 0}</span>
           </div>
@@ -2316,10 +2346,6 @@ const SpkCmt = () => {
                 </button>
                 <button type="button" className="ks-btn" onClick={handleExportExcel}>
                   Export Excel
-                </button>
-
-                <button type="button" className="ks-btn is-primary" onClick={() => setShowForm(true)}>
-                  <FaPlus /> Tambah SPK CMT
                 </button>
               </div>
             </div>
@@ -2621,50 +2647,17 @@ const SpkCmt = () => {
         </main>
         </>
       ) : (
-        <div className="spkcmt-shell">
-          <header className="spkcmt-topbar">
-            <div className="spkcmt-title-group" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button
-                type="button"
-                className="spkcmt-btn-secondary"
-                onClick={() => {
-                  setShowForm(false);
-                  setNewSpk({
-                    source_type: "cutting",
-                    source_id: "",
-                    deadline: "",
-                    tanggal_ambil: "",
-                    id_penjahit: "",
-                    keterangan: "",
-                    catatan: "",
-                    markeran: "",
-                    aksesoris: [],
-                    handtag: "",
-                    merek: "",
-                    harga_barang_dasar: "",
-                    jenis_harga_barang: "per_pcs",
-                    harga_per_jasa: "",
-                    jenis_harga_jasa: "per_barang",
-                  });
-                  setPreviewData(null);
-                  setSelectedSpk(null);
-                }}
-                style={{ padding: '8px 14px', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-              >
-                ← Kembali
-              </button>
-              <div className="spkcmt-title-wrap">
-                <div className="spkcmt-module-pill">CMT Module</div>
-                <h1>{selectedSpk ? "Edit Data SPK CMT" : "Tambah SPK CMT"}</h1>
-                <p className="spkcmt-header-subtitle" style={{ margin: '4px 0 0' }}>
-                  Silakan lengkapi data SPK CMT di bawah ini. Preview cetak akan terupdate secara langsung.
-                </p>
-              </div>
+        <div className="ks-scroll" style={{ padding: "24px", overflowY: "auto", flex: 1, background: "var(--ks-bg)" }}>
+          {selectedSpk && (
+            <div style={{ padding: "16px", background: "var(--ks-surface)", border: "1px solid var(--ks-line)", borderRadius: "8px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+               <div>
+                 <h2 style={{ margin: 0, fontSize: "16px", color: "var(--ks-text)" }}>Edit Data SPK CMT</h2>
+                 <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--ks-text-soft)" }}>Anda sedang mengubah data SPK yang sudah ada.</p>
+               </div>
+               <button type="button" onClick={() => { setShowForm(false); resetNewSpk(); setSelectedSpk(null); }} className="ks-btn">Batal Edit</button>
             </div>
-          </header>
-
-          <main className="spkcmt-main">
-            <div style={{ display: "flex", gap: "24px", width: "100%", alignItems: "flex-start" }}>
+          )}
+          <div style={{ display: "flex", gap: "24px", width: "100%", alignItems: "flex-start" }}>
               {/* LEFT 50%: Form */}
               <div style={{ flex: 1, minWidth: 0, background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", boxShadow: "0 4px 20px rgba(15, 23, 42, 0.05)" }}>
                 <form onSubmit={handleSubmit}>
@@ -3240,9 +3233,9 @@ const SpkCmt = () => {
                 )}
               </div>
             </div>
-          </main>
         </div>
       )}
+      </div>
       {showChatPopup && (
         <div className="spkcmt-chat-overlay" onClick={handleCloseChat}>
           <div className="spkcmt-chat-popup" onClick={(e) => e.stopPropagation()}>

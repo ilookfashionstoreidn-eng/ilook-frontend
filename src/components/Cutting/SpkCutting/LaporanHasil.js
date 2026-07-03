@@ -7,6 +7,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import API from "../../../api";
+import "../../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "./LaporanHasil.css";
 
 const formatTanggal = (value) => {
@@ -179,207 +180,135 @@ const LaporanHasil = () => {
   };
 
   return (
-    <div className="laporan-erp-container">
-      <div className="laporan-erp-shell">
-        <header className="laporan-erp-header">
-          <div className="laporan-erp-header-top">
-            <div className="laporan-erp-title-group">
-              <div className="laporan-erp-brand-icon">
-                <FiBarChart2 />
-              </div>
-              <div className="laporan-erp-title-wrap">
-                <div className="laporan-erp-module-pill">Cutting Module</div>
-                <h1>Laporan Hasil Cutting</h1>
-                <p>Monitoring hasil cutting per tukang dan rentang tanggal</p>
-              </div>
-            </div>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Laporan Hasil Cutting</h1>
+          <span className="ks-header-sub">
+            Monitoring hasil cutting per tukang dan rentang tanggal
+          </span>
+        </div>
+        <div className="ks-header-actions">
+           <button type="button" className="ks-btn" onClick={handleResetFilter}>
+             <FiRefreshCw /> Reset
+           </button>
+        </div>
+      </header>
 
-            <div className="laporan-erp-actions">
-              <div className="laporan-erp-search-wrap">
-                <FiSearch className="laporan-erp-search-icon" />
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Hasil Periode</span>
+          <span className="ks-stat-value">{formatAngka(totalAll)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Hasil Ditampilkan</span>
+          <span className="ks-stat-value">{formatAngka(totalDisplayed)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Jumlah Tukang</span>
+          <span className="ks-stat-value">{formatAngka(tukang.length)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Durasi Periode</span>
+          <span className="ks-stat-value">{formatAngka(jumlahHari)} Hari</span>
+        </div>
+      </div>
+
+      <section className="ks-board" style={{ margin: "20px" }}>
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", width: "100%", flexWrap: "wrap", justifyContent: "space-between" }}>
+             <div className="ks-search" style={{ flex: 1, maxWidth: "300px" }}>
+                <FiSearch className="ks-search-icon" />
                 <input
-                  type="text"
-                  className="laporan-erp-search-input"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cari tanggal, nama tukang, atau jumlah..."
+                   type="text"
+                   placeholder="Cari data..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button
-                    type="button"
-                    className="laporan-erp-search-clear"
-                    onClick={() => setSearchTerm("")}
-                    aria-label="Hapus pencarian"
-                  >
-                    <FiX />
-                  </button>
+                   <FiX style={{ cursor: "pointer", marginLeft: "-24px" }} onClick={() => setSearchTerm("")} />
                 )}
-              </div>
-
-              <button type="button" className="laporan-erp-icon-btn" aria-label="Notifikasi">
-                <FiBell />
-                <span className="laporan-erp-dot" />
-              </button>
-
-              <div className="laporan-erp-avatar" title="Cutting Team">
-                CT
-              </div>
-            </div>
+             </div>
+             
+             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                   <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--ks-text-soft)" }}>Tanggal Mulai</span>
+                   <input type="date" className="ks-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={endDate || undefined} style={{ padding: "6px 12px", border: "1px solid var(--ks-line)", borderRadius: "6px", outline: "none", color: "var(--ks-text)" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                   <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--ks-text-soft)" }}>Tanggal Akhir</span>
+                   <input type="date" className="ks-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate || undefined} style={{ padding: "6px 12px", border: "1px solid var(--ks-line)", borderRadius: "6px", outline: "none", color: "var(--ks-text)" }} />
+                </div>
+             </div>
           </div>
-        </header>
+        </div>
 
-        <main className="laporan-erp-main">
-          <section className="laporan-erp-stats">
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Total Hasil Periode</p>
-              <p className="laporan-erp-stat-value">{formatAngka(totalAll)}</p>
-            </article>
+        {error && !loading && (
+          <div style={{ padding: "16px 20px", color: "#ef4444", display: "flex", alignItems: "center", gap: "8px" }}>
+             <FiBarChart2 /> {error}
+          </div>
+        )}
 
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Total Hasil Ditampilkan</p>
-              <p className="laporan-erp-stat-value laporan-erp-stat-value-info">
-                {formatAngka(totalDisplayed)}
-              </p>
-            </article>
-
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Jumlah Tukang</p>
-              <p className="laporan-erp-stat-value laporan-erp-stat-value-success">
-                {formatAngka(tukang.length)}
-              </p>
-            </article>
-
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Durasi Periode</p>
-              <p className="laporan-erp-stat-value laporan-erp-stat-value-muted">
-                {formatAngka(jumlahHari)} Hari
-              </p>
-            </article>
-          </section>
-
-          <section className="laporan-erp-table-wrapper">
-            <div className="laporan-erp-table-header">
-              <div>
-                <h3>Rekap Produksi Harian</h3>
-                <p>
-                  Menampilkan {filteredLaporan.length} dari {laporan.length} data
-                  pada periode {formatTanggal(startDate)} - {formatTanggal(endDate)}
-                </p>
-              </div>
-
-              <div className="laporan-erp-table-header-right">
-                {activeFilterCount > 0 && (
-                  <span className="laporan-erp-filter-pill">
-                    {activeFilterCount} filter aktif
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="laporan-erp-reset-btn"
-                  onClick={handleResetFilter}
-                >
-                  <FiRefreshCw /> Reset
-                </button>
-              </div>
-            </div>
-
-            <div className="laporan-erp-filter-section">
-              <div className="laporan-erp-date-field">
-                <label htmlFor="start-date">Tanggal Mulai</label>
-                <input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  max={endDate || undefined}
-                />
-              </div>
-
-              <div className="laporan-erp-date-field">
-                <label htmlFor="end-date">Tanggal Akhir</label>
-                <input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  min={startDate || undefined}
-                />
-              </div>
-            </div>
-
-            {loading && (
-              <div className="laporan-erp-loading">
-                <div className="laporan-erp-spinner" />
-                <p>Memuat data laporan...</p>
-              </div>
-            )}
-
-            {error && !loading && (
-              <div className="laporan-erp-empty-state">
-                <p className="laporan-erp-empty-title error">{error}</p>
-              </div>
-            )}
-
-            {!loading && !error && (
-              <div className="laporan-erp-table-scroll">
-                <table className="laporan-erp-table">
-                  <thead>
-                    <tr>
-                      <th>Tanggal</th>
-                      {tukang.map((nama) => (
-                        <th key={nama}>{nama}</th>
-                      ))}
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredLaporan.length > 0 ? (
-                      filteredLaporan.map((row, index) => (
-                        <tr key={`${row.tanggal}-${index}`}>
-                          <td className="laporan-erp-date-cell">
-                            {formatTanggal(row.tanggal)}
-                          </td>
-                          {tukang.map((nama) => (
-                            <td key={`${row.tanggal}-${nama}-${index}`}>
-                              {formatAngka(row[nama])}
-                            </td>
-                          ))}
-                          <td className="laporan-erp-total-cell">
-                            {formatAngka(row.total)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={tukang.length + 2} className="laporan-erp-empty-row">
-                          {searchTerm
-                            ? `Tidak ada data yang cocok untuk pencarian "${searchTerm}".`
-                            : "Tidak ada data untuk periode yang dipilih."}
+        <div className="ks-grid-scroll" style={{ padding: "0 20px 20px 20px" }}>
+          {loading ? (
+             <div style={{ padding: "32px", textAlign: "center" }}>Memuat data laporan...</div>
+          ) : !error && (
+             <table className="ks-grid">
+               <thead>
+                 <tr>
+                    <th style={{ whiteSpace: "nowrap" }}>Tanggal</th>
+                    {tukang.map((nama) => (
+                       <th key={nama} style={{ whiteSpace: "nowrap" }}>{nama}</th>
+                    ))}
+                    <th style={{ whiteSpace: "nowrap", textAlign: "right" }}>Total</th>
+                 </tr>
+               </thead>
+               <tbody>
+                  {filteredLaporan.length > 0 ? (
+                    filteredLaporan.map((row, index) => (
+                      <tr key={`${row.tanggal}-${index}`}>
+                        <td style={{ fontWeight: 500, color: "var(--ks-text-soft)", whiteSpace: "nowrap" }}>
+                          {formatTanggal(row.tanggal)}
                         </td>
-                      </tr>
-                    )}
-                  </tbody>
-
-                  {filteredLaporan.length > 0 && (
-                    <tfoot>
-                      <tr>
-                        <td>{searchTerm ? "Total Tampilan" : "Total Periode"}</td>
                         {tukang.map((nama) => (
-                          <td key={`summary-${nama}`}>
-                            {formatAngka(footerSummary[nama])}
+                          <td key={`${row.tanggal}-${nama}-${index}`} style={{ whiteSpace: "nowrap" }}>
+                            {formatAngka(row[nama])}
                           </td>
                         ))}
-                        <td>{formatAngka(footerSummary.total)}</td>
+                        <td style={{ fontWeight: 700, color: "var(--ks-text)", textAlign: "right", whiteSpace: "nowrap" }}>
+                          {formatAngka(row.total)}
+                        </td>
                       </tr>
-                    </tfoot>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={tukang.length + 2} style={{ textAlign: "center", padding: "32px", color: "var(--ks-text-soft)" }}>
+                        {searchTerm
+                          ? `Tidak ada data yang cocok untuk pencarian "${searchTerm}".`
+                          : "Tidak ada data untuk periode yang dipilih."}
+                      </td>
+                    </tr>
                   )}
-                </table>
-              </div>
-            )}
-          </section>
-        </main>
-      </div>
+               </tbody>
+               {filteredLaporan.length > 0 && (
+                 <tfoot>
+                   <tr>
+                     <td style={{ fontWeight: 700, color: "var(--ks-text)", background: "var(--ks-page)", whiteSpace: "nowrap" }}>{searchTerm ? "Total Tampilan" : "Total Periode"}</td>
+                     {tukang.map((nama) => (
+                       <td key={`summary-${nama}`} style={{ fontWeight: 700, color: "var(--ks-text)", background: "var(--ks-page)", whiteSpace: "nowrap" }}>
+                         {formatAngka(footerSummary[nama])}
+                       </td>
+                     ))}
+                     <td style={{ fontWeight: 700, color: "var(--brand-600)", background: "var(--ks-page)", textAlign: "right", whiteSpace: "nowrap" }}>
+                        {formatAngka(footerSummary.total)}
+                     </td>
+                   </tr>
+                 </tfoot>
+               )}
+             </table>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

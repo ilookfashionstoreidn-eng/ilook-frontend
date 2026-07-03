@@ -9,6 +9,7 @@ import {
   FiInfo,
 } from "react-icons/fi";
 import API from "../../../api";
+import "../../Jahit/KodeSeriBelumDikerjakanOptimized.css";
 import "./LaporanDataAcuan.css";
 
 const formatAngka = (value) =>
@@ -87,217 +88,167 @@ const LaporanDataAcuan = () => {
   };
 
   return (
-    <div className="laporan-erp-container">
-      <div className="laporan-erp-shell">
-        <header className="laporan-erp-header">
-          <div className="laporan-erp-header-top">
-            <div className="laporan-erp-title-group">
-              <div className="laporan-erp-brand-icon">
-                <FiLayers />
-              </div>
-              <div className="laporan-erp-title-wrap">
-                <div className="laporan-erp-module-pill">Cutting Module</div>
-                <h1>Laporan Data Acuan dalam Cutting</h1>
-                <p>Kalkulasi otomatis rata-rata berat / panjang per produk berdasarkan minimal 3 data SPK realisasi.</p>
-              </div>
-            </div>
+    <div className="ks-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Laporan Data Acuan dalam Cutting</h1>
+          <span className="ks-header-sub">
+            Kalkulasi otomatis rata-rata berat / panjang per produk berdasarkan minimal 3 data SPK realisasi.
+          </span>
+        </div>
+        <div className="ks-header-actions">
+           <button type="button" className="ks-btn" onClick={fetchData} disabled={loading} title="Refresh data">
+             <FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh
+           </button>
+        </div>
+      </header>
 
-            <div className="laporan-erp-actions">
-              <div className="laporan-erp-search-wrap">
-                <FiSearch className="laporan-erp-search-icon" />
+      <div className="ks-statrail">
+        <div className="ks-stat">
+          <span className="ks-stat-label">Total Kombinasi</span>
+          <span className="ks-stat-value">{formatAngka(stats.total)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Acuan Valid (>= 3 SPK)</span>
+          <span className="ks-stat-value" style={{ color: "var(--brand-600)" }}>{formatAngka(stats.valid)}</span>
+        </div>
+        <div className="ks-stat">
+          <span className="ks-stat-label">Belum Valid (&lt; 3 SPK)</span>
+          <span className="ks-stat-value">{formatAngka(stats.invalid)}</span>
+        </div>
+      </div>
+
+      <section className="ks-board" style={{ margin: "20px" }}>
+        <div className="ks-toolbar">
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", width: "100%", flexWrap: "wrap", justifyContent: "space-between" }}>
+             <div className="ks-search" style={{ flex: 1, maxWidth: "300px" }}>
+                <FiSearch className="ks-search-icon" />
                 <input
-                  type="text"
-                  className="laporan-erp-search-input"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cari produk, bagian, bahan, group..."
+                   type="text"
+                   placeholder="Cari produk, bagian, bahan, group..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button
-                    type="button"
-                    className="laporan-erp-search-clear"
-                    onClick={() => setSearchTerm("")}
-                    aria-label="Hapus pencarian"
-                  >
-                    <FiX />
-                  </button>
+                   <FiX style={{ cursor: "pointer", marginLeft: "-24px" }} onClick={() => setSearchTerm("")} />
                 )}
-              </div>
-
-              <button
-                type="button"
-                className="laporan-erp-icon-btn"
-                onClick={fetchData}
-                disabled={loading}
-                title="Refresh data"
-              >
-                <FiRefreshCw className={loading ? "animate-spin" : ""} />
-              </button>
-
-              <div className="laporan-erp-avatar" title="Cutting Team">
-                CT
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="laporan-erp-main">
-          <section className="laporan-erp-stats">
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Total Kombinasi</p>
-              <p className="laporan-erp-stat-value">{formatAngka(stats.total)}</p>
-            </article>
-
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Acuan Valid (>= 3 SPK)</p>
-              <p className="laporan-erp-stat-value laporan-erp-stat-value-success">
-                {formatAngka(stats.valid)}
-              </p>
-            </article>
-
-            <article className="laporan-erp-stat-item">
-              <p className="laporan-erp-stat-label">Belum Valid (&lt; 3 SPK)</p>
-              <p className="laporan-erp-stat-value laporan-erp-stat-value-info">
-                {formatAngka(stats.invalid)}
-              </p>
-            </article>
-          </section>
-
-          <section className="laporan-erp-table-wrapper">
-            <div className="laporan-erp-table-header">
-              <div>
-                <h3>Realisasi Berat / Panjang Acuan</h3>
-                <p>
-                  Menampilkan {formatAngka(filteredData.length)} dari {formatAngka(data.length)} data kombinasi produk
-                </p>
-              </div>
-
-              <div className="laporan-erp-table-header-right">
-                <label className="laporan-erp-checkbox-label">
+             </div>
+             
+             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--ks-text)", cursor: "pointer", fontWeight: 500 }}>
                   <input
                     type="checkbox"
                     checked={onlyValid}
                     onChange={(e) => setOnlyValid(e.target.checked)}
+                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
                   />
                   Hanya Acuan Valid (>= 3 SPK)
                 </label>
-                
                 {(searchTerm || onlyValid) && (
-                  <button
-                    type="button"
-                    className="laporan-erp-reset-btn"
-                    onClick={handleResetFilter}
-                  >
-                    <FiRefreshCw /> Reset
+                  <button type="button" className="ks-btn" onClick={handleResetFilter}>
+                    <FiRefreshCw /> Reset Filter
                   </button>
                 )}
-              </div>
-            </div>
+             </div>
+          </div>
+        </div>
 
-            {loading && (
-              <div className="laporan-erp-loading">
-                <div className="laporan-erp-spinner" />
-                <p>Memuat data acuan...</p>
-              </div>
-            )}
+        {error && !loading && (
+          <div style={{ padding: "16px 20px", color: "#ef4444", display: "flex", alignItems: "center", gap: "8px" }}>
+             <FiInfo /> {error}
+          </div>
+        )}
 
-            {error && !loading && (
-              <div className="laporan-erp-empty-state">
-                <p className="laporan-erp-empty-title error">{error}</p>
-              </div>
-            )}
-
-            {!loading && !error && (
-              <div className="laporan-erp-table-scroll">
-                <table className="laporan-erp-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "60px" }}>No</th>
-                      <th>Product Group</th>
-                      <th>Bagian</th>
-                      <th>Group Bahan</th>
-                      <th>Nama Bahan</th>
-                      <th>Warna</th>
-                      <th style={{ textAlign: "center" }}>Jumlah SPK</th>
-                      <th style={{ textAlign: "right" }}>Rata-rata / Produk</th>
-                      <th style={{ textAlign: "right" }}>Total Produk</th>
-                      <th style={{ textAlign: "right" }}>Total Berat / Panjang</th>
-                      <th style={{ textAlign: "center" }}>Status</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredData.length > 0 ? (
-                      filteredData.map((row, index) => (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td className="laporan-erp-date-cell" style={{ fontWeight: "bold" }}>
-                            {row.product}
-                          </td>
-                          <td>{row.bagian}</td>
-                          <td>{row.group_bahan || "-"}</td>
-                          <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                            {row.bahan}
-                          </td>
-                          <td>
-                            {row.warna ? (
-                              <span className="hasil-cutting-chip hasil-cutting-chip-primary">
-                                {row.warna}
-                              </span>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td style={{ textAlign: "center" }}>
-                            <span className={`hasil-cutting-chip ${row.spk_count >= 3 ? "hasil-cutting-chip-success" : "hasil-cutting-chip-info"}`}>
-                              {row.spk_count} SPK
+        <div className="ks-grid-scroll" style={{ padding: "0 20px" }}>
+          {loading ? (
+             <div style={{ padding: "32px", textAlign: "center" }}>Memuat data acuan...</div>
+          ) : !error && (
+             <table className="ks-grid">
+               <thead>
+                 <tr>
+                    <th style={{ width: "60px", textAlign: "center" }}>No</th>
+                    <th>Product Group</th>
+                    <th>Bagian</th>
+                    <th>Group Bahan</th>
+                    <th>Nama Bahan</th>
+                    <th>Warna</th>
+                    <th style={{ textAlign: "center" }}>Jumlah SPK</th>
+                    <th style={{ textAlign: "right" }}>Rata-rata / Produk</th>
+                    <th style={{ textAlign: "right" }}>Total Produk</th>
+                    <th style={{ textAlign: "right" }}>Total Berat / Panjang</th>
+                    <th style={{ textAlign: "center" }}>Status</th>
+                 </tr>
+               </thead>
+               <tbody>
+                  {filteredData.length > 0 ? (
+                    filteredData.map((row, index) => (
+                      <tr key={index}>
+                        <td style={{ textAlign: "center", color: "var(--ks-text-soft)", fontWeight: 500 }}>{index + 1}</td>
+                        <td style={{ fontWeight: 600, color: "var(--ks-text)", whiteSpace: "nowrap" }}>
+                          {row.product}
+                        </td>
+                        <td>{row.bagian}</td>
+                        <td style={{ color: "var(--ks-text-soft)" }}>{row.group_bahan || "-"}</td>
+                        <td style={{ fontSize: "13px", color: "var(--ks-text)" }}>
+                          {row.bahan}
+                        </td>
+                        <td>
+                          {row.warna ? (
+                            <span style={{ background: "var(--brand-50)", color: "var(--brand-600)", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", border: "1px solid var(--brand-200)", fontWeight: 500 }}>
+                              {row.warna}
                             </span>
-                          </td>
-                          <td style={{ textAlign: "right", fontWeight: "bold", color: "var(--primary-color, #4f46e5)" }}>
-                            {row.avg_weight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {row.satuan || "kg"}
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            {formatAngka(row.total_produk)} pcs
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            {row.total_berat.toLocaleString("id-ID", { minimumFractionDigits: 2 })} {row.satuan || "kg"}
-                          </td>
-                          <td style={{ textAlign: "center" }}>
-                            {row.is_valid ? (
-                              <span className="hasil-cutting-status-badge hasil-cutting-status-badge-same">
-                                Acuan Valid
-                              </span>
-                            ) : (
-                              <span className="hasil-cutting-status-badge" style={{ background: "#f3f4f6", color: "#6b7280", border: "1px solid #e5e7eb" }}>
-                                Belum Valid
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={11} className="laporan-erp-empty-row">
-                          {searchTerm
-                            ? `Tidak ada data acuan yang cocok untuk pencarian "${searchTerm}".`
-                            : "Tidak ada data acuan yang terdaftar."}
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <span style={{ background: row.spk_count >= 3 ? "#ecfdf5" : "#f1f5f9", color: row.spk_count >= 3 ? "#059669" : "#475569", border: `1px solid ${row.spk_count >= 3 ? '#a7f3d0' : '#e2e8f0'}`, padding: "2px 6px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>
+                            {row.spk_count} SPK
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand-600)", whiteSpace: "nowrap" }}>
+                          {row.avg_weight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {row.satuan || "kg"}
+                        </td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          {formatAngka(row.total_produk)} pcs
+                        </td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          {row.total_berat.toLocaleString("id-ID", { minimumFractionDigits: 2 })} {row.satuan || "kg"}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          {row.is_valid ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f0fdf4", color: "#16a34a", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: 600, border: "1px solid #bbf7d0" }}>
+                              Valid
+                            </span>
+                          ) : (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f8fafc", color: "#64748b", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: 500, border: "1px solid #e2e8f0" }}>
+                              Belum
+                            </span>
+                          )}
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            
-            <div className="laporan-data-acuan-note">
-              <FiInfo className="info-icon" />
-              <span>
-                <strong>Catatan:</strong> Data acuan dihitung berdasarkan total berat / panjang bahan dibagi dengan total pcs produk yang dihasilkan dari SPK cutting yang sudah selesai. Data acuan dianggap <strong>Valid</strong> jika telah terakumulasi dari minimal 3 SPK cutting yang berbeda untuk produk, bagian, bahan, dan warna yang sama.
-              </span>
-            </div>
-          </section>
-        </main>
-      </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={11} style={{ textAlign: "center", padding: "32px", color: "var(--ks-text-soft)" }}>
+                        {searchTerm
+                          ? `Tidak ada data acuan yang cocok untuk pencarian "${searchTerm}".`
+                          : "Tidak ada data acuan yang terdaftar."}
+                      </td>
+                    </tr>
+                  )}
+               </tbody>
+             </table>
+          )}
+        </div>
+        
+        <div style={{ padding: "16px 20px", background: "#f8fafc", borderTop: "1px solid var(--ks-line)", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px", display: "flex", gap: "12px", alignItems: "flex-start", color: "#475569", fontSize: "13px" }}>
+          <FiInfo style={{ flexShrink: 0, marginTop: "2px", color: "#3b82f6" }} size={16} />
+          <span>
+            <strong>Catatan:</strong> Data acuan dihitung berdasarkan total berat / panjang bahan dibagi dengan total pcs produk yang dihasilkan dari SPK cutting yang sudah selesai. Data acuan dianggap <strong>Valid</strong> jika telah terakumulasi dari minimal 3 SPK cutting yang berbeda untuk produk, bagian, bahan, dan warna yang sama.
+          </span>
+        </div>
+      </section>
     </div>
   );
 };

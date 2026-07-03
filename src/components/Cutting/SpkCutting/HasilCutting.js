@@ -594,7 +594,8 @@ const HasilCutting = () => {
       for (const dist of distributionsToSave) {
         // Format data hasil untuk distribusi ini
         const statusPerbandinganArray = [];
-        const dataHasil = spkDetail.detail.map((item) => {
+        const relevantBahan = getBahanByDistribusi(spkDetail.detail, dist);
+        const dataHasil = relevantBahan.map((item) => {
           const bahanId = item.spk_cutting_bahan_id;
           const data = inputData[`${dist.id}_${bahanId}`] || {};
           const totalProduk = getTotalProduk(dist.id, bahanId);
@@ -969,6 +970,26 @@ const HasilCutting = () => {
     setShowSpkDropdown(false);
     setOriginalData(null);
     setTanggalPotong(new Date().toISOString().split("T")[0]);
+  };
+
+  // Filter bahan berdasarkan alokasi SKU pada distribusi
+  const getBahanByDistribusi = (detail, dist) => {
+    if (!detail) return [];
+    return detail.filter(item => {
+      // Jika bahan tidak memiliki skus, tampilkan
+      if (!item.skus || item.skus.length === 0) return true;
+      
+      // Ambil semua SKU yang ada di dalam distribusi ini (dist.skus dari response backend)
+      const distSkus = dist.skus || [];
+      if (distSkus.length > 0) {
+        return item.skus.some(sku => distSkus.some(dSku => dSku.id === sku.id));
+      } else if (dist.sku && dist.sku.id) {
+        // Fallback jika tidak ada dist.skus, gunakan single sku (legacy)
+        return item.skus.some(sku => sku.id === dist.sku.id);
+      }
+      
+      return true;
+    });
   };
 
   // Handler untuk batal
@@ -1512,7 +1533,7 @@ const HasilCutting = () => {
                     <div key={dist.id} className="hasil-cutting-form-section hasil-cutting-form-section-detail" style={{ marginBottom: '32px' }}>
                       <div className="hasil-cutting-section-bar hasil-cutting-section-bar-soft" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h3 className="hasil-cutting-section-title hasil-cutting-section-title-soft">
-                          <i className="fas fa-tag"></i> {dist.kode_seri} - {getSkuOptionLabel(dist.sku)}
+                          <i className="fas fa-tag"></i> {dist.kode_seri} - {dist.skus && dist.skus.length > 1 ? `Gabungan ${dist.skus.length} SKU (${dist.skus[0].ukuran || dist.skus[0].product_size || '-'})` : getSkuOptionLabel(dist.sku)}
                         </h3>
                         {dist.status !== 'draft' && (
                           <span className="hasil-cutting-status-badge is-success">Sudah Disimpan</span>
@@ -1524,6 +1545,7 @@ const HasilCutting = () => {
                           <tr>
                             <th>Bagian</th>
                             <th>Nama Bahan</th>
+                            <th>SKU</th>
                             <th>Warna</th>
                             <th>Berat (KG)</th>
                             <th>Qty (Rol)</th>
@@ -1536,7 +1558,7 @@ const HasilCutting = () => {
                         </thead>
                         <tbody>
                           {spkDetail.detail && spkDetail.detail.length > 0 ? (
-                            spkDetail.detail.map((item, index) => {
+                            getBahanByDistribusi(spkDetail.detail, dist).map((item, index) => {
                               const bahanId = item.spk_cutting_bahan_id;
                               const currentData = inputData[`${dist.id}_${bahanId}`] || {};
                               const totalProduk = getTotalProduk(dist.id, bahanId);
@@ -1560,6 +1582,7 @@ const HasilCutting = () => {
                                 <tr key={`${dist.id}-${bahanId}-${index}`}>
                                   <td>{item.nama_bagian}</td>
                                   <td>{item.nama_bahan || "-"}</td>
+                                  <td>{item.skus && item.skus.length > 0 ? item.skus.map(s => s.sku_name || s.sku || "-").join(", ") : "-"}</td>
                                   <td>{item.warna || "-"}</td>
                                   <td>{item.berat_scanned > 0 ? `${item.berat_scanned.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : "0.00 kg"}</td>
                                   <td>{item.qty || "-"}</td>
