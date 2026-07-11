@@ -112,6 +112,7 @@ import SummarySPKSample from "./components/Sample/SummarySPKSample";
 import Blank from "./components/Blank/Blank";
 import Blank2 from "./components/Blank2/Blank2";
 import OrderMonitor from "./components/Order/OrderMonitor";
+import OrderPacking from "./components/Packing/OrderPacking";
 import Maintenance from "./components/Maintenance/Maintenance";
 import MenuProtectedRoute from "./components/UserManagement/MenuProtectedRoute";
 import UserManagement from "./components/UserManagement/UserManagement";
@@ -288,6 +289,7 @@ const App = () => {
 
           {/* Other routes */}
           <Route path="order" element={<OrderMonitor />} />
+          <Route path="orderPacking" element={<OrderPacking />} />
           <Route path="blank" element={<Blank />} />
           <Route path="blank2" element={<Blank2 />} />
         </Route>
