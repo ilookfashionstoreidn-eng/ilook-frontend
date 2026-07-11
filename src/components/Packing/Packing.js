@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Packing.css";
 import API from "../../api";
 import { FaBarcode, FaCheck, FaQrcode } from "react-icons/fa";
 import { useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { FiCheckCircle, FiPackage, FiSearch } from "react-icons/fi";
 
 const isOrderReadyForValidation = (items) =>
@@ -84,6 +85,23 @@ const Packing = () => {
   const [isSubmittingValidation, setIsSubmittingValidation] = useState(false);
   const [checkingSerial, setCheckingSerial] = useState(false);
 const [prevSerials, setPrevSerials] = useState({});
+  const location = useLocation();
+
+  // Auto-fill tracking number dari URL query param ?tracking=XXX
+  // (dikirim dari halaman /orderPacking saat klik tombol Scan)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const autoTracking = params.get("tracking");
+    if (autoTracking) {
+      setTrackingNumber(autoTracking);
+      // Auto-search setelah state ter-set
+      setTimeout(() => {
+        const fakeEvent = { preventDefault: () => {} };
+        handleSearchOrderWithTracking(autoTracking);
+      }, 200);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   const focusTrackingInput = () => {
     setTimeout(() => {
@@ -120,7 +138,56 @@ const [prevSerials, setPrevSerials] = useState({});
 
 
   
+const handleSearchOrderWithTracking = async (tracking) => {
+  if (!tracking) return;
+  setLoading(true);
+  setMessage("");
+  setCanSubmitByEnter(false);
+  try {
+    const response = await API.get(`/orders/tracking/${encodeURIComponent(tracking)}`);
+    const orderData = response.data;
+    if (orderData.status === "packed") {
+      setMessage("⚠️ Order ini sudah berstatus packed dan tidak bisa discan ulang.");
+      playSound("sudahpacking");
+      setOrder(null);
+      scannedSerialsRef.current = new Map();
+      pendingSerialsRef.current = new Map();
+      setScannedItems([]);
+      setLoading(false);
+      return;
+    }
+    const initialScan = orderData.items.map((item) => ({
+      sku: item.sku,
+      product_name: item.product_name,
+      ordered_qty: item.quantity,
+      scanned_qty: 0,
+      image: item.image,
+      serials: [],
+    }));
+    setTrackingNumber(tracking);
+    setOrder(orderData);
+    scannedSerialsRef.current = new Map();
+    pendingSerialsRef.current = new Map();
+    setScannedItems(initialScan);
+  } catch (error) {
+    setOrder(null);
+    scannedSerialsRef.current = new Map();
+    pendingSerialsRef.current = new Map();
+    setScannedItems([]);
+    const msg = error.response?.data?.message || "Order tidak ditemukan";
+    setMessage(msg);
+    if (msg.includes("sudah di packing")) {
+      playSound("sudahpacking");
+    } else {
+      playSound("error");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 const handleSearchOrder = async () => {
+
   const tracking = trackingNumber.trim();
   if (!tracking) return;
   setLoading(true);
