@@ -223,6 +223,20 @@ const OrderPacking = () => {
             ) : <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>—</span>}
           </td>
 
+          {/* No. Order (Marketplace) */}
+          <td>
+            {order?.order_number ? (
+              <div
+                style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-primary)", cursor: "pointer", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                onClick={() => handleCopy(order.order_number)}
+                title={`Klik copy: ${order.order_number}`}
+              >
+                {order.order_number}
+                <span className="op-copy-icon" style={{ marginLeft: "4px" }}>📋</span>
+              </div>
+            ) : <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>—</span>}
+          </td>
+
           {/* Tracking */}
           <td>
             {order?.tracking_number ? (
@@ -328,7 +342,7 @@ const OrderPacking = () => {
     : [{ v: "", l: "Semua Status" }, { v: "READY_TO_SHIP", l: "Siap Kirim" }, { v: "SHIPPING", l: "Dalam Kirim" }, { v: "PACKED", l: "Sudah Pack" }];
 
   const tableHeaders = mode === "webhook"
-    ? ["#", "Waktu Masuk", "Ginee Order ID", "Status Proses", "Platform", "Tracking Number", "SKU / Produk", "Status Order", "Batas Kirim", "Aksi"]
+    ? ["#", "Waktu Masuk", "Ginee Order ID", "Status Proses", "Platform", "No. Order", "Tracking Number", "SKU / Produk", "Status Order", "Batas Kirim", "Aksi"]
     : ["#", "Platform", "Tracking Number", "No. Order", "SKU / Produk", "Status", "Label", "Batas Kirim", "Waktu Masuk", "Aksi"];
 
   return (
