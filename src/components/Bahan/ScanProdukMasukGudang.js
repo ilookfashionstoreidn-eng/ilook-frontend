@@ -417,13 +417,6 @@ const ScanProdukMasukGudang = () => {
     return `${found.nomor_seri} (${found.sku} - ${scanned}/${found.jumlah} pcs)`;
   }, [selectedSeriId, seriList, selectedSeriItem]);
 
-  // Auto-select first layout for Scene 2
-  useEffect(() => {
-    if (!layoutId && state.layouts.length) {
-      setLayoutId(String(state.layouts[0].id));
-    }
-  }, [layoutId, state.layouts]);
-
   // Reset slot when layout changes in Scene 2
   useEffect(() => {
     setSlotId("");
@@ -443,9 +436,16 @@ const ScanProdukMasukGudang = () => {
   const stockSummaryBySlot = useMemo(() => getSlotStockSummaryMap(state), [state]);
 
   const selectedLayout = useMemo(
-    () => state.layouts.find((layout) => String(layout.id) === String(layoutId)) || null,
+    () => state.layouts.find((layout) => String(layout.id) === String(layoutId)) || state.layouts[0] || null,
     [layoutId, state.layouts]
   );
+
+  // Auto-select first layout for Scene 2
+  useEffect(() => {
+    if (selectedLayout && !layoutId) {
+      setLayoutId(String(selectedLayout.id));
+    }
+  }, [selectedLayout, layoutId]);
 
   const layoutSlots = useMemo(
     () =>

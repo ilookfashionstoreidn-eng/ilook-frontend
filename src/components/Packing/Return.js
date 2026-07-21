@@ -53,18 +53,18 @@ const ReturnPage = () => {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    if (state?.layouts?.length > 0 && !layoutId) {
-      setLayoutId(String(state.layouts[0].id));
-    }
-  }, [state?.layouts, layoutId]);
-
   const allSlots = useMemo(() => getAllSlots(state), [state]);
 
   const selectedLayout = useMemo(
-    () => state.layouts.find((l) => String(l.id) === String(layoutId)) || null,
+    () => state.layouts.find((l) => String(l.id) === String(layoutId)) || state.layouts[0] || null,
     [layoutId, state.layouts]
   );
+
+  useEffect(() => {
+    if (selectedLayout && !layoutId) {
+      setLayoutId(String(selectedLayout.id));
+    }
+  }, [selectedLayout, layoutId]);
 
   const layoutSlots = useMemo(
     () =>
@@ -353,7 +353,7 @@ const ReturnPage = () => {
                           <label>Gudang / Layout</label>
                           <select
                             className="return-select-modern"
-                            value={layoutId}
+                            value={layoutId || (selectedLayout ? selectedLayout.id : "")}
                             onChange={(e) => {
                               setLayoutId(e.target.value);
                               setFilterFloor("");
@@ -378,7 +378,7 @@ const ReturnPage = () => {
                               setFilterBlock("");
                               setSlotId("");
                             }}
-                            disabled={!layoutId}
+                            disabled={!selectedLayout}
                           >
                             <option value="">Semua Lantai</option>
                             {layoutFloors.map((f) => (
@@ -396,7 +396,7 @@ const ReturnPage = () => {
                               setFilterBlock(e.target.value);
                               setSlotId("");
                             }}
-                            disabled={!layoutId}
+                            disabled={!selectedLayout}
                           >
                             <option value="">Semua Blok</option>
                             {layoutBlocks.map((b) => (
@@ -413,9 +413,9 @@ const ReturnPage = () => {
                           style={{ borderColor: slotId ? "#0f766e" : "#cbd5e1", fontWeight: slotId ? 700 : 400 }}
                           value={slotId}
                           onChange={(e) => setSlotId(e.target.value)}
-                          disabled={!layoutId}
+                          disabled={!selectedLayout}
                         >
-                          <option value="">{layoutId ? "-- Pilih Rak / Slot Tujuan --" : "Pilih gudang terlebih dahulu"}</option>
+                          <option value="">{selectedLayout ? "-- Pilih Rak / Slot Tujuan --" : "Pilih gudang terlebih dahulu"}</option>
                           {filteredSlots.map((s) => (
                             <option key={s.id} value={s.id}>{s.slotCode}</option>
                           ))}
