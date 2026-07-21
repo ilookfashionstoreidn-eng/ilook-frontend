@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./Packing.css";
 import "./Return.css";
 import API from "../../api";
@@ -6,6 +6,7 @@ import { FaBarcode, FaCheck, FaUndo, FaWarehouse, FaBoxOpen } from "react-icons/
 import { FiPackage, FiSearch, FiUser, FiMapMarker } from "react-icons/fi";
 import SkuHover from "../SkuHover";
 import useGudangProdukWorkspace from "../Bahan/useGudangProdukWorkspace";
+import { getAllSlots } from "../Bahan/GudangProdukMockStore";
 
 const getErrorMessage = (error, fallback) => {
   if (error.response?.data?.errors) {
@@ -58,13 +59,42 @@ const ReturnPage = () => {
     }
   }, [state?.layouts, layoutId]);
 
-  const selectedLayout = state.layouts.find((l) => String(l.id) === String(layoutId)) || null;
-  const layoutFloors = selectedLayout?.floors || [];
-  const selectedFloor = layoutFloors.find((f) => String(f.id) === String(filterFloor)) || null;
-  const layoutBlocks = (selectedFloor ? selectedFloor.blocks : layoutFloors.flatMap((f) => f.blocks || [])) || [];
-  const selectedBlock = layoutBlocks.find((b) => String(b.id) === String(filterBlock)) || null;
-  const rawSlots = selectedBlock ? selectedBlock.racks || [] : layoutBlocks.flatMap((b) => b.racks || []);
-  const filteredSlots = rawSlots.filter((s) => s.isActive);
+  const allSlots = useMemo(() => getAllSlots(state), [state]);
+
+  const selectedLayout = useMemo(
+    () => state.layouts.find((l) => String(l.id) === String(layoutId)) || null,
+    [layoutId, state.layouts]
+  );
+
+  const layoutSlots = useMemo(
+    () =>
+      selectedLayout
+        ? allSlots.filter((slot) => String(slot.layoutId) === String(selectedLayout.id))
+        : [],
+    [allSlots, selectedLayout]
+  );
+
+  const layoutFloors = useMemo(() => {
+    const map = new Map();
+    layoutSlots.forEach((s) => map.set(String(s.floorId), s.floorLabel ? `Lantai ${s.floorNumber} (${s.floorLabel})` : `Lantai ${s.floorNumber}`));
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [layoutSlots]);
+
+  const layoutBlocks = useMemo(() => {
+    const map = new Map();
+    layoutSlots
+      .filter((s) => !filterFloor || String(s.floorId) === String(filterFloor))
+      .forEach((s) => map.set(String(s.blockId), s.blockLabel ? `Blok ${s.blockCode} (${s.blockLabel})` : `Blok ${s.blockCode}`));
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [layoutSlots, filterFloor]);
+
+  const filteredSlots = useMemo(() => {
+    return layoutSlots.filter((s) => {
+      if (filterFloor && String(s.floorId) !== String(filterFloor)) return false;
+      if (filterBlock && String(s.blockId) !== String(filterBlock)) return false;
+      return true;
+    });
+  }, [layoutSlots, filterFloor, filterBlock]);
 
   const handleScanReturn = async (event) => {
     event?.preventDefault();
@@ -333,7 +363,7 @@ const ReturnPage = () => {
                           >
                             <option value="">-- Pilih Gudang --</option>
                             {state.layouts.map((l) => (
-                              <option key={l.id} value={l.id}>{l.name}</option>
+                              <option key={l.id} value={l.id}>{l.name || l.uid || `Gudang #${l.id}`}</option>
                             ))}
                           </select>
                         </div>
