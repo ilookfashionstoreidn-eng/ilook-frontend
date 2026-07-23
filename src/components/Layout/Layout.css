@@ -118,6 +118,18 @@
   background-color: var(--side-active-bg);
   color: var(--side-active-text);
   font-weight: 600;
+  position: relative;
+}
+
+.sidebar-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 4px;
+  background-color: var(--brand-500);
+  border-radius: 0 4px 4px 0;
 }
 
 /* Icons */
@@ -194,11 +206,11 @@
 .dropdown-link:hover::before { width: 12px; background-color: var(--side-muted); }
 
 .dropdown-link.active {
-  color: var(--brand-400);
+  color: var(--brand-500);
   background-color: var(--side-active-bg);
   font-weight: 600;
 }
-.dropdown-link.active::before { background-color: var(--brand-400); }
+.dropdown-link.active::before { background-color: var(--brand-500); width: 12px; }
 
 /* Hide mini submenu icons for a clean text-only look */
 .dropdown-link .icon { display: none; }
@@ -269,6 +281,15 @@ li[style*="marginTop"] {
 }
 
 /* Grouped Menu Labels */
+.sidebar-group-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--side-muted);
+  padding: 16px 14px 4px 14px;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
 .dropdown-group-label {
   font-size: 10px;
   font-weight: 800;

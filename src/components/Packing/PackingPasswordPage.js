@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FaRegCopy } from "react-icons/fa";
-import { FiCheckCircle, FiClock, FiKey } from "react-icons/fi";
+import { FaRegCopy, FaKey, FaClock, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { getAllPackingPasswords } from "../../utils/packingPassword";
-import "./Packing.css";
+import "../Cutting/SpkCutting/DashboardCutting.css"; // Reuse dashboard cutting CSS for layout
+import "./Packing.css"; // Keep specific packing styles if any
+
+const formatLongDate = (date) =>
+  date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 const PackingPasswordPage = () => {
   const [now, setNow] = useState(() => new Date());
   const [copyStatus, setCopyStatus] = useState("");
+  const [statusType, setStatusType] = useState("success"); // 'success' or 'error'
+
   const passwordList = useMemo(() => getAllPackingPasswords(now), [now]);
   const allPasswordText = useMemo(
     () =>
@@ -15,6 +20,7 @@ const PackingPasswordPage = () => {
         .join("\n"),
     [passwordList]
   );
+  
   const activeInfo = passwordList[0];
 
   useEffect(() => {
@@ -25,97 +31,138 @@ const PackingPasswordPage = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const showStatus = (message, type = "success") => {
+    setCopyStatus(message);
+    setStatusType(type);
+    setTimeout(() => setCopyStatus("2000"), 2000);
+  };
+
   const handleCopyPassword = async (password, label) => {
     try {
       await navigator.clipboard.writeText(password);
-      setCopyStatus(`Password ${label} disalin`);
+      showStatus(`Password ${label} berhasil disalin!`);
     } catch (error) {
-      setCopyStatus("Gagal menyalin otomatis");
+      showStatus("Gagal menyalin otomatis", "error");
     }
-
-    setTimeout(() => setCopyStatus(""), 1800);
   };
 
   const handleCopyAllPasswords = async () => {
     try {
       await navigator.clipboard.writeText(allPasswordText);
-      setCopyStatus("Semua password disalin");
+      showStatus("Semua password berhasil disalin!");
     } catch (error) {
-      setCopyStatus("Gagal menyalin otomatis");
+      showStatus("Gagal menyalin otomatis", "error");
     }
-
-    setTimeout(() => setCopyStatus(""), 1800);
   };
 
   return (
-    <div className="pk-page pk-password-page">
-      <div className="pk-password-shell">
-        <section className="pk-password-hero">
-          <div className="pk-password-title">
-            <div className="pk-brand-icon">
-              <FiKey />
+    <div className="ks-page dc-page">
+      {/* Header matching DashboardCutting */}
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <div className="dc-title">
+            <FaKey style={{ color: "var(--dc-purple)" }} />
+            <h1>Password Packing Hari Ini</h1>
+          </div>
+          <span className="ks-header-sub">{formatLongDate(now)} — Akses operasional packing</span>
+        </div>
+        <div className="ks-header-actions">
+          <button className="ks-btn is-primary" onClick={handleCopyAllPasswords}>
+            <FaRegCopy />
+            <span>Copy Semua Password</span>
+          </button>
+        </div>
+      </header>
+
+      <main className="dc-main">
+        {/* Status Toast */}
+        {copyStatus && (
+          <div className="dc-error" style={{ marginBottom: "16px", backgroundColor: statusType === "success" ? "rgba(22, 163, 74, 0.08)" : "rgba(229, 72, 77, 0.08)", borderColor: statusType === "success" ? "rgba(22, 163, 74, 0.4)" : "rgba(229, 72, 77, 0.4)", color: statusType === "success" ? "#15803d" : "#b91c1c" }}>
+            {statusType === "success" ? <FaCheckCircle /> : <FaExclamationTriangle />}
+            <span>{copyStatus}</span>
+          </div>
+        )}
+
+        {/* KPI Cards Row (Information) */}
+        <section className="dc-kpi-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-blue"><FaClock /></span>
+              <span className="dc-kpi-label">Periode Aktif</span>
             </div>
-            <div>
-              <span className="pk-access-eyebrow">Packing Access</span>
-              <h1>Password Packing Hari Ini</h1>
-              <p>
-                {/* Setiap menu punya password berbeda. Saat pindah menu dan buka lagi,
-                sistem akan minta password menu itu lagi. */}
-              </p>
+            <div className="dc-kpi-value">{activeInfo.activeDate}</div>
+            <div className="dc-kpi-foot" style={{ marginTop: "8px" }}>
+              Mulai: <strong>{activeInfo.activeFrom}</strong>
             </div>
-            <button
-              type="button"
-              className="btn-search-modern pk-copy-all-button"
-              onClick={handleCopyAllPasswords}
-            >
-              <FaRegCopy /> Copy Semua Password
-            </button>
           </div>
 
-          <div className="pk-password-list">
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-orange"><FaClock /></span>
+              <span className="dc-kpi-label">Jadwal Rotasi Berikutnya</span>
+            </div>
+            <div className="dc-kpi-value">Jam {String(activeInfo.rotationHour).padStart(2, "0")}.00</div>
+            <div className="dc-kpi-foot" style={{ marginTop: "8px" }}>
+              Perkiraan ganti: <strong>{activeInfo.nextRotation}</strong>
+            </div>
+          </div>
+        </section>
+
+        {/* Password List Grid */}
+        <section className="dc-card" style={{ flex: 1 }}>
+          <div className="dc-card-head" style={{ marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid var(--ks-line)" }}>
+            <span className="dc-card-title" style={{ fontSize: "14px" }}>Daftar Akses Menu Packing</span>
+          </div>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
             {passwordList.map((passwordInfo) => (
-              <article key={passwordInfo.key} className="pk-password-code">
-                <span>{passwordInfo.label}</span>
-                <strong>{passwordInfo.password}</strong>
-                <small>{passwordInfo.path}</small>
+              <div 
+                key={passwordInfo.key} 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "space-between", 
+                  padding: "16px", 
+                  borderRadius: "10px", 
+                  border: "1px solid var(--ks-line)",
+                  backgroundColor: "#fafafa"
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--ks-text-soft)" }}>{passwordInfo.label}</span>
+                  <strong style={{ fontSize: "20px", color: "var(--ks-text)", letterSpacing: "1px", fontFamily: "monospace" }}>
+                    {passwordInfo.password}
+                  </strong>
+                  <span style={{ fontSize: "11px", color: "var(--ks-muted)" }}>Path: {passwordInfo.path}</span>
+                </div>
                 <button
                   type="button"
-                  className="btn-search-modern"
-                  onClick={() =>
-                    handleCopyPassword(passwordInfo.password, passwordInfo.label)
-                  }
+                  onClick={() => handleCopyPassword(passwordInfo.password, passwordInfo.label)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--ks-line)",
+                    backgroundColor: "#fff",
+                    color: "var(--ks-text)",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--dc-blue)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "var(--dc-blue)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "#fff"; e.currentTarget.style.color = "var(--ks-text)"; e.currentTarget.style.borderColor = "var(--ks-line)"; }}
+                  title="Copy Password"
                 >
-                  <FaRegCopy /> Copy
+                  <FaRegCopy size={14} />
                 </button>
-              </article>
+              </div>
             ))}
           </div>
-
-          {copyStatus && (
-            <div className="pk-access-success">
-              <FiCheckCircle /> {copyStatus}
-            </div>
-          )}
         </section>
 
-        <section className="pk-password-grid">
-          <article className="pk-password-info">
-            <div className="pk-kpi-head">
-              <FiClock /> Periode Aktif
-            </div>
-            <strong>{activeInfo.activeDate}</strong>
-            <small>Mulai: {activeInfo.activeFrom}</small>
-          </article>
-
-          <article className="pk-password-info">
-            <div className="pk-kpi-head">
-              <FiClock /> Ganti Password
-            </div>
-            <strong>Jam {String(activeInfo.rotationHour).padStart(2, "0")}.00</strong>
-            <small>Berikutnya: {activeInfo.nextRotation}</small>
-          </article>
-        </section>
-      </div>
+      </main>
     </div>
   );
 };

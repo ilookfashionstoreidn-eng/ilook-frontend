@@ -36,6 +36,7 @@ import {
   FaPrint,
   FaMoon,
   FaSun,
+  FaKey,
 } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
 import API from "../../api";
@@ -213,11 +214,10 @@ const Layout = () => {
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
         <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", overflow: 'hidden' }}>
-            <div style={{ width: "26px", height: "26px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: "7px", display: "flex", justifyContent: "center", alignItems: "center", color: "#fff", flexShrink: 0, boxShadow: "0 4px 10px -4px rgba(16,185,129,0.6)" }}>
-              <FaLayerGroup size={12} />
-            </div>
-            <h3 className="sidebar-title">ILOOK SYSTEM</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", overflow: 'hidden' }}>
+            <h3 className="sidebar-title" style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              iLOOK <span style={{ color: "var(--brand-500)" }}>.</span>
+            </h3>
           </div>
           <button
             className="sidebar-collapse-btn"
@@ -228,6 +228,9 @@ const Layout = () => {
         </div>
         <nav className="sidebar-menu">
           <ul>
+            {(hasAccess("dashboard") || hasAccess("laporan_daily_produksi")) && (
+              <li className="sidebar-group-label">Main Menu</li>
+            )}
             {hasAccess("dashboard") && (
               <li>
                 <Link to="/home" className={`sidebar-link ${activeMenu === "home" ? "active" : ""}`} onClick={() => handleMenuClick("home")}>
@@ -245,6 +248,9 @@ const Layout = () => {
             )}
 
             {/* ── Quality Control ── */}
+            {(hasAccess("qc") || hasAccess("sample")) && (
+              <li className="sidebar-group-label">Quality & Sample</li>
+            )}
             {hasAccess("qc") && (
               <li>
                 <div onClick={toggleQcMenu} className={`sidebar-link dropdown-toggle ${(activeMenu === "qc" || activeMenu === "qc-lolos" || activeMenu === "qc-reject") ? "active" : ""}`}>
@@ -252,7 +258,10 @@ const Layout = () => {
                   <span className={`arrow ${isQcOpen ? "open" : ""}`}>{isQcOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isQcOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {(hasAccess("qc:lolos") || hasAccess("qc:reject")) && (
+                      <div className="dropdown-group-label">Status</div>
+                    )}
                     {hasAccess("qc:lolos") && (
                       <li>
                         <Link to="/qc-lolos" className={`dropdown-link ${activeMenu === "qc-lolos" ? "active" : ""}`} onClick={() => handleMenuClick("qc-lolos")}>
@@ -280,13 +289,19 @@ const Layout = () => {
                   <span className={`arrow ${isSampleOpen ? "open" : ""}`}>{isSampleOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isSampleOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {hasAccess("sample:tukang") && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
                     {hasAccess("sample:tukang") && (
                       <li>
                         <Link to="/tukang-sample" className={`dropdown-link ${activeMenu === "tukang-sample" ? "active" : ""}`} onClick={() => handleMenuClick("tukang-sample")}>
                           <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Sample
                         </Link>
                       </li>
+                    )}
+                    {(hasAccess("sample:spk") || hasAccess("sample:summary")) && (
+                      <div className="dropdown-group-label">Operasional</div>
                     )}
                     {hasAccess("sample:spk") && (
                       <li>
@@ -307,6 +322,9 @@ const Layout = () => {
               </li>
             )}
 
+            {(hasAccess("aksesoris") || hasAccess("produk") || hasAccess("gudang_bahan")) && (
+              <li className="sidebar-group-label">Inventaris & Gudang</li>
+            )}
             {hasAccess("aksesoris") && (
               <li>
                 <div onClick={toggleAksesorisMenu} className={`sidebar-link dropdown-toggle ${activeMenu === "aksesoris" ? "active" : ""}`}>
@@ -314,13 +332,19 @@ const Layout = () => {
                   <span className={`arrow ${isAksesorisOpen ? "open" : ""}`}>{isAksesorisOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isAksesorisOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {hasAccess("aksesoris:data") && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
                     {hasAccess("aksesoris:data") && (
                       <li>
                         <Link to="aksesoris" className={`dropdown-link ${activeMenu === "aksesoris" ? "active" : ""}`} onClick={() => handleMenuClick("aksesoris")}>
                           <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Data Aksesoris
                         </Link>
                       </li>
+                    )}
+                    {(hasAccess("aksesoris:pembelian_toko") || hasAccess("aksesoris:pembelian_cmt")) && (
+                      <div className="dropdown-group-label">Pembelian</div>
                     )}
                     {hasAccess("aksesoris:pembelian_toko") && (
                       <li>
@@ -349,13 +373,19 @@ const Layout = () => {
                   <span className={`arrow ${isHppOpen ? "open" : ""}`}>{isHppOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isHppOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {(hasAccess("produk:list")) && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
                     {hasAccess("produk:list") && (
                       <li>
                         <Link to="produk-list" className={`dropdown-link ${activeMenu === "produk-list" ? "active" : ""}`} onClick={() => handleMenuClick("produk-list")}>
                           <FaLayerGroup className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Produk
                         </Link>
                       </li>
+                    )}
+                    {hasAccess("produk:hpp") && (
+                      <div className="dropdown-group-label">Keuangan</div>
                     )}
                     {hasAccess("produk:hpp") && (
                       <li>
@@ -502,6 +532,9 @@ const Layout = () => {
               </li>
             )}
 
+            {(hasAccess("cutting") || hasAccess("jasa") || hasAccess("cmt")) && (
+              <li className="sidebar-group-label">Produksi & CMT</li>
+            )}
             {hasAccess("cutting") && (
               <li>
                 <div onClick={toggleCuttingMenu} className={`sidebar-link dropdown-toggle ${["dashboardCutting", "tukangCutting", "tukangPola", "markeran", "spkcutting", "hasilcutting", "laporanhasil", "laporan-data-acuan", "historyhasilcutting", "historydistribusispk", "hutangc", "cashboanc", "pendapatancutting", "pendapatanhistory"].includes(activeMenu) ? "active" : ""}`}>
@@ -622,7 +655,10 @@ const Layout = () => {
                   <span className={`arrow ${isJasaOpen ? "open" : ""}`}>{isJasaOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isJasaOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {hasAccess("jasa:dashboard") && (
+                      <div className="dropdown-group-label">Utama</div>
+                    )}
                     {hasAccess("jasa:dashboard") && (
                       <li>
                         <Link to="dashboard-jasa" className={`dropdown-link ${activeMenu === "dashboard-jasa" ? "active" : ""}`} onClick={() => handleMenuClick("dashboard-jasa")}>
@@ -631,11 +667,17 @@ const Layout = () => {
                       </li>
                     )}
                     {hasAccess("jasa:tukang") && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
+                    {hasAccess("jasa:tukang") && (
                       <li>
                         <Link to="tukangJasa" className={`dropdown-link ${activeMenu === "tukangJasa" ? "active" : ""}`} onClick={() => handleMenuClick("tukangJasa")}>
                           <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Tukang Jasa
                         </Link>
                       </li>
+                    )}
+                    {(hasAccess("jasa:spk") || hasAccess("jasa:hasil")) && (
+                      <div className="dropdown-group-label">Operasional</div>
                     )}
                     {hasAccess("jasa:spk") && (
                       <li>
@@ -650,6 +692,9 @@ const Layout = () => {
                           <FaCheckSquare className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Hasil Jasa
                         </Link>
                       </li>
+                    )}
+                    {(hasAccess("jasa:cashbon") || hasAccess("jasa:hutang") || hasAccess("jasa:pendapatan") || hasAccess("jasa:history_pendapatan")) && (
+                      <div className="dropdown-group-label">Keuangan</div>
                     )}
                     {hasAccess("jasa:cashbon") && (
                       <li>
@@ -691,7 +736,10 @@ const Layout = () => {
                   <span className={`arrow ${isCmtOpen ? "open" : ""}`}>{isCmtOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isCmtOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {hasAccess("cmt:dashboard") && (
+                      <div className="dropdown-group-label">Utama</div>
+                    )}
                     {hasAccess("cmt:dashboard") && (
                       <li>
                         <Link to="dashboard-cmt" className={`dropdown-link ${activeMenu === "dashboard-cmt" ? "active" : ""}`} onClick={() => handleMenuClick("dashboard-cmt")}>
@@ -700,11 +748,17 @@ const Layout = () => {
                       </li>
                     )}
                     {hasAccess("cmt:penjahit") && (
+                      <div className="dropdown-group-label">Master Data</div>
+                    )}
+                    {hasAccess("cmt:penjahit") && (
                       <li>
                         <Link to="penjahit" className={`dropdown-link ${activeMenu === "penjahit" ? "active" : ""}`} onClick={() => handleMenuClick("penjahit")}>
                           <FaUser className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Daftar Penjahit
                         </Link>
                       </li>
+                    )}
+                    {(hasAccess("cmt:pekerjaan_tersedia") || hasAccess("cmt:spk") || hasAccess("cmt:data_dikerjakan") || hasAccess("cmt:pengiriman")) && (
+                      <div className="dropdown-group-label">Operasional</div>
                     )}
                     {hasAccess("cmt:pekerjaan_tersedia") && (
                       <li>
@@ -736,6 +790,9 @@ const Layout = () => {
                               <FaBox className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Pengiriman
                             </Link>
                           </li>
+                        )}
+                        {(hasAccess("cmt:hutang") || hasAccess("cmt:cashbon") || hasAccess("cmt:pendapatan") || hasAccess("cmt:history_pendapatan")) && (
+                          <div className="dropdown-group-label">Keuangan</div>
                         )}
                         {hasAccess("cmt:hutang") && (
                           <li>
@@ -795,6 +852,9 @@ const Layout = () => {
               </li>
             )}
 
+            {(hasAccess("gudang_produk") || hasAccess("packing") || hasAccess("return")) && (
+              <li className="sidebar-group-label">Distribusi & Logistik</li>
+            )}
             {hasAccess("gudang_produk") && (
               <li>
                 <div
@@ -1094,7 +1154,10 @@ const Layout = () => {
                   <span className={`arrow ${isReturnOpen ? "open" : ""}`}>{isReturnOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
                 </div>
                 {isReturnOpen && (
-                  <ul className="dropdown-menu show">
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {(hasAccess("return:return") || hasAccess("return:logs")) && (
+                      <div className="dropdown-group-label">Operasional</div>
+                    )}
                     {hasAccess("return:return") && (
                       <li>
                         <Link to="return" className={`dropdown-link ${activeMenu === "return" ? "active" : ""}`} onClick={() => handleMenuClick("return")}>
@@ -1114,11 +1177,24 @@ const Layout = () => {
               </li>
             )}
             {role === "super-admin" && (
-              <li>
-                <Link to="/user-management" className={`sidebar-link ${activeMenu === "user-management" ? "active" : ""}`} onClick={() => handleMenuClick("user-management")}>
-                  <FaUser className="icon" /> User Management
-                </Link>
-              </li>
+              <>
+                <li className="sidebar-group-label">Pengaturan</li>
+                <li>
+                  <Link to="/user-management" className={`sidebar-link ${activeMenu === "user-management" ? "active" : ""}`} onClick={() => handleMenuClick("user-management")}>
+                    <FaUser className="icon" /> User Management
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/getPassword" className={`sidebar-link ${activeMenu === "getPassword" ? "active" : ""}`} onClick={() => handleMenuClick("getPassword")}>
+                    <FaKey className="icon" /> Get Password
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/order" className={`sidebar-link ${activeMenu === "order" ? "active" : ""}`} onClick={() => handleMenuClick("order")}>
+                    <FaShoppingCart className="icon" /> Order Monitor
+                  </Link>
+                </li>
+              </>
             )}
 
             <li style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid var(--side-border)" }}>
