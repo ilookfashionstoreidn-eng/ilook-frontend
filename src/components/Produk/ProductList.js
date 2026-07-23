@@ -1422,29 +1422,29 @@ const ProductList = () => {
 
     return (
       <div className="product-list-modal-backdrop" onClick={closeModal}>
-        <form className="product-list-modal" onSubmit={handleSubmit} onClick={(event) => event.stopPropagation()}>
+        <form className={`product-list-modal${isMultiSkuMode ? ' wide' : ''}`} onSubmit={handleSubmit} onClick={(event) => event.stopPropagation()}>
           <div className="product-list-modal-header">
             <div>
               <p className="product-list-modal-kicker">
-                {modalTitle}{/* [DUPLIKAT] - dimodifikasi */}
+                {modalTitle}
               </p>
-              <h2>{modalHeading}{/* [DUPLIKAT] - dimodifikasi */}</h2>
+              <h2>{modalHeading}</h2>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               {modalMode === "add" && !isDuplicate && (
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", background: isMultiSkuMode ? "#e0e7ff" : "#f1f5f9", padding: "8px 16px", borderRadius: "8px", fontWeight: "600", color: isMultiSkuMode ? "#4338ca" : "#475569", transition: "all 0.2s" }}>
-                  <input type="checkbox" checked={isMultiSkuMode} onChange={(e) => setIsMultiSkuMode(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#4f46e5", cursor: "pointer" }} />
-                  Mode Multi-SKU (Banyak Varian)
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", background: isMultiSkuMode ? "#e0e7ff" : "#f1f5f9", padding: "7px 14px", borderRadius: "8px", fontWeight: "600", fontSize: "12px", color: isMultiSkuMode ? "#4338ca" : "#475569", border: isMultiSkuMode ? "1px solid #c7d2fe" : "1px solid #e2e8f0", transition: "all 0.2s", whiteSpace: "nowrap" }}>
+                  <input type="checkbox" checked={isMultiSkuMode} onChange={(e) => setIsMultiSkuMode(e.target.checked)} style={{ width: "15px", height: "15px", accentColor: "#4f46e5", cursor: "pointer" }} />
+                  Mode Multi-SKU
                 </label>
               )}
-              <button className="product-list-icon-button" onClick={closeModal} type="button">
+              <button className="product-list-icon-button" onClick={closeModal} type="button" title="Tutup">
                 <FaTimes />
               </button>
             </div>
           </div>
 
           <div className="product-list-form-section">
-            <h3>Informasi Produk {isMultiSkuMode && <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal', marginLeft: '8px' }}>(Kolom SKU dan Warna dikunci saat Multi-SKU aktif)</span>}</h3>
+            <h3>Informasi Produk {isMultiSkuMode && <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'normal', marginLeft: '4px', textTransform: 'none', letterSpacing: 0 }}>(Warna & Ukuran diisi di tabel)</span>}</h3>
               <div className="product-list-form-grid">
                 <GineeSkuAutocomplete
                   value={isMultiSkuMode ? "" : form.sku_name}
