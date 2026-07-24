@@ -142,6 +142,17 @@ const OrderMonitor = () => {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState("");
 
+  // Tab 3: Webhook Monitoring State
+  const [webhookDate, setWebhookDate] = useState(todayIso());
+  const [webhookStatus, setWebhookStatus] = useState("all");
+  const [webhookSearch, setWebhookSearch] = useState("");
+  const [webhookLogs, setWebhookLogs] = useState([]);
+  const [webhookStats, setWebhookStats] = useState({ total: 0, processed: 0, failed: 0, received: 0 });
+  const [webhookPagination, setWebhookPagination] = useState({ current_page: 1, last_page: 1, total: 0, per_page: 50 });
+  const [webhookLoading, setWebhookLoading] = useState(false);
+  const [webhookError, setWebhookError] = useState("");
+  const [selectedWebhookPayload, setSelectedWebhookPayload] = useState(null);
+
   const fetchOrders = async (cursor = currentCursor, nextFilters = appliedFilters) => {
     try {
       setLoading(true); setError("");
@@ -174,13 +185,46 @@ const OrderMonitor = () => {
     }
   };
 
+  const fetchWebhookLogs = async (page = 1) => {
+    try {
+      setWebhookLoading(true);
+      setWebhookError("");
+      const response = await API.get("/webhook-logs", {
+        params: {
+          date: webhookDate,
+          status: webhookStatus === "all" ? undefined : webhookStatus,
+          search: webhookSearch.trim() || undefined,
+          page: page,
+          per_page: 50,
+        },
+      });
+      const data = response.data || {};
+      const logsObj = data.logs || {};
+      setWebhookLogs(logsObj.data || []);
+      setWebhookStats(data.stats || { total: 0, processed: 0, failed: 0, received: 0 });
+      setWebhookPagination({
+        current_page: logsObj.current_page || 1,
+        last_page: logsObj.last_page || 1,
+        total: logsObj.total || 0,
+        per_page: logsObj.per_page || 50,
+      });
+    } catch (err) {
+      setWebhookError(err?.response?.data?.message || "Gagal memuat log webhook");
+      setWebhookLogs([]);
+    } finally {
+      setWebhookLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "realtime") {
       fetchOrders(null, appliedFilters);
-    } else {
+    } else if (activeTab === "summary") {
       fetchSummaryReport(summaryYear, summaryMonth, summaryDateBasis);
+    } else if (activeTab === "webhook") {
+      fetchWebhookLogs(1);
     }
-  }, [activeTab]);
+  }, [activeTab, webhookDate, webhookStatus]);
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -344,6 +388,27 @@ const OrderMonitor = () => {
           }}
         >
           <FiCalendar /> Rekap Monitor (Bulan, Tanggal & Status)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("webhook")}
+          style={{
+            padding: "10px 18px",
+            fontSize: "13px",
+            fontWeight: "700",
+            border: "none",
+            borderBottom: activeTab === "webhook" ? "3px solid var(--dc-blue, #2458ce)" : "3px solid transparent",
+            color: activeTab === "webhook" ? "var(--dc-blue, #2458ce)" : "#64748b",
+            background: "transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.2s",
+          }}
+        >
+          <FaDatabase /> Log & Monitor Webhook Ginee
         </button>
       </div>
 
@@ -887,6 +952,236 @@ const OrderMonitor = () => {
                 </table>
               </div>
             </section>
+          </div>
+        )}
+
+        {/* TAB 3: LOG & MONITOR WEBHOOK GINEE */}
+        {activeTab === "webhook" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* KPI Stats Row for Webhook */}
+            <section className="dc-kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-blue"><FaDatabase /></span>
+                  <span className="dc-kpi-label">Total Webhook</span>
+                </div>
+                <div className="dc-kpi-value">{formatNumber(webhookStats.total)}</div>
+                <div className="dc-kpi-foot"><span>Payload masuk dari Ginee</span></div>
+              </div>
+
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-green"><FaCheckCircle /></span>
+                  <span className="dc-kpi-label">Sukses Diproses</span>
+                </div>
+                <div className="dc-kpi-value" style={{ color: "var(--dc-green)" }}>{formatNumber(webhookStats.processed)}</div>
+                <div className="dc-kpi-foot"><span className="dc-ok">Status DB terupdate</span></div>
+              </div>
+
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-purple"><FiClock /></span>
+                  <span className="dc-kpi-label">Menunggu Queue</span>
+                </div>
+                <div className="dc-kpi-value" style={{ color: "var(--dc-purple)" }}>{formatNumber(webhookStats.received)}</div>
+                <div className="dc-kpi-foot"><span>Dalam antrean job</span></div>
+              </div>
+
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-orange"><FaExclamationTriangle /></span>
+                  <span className="dc-kpi-label">Gagal Diproses</span>
+                </div>
+                <div className="dc-kpi-value" style={{ color: "var(--dc-red)" }}>{formatNumber(webhookStats.failed)}</div>
+                <div className="dc-kpi-foot"><span className="dc-mini-over">Gagal sync</span></div>
+              </div>
+            </section>
+
+            {/* Filter & Search Bar */}
+            <section className="dc-card" style={{ padding: "16px 18px" }}>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "var(--ks-text-soft)", marginBottom: "4px" }}>Pilih Tanggal Log</label>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <input
+                        type="date"
+                        value={webhookDate === "all" ? "" : webhookDate}
+                        onChange={(e) => setWebhookDate(e.target.value || "all")}
+                        style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "12.5px" }}
+                      />
+                      <button
+                        type="button"
+                        className={`ks-btn ${webhookDate === "all" ? "is-primary" : ""}`}
+                        onClick={() => setWebhookDate("all")}
+                        style={{ padding: "0 10px", fontSize: "11px" }}
+                      >
+                        Semua
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "var(--ks-text-soft)", marginBottom: "4px" }}>Status Webhook</label>
+                    <select
+                      value={webhookStatus}
+                      onChange={(e) => setWebhookStatus(e.target.value)}
+                      style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "12.5px" }}
+                    >
+                      <option value="all">Semua Status</option>
+                      <option value="processed">Processed (Sukses)</option>
+                      <option value="received">Received (Antrean)</option>
+                      <option value="failed">Failed (Gagal)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ position: "relative", minWidth: "220px" }}>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "var(--ks-text-soft)", marginBottom: "4px" }}>Cari Resi / Order ID</label>
+                    <input
+                      type="text"
+                      placeholder="Nomor Resi / Ginee Order ID..."
+                      value={webhookSearch}
+                      onChange={(e) => setWebhookSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && fetchWebhookLogs(1)}
+                      style={{ width: "100%", padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "12.5px", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ks-btn is-primary"
+                    onClick={() => fetchWebhookLogs(1)}
+                    style={{ alignSelf: "flex-end", height: "33px", padding: "0 14px", fontSize: "12px" }}
+                  >
+                    <FaSearch /> <span>Filter</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className="ks-btn"
+                  onClick={() => fetchWebhookLogs(webhookPagination.current_page)}
+                  style={{ alignSelf: "flex-end", height: "33px", padding: "0 14px", fontSize: "12px" }}
+                >
+                  <FaSyncAlt /> <span>Segarkan</span>
+                </button>
+              </div>
+            </section>
+
+            {/* Table Log Webhook */}
+            <section className="dc-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div className="dc-card-head" style={{ padding: "14px 18px", margin: 0, borderBottom: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc" }}>
+                <span className="dc-card-title"><FaDatabase style={{ marginRight: 6, color: "var(--dc-blue)" }} /> Log Riwayat Webhook Ginee</span>
+                <span style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>Total {formatNumber(webhookPagination.total)} logs</span>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "var(--ks-surface)", borderBottom: "1px solid var(--ks-line)", color: "var(--ks-text-soft)", textAlign: "left" }}>
+                      <th style={{ padding: "10px 16px" }}>Waktu Diterima</th>
+                      <th style={{ padding: "10px 16px" }}>Ginee Order ID</th>
+                      <th style={{ padding: "10px 16px" }}>Action Event</th>
+                      <th style={{ padding: "10px 16px" }}>Nomor Resi / Order</th>
+                      <th style={{ padding: "10px 16px" }}>Status DB Order</th>
+                      <th style={{ padding: "10px 16px", textAlign: "center" }}>Status Webhook</th>
+                      <th style={{ padding: "10px 16px", textAlign: "center" }}>Detail Payload</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {webhookLoading ? (
+                      <tr><td colSpan={7} style={{ padding: "30px", textAlign: "center", color: "var(--ks-muted)" }}>Memuat log webhook...</td></tr>
+                    ) : webhookLogs.length === 0 ? (
+                      <tr><td colSpan={7} style={{ padding: "30px", textAlign: "center", color: "var(--ks-muted)" }}>Tidak ada log webhook ditemukan pada filter ini.</td></tr>
+                    ) : (
+                      webhookLogs.map((log) => (
+                        <tr key={log.id} style={{ borderBottom: "1px solid var(--ks-line)" }}>
+                          <td style={{ padding: "10px 16px", whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDateTime(log.created_at)}</td>
+                          <td style={{ padding: "10px 16px", fontFamily: "monospace", fontWeight: "600" }}>{log.ginee_order_id || "-"}</td>
+                          <td style={{ padding: "10px 16px" }}><span style={{ backgroundColor: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", fontSize: "11px" }}>{log.action || log.entity || "order"}</span></td>
+                          <td style={{ padding: "10px 16px" }}>
+                            {log.order ? (
+                              <div>
+                                <strong style={{ color: "var(--ks-text)", display: "block" }}>{log.order.tracking_number || log.order.order_number}</strong>
+                                <span style={{ fontSize: "11px", color: "var(--ks-text-soft)" }}>{log.order.customer_name || "-"}</span>
+                              </div>
+                            ) : (
+                              <span style={{ color: "var(--ks-muted)" }}>-</span>
+                            )}
+                          </td>
+                          <td style={{ padding: "10px 16px" }}>
+                            {log.order ? (
+                              <span className={`dc-track-badge ${log.order.status === "CANCELLED" ? "is-behind" : "is-ontrack"}`}>
+                                {log.order.status}
+                              </span>
+                            ) : "-"}
+                          </td>
+                          <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                            <span className={`dc-track-badge ${log.status === "processed" ? "is-ontrack" : log.status === "failed" ? "is-behind" : ""}`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              className="ks-btn"
+                              style={{ padding: "3px 8px", fontSize: "11px" }}
+                              onClick={() => setSelectedWebhookPayload(log.raw_payload)}
+                            >
+                              View JSON
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {webhookPagination.last_page > 1 && (
+                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--ks-line)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>Halaman {webhookPagination.current_page} dari {webhookPagination.last_page}</span>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      className="ks-btn"
+                      disabled={webhookPagination.current_page <= 1}
+                      onClick={() => fetchWebhookLogs(webhookPagination.current_page - 1)}
+                      style={{ padding: "4px 12px", fontSize: "12px" }}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="ks-btn"
+                      disabled={webhookPagination.current_page >= webhookPagination.last_page}
+                      onClick={() => fetchWebhookLogs(webhookPagination.current_page + 1)}
+                      style={{ padding: "4px 12px", fontSize: "12px" }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* Modal View Payload JSON */}
+        {selectedWebhookPayload && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setSelectedWebhookPayload(null)}>
+            <div className="dc-card" style={{ width: "100%", maxWidth: "650px", margin: "20px", padding: 0 }} onClick={(e) => e.stopPropagation()}>
+              <div className="dc-card-head" style={{ padding: "14px 18px", margin: 0, borderBottom: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc", borderRadius: "11px 11px 0 0" }}>
+                <span className="dc-card-title"><FaDatabase style={{ marginRight: 6, color: "var(--dc-blue)" }} /> Raw Webhook Payload JSON</span>
+                <button type="button" onClick={() => setSelectedWebhookPayload(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ks-muted)", fontSize: "18px" }}><FaTimes /></button>
+              </div>
+              <div style={{ padding: "16px", maxHeight: "65vh", overflowY: "auto", backgroundColor: "#0f172a", color: "#38bdf8", borderRadius: "0 0 11px 11px" }}>
+                <pre style={{ margin: 0, fontFamily: "monospace", fontSize: "12px", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+                  {typeof selectedWebhookPayload === "string" ? selectedWebhookPayload : JSON.stringify(selectedWebhookPayload, null, 2)}
+                </pre>
+              </div>
+            </div>
           </div>
         )}
       </main>
