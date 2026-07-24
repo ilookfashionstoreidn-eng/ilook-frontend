@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Packing.css";
+import "../Cutting/SpkCutting/DashboardCutting.css";
 import API from "../../api";
 import { FaBarcode, FaCheck, FaQrcode } from "react-icons/fa";
 import { useRef } from "react";
@@ -541,286 +542,312 @@ const handleScanBarcode = async (barcodeValue = null) => {
 
 
   return (
-    <div className="pk-page">
-      <div className="pk-shell">
-        <section className="pk-content">
-          <header className="pk-topbar">
-            <div className="pk-title-group">
-              <div className="pk-brand-icon">
-                <FaQrcode />
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <h1>Packing Validation</h1>
-                  <span className="pk-badge-tag">Standard Mode</span>
-                </div>
-                <p>Scan tracking number, verifikasi barcode SKU/SPK CMT, dan finalisasi validasi packing order.</p>
-              </div>
+    <div className="ks-page dc-page">
+      {/* Header matching DashboardCutting */}
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <div className="dc-title">
+            <FaQrcode style={{ color: "var(--dc-blue)" }} />
+            <h1>Packing Validation</h1>
+            <span className="dc-track-badge is-ontrack" style={{ padding: "4px 10px", fontSize: "11px" }}>Standard Mode</span>
+          </div>
+          <span className="ks-header-sub">Scan tracking number, verifikasi barcode SKU/SPK CMT, dan finalisasi validasi packing order.</span>
+        </div>
+        <div className="ks-header-actions">
+          <button className="ks-btn" onClick={focusTrackingInput}>
+            <FiSearch /> <span>Input Tracking</span>
+          </button>
+        </div>
+      </header>
+
+      <main className="dc-main">
+        {/* Search & Scan Section */}
+        <section className="dc-card">
+          <div className="dc-card-head" style={{ marginBottom: "8px" }}>
+            <span className="dc-card-title"><FiSearch style={{ marginRight: 6, color: "var(--dc-blue)" }} /> Cari & Scan Tracking Number</span>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1, minWidth: "280px" }}>
+              <FiSearch style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--ks-muted, #94a3b8)", fontSize: "14px" }} />
+              <input
+                ref={trackingInputRef}
+                type="text"
+                placeholder="Scan / masukkan Tracking Number resi..."
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearchOrder()}
+                autoFocus
+                style={{
+                  width: "100%", height: "40px", paddingLeft: "36px", paddingRight: "12px",
+                  borderRadius: "8px", border: "1px solid var(--ks-line)", fontSize: "13px",
+                  outline: "none", boxSizing: "border-box", backgroundColor: "#fff"
+                }}
+              />
             </div>
-          </header>
+            <button
+              onClick={handleSearchOrder}
+              disabled={loading}
+              className="ks-btn is-primary"
+              style={{ height: "40px", padding: "0 18px" }}
+            >
+              {loading ? "Memuat..." : "Cari Order"}
+            </button>
+          </div>
 
-          <main className="pk-main">
-            <section className="pk-card pk-search-card">
-              <div className="pk-search-head">
-                <div>
-                  <h2>Cari & Scan Tracking Number</h2>
-                  <span>Scan resi paket atau ketik nomor tracking untuk mulai proses validasi</span>
+          {message && (
+            <div className="dc-error" style={{ marginTop: "12px", backgroundColor: message.includes("⚠️") || message.includes("❌") ? "rgba(229, 72, 77, 0.08)" : "rgba(22, 163, 74, 0.08)", borderColor: message.includes("⚠️") || message.includes("❌") ? "rgba(229, 72, 77, 0.4)" : "rgba(22, 163, 74, 0.4)", color: message.includes("⚠️") || message.includes("❌") ? "#b91c1c" : "#15803d" }}>
+              <span>{message}</span>
+            </div>
+          )}
+        </section>
+
+        {order && (
+          <>
+            {/* KPI Row (3 Cards like DashboardCutting) */}
+            <section className="dc-kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-blue"><FiPackage /></span>
+                  <span className="dc-kpi-label">Total Produk</span>
+                </div>
+                <div className="dc-kpi-value">{order.total_qty} <span className="dc-unit">pcs</span></div>
+                <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+                  <span>Jumlah item pesanan</span>
                 </div>
               </div>
 
-              <div className="tracking-input-wrapper">
-                <div className="pk-input-icon-wrap">
-                  <FiSearch className="pk-input-icon" />
-                  <input
-                    ref={trackingInputRef}
-                    type="text"
-                    placeholder="Scan / masukkan Tracking Number resi..."
-                    value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearchOrder()}
-                    autoFocus
-                    className="tracking-input-modern"
-                  />
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-green"><FiCheckCircle /></span>
+                  <span className="dc-kpi-label">Progress Scan</span>
                 </div>
-                <button 
-                  onClick={handleSearchOrder} 
-                  disabled={loading}
-                  className="btn-search-modern"
-                >
-                  {loading ? "Memuat..." : "Cari Order"}
-                </button>
+                <div className="dc-kpi-value">
+                  {scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0)} / {scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0)}
+                </div>
+                <div className="dc-progress-wrap" style={{ marginTop: "6px" }}>
+                  <div className="dc-progress-track">
+                    <div
+                      className="dc-progress-fill dc-fill-green"
+                      style={{
+                        width: `${Math.min(100, (scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0) / Math.max(1, scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0))) * 100)}%`
+                      }}
+                    />
+                  </div>
+                  <span className="dc-progress-pct">
+                    {Math.round((scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0) / Math.max(1, scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0))) * 100)}%
+                  </span>
+                </div>
               </div>
 
-              {message && (
-                <div className={`packing-message ${message.includes("⚠️") || message.includes("❌") ? "packing-message-danger" : message.includes("✅") ? "packing-message-success" : "packing-message-info"}`}>
-                  {message}
+              <div className="dc-card dc-kpi">
+                <div className="dc-kpi-head">
+                  <span className="dc-kpi-icon dc-i-purple"><FiSearch /></span>
+                  <span className="dc-kpi-label">Info Pelanggan</span>
                 </div>
-              )}
+                <div className="dc-kpi-value" style={{ fontSize: "18px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                  {order.customer_name || "-"}
+                </div>
+                <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+                  <strong>{order.customer_phone || "-"}</strong> • {order.platform || "Marketplace"}
+                </div>
+              </div>
             </section>
 
-      {order && (
-        <>
-          <section className="pk-kpi-grid">
-            <article className="pk-kpi-card">
-              <div className="pk-kpi-head"><FiPackage /> Total Produk</div>
-              <strong>{order.total_qty} <span style={{ fontSize: "14px", fontWeight: "600" }}>pcs</span></strong>
-              <small>Jumlah item pesanan</small>
-            </article>
-
-            <article className="pk-kpi-card">
-              <div className="pk-kpi-head"><FiCheckCircle /> Progress Scan</div>
-              <strong>
-                {scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0)} / {scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0)}
-              </strong>
-              {/* Progress bar */}
-              <div className="pk-progress-bar-wrap">
-                <div 
-                  className="pk-progress-bar-fill" 
-                  style={{ 
-                    width: `${Math.min(100, (scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0) / Math.max(1, scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0))) * 100)}%` 
-                  }} 
-                />
-              </div>
-            </article>
-
-            <article className="pk-kpi-card">
-              <div className="pk-kpi-head"><FiSearch /> Info Pelanggan</div>
-              <strong style={{ fontSize: "16px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{order.customer_name || "-"}</strong>
-              <small>{order.customer_phone || "-"} • {order.platform || "Marketplace"}</small>
-            </article>
-          </section>
-
-          <section className="pk-card order-section">
-            <div className="pk-order-header-banner">
-              <div>
-                <h2>Order #{order.order_number || order.tracking_number}</h2>
-                <div className="pk-order-meta-tags">
-                  <span className="pk-meta-tag"><strong>Customer:</strong> {order.customer_name || "-"}</span>
-                  <span className="pk-meta-tag"><strong>No. HP:</strong> {order.customer_phone || "-"}</span>
-                  <span className="pk-meta-tag"><strong>Tracking:</strong> {order.tracking_number || "-"}</span>
+            {/* Order Details & Validation Table */}
+            <section className="dc-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div className="dc-card-head" style={{ padding: "16px 18px", margin: 0, borderBottom: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <span className="dc-card-title" style={{ fontSize: "15px", fontWeight: "700" }}>Order #{order.order_number || order.tracking_number}</span>
+                  <div style={{ display: "flex", gap: "10px", fontSize: "11px", color: "var(--ks-text-soft)", marginTop: "4px" }}>
+                    <span><strong>Customer:</strong> {order.customer_name || "-"}</span>
+                    <span>•</span>
+                    <span><strong>No HP:</strong> {order.customer_phone || "-"}</span>
+                    <span>•</span>
+                    <span><strong>Tracking:</strong> {order.tracking_number || "-"}</span>
+                  </div>
                 </div>
+                <span className={`dc-track-badge ${order.status === "packed" ? "is-ontrack" : "is-behind"}`} style={{ padding: "4px 10px", fontSize: "11px" }}>
+                  {order.status || "READY_TO_SHIP"}
+                </span>
               </div>
-              <span className={`pk-order-status-badge ${order.status === "packed" ? "is-packed" : "is-ready"}`}>
-                {order.status || "READY_TO_SHIP"}
-              </span>
-            </div>
 
-            <div className="pk-table-wrap">
-              <table className="packing-table">
-                <thead>
-                  <tr>
-                    <th>SKU Barcode</th>
-                    <th>Nama Produk</th>
-                    <th style={{ textAlign: "center" }}>Qty Pesanan</th>
-                    <th style={{ textAlign: "center" }}>Qty Scan</th>
-                    <th style={{ textAlign: "center" }}>Gambar</th>
-                    <th>Nomor Seri</th>
-                    <th style={{ textAlign: "center" }}>Status Item</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scannedItems.map((item, idx) => (
-                    <tr key={idx} className={item.scanned_qty === item.ordered_qty ? "row-complete" : ""}>
-                      <td>
-                        <strong className="pk-sku-text">{item.sku}</strong>
-                      </td>
-                      <td>
-                        <span className="pk-product-title">{item.product_name}</span>
-                      </td>
-                      <td className="qty-cell ordered">{item.ordered_qty}</td>
-                      <td className="qty-cell scanned">
-                        <span className={`qty-badge ${item.scanned_qty === item.ordered_qty ? "is-done" : "is-pending"}`}>
-                          {item.scanned_qty}
-                        </span>
-                      </td>
-
-                      <td style={{ textAlign: "center" }}>
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.product_name}
-                            className="product-image"
-                          />
-                        ) : (
-                          <span style={{ color: "#aaa", fontSize: "11px" }}>No Image</span>
-                        )}
-                      </td>
-
-                      <td>
-                        <div className="pk-serial-inputs-grid">
-                          {item.serials.map((serial, sIdx) => (
-                            <div key={sIdx} className="pk-serial-input-item">
-                              <span className="pk-serial-label">Seri #{sIdx + 1}</span>
-                              <input
-                                type="text"
-                                value={serial}
-                                placeholder="Auto / Scan..."
-                                onKeyDown={(e) => {}}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  const key = `${idx}-${sIdx}`;
-
-                                  if (val.length > 9) {
-                                    setMessage("❌ Nomor seri maksimal 9 karakter!");
-                                    playSound("noseri");
-                                    e.target.value = prevSerials[key] || "";
-                                    return;
-                                  }
-                                  setPrevSerials((prev) => ({ ...prev, [key]: val }));
-
-                                  const updated = [...scannedItems];
-                                  updated[idx].serials[sIdx] = val;
-                                  scannedSerialsRef.current = buildScannedSerialMap(updated);
-                                  setScannedItems(updated);
-
-                                  const isCurrentItemComplete =
-                                    updated[idx].serials.length === updated[idx].ordered_qty &&
-                                    updated[idx].serials.every((s) => s.trim() !== "");
-
-                                  if (!isCurrentItemComplete) {
-                                    setCanSubmitByEnter(false);
-                                    setTimeout(() => {
-                                      barcodeInputRef.current?.focus();
-                                    }, 50);
-                                    return;
-                                  }
-
-                                  const allSkuComplete = isOrderReadyForValidation(updated);
-
-                                  if (allSkuComplete) {
-                                    setTimeout(() => {
-                                      setCanSubmitByEnter(true);  
-                                      submitButtonRef.current?.focus();
-                                    }, 50);
-                                  } else {
-                                    setCanSubmitByEnter(false);
-                                    setTimeout(() => {
-                                      barcodeInputRef.current?.focus();
-                                    }, 50);
-                                  }
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-
-                      <td style={{ textAlign: "center" }}>
-                        {item.scanned_qty === item.ordered_qty ? (
-                          <span className="status-ok">
-                            <FaCheck /> Lengkap
-                          </span>
-                        ) : (
-                          <span className="status-wait">
-                            <FaBarcode /> Scan...
-                          </span>
-                        )}
-                      </td>
+              {/* Table */}
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "var(--ks-surface)", borderBottom: "1px solid var(--ks-line)", color: "var(--ks-text-soft)" }}>
+                      <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600" }}>SKU Barcode</th>
+                      <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600" }}>Nama Produk</th>
+                      <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600" }}>Qty Pesanan</th>
+                      <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600" }}>Qty Scan</th>
+                      <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600" }}>Gambar</th>
+                      <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600" }}>Nomor Seri</th>
+                      <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600" }}>Status Item</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {scannedItems.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid var(--ks-line)", backgroundColor: item.scanned_qty === item.ordered_qty ? "rgba(22, 163, 74, 0.03)" : "transparent" }}>
+                        <td style={{ padding: "12px 18px" }}>
+                          <strong style={{ fontFamily: "monospace", fontSize: "12.5px", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>{item.sku}</strong>
+                        </td>
+                        <td style={{ padding: "12px 18px", fontWeight: "600", color: "var(--ks-text)" }}>{item.product_name}</td>
+                        <td style={{ padding: "12px 18px", textAlign: "center", fontWeight: "700", color: "var(--dc-blue)" }}>{item.ordered_qty}</td>
+                        <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                          <span className={`dc-track-badge ${item.scanned_qty === item.ordered_qty ? "is-ontrack" : "is-behind"}`} style={{ padding: "3px 8px", fontSize: "11px" }}>
+                            {item.scanned_qty}
+                          </span>
+                        </td>
 
-            <div className="sku-input-wrapper">
-              <label className="sku-label">
-                <FaBarcode style={{ color: "var(--dc-blue, #4f46e5)" }} /> Scan Barcode SPK CMT / Barcode SKU Produk
-              </label>
+                        <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.product_name}
+                              style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "6px", border: "1px solid var(--ks-line)" }}
+                            />
+                          ) : (
+                            <span style={{ color: "var(--ks-muted)", fontSize: "11px" }}>No Image</span>
+                          )}
+                        </td>
 
-              <form onSubmit={handleScanBarcode} className="sku-input">
-                <input
-                  type="text"
-                  placeholder="Arahkan barcode scanner ke produk / SPK CMT..."
-                  value={scannedBarcode}
-                  onChange={(e) => setScannedBarcode(e.target.value)}
-                  onKeyDown={handleBarcodeInputKeyDown}
-                  ref={barcodeInputRef}
-                  disabled={isScanComplete || checkingSerial}
-                  autoFocus
-                />
-                <button type="submit" disabled={isScanComplete || checkingSerial}>
-                  {checkingSerial ? "Mengecek..." : "Scan Product"}
+                        <td style={{ padding: "12px 18px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            {item.serials.map((serial, sIdx) => (
+                              <div key={sIdx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--ks-text-soft)", minWidth: "45px" }}>Seri #{sIdx + 1}</span>
+                                <input
+                                  type="text"
+                                  value={serial}
+                                  placeholder="Auto / Scan..."
+                                  style={{ width: "130px", height: "30px", padding: "0 8px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "12px", fontFamily: "monospace", outline: "none" }}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const key = `${idx}-${sIdx}`;
+
+                                    if (val.length > 9) {
+                                      setMessage("❌ Nomor seri maksimal 9 karakter!");
+                                      playSound("noseri");
+                                      e.target.value = prevSerials[key] || "";
+                                      return;
+                                    }
+                                    setPrevSerials((prev) => ({ ...prev, [key]: val }));
+
+                                    const updated = [...scannedItems];
+                                    updated[idx].serials[sIdx] = val;
+                                    scannedSerialsRef.current = buildScannedSerialMap(updated);
+                                    setScannedItems(updated);
+
+                                    const isCurrentItemComplete =
+                                      updated[idx].serials.length === updated[idx].ordered_qty &&
+                                      updated[idx].serials.every((s) => s.trim() !== "");
+
+                                    if (!isCurrentItemComplete) {
+                                      setCanSubmitByEnter(false);
+                                      setTimeout(() => {
+                                        barcodeInputRef.current?.focus();
+                                      }, 50);
+                                      return;
+                                    }
+
+                                    const allSkuComplete = isOrderReadyForValidation(updated);
+
+                                    if (allSkuComplete) {
+                                      setTimeout(() => {
+                                        setCanSubmitByEnter(true);
+                                        submitButtonRef.current?.focus();
+                                      }, 50);
+                                    } else {
+                                      setCanSubmitByEnter(false);
+                                      setTimeout(() => {
+                                        barcodeInputRef.current?.focus();
+                                      }, 50);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                          {item.scanned_qty === item.ordered_qty ? (
+                            <span style={{ color: "var(--dc-green)", fontWeight: "700", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <FaCheck /> Lengkap
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--ks-text-soft)", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <FaBarcode /> Scan...
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* SPK CMT Scan Form */}
+              <div style={{ padding: "16px 18px", borderTop: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "8px" }}>
+                  <FaBarcode style={{ color: "var(--dc-blue)", marginRight: 6 }} /> Scan Barcode SPK CMT / Barcode SKU Produk
+                </label>
+
+                <form onSubmit={handleScanBarcode} style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    placeholder="Arahkan barcode scanner ke produk / SPK CMT..."
+                    value={scannedBarcode}
+                    onChange={(e) => setScannedBarcode(e.target.value)}
+                    onKeyDown={handleBarcodeInputKeyDown}
+                    ref={barcodeInputRef}
+                    disabled={isScanComplete || checkingSerial}
+                    autoFocus
+                    style={{ flex: 1, height: "38px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none" }}
+                  />
+                  <button type="submit" disabled={isScanComplete || checkingSerial} className="ks-btn is-primary" style={{ height: "38px", padding: "0 16px" }}>
+                    {checkingSerial ? "Mengecek..." : "Scan Product"}
+                  </button>
+                </form>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ padding: "16px 18px", borderTop: "1px solid var(--ks-line)", display: "flex", gap: "10px", alignItems: "center", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  ref={submitButtonRef}
+                  className={`ks-btn is-primary ${canSubmitByEnter ? "is-ready-submit" : ""}`}
+                  disabled={isSubmittingValidation}
+                  onClick={handleSubmitValidation}
+                  style={{ height: "38px", padding: "0 20px", fontSize: "13px", fontWeight: "700" }}
+                >
+                  {isSubmittingValidation ? "Memvalidasi..." : "✓ Submit Validasi Packing"}
                 </button>
-              </form>
-            </div>
 
-            <div className="packing-actions">
-              <button
-                type="button"
-                ref={submitButtonRef}
-                className={`btn-validate ${canSubmitByEnter ? "is-ready-submit" : ""}`}
-                disabled={isSubmittingValidation}
-                onClick={handleSubmitValidation}
-              >
-                {isSubmittingValidation ? "Memvalidasi..." : "✓ Submit Validasi Packing"}
-              </button>
-
-              <button
-                onClick={() => {
-                  setOrder(null);
-                  scannedSerialsRef.current = new Map();
-                  pendingSerialsRef.current = new Map();
-                  setScannedItems([]);
-                  setTrackingNumber("");
-                  setScannedBarcode("");
-                  setCanSubmitByEnter(false);
-                  focusTrackingInput();
-                }}
-                className="btn-cancel"
-              >
-                Batal
-              </button>
-            </div>
-          </section>
-        </>
-      )}
-          </main>
-        </section>
-      </div>
+                <button
+                  type="button"
+                  className="ks-btn"
+                  onClick={() => {
+                    setOrder(null);
+                    scannedSerialsRef.current = new Map();
+                    pendingSerialsRef.current = new Map();
+                    setScannedItems([]);
+                    setTrackingNumber("");
+                    setScannedBarcode("");
+                    setCanSubmitByEnter(false);
+                    focusTrackingInput();
+                  }}
+                  style={{ height: "38px", padding: "0 16px" }}
+                >
+                  Batal
+                </button>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
     </div>
-
-
   );
 };
-
 export default Packing;
