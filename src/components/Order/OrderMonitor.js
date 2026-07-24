@@ -535,17 +535,17 @@ const OrderMonitor = () => {
                   <button type="button" className="ks-btn" onClick={handleResetFilters} disabled={loading} style={{ height: "32px", padding: "0 12px" }}>Reset</button>
                 </form>
 
-                <div style={{ flex: 1, overflow: "auto", position: "relative" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
-                    <thead style={{ position: "sticky", top: 0, backgroundColor: "var(--ks-surface)", zIndex: 1, boxShadow: "0 1px 0 var(--ks-line)" }}>
+                <div style={{ flex: 1, overflow: "auto", position: "relative" }} className="om-table-container">
+                  <table className="om-table">
+                    <thead>
                       <tr>
-                        <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Order</th>
-                        <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Tracking</th>
-                        <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Status</th>
-                        <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Packing</th>
-                        <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Sumber</th>
-                        <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Total</th>
-                        <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600", color: "var(--ks-text-soft)", borderBottom: "1px solid var(--ks-line)" }}>Aksi</th>
+                        <th>Order</th>
+                        <th>Tracking Number</th>
+                        <th>Status</th>
+                        <th>Packing</th>
+                        <th>Sumber</th>
+                        <th style={{ textAlign: "center" }}>Total</th>
+                        <th style={{ textAlign: "center" }}>Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -555,30 +555,34 @@ const OrderMonitor = () => {
                         <tr><td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "var(--ks-muted)" }}><FiBox size={24} style={{ marginBottom: "8px" }} /><br/>Tidak ada order pada filter ini.</td></tr>
                       ) : (
                         orders.map((order) => (
-                          <tr key={order.id} style={{ borderBottom: "1px solid var(--ks-line)" }} className="ks-table-row-hover">
-                            <td style={{ padding: "12px 18px" }}>
-                              <strong style={{ color: "var(--ks-text)" }}>{order.order_number || "-"}</strong>
+                          <tr key={order.id}>
+                            <td>
+                              <span className="om-code-badge">{order.order_number || "-"}</span>
                               <div style={{ fontSize: "11px", color: "var(--ks-muted)", marginTop: "4px" }}>{order.platform || "-"} • {formatDateTime(order.order_date)}</div>
                             </td>
-                            <td style={{ padding: "12px 18px", color: "var(--ks-text)" }}>{order.tracking_number || "-"}</td>
-                            <td style={{ padding: "12px 18px" }}>
-                              <span className={`dc-track-badge ${statusClass(order.status) === "success" ? "is-ontrack" : statusClass(order.status) === "danger" ? "is-behind" : ""}`} style={{ backgroundColor: statusClass(order.status) === "info" ? "#eef3fc" : statusClass(order.status) === "primary" ? "#f0f4ff" : undefined, color: statusClass(order.status) === "info" ? "var(--dc-blue)" : statusClass(order.status) === "primary" ? "#1e40af" : undefined, padding: "4px 8px" }}>{order.status || "-"}</span>
+                            <td>
+                              <span className="om-code-badge" style={{ backgroundColor: "#f8fafc" }}>{order.tracking_number || "-"}</span>
                             </td>
-                            <td style={{ padding: "12px 18px" }}>
-                              <span className={`dc-track-badge ${isPacked(order.is_packed) ? "is-ontrack" : "is-behind"}`} style={{ padding: "4px 8px" }}>
+                            <td>
+                              <span className={`om-status-badge ${order.status === "READY_TO_SHIP" ? "status-ready" : order.status === "PRINTED" ? "status-printed" : order.status === "CANCELLED" ? "status-cancel" : order.status === "PAID" ? "status-paid" : "status-packed"}`}>
+                                {order.status || "-"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`om-status-badge ${isPacked(order.is_packed) ? "status-packed" : "status-pending"}`}>
                                 {isPacked(order.is_packed) ? "Packed" : "Belum"}
                               </span>
                             </td>
-                            <td style={{ padding: "12px 18px" }}>
-                              <span className="dc-track-badge" style={{ backgroundColor: order.source === "webhook" ? "#e5f8ed" : "#eef3fc", color: order.source === "webhook" ? "var(--dc-green)" : "var(--dc-blue)", padding: "4px 8px", textTransform: "capitalize" }}>
+                            <td>
+                              <span className="om-status-badge status-ready" style={{ textTransform: "capitalize" }}>
                                 {order.source || "Syncing"}
                               </span>
                             </td>
-                            <td style={{ padding: "12px 18px", textAlign: "center" }}>
-                              <div style={{ fontWeight: "600" }}>{formatNumber(order.total_qty)} pcs</div>
+                            <td style={{ textAlign: "center" }}>
+                              <div style={{ fontWeight: "700", color: "#0f172a" }}>{formatNumber(order.total_qty)} pcs</div>
                               <div style={{ fontSize: "11px", color: "var(--ks-muted)" }}>{formatCurrency(order.total_amount)}</div>
                             </td>
-                            <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                            <td style={{ textAlign: "center" }}>
                               <button type="button" className="ks-btn" onClick={() => setSelectedOrder(order)} style={{ padding: "4px 10px", fontSize: "11px", height: "auto" }}>Detail</button>
                             </td>
                           </tr>
@@ -812,22 +816,22 @@ const OrderMonitor = () => {
                 </span>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "900px" }}>
+              <div style={{ overflowX: "auto" }} className="om-table-container">
+                <table className="om-table">
                   <thead>
-                    <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569" }}>
-                      <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700" }}>
+                    <tr>
+                      <th style={{ textAlign: "left" }}>
                         {summaryViewMode === "daily" ? "Tanggal" : "Bulan"}
                       </th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>Total Order</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>PAID</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>READY TO SHIP</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>PRINTED</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>SHIPPED / DELIVERED</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>CANCELLED</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>PENDING</th>
-                      <th style={{ padding: "12px 14px", textAlign: "center", fontWeight: "700" }}>PACKING (Packed / Belum)</th>
-                      <th style={{ padding: "12px 16px", textAlign: "right", fontWeight: "700" }}>Total Nominal (Rp)</th>
+                      <th style={{ textAlign: "center" }}>Total Order</th>
+                      <th style={{ textAlign: "center" }}>PAID</th>
+                      <th style={{ textAlign: "center" }}>READY TO SHIP</th>
+                      <th style={{ textAlign: "center" }}>PRINTED</th>
+                      <th style={{ textAlign: "center" }}>SHIPPED / DELIVERED</th>
+                      <th style={{ textAlign: "center" }}>CANCELLED</th>
+                      <th style={{ textAlign: "center" }}>PENDING</th>
+                      <th style={{ textAlign: "center" }}>PACKING (Packed / Belum)</th>
+                      <th style={{ textAlign: "right" }}>Total Nominal (Rp)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1075,17 +1079,17 @@ const OrderMonitor = () => {
                 <span style={{ fontSize: "12px", color: "var(--ks-text-soft)" }}>Total {formatNumber(webhookPagination.total)} logs</span>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+              <div style={{ overflowX: "auto" }} className="om-table-container">
+                <table className="om-table">
                   <thead>
-                    <tr style={{ backgroundColor: "var(--ks-surface)", borderBottom: "1px solid var(--ks-line)", color: "var(--ks-text-soft)", textAlign: "left" }}>
-                      <th style={{ padding: "10px 16px" }}>Waktu Diterima</th>
-                      <th style={{ padding: "10px 16px" }}>Ginee Order ID</th>
-                      <th style={{ padding: "10px 16px" }}>Action Event</th>
-                      <th style={{ padding: "10px 16px" }}>Nomor Resi / Order</th>
-                      <th style={{ padding: "10px 16px" }}>Status DB Order</th>
-                      <th style={{ padding: "10px 16px", textAlign: "center" }}>Status Webhook</th>
-                      <th style={{ padding: "10px 16px", textAlign: "center" }}>Detail Payload</th>
+                    <tr>
+                      <th>Waktu Diterima</th>
+                      <th>Ginee Order ID</th>
+                      <th>Action Event</th>
+                      <th>Nomor Resi / Order</th>
+                      <th>Status DB Order</th>
+                      <th style={{ textAlign: "center" }}>Status Webhook</th>
+                      <th style={{ textAlign: "center" }}>Detail Payload</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1095,33 +1099,33 @@ const OrderMonitor = () => {
                       <tr><td colSpan={7} style={{ padding: "30px", textAlign: "center", color: "var(--ks-muted)" }}>Tidak ada log webhook ditemukan pada filter ini.</td></tr>
                     ) : (
                       webhookLogs.map((log) => (
-                        <tr key={log.id} style={{ borderBottom: "1px solid var(--ks-line)" }}>
-                          <td style={{ padding: "10px 16px", whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDateTime(log.created_at)}</td>
-                          <td style={{ padding: "10px 16px", fontFamily: "monospace", fontWeight: "600" }}>{log.ginee_order_id || "-"}</td>
-                          <td style={{ padding: "10px 16px" }}><span style={{ backgroundColor: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", fontSize: "11px" }}>{log.action || log.entity || "order"}</span></td>
-                          <td style={{ padding: "10px 16px" }}>
+                        <tr key={log.id}>
+                          <td style={{ whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDateTime(log.created_at)}</td>
+                          <td><span className="om-code-badge">{log.ginee_order_id || "-"}</span></td>
+                          <td><span className="om-code-badge" style={{ backgroundColor: "#eef2ff", color: "#3730a3" }}>{log.action || log.entity || "order"}</span></td>
+                          <td>
                             {log.order ? (
                               <div>
-                                <strong style={{ color: "var(--ks-text)", display: "block" }}>{log.order.tracking_number || log.order.order_number}</strong>
-                                <span style={{ fontSize: "11px", color: "var(--ks-text-soft)" }}>{log.order.customer_name || "-"}</span>
+                                <span className="om-code-badge" style={{ display: "inline-block", marginBottom: "2px" }}>{log.order.tracking_number || log.order.order_number}</span>
+                                <span style={{ fontSize: "11px", color: "var(--ks-text-soft)", display: "block" }}>{log.order.customer_name || "-"}</span>
                               </div>
                             ) : (
                               <span style={{ color: "var(--ks-muted)" }}>-</span>
                             )}
                           </td>
-                          <td style={{ padding: "10px 16px" }}>
+                          <td>
                             {log.order ? (
-                              <span className={`dc-track-badge ${log.order.status === "CANCELLED" ? "is-behind" : "is-ontrack"}`}>
+                              <span className={`om-status-badge ${log.order.status === "CANCELLED" ? "status-cancel" : log.order.status === "READY_TO_SHIP" ? "status-ready" : "status-packed"}`}>
                                 {log.order.status}
                               </span>
                             ) : "-"}
                           </td>
-                          <td style={{ padding: "10px 16px", textAlign: "center" }}>
-                            <span className={`dc-track-badge ${log.status === "processed" ? "is-ontrack" : log.status === "failed" ? "is-behind" : ""}`}>
+                          <td style={{ textAlign: "center" }}>
+                            <span className={`om-status-badge ${log.status === "processed" ? "status-packed" : log.status === "failed" ? "status-cancel" : "status-ready"}`}>
                               {log.status}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                          <td style={{ textAlign: "center" }}>
                             <button
                               type="button"
                               className="ks-btn"
