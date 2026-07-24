@@ -325,6 +325,7 @@
 }
 .sidebar.collapsed:not(.peek) .sidebar-header { padding: 0 8px; justify-content: center; cursor: pointer; }
 .sidebar-brand-icon { color: var(--brand-500); flex-shrink: 0; }
+.sidebar.collapsed:not(.peek) .sidebar-group-label { display: none; }
 
 .sidebar.collapsed:not(.peek) .sidebar-link {
   padding: 12px 0;
