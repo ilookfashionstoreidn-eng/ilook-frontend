@@ -22,6 +22,7 @@ const Layout = () => {
   const [isAksesorisOpen, setIsAksesorisOpen] = useState(false);
   const [isQcOpen, setIsQcOpen] = useState(false);
   const [isSampleOpen, setIsSampleOpen] = useState(false);
+  const [isCsOpen, setIsCsOpen] = useState(false);
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "light");
     localStorage.setItem("theme", "light");
@@ -1116,6 +1117,27 @@ const Layout = () => {
                 )}
               </li>
             )}
+
+            <li className="sidebar-group-label">Support</li>
+            <li>
+              <div
+                onClick={() => setIsCsOpen(!isCsOpen)}
+                className={`sidebar-link dropdown-toggle ${["customer-service", "cs-monitoring-notes"].includes(activeMenu) ? "active" : ""}`}
+              >
+                <Headphones className="icon" /> Customer Service
+                <span className={`arrow ${isCsOpen ? "open" : ""}`}>{isCsOpen ? <ChevronUp /> : <ChevronDown />}</span>
+              </div>
+              {isCsOpen && (
+                <ul className="dropdown-menu show dropdown-menu-grouped">
+                  <li>
+                    <Link to="customer-service/monitoring-notes" className={`dropdown-link ${activeMenu === "cs-monitoring-notes" ? "active" : ""}`} onClick={() => handleMenuClick("cs-monitoring-notes")}>
+                      Monitoring Notes
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
             {role === "super-admin" && (
               <>
                 <li className="sidebar-group-label">Pengaturan</li>
@@ -1136,13 +1158,6 @@ const Layout = () => {
                 </li>
               </>
             )}
-
-            <li className="sidebar-group-label">Support</li>
-            <li>
-              <Link to="/customer-service" className={`sidebar-link ${activeMenu === "customer-service" ? "active" : ""}`} onClick={() => handleMenuClick("customer-service")}>
-                <Headphones className="icon" /> Customer Service
-              </Link>
-            </li>
 
             <li className="sidebar-footer-item">
               <button className="sidebar-link is-logout" onClick={handleLogout}>

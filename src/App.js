@@ -293,7 +293,9 @@ const App = () => {
           <Route path="orderPacking" element={<OrderPacking />} />
           <Route path="blank" element={<Blank />} />
           <Route path="blank2" element={<Blank2 />} />
-          <Route path="customer-service" element={<CustomerService />} />
+          <Route path="customer-service">
+            <Route path="monitoring-notes" element={<CustomerService />} />
+          </Route>
         </Route>
       </Routes>
     </Router>
