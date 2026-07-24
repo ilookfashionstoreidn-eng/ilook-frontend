@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../../../api";
 import "./TukangCutting.css";
+import "../SpkCutting/DashboardCutting.css";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import {
   FiAlertTriangle,
@@ -12,6 +13,9 @@ import {
   FiTrash2,
   FiUsers,
   FiX,
+  FiCreditCard,
+  FiPhoneCall,
+  FiClock,
 } from "react-icons/fi";
 
 const INITIAL_FORM = {
@@ -23,10 +27,7 @@ const INITIAL_FORM = {
 };
 
 const formatDateTime = (isoValue) => {
-  if (!isoValue) {
-    return "-";
-  }
-
+  if (!isoValue) return "-";
   return new Date(isoValue).toLocaleString("id-ID", {
     day: "2-digit",
     month: "short",
@@ -71,10 +72,7 @@ const TukangCutting = () => {
   }, []);
 
   useEffect(() => {
-    if (!toast) {
-      return undefined;
-    }
-
+    if (!toast) return undefined;
     const timer = setTimeout(() => setToast(null), 3200);
     return () => clearTimeout(timer);
   }, [toast]);
@@ -84,7 +82,9 @@ const TukangCutting = () => {
       tukangCutting.filter((item) =>
         (item.nama_tukang_cutting || "")
           .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+          .includes(searchTerm.toLowerCase()) ||
+        (item.kontak || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.bank || "").toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [searchTerm, tukangCutting]
   );
@@ -102,18 +102,9 @@ const TukangCutting = () => {
   }, [tukangCutting]);
 
   const feedbackIcon = useMemo(() => {
-    if (!toast) {
-      return null;
-    }
-
-    if (toast.type === "success") {
-      return <FiCheckCircle />;
-    }
-
-    if (toast.type === "warning") {
-      return <FiAlertTriangle />;
-    }
-
+    if (!toast) return null;
+    if (toast.type === "success") return <FiCheckCircle />;
+    if (toast.type === "warning") return <FiAlertTriangle />;
     return <FiInfo />;
   }, [toast]);
 
@@ -196,8 +187,7 @@ const TukangCutting = () => {
       closeForm();
     } catch (submitError) {
       showToast(
-        submitError.response?.data?.message ||
-          "Terjadi kesalahan saat menyimpan data.",
+        submitError.response?.data?.message || "Terjadi kesalahan saat menyimpan data.",
         "warning"
       );
     } finally {
@@ -215,8 +205,7 @@ const TukangCutting = () => {
       showToast(`Mitra "${item.nama_tukang_cutting}" berhasil dihapus.`, "success");
     } catch (deleteError) {
       showToast(
-        deleteError.response?.data?.message ||
-          "Gagal menghapus data mitra. Silakan coba lagi.",
+        deleteError.response?.data?.message || "Gagal menghapus data mitra. Silakan coba lagi.",
         "warning"
       );
     } finally {
@@ -225,332 +214,321 @@ const TukangCutting = () => {
   };
 
   return (
-    <div className="tc-container">
-      <header className="tc-header">
-        <div className="tc-header-top">
-          <div className="tc-title-group">
-            <div className="tc-brand-icon">
-              <FiScissors />
-            </div>
-            <div className="tc-title-wrap">
-              <div className="tc-module-pill">Cutting Management</div>
-              <h1>Master Tukang Cutting</h1>
-              <p className="tc-header-subtitle">
-                Manajemen data mitra cutting untuk operasional produksi.
-              </p>
-            </div>
+    <div className="ks-page dc-page">
+      {/* Header matching DashboardCutting */}
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <div className="dc-title">
+            <FiScissors style={{ color: "var(--dc-blue)" }} />
+            <h1>Master Tukang Cutting</h1>
+            <span className="dc-track-badge is-ontrack" style={{ padding: "4px 10px", fontSize: "11px" }}>Cutting Management</span>
           </div>
-
-          <div className="tc-search-wrap">
-            <input
-              className="tc-search-input"
-              type="text"
-              placeholder="Cari nama tukang cutting"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm ? (
-              <button
-                type="button"
-                className="tc-search-clear"
-                onClick={() => setSearchTerm("")}
-                aria-label="Hapus pencarian"
-              >
-                <FiX />
-              </button>
-            ) : (
-              <span className="tc-search-icon" aria-hidden="true">
-                <FaSearch />
-              </span>
-            )}
-          </div>
+          <span className="ks-header-sub">Manajemen data mitra tukang cutting & akun pembayaran operasional produksi.</span>
+        </div>
+        <div className="ks-header-actions">
+          <button className="ks-btn ks-btn-outline" onClick={fetchTukangCutting} disabled={loading}>
+            <FiRefreshCw className={loading ? "spinning" : ""} /> <span>Segarkan</span>
+          </button>
+          <button className="ks-btn is-primary" onClick={() => { resetForm(); setShowForm(true); }}>
+            <FaPlus /> <span>Tambah Mitra</span>
+          </button>
         </div>
       </header>
 
-      <main className="tc-main">
-        <section className="tc-stats">
-          <div className="tc-stat-item">
-            <p className="tc-stat-label">Total Mitra</p>
-            <p className="tc-stat-value">{summary.totalMitra}</p>
+      <main className="dc-main">
+        {/* KPI Row (4 Cards like DashboardCutting) */}
+        <section className="dc-kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-blue"><FiUsers /></span>
+              <span className="dc-kpi-label">Total Mitra</span>
+            </div>
+            <div className="dc-kpi-value">{summary.totalMitra} <span className="dc-unit">orang</span></div>
+            <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+              <span>Tukang cutting terdaftar</span>
+            </div>
           </div>
-          <div className="tc-stat-item">
-            <p className="tc-stat-label">Kontak Aktif</p>
-            <p className="tc-stat-value tc-stat-value-success">{summary.kontakAktif}</p>
+
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-green"><FiPhoneCall /></span>
+              <span className="dc-kpi-label">Kontak Aktif</span>
+            </div>
+            <div className="dc-kpi-value" style={{ color: "var(--dc-green)" }}>{summary.kontakAktif}</div>
+            <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+              <span className="dc-ok">Terverifikasi ada nomor</span>
+            </div>
           </div>
-          <div className="tc-stat-item">
-            <p className="tc-stat-label">Bank Terdaftar</p>
-            <p className="tc-stat-value tc-stat-value-info">{summary.bankTerdaftar}</p>
+
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-purple"><FiCreditCard /></span>
+              <span className="dc-kpi-label">Bank Terdaftar</span>
+            </div>
+            <div className="dc-kpi-value" style={{ color: "var(--dc-purple)" }}>{summary.bankTerdaftar} <span className="dc-unit">bank</span></div>
+            <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+              <span>Rekening penggajian</span>
+            </div>
           </div>
-          <div className="tc-stat-item">
-            <p className="tc-stat-label">Sinkron Terakhir</p>
-            <p className="tc-stat-value tc-stat-value-small">{formatDateTime(lastSyncAt)}</p>
+
+          <div className="dc-card dc-kpi">
+            <div className="dc-kpi-head">
+              <span className="dc-kpi-icon dc-i-orange"><FiClock /></span>
+              <span className="dc-kpi-label">Terakhir Sinkron</span>
+            </div>
+            <div className="dc-kpi-value" style={{ fontSize: "15px", whiteSpace: "nowrap", marginTop: "6px" }}>
+              {formatDateTime(lastSyncAt)}
+            </div>
+            <div className="dc-kpi-foot" style={{ marginTop: "4px" }}>
+              <span>Status data aktif</span>
+            </div>
           </div>
         </section>
 
-        <section className="tc-table-wrapper">
-          <div className="tc-table-header">
+        {/* Data Table Section */}
+        <section className="dc-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="dc-card-head" style={{ padding: "16px 18px", margin: 0, borderBottom: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc", flexWrap: "wrap", gap: "12px", justifyContent: "space-between" }}>
             <div>
-              <h3>Daftar Mitra Cutting</h3>
-              <p>
-                Menampilkan {filteredTukangCutting.length} dari {summary.totalMitra} data
-              </p>
+              <span className="dc-card-title" style={{ fontSize: "15px", fontWeight: "700" }}>Daftar Mitra Cutting</span>
+              <div style={{ fontSize: "11px", color: "var(--ks-text-soft)", marginTop: "4px" }}>
+                Menampilkan <strong>{filteredTukangCutting.length}</strong> dari <strong>{summary.totalMitra}</strong> mitra
+              </div>
             </div>
-            <div className="tc-table-actions">
-              <button
-                type="button"
-                className="tc-btn-secondary"
-                onClick={fetchTukangCutting}
-                disabled={loading}
-              >
-                <FiRefreshCw /> Refresh
-              </button>
-              <button type="button" className="tc-btn-primary" onClick={() => setShowForm(true)}>
-                <FaPlus /> Tambah Mitra
-              </button>
+
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div style={{ position: "relative", minWidth: "240px" }}>
+                <FaSearch style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--ks-muted)", fontSize: "12px" }} />
+                <input
+                  type="text"
+                  placeholder="Cari nama, kontak, atau bank..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    width: "100%", height: "34px", paddingLeft: "30px", paddingRight: searchTerm ? "30px" : "12px",
+                    borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "12.5px", outline: "none", boxSizing: "border-box"
+                  }}
+                />
+                {searchTerm && (
+                  <button type="button" onClick={() => setSearchTerm("")} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ks-muted)" }}>
+                    <FiX />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="tc-filter-section">
-            <div className="tc-filter-wrap">
-              <span className="tc-filter-label">Status Data</span>
-              <span className="tc-filter-value">Aktif</span>
-            </div>
-          </div>
-
-          {error ? (
-            <div className="tc-alert">
+          {error && (
+            <div className="dc-error" style={{ margin: "16px" }}>
               <FiAlertTriangle />
-              <p>{error}</p>
-              <button className="tc-btn-secondary" onClick={fetchTukangCutting}>
+              <span>{error}</span>
+              <button className="ks-btn" onClick={fetchTukangCutting} style={{ marginLeft: "auto", height: "28px", padding: "0 10px", fontSize: "11px" }}>
                 Muat Ulang
               </button>
             </div>
-          ) : null}
+          )}
 
-          {loading ? (
-            <div className="tc-loading">
-              <div className="tc-spinner" />
-              <p className="tc-loading-title">Memuat Data</p>
-              <p className="tc-loading-subtitle">Mohon tunggu beberapa saat...</p>
-            </div>
-          ) : filteredTukangCutting.length === 0 ? (
-            <div className="tc-empty-state">
-              <div className="tc-empty-icon">
-                <FiUsers />
-              </div>
-              <p className="tc-empty-title">Data Tidak Ditemukan</p>
-              <p className="tc-empty-text">Coba ubah kata kunci pencarian yang digunakan.</p>
-            </div>
-          ) : (
-            <div className="tc-table-scroll">
-              <table className="tc-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nama Tukang Cutting</th>
-                    <th>Kontak</th>
-                    <th>Bank</th>
-                    <th>No Rekening</th>
-                    <th>Alamat</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTukangCutting.map((tc) => (
-                    <tr key={tc.id}>
-                      <td className="tc-id-value">#{tc.id}</td>
-                      <td>{tc.nama_tukang_cutting || "-"}</td>
-                      <td>{tc.kontak || "-"}</td>
-                      <td>
-                        <span className="tc-bank-chip">{tc.bank || "-"}</span>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+              <thead>
+                <tr style={{ backgroundColor: "var(--ks-surface)", borderBottom: "1px solid var(--ks-line)", color: "var(--ks-text-soft)", textAlign: "left" }}>
+                  <th style={{ padding: "12px 18px", fontWeight: "600", width: "70px" }}>ID</th>
+                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Nama Tukang Cutting</th>
+                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Kontak HP</th>
+                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Bank</th>
+                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>No Rekening</th>
+                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Alamat</th>
+                  <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600", width: "110px" }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--ks-muted)" }}>Memuat data tukang cutting...</td></tr>
+                ) : filteredTukangCutting.length === 0 ? (
+                  <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--ks-muted)" }}>Data tidak ditemukan. Coba ubah kata kunci pencarian.</td></tr>
+                ) : (
+                  filteredTukangCutting.map((tc) => (
+                    <tr key={tc.id} style={{ borderBottom: "1px solid var(--ks-line)" }}>
+                      <td style={{ padding: "12px 18px" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "11.5px", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>#{tc.id}</span>
                       </td>
-                      <td>{tc.no_rekening || "-"}</td>
-                      <td>{tc.alamat || "-"}</td>
-                      <td>
-                        <div className="tc-action-buttons">
+                      <td style={{ padding: "12px 18px", fontWeight: "700", color: "var(--ks-text)" }}>
+                        {tc.nama_tukang_cutting || "-"}
+                      </td>
+                      <td style={{ padding: "12px 18px" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--ks-text)" }}>{tc.kontak || "-"}</span>
+                      </td>
+                      <td style={{ padding: "12px 18px" }}>
+                        <span className="dc-track-badge is-ontrack" style={{ padding: "3px 8px", fontSize: "11px" }}>
+                          {tc.bank || "-"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 18px" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--ks-text)" }}>{tc.no_rekening || "-"}</span>
+                      </td>
+                      <td style={{ padding: "12px 18px", color: "var(--ks-text-soft)" }}>
+                        {tc.alamat || "-"}
+                      </td>
+                      <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                           <button
                             type="button"
-                            className="tc-btn-icon tc-btn-icon-edit"
+                            className="ks-btn"
+                            style={{ padding: "4px 8px", fontSize: "11px" }}
                             onClick={() => openEditModal(tc)}
-                            title="Edit data"
+                            title="Edit Data"
                           >
                             <FiEdit2 />
                           </button>
                           <button
                             type="button"
-                            className="tc-btn-icon tc-btn-icon-delete"
+                            className="ks-btn"
+                            style={{ padding: "4px 8px", fontSize: "11px", color: "#b91c1c", borderColor: "#fecaca" }}
                             onClick={() => setDeleteConfirm(tc)}
-                            title="Hapus data"
+                            title="Hapus Data"
                           >
                             <FiTrash2 />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
 
-      {/* ── Add / Edit Modal ── */}
-      {showForm ? (
-        <div className="tc-modal-overlay" onClick={closeForm}>
-          <div className="tc-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="tc-modal-header">
-              <h3>{editingItem ? "Edit Mitra Cutting" : "Tambah Mitra Cutting"}</h3>
-              <button className="tc-modal-close" onClick={closeForm} type="button">
-                <FiX />
-              </button>
+      {/* Modal Form Add/Edit */}
+      {showForm && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={closeForm}>
+          <div className="dc-card" style={{ width: "100%", maxWidth: "520px", margin: "20px", padding: 0 }} onClick={(e) => e.stopPropagation()}>
+            <div className="dc-card-head" style={{ padding: "16px 20px", margin: 0, borderBottom: "1px solid var(--ks-line)", backgroundColor: "#fbfbfc", borderRadius: "11px 11px 0 0" }}>
+              <span className="dc-card-title" style={{ fontSize: "15px", fontWeight: "700" }}>{editingItem ? "Edit Mitra Cutting" : "Tambah Mitra Cutting"}</span>
+              <button type="button" onClick={closeForm} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ks-muted)", fontSize: "18px" }}><FiX /></button>
             </div>
 
-            <div className="tc-modal-body">
-              <form onSubmit={handleFormSubmit} className="tc-modal-form">
-                <div className="tc-form-group tc-form-full">
-                  <label htmlFor="nama_tukang_cutting">
-                    Nama Tukang <span className="tc-required">*</span>
-                  </label>
-                  <input
-                    id="nama_tukang_cutting"
-                    type="text"
-                    name="nama_tukang_cutting"
-                    className="tc-form-input"
-                    value={newTukangCutting.nama_tukang_cutting}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan nama lengkap"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleFormSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "4px" }}>
+                  Nama Tukang Cutting <span style={{ color: "#b91c1c" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  name="nama_tukang_cutting"
+                  value={newTukangCutting.nama_tukang_cutting}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan nama lengkap..."
+                  required
+                  style={{ width: "100%", height: "36px", padding: "0 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
 
-                <div className="tc-form-group">
-                  <label htmlFor="kontak">
-                    Kontak <span className="tc-required">*</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "4px" }}>
+                    Kontak HP <span style={{ color: "#b91c1c" }}>*</span>
                   </label>
                   <input
-                    id="kontak"
                     type="text"
                     name="kontak"
-                    className="tc-form-input"
                     value={newTukangCutting.kontak}
                     onChange={handleInputChange}
                     placeholder="Contoh: 0812xxxxxxx"
                     required
+                    style={{ width: "100%", height: "36px", padding: "0 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
 
-                <div className="tc-form-group">
-                  <label htmlFor="bank">
-                    Bank <span className="tc-required">*</span>
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "4px" }}>
+                    Bank <span style={{ color: "#b91c1c" }}>*</span>
                   </label>
                   <input
-                    id="bank"
                     type="text"
                     name="bank"
-                    className="tc-form-input"
                     value={newTukangCutting.bank}
                     onChange={handleInputChange}
                     placeholder="Contoh: BCA"
                     required
+                    style={{ width: "100%", height: "36px", padding: "0 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
+              </div>
 
-                <div className="tc-form-group">
-                  <label htmlFor="no_rekening">
-                    Nomor Rekening <span className="tc-required">*</span>
-                  </label>
-                  <input
-                    id="no_rekening"
-                    type="text"
-                    name="no_rekening"
-                    className="tc-form-input"
-                    value={newTukangCutting.no_rekening}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan nomor rekening"
-                    required
-                  />
-                </div>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "4px" }}>
+                  Nomor Rekening <span style={{ color: "#b91c1c" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  name="no_rekening"
+                  value={newTukangCutting.no_rekening}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan nomor rekening..."
+                  required
+                  style={{ width: "100%", height: "36px", padding: "0 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
 
-                <div className="tc-form-group tc-form-full">
-                  <label htmlFor="alamat">
-                    Alamat <span className="tc-required">*</span>
-                  </label>
-                  <textarea
-                    id="alamat"
-                    name="alamat"
-                    className="tc-form-input"
-                    value={newTukangCutting.alamat}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan alamat lengkap"
-                    rows="3"
-                    required
-                  />
-                </div>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--ks-text)", marginBottom: "4px" }}>
+                  Alamat <span style={{ color: "#b91c1c" }}>*</span>
+                </label>
+                <textarea
+                  name="alamat"
+                  value={newTukangCutting.alamat}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan alamat lengkap..."
+                  rows="3"
+                  required
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--ks-line)", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
 
-                <div className="tc-form-actions">
-                  <button type="submit" className="tc-btn-submit" disabled={isSubmitting}>
-                    {isSubmitting
-                      ? "Menyimpan..."
-                      : editingItem
-                        ? "Perbarui Data"
-                        : "Simpan Data"}
-                  </button>
-                  <button
-                    type="button"
-                    className="tc-btn-cancel"
-                    onClick={closeForm}
-                    disabled={isSubmitting}
-                  >
-                    Batal
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "10px" }}>
+                <button type="button" className="ks-btn" onClick={closeForm} disabled={isSubmitting} style={{ height: "36px", padding: "0 16px" }}>
+                  Batal
+                </button>
+                <button type="submit" className="ks-btn is-primary" disabled={isSubmitting} style={{ height: "36px", padding: "0 18px", fontWeight: "700" }}>
+                  {isSubmitting ? "Menyimpan..." : editingItem ? "Perbarui Data" : "Simpan Data"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {/* ── Delete Confirmation Modal ── */}
-      {deleteConfirm ? (
-        <div className="tc-modal-overlay" onClick={() => setDeleteConfirm(null)}>
-          <div className="tc-delete-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="tc-delete-modal-icon">
+      {/* Modal Hapus */}
+      {deleteConfirm && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setDeleteConfirm(null)}>
+          <div className="dc-card" style={{ width: "100%", maxWidth: "420px", margin: "20px", padding: "20px", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "#fef2f2", color: "#b91c1c", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "20px", marginBottom: "12px" }}>
               <FiTrash2 />
             </div>
-            <h3>Hapus Mitra Cutting?</h3>
-            <p>
-              Data <strong>"{deleteConfirm.nama_tukang_cutting}"</strong> akan dihapus secara
-              permanen dan tidak dapat dikembalikan.
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "var(--ks-text)" }}>Hapus Mitra Cutting?</h3>
+            <p style={{ margin: "0 0 20px 0", fontSize: "13px", color: "var(--ks-text-soft)", lineHeight: "1.5" }}>
+              Data mitra <strong>"{deleteConfirm.nama_tukang_cutting}"</strong> akan dihapus secara permanen dari sistem.
             </p>
-            <div className="tc-delete-modal-actions">
-              <button
-                type="button"
-                className="tc-btn-danger"
-                onClick={() => handleDelete(deleteConfirm)}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Menghapus..." : "Ya, Hapus"}
-              </button>
-              <button
-                type="button"
-                className="tc-btn-cancel"
-                onClick={() => setDeleteConfirm(null)}
-                disabled={isSubmitting}
-              >
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button type="button" className="ks-btn" onClick={() => setDeleteConfirm(null)} disabled={isSubmitting} style={{ height: "36px", padding: "0 16px" }}>
                 Batal
+              </button>
+              <button type="button" className="ks-btn" onClick={() => handleDelete(deleteConfirm)} disabled={isSubmitting} style={{ height: "36px", padding: "0 18px", backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c", fontWeight: "700" }}>
+                {isSubmitting ? "Menghapus..." : "Ya, Hapus"}
               </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {toast ? (
-        <div className={`tc-feedback-toast ${toast.type}`}>
-          <span className="tc-feedback-icon">{feedbackIcon}</span>
-          <p>{toast.message}</p>
+      {/* Toast Alert */}
+      {toast && (
+        <div className={`tc-feedback-toast ${toast.type}`} style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 10000, display: "flex", alignItems: "center", gap: "10px", padding: "12px 18px", borderRadius: "8px", backgroundColor: toast.type === "success" ? "#047857" : "#b91c1c", color: "#fff", boxShadow: "0 10px 25px rgba(0,0,0,0.15)", fontSize: "13px" }}>
+          <span>{feedbackIcon}</span>
+          <span>{toast.message}</span>
         </div>
-      ) : null}
+      )}
     </div>
   );
 };
