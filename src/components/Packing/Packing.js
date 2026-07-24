@@ -547,9 +547,6 @@ const handleScanBarcode = async (barcodeValue = null) => {
           <header className="pk-topbar">
             <div className="pk-title-group">
               <div className="pk-brand-icon">
-          <header className="pk-topbar">
-            <div className="pk-title-group">
-              <div className="pk-brand-icon">
                 <FaQrcode />
               </div>
               <div>
