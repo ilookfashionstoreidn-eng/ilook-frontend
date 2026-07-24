@@ -323,9 +323,9 @@
   width: 260px;
   box-shadow: 4px 0 24px rgba(2, 6, 23, 0.35);
 }
-.sidebar.collapsed:not(.peek) .sidebar-title { display: none; }
-.sidebar.collapsed:not(.peek) .sidebar-header { padding: 0 16px; justify-content: center; }
-.sidebar.collapsed:not(.peek) .sidebar-header-brand { display: none; }
+.sidebar.collapsed:not(.peek) .sidebar-header { padding: 0 8px; justify-content: center; cursor: pointer; }
+.sidebar.collapsed:not(.peek) .sidebar-title { font-size: 14px; letter-spacing: 0; }
+
 
 .sidebar-collapse-btn {
   background: transparent;
