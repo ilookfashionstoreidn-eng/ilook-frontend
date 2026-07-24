@@ -170,6 +170,11 @@ const handleSearchOrderWithTracking = async (tracking) => {
     scannedSerialsRef.current = new Map();
     pendingSerialsRef.current = new Map();
     setScannedItems(initialScan);
+
+    // Auto-focus ke input Scan Barcode SPK CMT / Barcode SKU Produk
+    setTimeout(() => {
+      barcodeInputRef.current?.focus();
+    }, 100);
   } catch (error) {
     setOrder(null);
     scannedSerialsRef.current = new Map();
@@ -224,6 +229,11 @@ const handleSearchOrder = async () => {
     scannedSerialsRef.current = new Map();
     pendingSerialsRef.current = new Map();
     setScannedItems(initialScan);
+
+    // Auto-focus ke input Scan Barcode SPK CMT / Barcode SKU Produk
+    setTimeout(() => {
+      barcodeInputRef.current?.focus();
+    }, 100);
   } catch (error) {
     setOrder(null);
     scannedSerialsRef.current = new Map();
