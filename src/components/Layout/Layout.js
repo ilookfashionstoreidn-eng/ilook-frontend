@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, Eye } from "lucide-react";
+import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut } from "lucide-react";
 import API from "../../api";
 
 const Layout = () => {
@@ -177,15 +177,14 @@ const Layout = () => {
           style={{ cursor: "pointer" }}
           title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          {(isSidebarCollapsed && !isSidebarHovered) ? (
-            <Eye size={22} className="sidebar-brand-icon" />
-          ) : (
-            <div className="sidebar-header-brand">
-              <h3 className="sidebar-title">
-                iLOOK <span className="sidebar-title-dot">.</span>
-              </h3>
-            </div>
-          )}
+          <div className="sidebar-header-brand">
+            <h3 className="sidebar-title">
+              {(!isSidebarCollapsed || isSidebarHovered)
+                ? <>iLOOK <span className="sidebar-title-dot">.</span></>
+                : <>iL<span className="sidebar-title-dot">.</span></>
+              }
+            </h3>
+          </div>
         </div>
         <nav className="sidebar-menu">
           <ul>
