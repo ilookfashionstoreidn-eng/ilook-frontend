@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import API from "../../../api";
 import "./TukangCutting.css";
 import "../SpkCutting/DashboardCutting.css";
-import { FaPlus, FaSearch } from "react-icons/fa";
 import {
   FiAlertTriangle,
   FiCheckCircle,
@@ -16,6 +15,8 @@ import {
   FiCreditCard,
   FiPhoneCall,
   FiClock,
+  FiPlus,
+  FiSearch,
 } from "react-icons/fi";
 
 const INITIAL_FORM = {
@@ -288,7 +289,7 @@ const TukangCutting = () => {
 
             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ position: "relative", minWidth: "220px" }}>
-                <FaSearch style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--ks-muted)", fontSize: "12px" }} />
+                <FiSearch style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--ks-muted)", fontSize: "12px" }} />
                 <input
                   type="text"
                   placeholder="Cari nama, kontak, atau bank..."
@@ -311,7 +312,7 @@ const TukangCutting = () => {
               </button>
 
               <button className="ks-btn is-primary" onClick={() => { resetForm(); setShowForm(true); }} style={{ height: "34px", padding: "0 14px", fontSize: "12px" }}>
-                <FaPlus /> <span>Tambah Mitra</span>
+                <FiPlus /> <span>Tambah Mitra</span>
               </button>
             </div>
           </div>
