@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, ToggleLeft, ToggleRight } from "lucide-react";
+import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut } from "lucide-react";
 import API from "../../api";
 
 const Layout = () => {
@@ -171,7 +171,12 @@ const Layout = () => {
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
-        <div className="sidebar-header">
+        <div 
+          className="sidebar-header" 
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          style={{ cursor: "pointer" }}
+          title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
           <div className="sidebar-header-brand">
             <h3 className="sidebar-title">
               {(!isSidebarCollapsed || isSidebarHovered) ? (
@@ -181,13 +186,6 @@ const Layout = () => {
               )}
             </h3>
           </div>
-          <button
-            className="sidebar-collapse-btn"
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {isSidebarCollapsed ? <ToggleRight /> : <ToggleLeft />}
-          </button>
         </div>
         <nav className="sidebar-menu">
           <ul>
