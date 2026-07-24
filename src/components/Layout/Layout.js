@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut } from "lucide-react";
+import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, Headphones } from "lucide-react";
 import API from "../../api";
 
 const Layout = () => {
@@ -1136,6 +1136,13 @@ const Layout = () => {
                 </li>
               </>
             )}
+
+            <li className="sidebar-group-label">Support</li>
+            <li>
+              <Link to="/customer-service" className={`sidebar-link ${activeMenu === "customer-service" ? "active" : ""}`} onClick={() => handleMenuClick("customer-service")}>
+                <Headphones className="icon" /> Customer Service
+              </Link>
+            </li>
 
             <li className="sidebar-footer-item">
               <button className="sidebar-link is-logout" onClick={handleLogout}>

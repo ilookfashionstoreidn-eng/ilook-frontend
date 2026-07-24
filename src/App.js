@@ -116,6 +116,7 @@ import OrderPacking from "./components/Packing/OrderPacking";
 import Maintenance from "./components/Maintenance/Maintenance";
 import MenuProtectedRoute from "./components/UserManagement/MenuProtectedRoute";
 import UserManagement from "./components/UserManagement/UserManagement";
+import CustomerService from "./components/CustomerService/CustomerService";
 
 const App = () => {
   return (
@@ -292,6 +293,7 @@ const App = () => {
           <Route path="orderPacking" element={<OrderPacking />} />
           <Route path="blank" element={<Blank />} />
           <Route path="blank2" element={<Blank2 />} />
+          <Route path="customer-service" element={<CustomerService />} />
         </Route>
       </Routes>
     </Router>
