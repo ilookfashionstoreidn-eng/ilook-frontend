@@ -12,6 +12,7 @@ import {
   FaListUl,
   FaCalendarAlt,
   FaChartBar,
+  FaFilter,
 } from "react-icons/fa";
 import { FiBox, FiClock, FiFileText, FiCalendar, FiDollarSign } from "react-icons/fi";
 
