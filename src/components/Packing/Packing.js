@@ -547,11 +547,17 @@ const handleScanBarcode = async (barcodeValue = null) => {
           <header className="pk-topbar">
             <div className="pk-title-group">
               <div className="pk-brand-icon">
+          <header className="pk-topbar">
+            <div className="pk-title-group">
+              <div className="pk-brand-icon">
                 <FaQrcode />
               </div>
               <div>
-                <h1>Packing Validation</h1>
-                <p>Scan tracking, verifikasi barcode SKU, dan finalisasi order packing.</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h1>Packing Validation</h1>
+                  <span className="pk-badge-tag">Standard Mode</span>
+                </div>
+                <p>Scan tracking number, verifikasi barcode SKU/SPK CMT, dan finalisasi validasi packing order.</p>
               </div>
             </div>
           </header>
@@ -559,31 +565,40 @@ const handleScanBarcode = async (barcodeValue = null) => {
           <main className="pk-main">
             <section className="pk-card pk-search-card">
               <div className="pk-search-head">
-                <h2>Cari Order</h2>
-                <span>Masukkan tracking number untuk memulai proses packing</span>
+                <div>
+                  <h2>Cari & Scan Tracking Number</h2>
+                  <span>Scan resi paket atau ketik nomor tracking untuk mulai proses validasi</span>
+                </div>
               </div>
 
               <div className="tracking-input-wrapper">
-        <input
-          ref={trackingInputRef}
-          type="text"
-          placeholder="Scan / masukkan Tracking Number..."
-          value={trackingNumber}
-          onChange={(e) => setTrackingNumber(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearchOrder()}
-          autoFocus
-          className="tracking-input-modern"
-        />
-        <button 
-          onClick={handleSearchOrder} 
-          disabled={loading}
-          className="btn-search-modern"
-          >
-          {loading ? "Loading..." : "Cari Order"}
-        </button>
+                <div className="pk-input-icon-wrap">
+                  <FiSearch className="pk-input-icon" />
+                  <input
+                    ref={trackingInputRef}
+                    type="text"
+                    placeholder="Scan / masukkan Tracking Number resi..."
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchOrder()}
+                    autoFocus
+                    className="tracking-input-modern"
+                  />
+                </div>
+                <button 
+                  onClick={handleSearchOrder} 
+                  disabled={loading}
+                  className="btn-search-modern"
+                >
+                  {loading ? "Memuat..." : "Cari Order"}
+                </button>
               </div>
 
-              {message && <div className="packing-message">{message}</div>}
+              {message && (
+                <div className={`packing-message ${message.includes("⚠️") || message.includes("❌") ? "packing-message-danger" : message.includes("✅") ? "packing-message-success" : "packing-message-info"}`}>
+                  {message}
+                </div>
+              )}
             </section>
 
       {order && (
@@ -591,191 +606,214 @@ const handleScanBarcode = async (barcodeValue = null) => {
           <section className="pk-kpi-grid">
             <article className="pk-kpi-card">
               <div className="pk-kpi-head"><FiPackage /> Total Produk</div>
-              <strong>{order.total_qty}</strong>
-              <small>item dalam order</small>
+              <strong>{order.total_qty} <span style={{ fontSize: "14px", fontWeight: "600" }}>pcs</span></strong>
+              <small>Jumlah item pesanan</small>
             </article>
+
             <article className="pk-kpi-card">
               <div className="pk-kpi-head"><FiCheckCircle /> Progress Scan</div>
-              <strong>{scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0)} / {scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0)}</strong>
-              <small>total scanned / ordered</small>
+              <strong>
+                {scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0)} / {scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0)}
+              </strong>
+              {/* Progress bar */}
+              <div className="pk-progress-bar-wrap">
+                <div 
+                  className="pk-progress-bar-fill" 
+                  style={{ 
+                    width: `${Math.min(100, (scannedItems.reduce((sum, i) => sum + i.scanned_qty, 0) / Math.max(1, scannedItems.reduce((sum, i) => sum + i.ordered_qty, 0))) * 100)}%` 
+                  }} 
+                />
+              </div>
             </article>
+
             <article className="pk-kpi-card">
-              <div className="pk-kpi-head"><FiSearch /> Customer</div>
-              <strong>{order.customer_name}</strong>
-              <small>{order.customer_phone}</small>
+              <div className="pk-kpi-head"><FiSearch /> Info Pelanggan</div>
+              <strong style={{ fontSize: "16px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{order.customer_name || "-"}</strong>
+              <small>{order.customer_phone || "-"} • {order.platform || "Marketplace"}</small>
             </article>
           </section>
 
           <section className="pk-card order-section">
-          <h2>Order #{order.order_number}</h2>
-          <p className="pk-order-meta">
-            <strong>Nama Customer:</strong> {order.customer_name} <br />
-            <strong>No. HP:</strong> {order.customer_phone}  <br />
-            <strong>Total Produk:</strong> {order.total_qty}
-          </p>
+            <div className="pk-order-header-banner">
+              <div>
+                <h2>Order #{order.order_number || order.tracking_number}</h2>
+                <div className="pk-order-meta-tags">
+                  <span className="pk-meta-tag"><strong>Customer:</strong> {order.customer_name || "-"}</span>
+                  <span className="pk-meta-tag"><strong>No. HP:</strong> {order.customer_phone || "-"}</span>
+                  <span className="pk-meta-tag"><strong>Tracking:</strong> {order.tracking_number || "-"}</span>
+                </div>
+              </div>
+              <span className={`pk-order-status-badge ${order.status === "packed" ? "is-packed" : "is-ready"}`}>
+                {order.status || "READY_TO_SHIP"}
+              </span>
+            </div>
 
-          <div className="pk-table-wrap">
-          <table className="packing-table">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Nama Produk</th>
-                <th>Qty Pesanan</th>
-                <th>Qty Scan</th>
-                <th>Gambar</th>
-                <th>Nomor Seri</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scannedItems.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.sku}</td>
-                  <td>{item.product_name}</td>
-                  <td className="qty-cell ordered">{item.ordered_qty}</td>
-                  <td className="qty-cell scanned">{item.scanned_qty}</td>
+            <div className="pk-table-wrap">
+              <table className="packing-table">
+                <thead>
+                  <tr>
+                    <th>SKU Barcode</th>
+                    <th>Nama Produk</th>
+                    <th style={{ textAlign: "center" }}>Qty Pesanan</th>
+                    <th style={{ textAlign: "center" }}>Qty Scan</th>
+                    <th style={{ textAlign: "center" }}>Gambar</th>
+                    <th>Nomor Seri</th>
+                    <th style={{ textAlign: "center" }}>Status Item</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scannedItems.map((item, idx) => (
+                    <tr key={idx} className={item.scanned_qty === item.ordered_qty ? "row-complete" : ""}>
+                      <td>
+                        <strong className="pk-sku-text">{item.sku}</strong>
+                      </td>
+                      <td>
+                        <span className="pk-product-title">{item.product_name}</span>
+                      </td>
+                      <td className="qty-cell ordered">{item.ordered_qty}</td>
+                      <td className="qty-cell scanned">
+                        <span className={`qty-badge ${item.scanned_qty === item.ordered_qty ? "is-done" : "is-pending"}`}>
+                          {item.scanned_qty}
+                        </span>
+                      </td>
 
-                   <td>
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.product_name}
-                        className="product-image"
-                      />
-                    ) : (
-                      <span style={{ color: "#aaa", fontSize: "13px" }}>No Image</span>
-                    )}
-                  </td>
+                      <td style={{ textAlign: "center" }}>
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.product_name}
+                            className="product-image"
+                          />
+                        ) : (
+                          <span style={{ color: "#aaa", fontSize: "11px" }}>No Image</span>
+                        )}
+                      </td>
 
-               <td>
-               {item.serials.map((serial, sIdx) => (
-              <input
-                type="text"
-                value={serial}
-                autoFocus
-                onKeyDown={(e) => {
-                  
+                      <td>
+                        <div className="pk-serial-inputs-grid">
+                          {item.serials.map((serial, sIdx) => (
+                            <div key={sIdx} className="pk-serial-input-item">
+                              <span className="pk-serial-label">Seri #{sIdx + 1}</span>
+                              <input
+                                type="text"
+                                value={serial}
+                                placeholder="Auto / Scan..."
+                                onKeyDown={(e) => {}}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const key = `${idx}-${sIdx}`;
+
+                                  if (val.length > 9) {
+                                    setMessage("❌ Nomor seri maksimal 9 karakter!");
+                                    playSound("noseri");
+                                    e.target.value = prevSerials[key] || "";
+                                    return;
+                                  }
+                                  setPrevSerials((prev) => ({ ...prev, [key]: val }));
+
+                                  const updated = [...scannedItems];
+                                  updated[idx].serials[sIdx] = val;
+                                  scannedSerialsRef.current = buildScannedSerialMap(updated);
+                                  setScannedItems(updated);
+
+                                  const isCurrentItemComplete =
+                                    updated[idx].serials.length === updated[idx].ordered_qty &&
+                                    updated[idx].serials.every((s) => s.trim() !== "");
+
+                                  if (!isCurrentItemComplete) {
+                                    setCanSubmitByEnter(false);
+                                    setTimeout(() => {
+                                      barcodeInputRef.current?.focus();
+                                    }, 50);
+                                    return;
+                                  }
+
+                                  const allSkuComplete = isOrderReadyForValidation(updated);
+
+                                  if (allSkuComplete) {
+                                    setTimeout(() => {
+                                      setCanSubmitByEnter(true);  
+                                      submitButtonRef.current?.focus();
+                                    }, 50);
+                                  } else {
+                                    setCanSubmitByEnter(false);
+                                    setTimeout(() => {
+                                      barcodeInputRef.current?.focus();
+                                    }, 50);
+                                  }
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+
+                      <td style={{ textAlign: "center" }}>
+                        {item.scanned_qty === item.ordered_qty ? (
+                          <span className="status-ok">
+                            <FaCheck /> Lengkap
+                          </span>
+                        ) : (
+                          <span className="status-wait">
+                            <FaBarcode /> Scan...
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="sku-input-wrapper">
+              <label className="sku-label">
+                <FaBarcode style={{ color: "var(--dc-blue, #4f46e5)" }} /> Scan Barcode SPK CMT / Barcode SKU Produk
+              </label>
+
+              <form onSubmit={handleScanBarcode} className="sku-input">
+                <input
+                  type="text"
+                  placeholder="Arahkan barcode scanner ke produk / SPK CMT..."
+                  value={scannedBarcode}
+                  onChange={(e) => setScannedBarcode(e.target.value)}
+                  onKeyDown={handleBarcodeInputKeyDown}
+                  ref={barcodeInputRef}
+                  disabled={isScanComplete || checkingSerial}
+                  autoFocus
+                />
+                <button type="submit" disabled={isScanComplete || checkingSerial}>
+                  {checkingSerial ? "Mengecek..." : "Scan Product"}
+                </button>
+              </form>
+            </div>
+
+            <div className="packing-actions">
+              <button
+                type="button"
+                ref={submitButtonRef}
+                className={`btn-validate ${canSubmitByEnter ? "is-ready-submit" : ""}`}
+                disabled={isSubmittingValidation}
+                onClick={handleSubmitValidation}
+              >
+                {isSubmittingValidation ? "Memvalidasi..." : "✓ Submit Validasi Packing"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setOrder(null);
+                  scannedSerialsRef.current = new Map();
+                  pendingSerialsRef.current = new Map();
+                  setScannedItems([]);
+                  setTrackingNumber("");
+                  setScannedBarcode("");
+                  setCanSubmitByEnter(false);
+                  focusTrackingInput();
                 }}
-                onChange={(e) => {
-                  const val = e.target.value;
-                    const key = `${idx}-${sIdx}`;
-
-                if (val.length > 9) {
-                  setMessage("❌ Nomor seri lebih dari 9 karakter!");
-                  playSound("noseri");
-
-                  const key = `${idx}-${sIdx}`;
-                  e.target.value = prevSerials[key] || "";
-                  return;
-                }
-                  setPrevSerials(prev => ({ ...prev, [key]: val }));
-
-                  const updated = [...scannedItems];
-                  updated[idx].serials[sIdx] = val;
-                  scannedSerialsRef.current = buildScannedSerialMap(updated);
-                  setScannedItems(updated);
-
-                  const isCurrentItemComplete =
-                    updated[idx].serials.length === updated[idx].ordered_qty &&
-                    updated[idx].serials.every(s => s.trim() !== "");
-
-                  if (!isCurrentItemComplete) {
-                    setCanSubmitByEnter(false);
-                    setTimeout(() => {
-                      barcodeInputRef.current?.focus();
-                    }, 50);
-                    return;
-                  }
-
-                  const allSkuComplete = isOrderReadyForValidation(updated);
-
-                 if (allSkuComplete) {
-                  setTimeout(() => {
-                    setCanSubmitByEnter(true);  
-                    submitButtonRef.current?.focus();
-                  }, 50);
-                  }
-                  else {
-                    setCanSubmitByEnter(false);
-                    setTimeout(() => {
-                    barcodeInputRef.current?.focus();
-                    }, 50);
-                  }
-                }}
-              />
-
-
-            ))}
-
-              </td>
-
-                  <td>
-                    {item.scanned_qty === item.ordered_qty ? (
-                      <span className="status-ok">
-                        <FaCheck /> OK
-                      </span>
-                    ) : (
-                      <span className="status-wait">
-                        <FaBarcode /> Scan...
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-
-
-
-      <div className="sku-input-wrapper">
-        <label className="sku-label">Scan SPK CMT Barcode</label>
-
-        <form onSubmit={handleScanBarcode} className="sku-input">
-          <input
-            type="text"
-            placeholder="Scan SPK CMT Barcode..."
-            value={scannedBarcode}
-            onChange={(e) => setScannedBarcode(e.target.value)}
-            onKeyDown={handleBarcodeInputKeyDown}
-            ref={barcodeInputRef}
-            disabled={isScanComplete || checkingSerial}
-            autoFocus
-          />
-          <button type="submit" disabled={isScanComplete || checkingSerial}>
-            {checkingSerial ? "Cek..." : "Scan"}
-          </button>
-        </form>
-      </div>
-
-          <div className="packing-actions">
-           <button
-            type="button"
-            ref={submitButtonRef}
-            className="btn-validate"
-            disabled={isSubmittingValidation}
-            onClick={handleSubmitValidation}
-          >
-            {isSubmittingValidation ? "Memvalidasi..." : "Submit Validasi"}
-          </button>
-
-
-            <button
-              onClick={() => {
-                setOrder(null);
-                scannedSerialsRef.current = new Map();
-                pendingSerialsRef.current = new Map();
-                setScannedItems([]);
-                setTrackingNumber("");
-                setScannedBarcode("");
-                setCanSubmitByEnter(false);
-                focusTrackingInput();
-              }}
-              className="btn-cancel"
-            >
-              Batal
-            </button>
-          </div>
+                className="btn-cancel"
+              >
+                Batal
+              </button>
+            </div>
           </section>
         </>
       )}

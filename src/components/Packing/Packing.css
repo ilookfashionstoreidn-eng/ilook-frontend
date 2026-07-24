@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 .pk-page {
   width: 100%;
@@ -1147,3 +1147,211 @@ td img.product-image {
     width: 100%;
   }
 }
+
+/* =========================================================
+   MODERN ENHANCEMENTS FOR PACKING VALIDATION UI
+   ========================================================= */
+
+.pk-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #edf2fe;
+  color: #3b82f6;
+  border: 1px solid #bfdbfe;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pk-input-icon-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+}
+
+.pk-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.pk-input-icon-wrap .tracking-input-modern {
+  padding-left: 42px;
+  width: 100%;
+  min-width: unset;
+}
+
+.pk-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.pk-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease-in-out;
+}
+
+.pk-order-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.pk-order-header-banner h2 {
+  margin: 0 0 6px 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pk-order-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pk-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pk-order-status-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pk-order-status-badge.is-ready {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.pk-order-status-badge.is-packed {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.pk-sku-text {
+  font-family: monospace;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.pk-product-title {
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.qty-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.qty-badge.is-done {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.qty-badge.is-pending {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.pk-serial-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pk-serial-input-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pk-serial-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  min-width: 50px;
+  text-transform: uppercase;
+}
+
+.pk-serial-input-item input {
+  width: 140px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.pk-serial-input-item input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.packing-table tr.row-complete td {
+  background: #f8fafc;
+}
+
+.btn-validate.is-ready-submit {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  animation: pk-pulse-ready 1.5s infinite;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes pk-pulse-ready {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
