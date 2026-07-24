@@ -398,15 +398,16 @@ const handleScanBarcode = async (barcodeValue = null) => {
   const readyToSubmit = isOrderReadyForValidation(updatedItems);
   setCanSubmitByEnter(readyToSubmit);
 
-  // Focus ke input barcode berikutnya setelah scan berhasil
+  // Jika semua produk sudah 100% discan, submit validasi secara OTOMATIS!
   setTimeout(() => {
     if (readyToSubmit) {
       submitButtonRef.current?.focus();
+      handleSubmitValidation(updatedItems);
       return;
     }
 
     barcodeInputRef.current?.focus();
-  }, 50);
+  }, 300);
 };
 
   const handleBarcodeInputKeyDown = (e) => {
@@ -424,11 +425,12 @@ const handleScanBarcode = async (barcodeValue = null) => {
     handleScanBarcode(value);
   };
 
-  const handleSubmitValidation = async () => {
-  if (!order || isSubmittingValidation) return;
+  const handleSubmitValidation = async (customItems = null) => {
+    if (!order || isSubmittingValidation) return;
+    const targetItems = customItems || scannedItems;
 
   // Validasi semua item sudah lengkap
-  for (let item of scannedItems) {
+  for (let item of targetItems) {
     // Pastikan semua item sudah di-scan sesuai pesanan
     if (item.scanned_qty < item.ordered_qty) {
       setMessage(`⚠️ SKU ${item.sku} belum lengkap. Dipesan: ${item.ordered_qty}, discan: ${item.scanned_qty}`);
@@ -454,7 +456,7 @@ const handleScanBarcode = async (barcodeValue = null) => {
   }
 
   const serialBySku = new Map();
-  for (let item of scannedItems) {
+  for (let item of targetItems) {
     for (let serial of item.serials) {
       const serialKey = buildSerialKey(item.sku, serial);
       if (!normalizeSerial(serial)) continue;
@@ -481,7 +483,7 @@ const handleScanBarcode = async (barcodeValue = null) => {
 
     // Kirim semua item yang sudah lengkap (harus semua item dari order)
     // Pastikan hanya item dengan scanned_qty > 0 dan serials tidak kosong
-    const filteredItems = scannedItems.filter((item) => item.scanned_qty > 0 && item.serials.length > 0);
+    const filteredItems = targetItems.filter((item) => item.scanned_qty > 0 && item.serials.length > 0);
     
     // Validasi limit jumlah item (untuk performa)
     const MAX_ITEMS_PER_REQUEST = 1000;
