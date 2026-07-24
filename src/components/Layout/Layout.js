@@ -36,7 +36,7 @@ const Layout = () => {
     if (path) {
       setActiveMenu(path);
       // Auto open menus based on path
-      if (['packing', 'packing-random', 'packing-pendingan', 'packing-belum-barcode', 'packing-no-data-ginee', 'packing-inject', 'seri', 'monitoring', 'packing-printed', 'packing-daily-report', 'packing-daily-packing-report', 'logs'].includes(path)) setIsPackingOpen(true);
+      if (['packing', 'packing-random', 'packing-pendingan', 'packing-belum-barcode', 'packing-no-data-ginee', 'packing-inject', 'seri', 'monitoring', 'logs'].includes(path)) setIsPackingOpen(true);
       if (['gudang', 'list-stok-gudang', 'gudang-logs', 'scan-masuk-gudang'].includes(path)) setIsGudangOpen(true);
       if (['list-stok-product', 'riwayat-opname-product', 'riwayat-masuk-product', 'riwayat-keluar-product', 'riwayat-scan-pengiriman'].includes(path)) setIsGudangProdukOpen(true);
       if (['jahit', 'jahit-spk', 'pengiriman', 'jahit-hutang', 'jahit-cashbon', 'jahit-pendapatan', 'jahit-deadline', 'jahit-status', 'kinerja', 'kinerja-detail', 'jahit-riwayat-pendapatan'].includes(path)) setIsCmtOpen(true);
@@ -99,8 +99,6 @@ const Layout = () => {
   }, [handleLogout]);
 
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-
-  // Auto collapse removed for better UX
 
   const hasAccess = (menuKey) => {
     if (role === "super-admin") return true;
@@ -168,18 +166,15 @@ const Layout = () => {
       </button>
 
       {/* Sidebar */}
-      <aside 
-        className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}
-        onMouseEnter={() => {
-          setIsSidebarHovered(true);
-          if (isSidebarCollapsed) setIsSidebarCollapsed(false);
-        }}
+      <aside
+        className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""} ${isSidebarCollapsed && isSidebarHovered ? "peek" : ""}`}
+        onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
-        <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", overflow: 'hidden' }}>
-            <h3 className="sidebar-title" style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              iLOOK <span style={{ color: "var(--brand-500)" }}>.</span>
+        <div className="sidebar-header">
+          <div className="sidebar-header-brand">
+            <h3 className="sidebar-title">
+              iLOOK <span className="sidebar-title-dot">.</span>
             </h3>
           </div>
           <button
@@ -1004,7 +999,7 @@ const Layout = () => {
               <li>
                 <div
                   onClick={togglePackingMenu}
-                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring", "packing-printed", "packing-daily-report", "packing-daily-packing-report"].includes(activeMenu) ? "active" : ""}`}
+                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring"].includes(activeMenu) ? "active" : ""}`}
                 >
                   <PackageOpen className="icon" /> Packing
                   <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <ChevronUp /> : <ChevronDown />}</span>
@@ -1017,7 +1012,7 @@ const Layout = () => {
                     {hasAccess("packing:packing") && (
                       <li>
                         <Link to="packing" className={`dropdown-link ${activeMenu === "packing" ? "active" : ""}`} onClick={() => handleMenuClick("packing")}>
-                          <PackageOpen className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Packing
+                          <PackageOpen className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input Packing
                         </Link>
                       </li>
                     )}
@@ -1074,27 +1069,7 @@ const Layout = () => {
                         </Link>
                       </li>
                     )}
-                    {hasAccess("packing:logs") && (
-                      <li>
-                        <Link to="packing-printed" className={`dropdown-link ${activeMenu === "packing-printed" ? "active" : ""}`} onClick={() => handleMenuClick("packing-printed")}>
-                          <Printer className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Cetak vs Packing
-                        </Link>
-                      </li>
-                    )}
-                    {hasAccess("packing:logs") && (
-                      <li>
-                        <Link to="packing-daily-report" className={`dropdown-link ${activeMenu === "packing-daily-report" ? "active" : ""}`} onClick={() => handleMenuClick("packing-daily-report")}>
-                          <Calendar className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Cetak Harian
-                        </Link>
-                      </li>
-                    )}
-                    {hasAccess("packing:logs") && (
-                      <li>
-                        <Link to="packing-daily-packing-report" className={`dropdown-link ${activeMenu === "packing-daily-packing-report" ? "active" : ""}`} onClick={() => handleMenuClick("packing-daily-packing-report")}>
-                          <PackageOpen className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Packing Harian
-                        </Link>
-                      </li>
-                    )}
+
                     {hasAccess("packing:logs") && (
                       <li>
                         <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
@@ -1124,7 +1099,7 @@ const Layout = () => {
                     {hasAccess("return:return") && (
                       <li>
                         <Link to="return" className={`dropdown-link ${activeMenu === "return" ? "active" : ""}`} onClick={() => handleMenuClick("return")}>
-                          <Undo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Retur
+                          <Undo className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input Retur
                         </Link>
                       </li>
                     )}
@@ -1160,8 +1135,8 @@ const Layout = () => {
               </>
             )}
 
-            <li style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid var(--side-border)" }}>
-              <button className="sidebar-link" onClick={handleLogout} style={{ color: "#ff6b6b" }}>
+            <li className="sidebar-footer-item">
+              <button className="sidebar-link is-logout" onClick={handleLogout}>
                 <LogOut className="icon" /> Logout
               </button>
             </li>

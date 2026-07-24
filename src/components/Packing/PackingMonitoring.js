@@ -4,10 +4,11 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faTruck, faCheckCircle, faTimesCircle, faBoxOpen, faCalendarAlt, faCheckDouble, faPercent, faChartLine, faBolt, faCalendarDay, faSearch, faListUl } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faTruck, faCheckCircle, faTimesCircle, faBoxOpen, faCalendarAlt, faCheckDouble, faPercent, faChartLine, faBolt, faSearch, faListUl } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import { Line, Doughnut, Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
+import '../Cutting/SpkCutting/DashboardCutting.css';
 import './PackingMonitoring.css';
 
 const formatNum = (n) => Number(n || 0).toLocaleString('id-ID');
@@ -35,14 +36,9 @@ const STATUS_FILTERS = [
     { key: 'DELIVERED', label: 'Selesai' },
 ];
 
-const statusBadgeStyle = (status) => {
-    const map = {
-        SHIPPING: { bg: '#dcfce7', color: '#166534' },
-        DELIVERED: { bg: '#f3e8ff', color: '#6b21a8' },
-        CANCELLED: { bg: '#fee2e2', color: '#991b1b' },
-    };
-    const s = map[status] || { bg: '#fef3c7', color: '#92400e' };
-    return { backgroundColor: s.bg, color: s.color, padding: '4px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' };
+const statusPillClass = (status) => {
+    const map = { SHIPPING: 'is-shipping', DELIVERED: 'is-delivered', CANCELLED: 'is-cancelled' };
+    return `pm-status-pill ${map[status] || 'is-other'}`;
 };
 
 const PackingMonitoring = () => {
@@ -377,247 +373,222 @@ const PackingMonitoring = () => {
         }
     }), []);
 
+    const statusCards = [
+        { key: 'ALL', label: 'Total Dipacking', value: summary.total, icon: faBoxOpen, iconClass: 'pm-i-blue', ring: '#2458ce' },
+        { key: 'SHIPPING', label: 'Dalam Perjalanan', value: summary.shipping, icon: faTruck, iconClass: 'pm-i-green', ring: '#16a34a' },
+        { key: 'DELIVERED', label: 'Selesai', value: summary.delivered, icon: faCheckDouble, iconClass: 'pm-i-purple', ring: '#7c3aed' },
+        { key: 'CANCELLED', label: 'Reject / Batal', value: summary.cancelled, icon: faTimesCircle, iconClass: 'pm-i-red', ring: '#e5484d' },
+        { key: 'OTHER', label: 'Menunggu Kurir', value: summary.other, icon: faCheckCircle, iconClass: 'pm-i-amber', ring: '#d97706' },
+    ];
+
+    const insightCards = [
+        { label: 'Tingkat Selesai', val: analytics.completionRate.toFixed(1) + '%', sub: formatNum(summary.delivered) + ' terkirim', icon: faPercent, iconClass: 'pm-i-purple' },
+        { label: 'Tingkat Reject', val: analytics.cancelRate.toFixed(1) + '%', sub: formatNum(summary.cancelled) + ' batal', icon: faTimesCircle, iconClass: 'pm-i-red' },
+        { label: 'Tunggu Kurir', val: analytics.awaitingRate.toFixed(1) + '%', sub: formatNum(summary.other) + ' blm pickup', icon: faBoxOpen, iconClass: 'pm-i-amber' },
+        { label: 'Dlm Perjalanan', val: analytics.inTransitRate.toFixed(1) + '%', sub: formatNum(summary.shipping) + ' otw', icon: faTruck, iconClass: 'pm-i-green' },
+        { label: 'Rata-rata/Hari', val: formatNum(Math.round(analytics.avgPerDay)), sub: analytics.activeDays + ' hari aktif', icon: faChartLine, iconClass: 'pm-i-teal' },
+        { label: 'Hari Tertinggi', val: analytics.peak ? formatNum(analytics.peak.qty) : '-', sub: analytics.peak ? dayjs(analytics.peak.date).format('DD MMM') : 'Belum ada data', icon: faBolt, iconClass: 'pm-i-blue' },
+    ];
+
     return (
-        <div className="ks-page">
+        <div className="ks-page dc-page pm-page">
             <header className="ks-header">
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                    <button className="ks-btn" onClick={() => navigate('/packing')} title="Kembali" style={{ height: '36px', width: '36px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                    <div className="ks-header-id" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>Monitoring Hasil Packing</h1>
-                        <span className="ks-header-sub">
-                            <FontAwesomeIcon icon={faCalendarAlt} className="me-2" style={{ color: '#0ea5e9' }} />
-                            Pantau pergerakan status pesanan secara real-time
-                        </span>
+                <div className="ks-header-id">
+                    <div className="dc-title">
+                        <FontAwesomeIcon icon={faTruck} style={{ color: '#2458ce' }} />
+                        <h1>Monitoring Hasil Packing</h1>
                     </div>
+                    <span className="ks-header-sub">
+                        <FontAwesomeIcon icon={faCalendarAlt} style={{ marginRight: 6, color: '#2458ce' }} />
+                        Pantau pergerakan status pesanan secara real-time
+                    </span>
                 </div>
                 <div className="ks-header-actions">
-                    <div className="ks-toolbar" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>Mulai:</span>
-                        <input 
-                            type="date" 
-                            value={startDate} 
-                            onChange={(e) => setStartDate(e.target.value)} 
-                            style={{ height: '36px', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#fff' }}
-                            title="Tanggal Mulai"
-                        />
-                        <span style={{ color: '#64748b', fontWeight: '600', margin: '0 4px' }}>-</span>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>Sampai:</span>
-                        <input 
-                            type="date" 
-                            value={endDate} 
-                            onChange={(e) => setEndDate(e.target.value)} 
-                            style={{ height: '36px', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#fff' }}
-                            title="Tanggal Akhir"
-                        />
+                    <button className="ks-btn pm-back-btn" onClick={() => navigate('/packing')} title="Kembali">
+                        <FontAwesomeIcon icon={faArrowLeft} />
+                    </button>
+                    <div className="pm-date-range">
+                        <span className="pm-date-label">Mulai</span>
+                        <input type="date" className="pm-date-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} title="Tanggal Mulai" />
+                        <span className="pm-date-sep">–</span>
+                        <span className="pm-date-label">Sampai</span>
+                        <input type="date" className="pm-date-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} title="Tanggal Akhir" />
                     </div>
                 </div>
             </header>
 
-            {loading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
-                    <Spinner animation="border" style={{ color: '#0ea5e9', width: '3rem', height: '3rem' }} />
-                    <span style={{ marginTop: '16px', color: '#64748b', fontWeight: '500' }}>Memuat data monitoring...</span>
-                </div>
-            ) : (
-                <>
-                    <div className="ks-statrail" style={{ marginTop: '16px', padding: '0 20px', gap: '16px' }}>
-                        {[
-                            { key: 'ALL', label: 'Total Dipacking', value: summary.total, icon: faBoxOpen, grad: 'bg-blue-gradient', ring: '#0ea5e9' },
-                            { key: 'SHIPPING', label: 'Dalam Perjalanan', value: summary.shipping, icon: faTruck, grad: 'bg-green-gradient', ring: '#10b981' },
-                            { key: 'DELIVERED', label: 'Selesai', value: summary.delivered, icon: faCheckDouble, grad: 'bg-purple-gradient', ring: '#a855f7' },
-                            { key: 'CANCELLED', label: 'Reject / Batal', value: summary.cancelled, icon: faTimesCircle, grad: 'bg-red-gradient', ring: '#ef4444' },
-                            { key: 'OTHER', label: 'Menunggu Kurir', value: summary.other, icon: faCheckCircle, grad: 'bg-yellow-gradient', ring: '#f59e0b' },
-                        ].map((card) => (
-                            <div
-                                key={card.key}
-                                className="ks-board"
-                                onClick={() => setStatusFilter(card.key)}
-                                style={{ margin: 0, padding: '16px 20px', cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                                    border: statusFilter === card.key ? `2px solid ${card.ring}` : '1px solid #e2e8f0',
-                                    backgroundColor: statusFilter === card.key ? `${card.ring}0d` : '#fff',
-                                    boxShadow: statusFilter === card.key ? `0 4px 12px ${card.ring}22` : '0 1px 2px rgba(15, 23, 42, 0.06)',
-                                    transition: 'all 0.2s ease'
-                                }}
-                                title={`Lacak pesanan: ${card.label}`}
-                            >
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748b' }}>{card.label}</span>
-                                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1 }}>{formatNum(card.value)}</div>
-                                </div>
-                                <div className={`packing-icon-wrapper ${card.grad}`} style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', color: '#fff' }}>
-                                    <FontAwesomeIcon icon={card.icon} size="lg" />
-                                </div>
-                            </div>
-                        ))}
+            <main className="dc-main">
+                {loading ? (
+                    <div className="pm-loading">
+                        <Spinner animation="border" style={{ color: '#2458ce', width: '3rem', height: '3rem' }} />
+                        <span>Memuat data monitoring...</span>
                     </div>
+                ) : (
+                    <>
+                        <section className="pm-status-row">
+                            {statusCards.map((card) => {
+                                const active = statusFilter === card.key;
+                                return (
+                                    <div
+                                        key={card.key}
+                                        className={`dc-card pm-status-card${active ? ' is-active' : ''}`}
+                                        style={{ '--pm-ring': card.ring, '--pm-ring-bg': `${card.ring}0d`, '--pm-ring-shadow': `${card.ring}22` }}
+                                        onClick={() => setStatusFilter(card.key)}
+                                        title={`Lacak pesanan: ${card.label}`}
+                                    >
+                                        <div className="dc-kpi-head">
+                                            <span className={`dc-kpi-icon ${card.iconClass}`}><FontAwesomeIcon icon={card.icon} /></span>
+                                            <span className="dc-kpi-label">{card.label}</span>
+                                        </div>
+                                        <div className="dc-kpi-value">{formatNum(card.value)}</div>
+                                    </div>
+                                );
+                            })}
+                        </section>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', padding: '0 20px', margin: '0 0 16px 0' }}>
-                        {[
-                            { label: 'Tingkat Selesai', val: analytics.completionRate.toFixed(1) + '%', sub: formatNum(summary.delivered) + ' terkirim', icon: faPercent, grad: 'bg-purple-gradient' },
-                            { label: 'Tingkat Reject', val: analytics.cancelRate.toFixed(1) + '%', sub: formatNum(summary.cancelled) + ' batal', icon: faTimesCircle, grad: 'bg-red-gradient' },
-                            { label: 'Tunggu Kurir', val: analytics.awaitingRate.toFixed(1) + '%', sub: formatNum(summary.other) + ' blm pickup', icon: faBoxOpen, grad: 'bg-yellow-gradient' },
-                            { label: 'Dlm Perjalanan', val: analytics.inTransitRate.toFixed(1) + '%', sub: formatNum(summary.shipping) + ' otw', icon: faTruck, grad: 'bg-green-gradient' },
-                            { label: 'Rata-rata/Hari', val: formatNum(Math.round(analytics.avgPerDay)), sub: analytics.activeDays + ' hari aktif', icon: faChartLine, grad: 'bg-teal-gradient' },
-                            { label: 'Hari Tertinggi', val: analytics.peak ? formatNum(analytics.peak.qty) : '-', sub: analytics.peak ? dayjs(analytics.peak.date).format('DD MMM') : 'Belum ada data', icon: faBolt, grad: 'bg-blue-gradient' }
-                        ].map((insight, idx) => (
-                            <div key={idx} className="ks-board" style={{ padding: '16px', display: 'flex', flexDirection: 'row', gap: '14px', alignItems: 'center', borderRadius: '12px', margin: 0 }}>
-                                <div className={`chip-icon ${insight.grad}`} style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
-                                    <FontAwesomeIcon icon={insight.icon} size="lg" />
+                        <section className="pm-insight-row">
+                            {insightCards.map((insight, idx) => (
+                                <div key={idx} className="dc-card pm-insight-card">
+                                    <span className={`dc-kpi-icon ${insight.iconClass}`}><FontAwesomeIcon icon={insight.icon} /></span>
+                                    <div className="pm-insight-body">
+                                        <span className="dc-kpi-label">{insight.label}</span>
+                                        <span className="pm-insight-value">{insight.val}</span>
+                                        <span className="pm-insight-sub">{insight.sub}</span>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{insight.label}</span>
-                                    <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', lineHeight: 1 }}>{insight.val}</span>
-                                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '500' }}>{insight.sub}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </section>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '16px', padding: '16px 20px' }}>
-                        <div className="ks-board" style={{ padding: '16px' }}>
-                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Grafik Produksi Harian</div>
-                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
-                                {!dailyChartData ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-                                        Belum ada data hasil packing
-                                    </div>
-                                ) : (
-                                    <Line data={dailyChartData} options={{...dailyChartOptions, maintainAspectRatio: false}} />
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="ks-board" style={{ padding: '16px' }}>
-                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Distribusi Status</div>
-                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
-                                {!statusDoughnutData ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-                                        Belum ada data status
-                                    </div>
-                                ) : (
-                                    <Doughnut data={statusDoughnutData} options={{...doughnutOptions, maintainAspectRatio: false}} />
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="ks-board" style={{ padding: '16px' }}>
-                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Durasi Menunggu Kurir</div>
-                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
-                                {!awaitingScatterData ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
-                                        Semua pesanan sudah dibawa kurir
-                                    </div>
-                                ) : (
-                                    <Scatter data={awaitingScatterData} options={{...scatterOptions, maintainAspectRatio: false}} />
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="ks-board" style={{ padding: '16px' }}>
-                            <div style={{ marginBottom: '12px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>Durasi Dalam Perjalanan</div>
-                            <div className="packing-chart-wrapper compact" style={{ height: '220px' }}>
-                                {!shippingScatterData ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>
-                                        Belum ada data pengiriman aktif
-                                    </div>
-                                ) : (
-                                    <Scatter data={shippingScatterData} options={{...scatterOptions, maintainAspectRatio: false}} />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="ks-board" style={{ margin: '16px 20px 20px', padding: '16px' }}>
-                        <div className="ks-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: '600', color: '#0f172a', fontSize: '15px' }}>
-                                <FontAwesomeIcon icon={faListUl} className="me-2" style={{ color: '#0ea5e9' }} />
-                                Detail Pesanan untuk Dilacak ({formatNum(filteredOrders.length)})
-                            </span>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <FontAwesomeIcon icon={faSearch} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }} />
-                                    <input
-                                        type="text"
-                                        placeholder="Cari order / resi / pelanggan..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 12px 0 34px', fontSize: '13px', width: '240px', backgroundColor: '#f8fafc', height: '36px', outline: 'none' }}
-                                    />
-                                </div>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    style={{ borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '500', color: '#475569', padding: '0 32px 0 12px', cursor: 'pointer', backgroundColor: '#f8fafc', height: '36px', outline: 'none', appearance: 'none', background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center', backgroundSize: '12px' }}
-                                >
-                                    {STATUS_FILTERS.map((f) => (
-                                        <option key={f.key} value={f.key}>{f.label} ({formatNum(statusCounts[f.key] || 0)})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="ks-grid-scroll" style={{ maxHeight: '420px' }}>
-                            <table className="ks-grid">
-                                <thead>
-                                    <tr>
-                                        {['No. Order', 'No. Resi', 'Kurir', 'Pelanggan', 'Qty', 'Status', 'Tanggal Beli', 'Tanggal Kirim', 'Notes'].map((h, i) => (
-                                            <th key={i} style={{ textAlign: (h === 'Qty' || h === 'Status' || h === 'Kurir') ? 'center' : 'left' }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredOrders.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="9" style={{ textAlign: 'center', padding: '28px', color: '#94a3b8' }}>
-                                                Tidak ada pesanan pada status / pencarian ini.
-                                            </td>
-                                        </tr>
+                        <section className="pm-analytics-row">
+                            <div className="dc-card dc-chart-card">
+                                <div className="dc-card-head"><span className="dc-card-title">Grafik Produksi Harian</span></div>
+                                <div className="dc-chart-area">
+                                    {!dailyChartData ? (
+                                        <div className="dc-empty">Belum ada data hasil packing</div>
                                     ) : (
-                                        filteredOrders.map((order) => (
-                                            <tr key={order.id}>
-                                                <td style={{ fontWeight: '600' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span>{order.order_number || '-'}</span>
-                                                        {order.order_type === 'PRE_ORDER' && (
-                                                            <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', letterSpacing: '0.5px' }}>PO</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td style={{ fontFamily: 'monospace', color: '#334155' }}>{order.tracking_number || '-'}</td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#475569', whiteSpace: 'nowrap' }}>{getCourier(order.tracking_number)}</span>
-                                                </td>
-                                                <td>{order.customer_name || '-'}</td>
-                                                <td style={{ textAlign: 'center', fontWeight: '600', color: '#475569' }}>{order.total_qty}</td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    <span style={statusBadgeStyle(order.status)}>{order.status || '-'}</span>
-                                                </td>
-                                                <td style={{ color: '#64748b' }}>{order.order_date ? dayjs(order.order_date).format('DD MMM YYYY, HH:mm') : '-'}</td>
-                                                <td style={{ color: '#64748b' }}>{order.picked_at ? dayjs(order.picked_at).format('DD MMM YYYY, HH:mm') : '-'}</td>
-                                                <td style={{ color: '#64748b', fontWeight: '500' }}>
-                                                    {order.status === 'SHIPPING' && order.picked_at ? (
-                                                        <span style={{ color: '#ea580c', backgroundColor: '#ffedd5', padding: '4px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
-                                                            <FontAwesomeIcon icon={faTruck} className="me-1" />
-                                                            {dayjs().diff(dayjs(order.picked_at), 'day')} Hari
-                                                        </span>
-                                                    ) : (order.status !== 'SHIPPING' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && order.picked_at) ? (
-                                                        <span style={{ color: '#ca8a04', backgroundColor: '#fef08a', padding: '4px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
-                                                            <FontAwesomeIcon icon={faBoxOpen} className="me-1" />
-                                                            {dayjs().diff(dayjs(order.picked_at), 'day')} Hari
-                                                        </span>
-                                                    ) : '-'}
-                                                </td>
-                                            </tr>
-                                        ))
+                                        <Line data={dailyChartData} options={dailyChartOptions} />
                                     )}
-                                </tbody>
-                            </table>
+                                </div>
+                            </div>
+
+                            <div className="dc-card dc-chart-card">
+                                <div className="dc-card-head"><span className="dc-card-title">Distribusi Status</span></div>
+                                <div className="dc-chart-area">
+                                    {!statusDoughnutData ? (
+                                        <div className="dc-empty">Belum ada data status</div>
+                                    ) : (
+                                        <Doughnut data={statusDoughnutData} options={doughnutOptions} />
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="dc-card dc-chart-card">
+                                <div className="dc-card-head"><span className="dc-card-title">Durasi Menunggu Kurir</span></div>
+                                <div className="dc-chart-area">
+                                    {!awaitingScatterData ? (
+                                        <div className="dc-empty pm-empty-pad">Semua pesanan sudah dibawa kurir</div>
+                                    ) : (
+                                        <Scatter data={awaitingScatterData} options={scatterOptions} />
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="dc-card dc-chart-card">
+                                <div className="dc-card-head"><span className="dc-card-title">Durasi Dalam Perjalanan</span></div>
+                                <div className="dc-chart-area">
+                                    {!shippingScatterData ? (
+                                        <div className="dc-empty pm-empty-pad">Belum ada data pengiriman aktif</div>
+                                    ) : (
+                                        <Scatter data={shippingScatterData} options={scatterOptions} />
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
+                        <div className="dc-card pm-table-card">
+                            <div className="dc-card-head pm-table-head">
+                                <span className="dc-card-title pm-table-title">
+                                    <FontAwesomeIcon icon={faListUl} style={{ color: '#2458ce', marginRight: 6 }} />
+                                    Detail Pesanan untuk Dilacak ({formatNum(filteredOrders.length)})
+                                </span>
+                                <div className="pm-table-tools">
+                                    <div className="pm-search-wrap">
+                                        <FontAwesomeIcon icon={faSearch} className="pm-search-icon" />
+                                        <input
+                                            type="text"
+                                            className="pm-search-input"
+                                            placeholder="Cari order / resi / pelanggan..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    <select
+                                        className="pm-select"
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                    >
+                                        {STATUS_FILTERS.map((f) => (
+                                            <option key={f.key} value={f.key}>{f.label} ({formatNum(statusCounts[f.key] || 0)})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="dc-table-wrap pm-table-scroll">
+                                <table className="dc-grid">
+                                    <thead>
+                                        <tr>
+                                            {['No. Order', 'No. Resi', 'Kurir', 'Pelanggan', 'Qty', 'Status', 'Tanggal Beli', 'Tanggal Kirim', 'Notes'].map((h, i) => (
+                                                <th key={i} style={(h === 'Qty' || h === 'Status' || h === 'Kurir') ? { textAlign: 'center' } : undefined}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredOrders.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="9" className="dc-empty">Tidak ada pesanan pada status / pencarian ini.</td>
+                                            </tr>
+                                        ) : (
+                                            filteredOrders.map((order) => (
+                                                <tr key={order.id}>
+                                                    <td className="pm-order-cell">
+                                                        <span>{order.order_number || '-'}</span>
+                                                        {order.order_type === 'PRE_ORDER' && <span className="pm-po-tag">PO</span>}
+                                                    </td>
+                                                    <td className="pm-mono">{order.tracking_number || '-'}</td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        <span className="pm-tag">{getCourier(order.tracking_number)}</span>
+                                                    </td>
+                                                    <td>{order.customer_name || '-'}</td>
+                                                    <td className="dc-num">{order.total_qty}</td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        <span className={statusPillClass(order.status)}>{order.status || '-'}</span>
+                                                    </td>
+                                                    <td className="pm-muted">{order.order_date ? dayjs(order.order_date).format('DD MMM YYYY, HH:mm') : '-'}</td>
+                                                    <td className="pm-muted">{order.picked_at ? dayjs(order.picked_at).format('DD MMM YYYY, HH:mm') : '-'}</td>
+                                                    <td className="pm-muted">
+                                                        {order.status === 'SHIPPING' && order.picked_at ? (
+                                                            <span className="pm-duration-pill is-shipping">
+                                                                <FontAwesomeIcon icon={faTruck} style={{ marginRight: 5 }} />
+                                                                {dayjs().diff(dayjs(order.picked_at), 'day')} Hari
+                                                            </span>
+                                                        ) : (order.status !== 'SHIPPING' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && order.picked_at) ? (
+                                                            <span className="pm-duration-pill is-waiting">
+                                                                <FontAwesomeIcon icon={faBoxOpen} style={{ marginRight: 5 }} />
+                                                                {dayjs().diff(dayjs(order.picked_at), 'day')} Hari
+                                                            </span>
+                                                        ) : '-'}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </main>
         </div>
     );
 };

@@ -52,18 +52,27 @@
   height: 64px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid var(--side-border);
   flex-shrink: 0;
 }
 
-.sidebar-header h3 {
-  font-size: 14px;
+.sidebar-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.sidebar-title {
+  font-size: 20px;
   font-weight: 800;
   color: var(--text);
-  letter-spacing: 0.06em;
+  letter-spacing: -0.02em;
   margin: 0;
 }
+.sidebar-title-dot { color: var(--brand-500); }
 
 .sidebar-menu {
   flex: 1;
@@ -229,14 +238,14 @@
 }
 
 /* Logout element */
-li[style*="marginTop"] {
-  margin-top: auto !important;
-  padding-top: 12px !important;
-  border-top: 1px solid var(--side-border) !important;
+.sidebar-footer-item {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--side-border);
 }
-.sidebar-link[style*="color: #ff6b6b"] { color: #f87171 !important; }
-.sidebar-link[style*="color: #ff6b6b"] .icon { color: #f87171 !important; opacity: 0.9; }
-.sidebar-link[style*="color: #ff6b6b"]:hover { background-color: rgba(248, 113, 113, 0.12) !important; }
+.sidebar-link.is-logout { color: #f87171; }
+.sidebar-link.is-logout .icon { color: #f87171; opacity: 0.9; }
+.sidebar-link.is-logout:hover { background-color: rgba(248, 113, 113, 0.12); }
 
 /* Mobile Toggle Button */
 .menu-button { display: none; }
@@ -297,17 +306,26 @@ li[style*="marginTop"] {
   color: var(--side-muted);
   padding: 12px 14px 4px 20px;
   letter-spacing: 0.12em;
+  opacity: 0.7;
 }
 .dropdown-menu-grouped li { margin-bottom: 2px; }
 .dropdown-menu-grouped .dropdown-link { padding: 8px 14px 8px 24px; }
 
 /* ===================================
    COLLAPSED SIDEBAR
+   .peek is added on top of .collapsed while the user's mouse is
+   over it, temporarily widening it back out (like VS Code's rail)
+   without touching the persisted collapsed preference. It never
+   auto-uncollapses on its own — only .peek toggles with hover.
    =================================== */
-.sidebar.collapsed { width: 68px; }
-.sidebar.collapsed .sidebar-title { display: none; }
-.sidebar.collapsed .sidebar-header { padding: 0 16px; justify-content: center !important; }
-.sidebar.collapsed .sidebar-header > div { display: none !important; }
+.sidebar.collapsed:not(.peek) { width: 68px; }
+.sidebar.collapsed.peek {
+  width: 260px;
+  box-shadow: 4px 0 24px rgba(2, 6, 23, 0.35);
+}
+.sidebar.collapsed:not(.peek) .sidebar-title { display: none; }
+.sidebar.collapsed:not(.peek) .sidebar-header { padding: 0 16px; justify-content: center; }
+.sidebar.collapsed:not(.peek) .sidebar-header-brand { display: none; }
 
 .sidebar-collapse-btn {
   background: transparent;
@@ -323,21 +341,21 @@ li[style*="marginTop"] {
   transition: background 0.12s, color 0.12s;
 }
 .sidebar-collapse-btn:hover { background: var(--side-hover-bg); color: var(--side-text-hover); }
-.sidebar.collapsed .sidebar-collapse-btn { font-size: 18px; }
+.sidebar.collapsed:not(.peek) .sidebar-collapse-btn { font-size: 18px; }
 
-.sidebar.collapsed .sidebar-link {
+.sidebar.collapsed:not(.peek) .sidebar-link {
   padding: 12px 0;
   justify-content: center;
   font-size: 0;
   color: transparent;
 }
-.sidebar.collapsed .sidebar-link .icon {
+.sidebar.collapsed:not(.peek) .sidebar-link .icon {
   margin-right: 0;
   font-size: 18px;
   color: var(--side-muted);
 }
-.sidebar.collapsed .sidebar-link:hover .icon { color: var(--side-text-hover); }
-.sidebar.collapsed .sidebar-link.active .icon { color: var(--brand-400); }
-.sidebar.collapsed .arrow { display: none; }
-.sidebar.collapsed .dropdown-menu { display: none !important; }
-.sidebar.collapsed .dropdown-group-label { display: none; }
+.sidebar.collapsed:not(.peek) .sidebar-link:hover .icon { color: var(--side-text-hover); }
+.sidebar.collapsed:not(.peek) .sidebar-link.active .icon { color: var(--brand-400); }
+.sidebar.collapsed:not(.peek) .arrow { display: none; }
+.sidebar.collapsed:not(.peek) .dropdown-menu { display: none !important; }
+.sidebar.collapsed:not(.peek) .dropdown-group-label { display: none; }

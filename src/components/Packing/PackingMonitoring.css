@@ -275,3 +275,109 @@
   .packing-metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* ═══════════════════════════════════════════════════════
+   Monitoring Hasil Packing — restyled to match DashboardCutting
+   (.dc-page / .dc-card / .dc-kpi-* tokens). Only page-specific
+   bits live here; shared visuals come from DashboardCutting.css.
+   ═══════════════════════════════════════════════════════ */
+
+.pm-page { --pm-amber: #d97706; }
+
+.pm-back-btn { height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.pm-date-range { display: flex; align-items: center; gap: 8px; }
+.pm-date-label { font-size: 12.5px; color: var(--ks-muted, #9a9aa3); }
+.pm-date-input {
+  height: 34px; border: 1px solid var(--ks-line, #ececef); border-radius: 8px;
+  padding: 0 10px; font-size: 12.5px; color: var(--ks-text, #1c1c1f);
+  background: var(--ks-surface, #fff); outline: none;
+}
+.pm-date-input:focus { border-color: var(--dc-blue); }
+.pm-date-sep { color: var(--ks-muted, #9a9aa3); }
+
+.pm-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 40vh; gap: 14px; color: var(--ks-text-soft, #6b6b73); font-weight: 500; font-size: 13px;
+}
+
+/* icon accent boxes (mirror dc-i-*) */
+.pm-i-blue   { background: #eef3fc; color: var(--dc-blue); }
+.pm-i-green  { background: #effaf3; color: var(--dc-green); }
+.pm-i-purple { background: #f5f0fe; color: var(--dc-purple); }
+.pm-i-red    { background: #fdecec; color: var(--dc-red); }
+.pm-i-amber  { background: #fef3e2; color: var(--pm-amber); }
+.pm-i-teal   { background: #e8f7f5; color: var(--dc-teal); }
+
+/* Row: status filter cards */
+.pm-status-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.pm-status-card { gap: 10px; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+.pm-status-card:hover { border-color: var(--ks-line-strong, #d8dbe1); }
+.pm-status-card.is-active {
+  border-color: var(--pm-ring);
+  background: var(--pm-ring-bg);
+  box-shadow: 0 4px 12px var(--pm-ring-shadow);
+}
+
+/* Row: insight mini-cards */
+.pm-insight-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.pm-insight-card { flex-direction: row; align-items: center; gap: 12px; padding: 14px 16px; }
+.pm-insight-card .dc-kpi-icon { width: 34px; height: 34px; font-size: 15px; }
+.pm-insight-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pm-insight-value { font-size: 17px; font-weight: 700; color: var(--ks-text, #1c1c1f); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.pm-insight-sub { font-size: 11px; color: var(--ks-muted, #9a9aa3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Row: charts */
+.pm-analytics-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 14px; }
+.pm-empty-pad { padding: 0 16px; text-align: center; }
+
+/* Table card */
+.pm-table-card { gap: 0; }
+.pm-table-head { flex-wrap: wrap; }
+.pm-table-title { font-size: 13px; }
+.pm-table-tools { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.pm-search-wrap { position: relative; }
+.pm-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ks-muted, #9a9aa3); font-size: 12px; }
+.pm-search-input {
+  height: 34px; width: 240px; border: 1px solid var(--ks-line, #ececef); border-radius: 8px;
+  padding: 0 12px 0 32px; font-size: 12.5px; background: var(--ks-bg, #fbfbfc); outline: none; color: var(--ks-text, #1c1c1f);
+}
+.pm-search-input:focus { border-color: var(--dc-blue); background: var(--ks-surface, #fff); }
+.pm-select {
+  height: 34px; border: 1px solid var(--ks-line, #ececef); border-radius: 8px;
+  padding: 0 30px 0 12px; font-size: 12.5px; font-weight: 500; color: var(--ks-text-soft, #6b6b73);
+  background: var(--ks-bg, #fbfbfc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a9aa3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 12px; appearance: none; outline: none; cursor: pointer;
+}
+.pm-table-scroll { max-height: 420px; overflow-y: auto; margin-top: 14px; }
+
+.pm-order-cell { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.pm-po-tag { background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+.pm-mono { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--ks-text-soft, #6b6b73); }
+.pm-tag { background: var(--ks-hover, #f6f7f9); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--ks-text-soft, #6b6b73); white-space: nowrap; }
+.pm-muted { color: var(--ks-muted, #9a9aa3); }
+
+.pm-status-pill { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; display: inline-block; }
+.pm-status-pill.is-shipping  { background: #dcfce7; color: #166534; }
+.pm-status-pill.is-delivered { background: #f3e8ff; color: #6b21a8; }
+.pm-status-pill.is-cancelled { background: #fee2e2; color: #991b1b; }
+.pm-status-pill.is-other     { background: #fef3c7; color: #92400e; }
+
+.pm-duration-pill { padding: 4px 8px; border-radius: 6px; white-space: nowrap; font-weight: 500; font-size: 11.5px; }
+.pm-duration-pill.is-shipping { color: #ea580c; background: #ffedd5; }
+.pm-duration-pill.is-waiting  { color: #ca8a04; background: #fef08a; }
+
+@media (max-width: 1280px) {
+  .pm-insight-row { grid-template-columns: repeat(3, 1fr); }
+  .pm-analytics-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1024px) {
+  .pm-status-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .pm-status-row { grid-template-columns: 1fr; }
+  .pm-insight-row { grid-template-columns: 1fr 1fr; }
+  .pm-analytics-row { grid-template-columns: 1fr; }
+  .pm-table-tools { width: 100%; }
+  .pm-search-input { width: 100%; }
+}
+
