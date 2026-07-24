@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut } from "lucide-react";
+import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import API from "../../api";
 
 const Layout = () => {
@@ -180,8 +180,9 @@ const Layout = () => {
           <button
             className="sidebar-collapse-btn"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
-            <Menu />
+            {isSidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
           </button>
         </div>
         <nav className="sidebar-menu">
