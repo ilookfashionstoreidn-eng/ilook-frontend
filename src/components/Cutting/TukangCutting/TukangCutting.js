@@ -327,17 +327,17 @@ const TukangCutting = () => {
             </div>
           )}
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+          <div style={{ overflowX: "auto" }} className="om-table-container">
+            <table className="om-table">
               <thead>
-                <tr style={{ backgroundColor: "var(--ks-surface)", borderBottom: "1px solid var(--ks-line)", color: "var(--ks-text-soft)", textAlign: "left" }}>
-                  <th style={{ padding: "12px 18px", fontWeight: "600", width: "70px" }}>ID</th>
-                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Nama Tukang Cutting</th>
-                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Kontak HP</th>
-                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Bank</th>
-                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>No Rekening</th>
-                  <th style={{ padding: "12px 18px", fontWeight: "600" }}>Alamat</th>
-                  <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: "600", width: "110px" }}>Aksi</th>
+                <tr>
+                  <th style={{ width: "70px" }}>ID</th>
+                  <th>Nama Tukang Cutting</th>
+                  <th>Kontak HP</th>
+                  <th>Bank</th>
+                  <th>No Rekening</th>
+                  <th>Alamat</th>
+                  <th style={{ textAlign: "center", width: "110px" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -347,28 +347,28 @@ const TukangCutting = () => {
                   <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--ks-muted)" }}>Data tidak ditemukan. Coba ubah kata kunci pencarian.</td></tr>
                 ) : (
                   filteredTukangCutting.map((tc) => (
-                    <tr key={tc.id} style={{ borderBottom: "1px solid var(--ks-line)" }}>
-                      <td style={{ padding: "12px 18px" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: "11.5px", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>#{tc.id}</span>
+                    <tr key={tc.id}>
+                      <td>
+                        <span className="om-code-badge">#{tc.id}</span>
                       </td>
-                      <td style={{ padding: "12px 18px", fontWeight: "700", color: "var(--ks-text)" }}>
+                      <td style={{ fontWeight: "700", color: "#0f172a" }}>
                         {tc.nama_tukang_cutting || "-"}
                       </td>
-                      <td style={{ padding: "12px 18px" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--ks-text)" }}>{tc.kontak || "-"}</span>
+                      <td>
+                        <span className="om-code-badge" style={{ backgroundColor: "#f8fafc" }}>{tc.kontak || "-"}</span>
                       </td>
-                      <td style={{ padding: "12px 18px" }}>
-                        <span className="dc-track-badge is-ontrack" style={{ padding: "3px 8px", fontSize: "11px" }}>
+                      <td>
+                        <span className="om-status-badge status-ready">
                           {tc.bank || "-"}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 18px" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--ks-text)" }}>{tc.no_rekening || "-"}</span>
+                      <td>
+                        <span className="om-code-badge" style={{ backgroundColor: "#f8fafc" }}>{tc.no_rekening || "-"}</span>
                       </td>
-                      <td style={{ padding: "12px 18px", color: "var(--ks-text-soft)" }}>
+                      <td style={{ color: "#475569" }}>
                         {tc.alamat || "-"}
                       </td>
-                      <td style={{ padding: "12px 18px", textAlign: "center" }}>
+                      <td style={{ textAlign: "center" }}>
                         <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                           <button
                             type="button"
@@ -377,7 +377,7 @@ const TukangCutting = () => {
                             onClick={() => openEditModal(tc)}
                             title="Edit Data"
                           >
-                            <FiEdit2 />
+                            <FiEdit2 /> Edit
                           </button>
                           <button
                             type="button"
