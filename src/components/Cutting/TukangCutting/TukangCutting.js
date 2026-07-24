@@ -221,7 +221,6 @@ const TukangCutting = () => {
           <div className="dc-title">
             <FiScissors style={{ color: "var(--dc-blue)" }} />
             <h1>Master Tukang Cutting</h1>
-            <span className="dc-track-badge is-ontrack" style={{ padding: "4px 10px", fontSize: "11px" }}>Cutting Management</span>
           </div>
           <span className="ks-header-sub">Manajemen data mitra tukang cutting & akun pembayaran operasional produksi.</span>
         </div>
