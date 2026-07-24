@@ -174,7 +174,11 @@ const Layout = () => {
         <div className="sidebar-header">
           <div className="sidebar-header-brand">
             <h3 className="sidebar-title">
-              iLOOK <span className="sidebar-title-dot">.</span>
+              {(!isSidebarCollapsed || isSidebarHovered) ? (
+                <>iLOOK <span className="sidebar-title-dot">.</span></>
+              ) : (
+                <>iL<span className="sidebar-title-dot">.</span></>
+              )}
             </h3>
           </div>
           <button
