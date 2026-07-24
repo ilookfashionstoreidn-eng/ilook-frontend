@@ -224,14 +224,6 @@ const TukangCutting = () => {
           </div>
           <span className="ks-header-sub">Manajemen data mitra tukang cutting & akun pembayaran operasional produksi.</span>
         </div>
-        <div className="ks-header-actions">
-          <button className="ks-btn ks-btn-outline" onClick={fetchTukangCutting} disabled={loading}>
-            <FiRefreshCw className={loading ? "spinning" : ""} /> <span>Segarkan</span>
-          </button>
-          <button className="ks-btn is-primary" onClick={() => { resetForm(); setShowForm(true); }}>
-            <FaPlus /> <span>Tambah Mitra</span>
-          </button>
-        </div>
       </header>
 
       <main className="dc-main">
@@ -294,8 +286,8 @@ const TukangCutting = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <div style={{ position: "relative", minWidth: "240px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ position: "relative", minWidth: "220px" }}>
                 <FaSearch style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--ks-muted)", fontSize: "12px" }} />
                 <input
                   type="text"
@@ -313,6 +305,14 @@ const TukangCutting = () => {
                   </button>
                 )}
               </div>
+
+              <button className="ks-btn ks-btn-outline" onClick={fetchTukangCutting} disabled={loading} style={{ height: "34px", padding: "0 12px", fontSize: "12px" }}>
+                <FiRefreshCw className={loading ? "spinning" : ""} /> <span>Segarkan</span>
+              </button>
+
+              <button className="ks-btn is-primary" onClick={() => { resetForm(); setShowForm(true); }} style={{ height: "34px", padding: "0 14px", fontSize: "12px" }}>
+                <FaPlus /> <span>Tambah Mitra</span>
+              </button>
             </div>
           </div>
 
