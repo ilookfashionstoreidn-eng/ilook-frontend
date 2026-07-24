@@ -4,7 +4,7 @@ import API from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaSearch, FaTimes, FaPlus, FaEdit, FaTrash, FaUsers, FaChevronDown, FaChevronRight, FaCheck,
-  FaTachometerAlt, FaFileInvoice, FaShieldAlt, FaFlask, FaGem, FaBox, FaWarehouse, FaCut, FaTools, FaTshirt, FaBoxes, FaBoxOpen, FaUndo, FaMapMarkerAlt
+  FaTachometerAlt, FaFileInvoice, FaShieldAlt, FaFlask, FaGem, FaBox, FaWarehouse, FaCut, FaTools, FaTshirt, FaBoxes, FaBoxOpen, FaUndo, FaMapMarkerAlt, FaHeadset
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -170,6 +170,14 @@ const AVAILABLE_MENUS = [
     submenus: [
       { key: "return:return", label: "Return" },
       { key: "return:logs", label: "Logs Return" }
+    ]
+  },
+  {
+    key: "cs",
+    label: "Customer Service",
+    icon: FaHeadset,
+    submenus: [
+      { key: "cs:monitoring_notes", label: "Monitoring Notes" }
     ]
   }
 ];

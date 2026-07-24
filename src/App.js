@@ -294,7 +294,7 @@ const App = () => {
           <Route path="blank" element={<Blank />} />
           <Route path="blank2" element={<Blank2 />} />
           <Route path="customer-service">
-            <Route path="monitoring-notes" element={<CustomerService />} />
+            <Route path="monitoring-notes" element={<MenuProtectedRoute menuKey="cs:monitoring_notes"><CustomerService /></MenuProtectedRoute>} />
           </Route>
         </Route>
       </Routes>

@@ -45,6 +45,7 @@ const Layout = () => {
       if (['tukang-jasa', 'spk-jasa', 'hasil-jasa', 'cashbon-jasa', 'hutang-jasa', 'pendapatan-jasa', 'history-pendapatan-jasa'].includes(path)) setIsJasaOpen(true);
       if (['qc-lolos', 'qc-reject'].includes(path)) setIsQcOpen(true);
       if (['return', 'return-logs'].includes(path)) setIsReturnOpen(true);
+      if (['customer-service/monitoring-notes'].includes(path)) setIsCsOpen(true);
     } else {
       setActiveMenu('home');
     }
@@ -1118,25 +1119,31 @@ const Layout = () => {
               </li>
             )}
 
-            <li className="sidebar-group-label">Support</li>
-            <li>
-              <div
-                onClick={() => setIsCsOpen(!isCsOpen)}
-                className={`sidebar-link dropdown-toggle ${["customer-service", "cs-monitoring-notes"].includes(activeMenu) ? "active" : ""}`}
-              >
-                <Headphones className="icon" /> Customer Service
-                <span className={`arrow ${isCsOpen ? "open" : ""}`}>{isCsOpen ? <ChevronUp /> : <ChevronDown />}</span>
-              </div>
-              {isCsOpen && (
-                <ul className="dropdown-menu show dropdown-menu-grouped">
-                  <li>
-                    <Link to="customer-service/monitoring-notes" className={`dropdown-link ${activeMenu === "cs-monitoring-notes" ? "active" : ""}`} onClick={() => handleMenuClick("cs-monitoring-notes")}>
-                      Monitoring Notes
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
+            {hasAccess("cs") && (
+              <li className="sidebar-group-label">Support</li>
+            )}
+            {hasAccess("cs") && (
+              <li>
+                <div
+                  onClick={() => setIsCsOpen(!isCsOpen)}
+                  className={`sidebar-link dropdown-toggle ${activeMenu === "customer-service/monitoring-notes" ? "active" : ""}`}
+                >
+                  <Headphones className="icon" /> Customer Service
+                  <span className={`arrow ${isCsOpen ? "open" : ""}`}>{isCsOpen ? <ChevronUp /> : <ChevronDown />}</span>
+                </div>
+                {isCsOpen && (
+                  <ul className="dropdown-menu show dropdown-menu-grouped">
+                    {hasAccess("cs:monitoring_notes") && (
+                      <li>
+                        <Link to="customer-service/monitoring-notes" className={`dropdown-link ${activeMenu === "customer-service/monitoring-notes" ? "active" : ""}`} onClick={() => handleMenuClick("customer-service/monitoring-notes")}>
+                          Monitoring Notes
+                        </Link>
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </li>
+            )}
 
             {role === "super-admin" && (
               <>
