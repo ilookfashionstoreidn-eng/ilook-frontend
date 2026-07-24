@@ -16,11 +16,57 @@ const TYPE_OPTIONS = [
 
 const nf = (value) => Number(value || 0).toLocaleString("id-ID");
 
+const formatDateTime = (value) => (value ? dayjs(value).format("DD MMM YYYY : HH:mm") : "-");
+
+const DATE_REQUEST_KEYWORDS = [
+  "tanggal", "tgl", "besok", "lusa", "hari ini", "minggu depan", "bulan depan",
+  "senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu",
+  "januari", "februari", "maret", "april", "mei", "juni", "juli",
+  "agustus", "september", "oktober", "november", "desember",
+  "paling lambat", "sebelum jam", "sebelum tanggal", "deadline", "sampai jam", "sampai tanggal",
+];
+const DATE_REQUEST_PATTERN = /\b\d{1,2}\s*[/-]\s*\d{1,2}\b/;
+
+const COLOR_REQUEST_KEYWORDS = [
+  "warna", "warnanya", "hitam", "putih", "merah", "biru", "hijau", "kuning",
+  "coklat", "cokelat", "abu-abu", "abu2", "pink", "ungu", "oren", "orange",
+  "navy", "cream", "krem", "silver", "emas", "gold", "maroon", "tosca", "toska",
+  "salem", "dusty", "baby blue", "babyblue", "army", "olive", "milo", "mocca",
+];
+
+const classifyBuyerMessage = (message) => {
+  if (!message || !message.trim()) return [];
+  const text = message.toLowerCase();
+  const tags = [];
+  if (DATE_REQUEST_KEYWORDS.some((k) => text.includes(k)) || DATE_REQUEST_PATTERN.test(text)) {
+    tags.push("Request Tanggal");
+  }
+  if (COLOR_REQUEST_KEYWORDS.some((k) => text.includes(k))) {
+    tags.push("Request Warna");
+  }
+  if (tags.length === 0) tags.push("Catatan Biasa");
+  return tags;
+};
+
+const CLASSIFICATION_CLASS = {
+  "Request Tanggal": "is-date",
+  "Request Warna": "is-color",
+  "Catatan Biasa": "is-general",
+};
+
+const CLASSIFY_FILTER_OPTIONS = [
+  { value: "all", label: "Semua Klasifikasi" },
+  { value: "Request Tanggal", label: "Request Tanggal" },
+  { value: "Request Warna", label: "Request Warna" },
+  { value: "Catatan Biasa", label: "Catatan Biasa" },
+];
+
 const CustomerService = () => {
   const [startDate, setStartDate] = useState(dayjs().startOf("month").format("YYYY-MM-DD"));
   const [endDate, setEndDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [search, setSearch] = useState("");
   const [type, setType] = useState("all");
+  const [classifyFilter, setClassifyFilter] = useState("all");
   const [perPage, setPerPage] = useState(25);
 
   const [notes, setNotes] = useState([]);
@@ -77,6 +123,10 @@ const CustomerService = () => {
     fetchNotes(1, next);
   };
 
+  const visibleNotes = classifyFilter === "all"
+    ? notes
+    : notes.filter((note) => classifyBuyerMessage(note.buyer_message).includes(classifyFilter));
+
   return (
     <div className="ks-page dc-page csn-page">
       <header className="ks-header">
@@ -128,6 +178,12 @@ const CustomerService = () => {
                 {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+            <div className="csn-filter-group">
+              <span className="csn-filter-label">Klasifikasi Pesan</span>
+              <select className="csn-input csn-select" value={classifyFilter} onChange={(e) => setClassifyFilter(e.target.value)}>
+                {CLASSIFY_FILTER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
             <button className="ks-btn is-primary csn-filter-btn" onClick={handleFilter} disabled={loading}>
               Tampilkan
             </button>
@@ -170,48 +226,87 @@ const CustomerService = () => {
         </section>
 
         <section className="dc-card csn-table-card">
-          <div className="dc-table-wrap">
-            <table className="dc-grid">
-              <thead>
-                <tr>
-                  <th>No. Order</th>
-                  <th>No. Resi</th>
-                  <th>Pelanggan</th>
-                  <th>Platform</th>
-                  <th style={{ textAlign: "center" }}>Status</th>
-                  <th>Tanggal Order</th>
-                  <th>Pesan Pembeli</th>
-                  <th>Catatan Penjual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={8} className="dc-empty">Memuat catatan...</td></tr>
-                ) : notes.length === 0 ? (
-                  <tr><td colSpan={8} className="dc-empty">Tidak ada catatan pelanggan pada filter ini.</td></tr>
-                ) : (
-                  notes.map((note) => (
-                    <tr key={note.id}>
-                      <td className="csn-strong">{note.order_number || "-"}</td>
-                      <td className="csn-mono">{note.tracking_number || "-"}</td>
-                      <td>{note.customer_name || "-"}</td>
-                      <td>{note.platform || "-"}</td>
-                      <td style={{ textAlign: "center" }}>
-                        <span className="csn-tag">{note.status || "-"}</span>
-                      </td>
-                      <td className="csn-muted">{note.order_date ? dayjs(note.order_date).format("DD MMM YYYY") : "-"}</td>
-                      <td className="csn-note-cell">
-                        {note.buyer_message ? <span title={note.buyer_message}>{note.buyer_message}</span> : <span className="csn-muted">—</span>}
-                      </td>
-                      <td className="csn-note-cell">
-                        {note.seller_memo ? <span title={note.seller_memo}>{note.seller_memo}</span> : <span className="csn-muted">—</span>}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <div className="dc-empty">Memuat catatan...</div>
+          ) : notes.length === 0 ? (
+            <div className="dc-empty">Tidak ada catatan pelanggan pada filter ini.</div>
+          ) : visibleNotes.length === 0 ? (
+            <div className="dc-empty">Tidak ada pesan dengan klasifikasi "{classifyFilter}" pada halaman ini.</div>
+          ) : (
+            <div className="csn-order-list">
+              {visibleNotes.map((note) => (
+                <article key={note.id} className="csn-order-card">
+                  <div className="csn-order-layer csn-layer-1">
+                    <div className="csn-field csn-field-order">
+                      <span className="csn-field-label">Order</span>
+                      <span className="csn-field-value csn-strong">{note.order_number || "-"}</span>
+                    </div>
+                    <div className="csn-field">
+                      <span className="csn-field-label">Pelanggan</span>
+                      <span className="csn-field-value">{note.customer_name || "-"}</span>
+                    </div>
+                    <div className="csn-field">
+                      <span className="csn-field-label">Resi</span>
+                      <span className="csn-field-value csn-mono">{note.tracking_number || "-"}</span>
+                    </div>
+                    <div className="csn-field">
+                      <span className="csn-field-label">Status</span>
+                      <span className="csn-tag">{note.status || "-"}</span>
+                    </div>
+                    <div className="csn-field">
+                      <span className="csn-field-label">Platform</span>
+                      <span className="csn-field-value">{note.platform || "-"}</span>
+                    </div>
+                  </div>
+
+                  <div className="csn-order-layer csn-layer-2">
+                    <div className="csn-field">
+                      <span className="csn-field-label">Tanggal Order</span>
+                      <span className="csn-field-value csn-muted">{formatDateTime(note.order_date)}</span>
+                    </div>
+                    <div className="csn-field">
+                      <span className="csn-field-label">Batas Kirim</span>
+                      <span className="csn-field-value csn-muted">{formatDateTime(note.shipping_deadline)}</span>
+                    </div>
+                    <div className="csn-field csn-field-product">
+                      <span className="csn-field-label">Product</span>
+                      {note.items && note.items.length > 0 ? (
+                        <ul className="csn-product-list">
+                          {note.items.map((item, idx) => (
+                            <li key={idx}>
+                              {item.product_name || item.sku || "-"}
+                              {item.quantity ? <span className="csn-qty"> ×{item.quantity}</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="csn-field-value csn-muted">—</span>
+                      )}
+                    </div>
+                    <div className="csn-field csn-field-note">
+                      <span className="csn-field-label">Pesan Pembeli</span>
+                      {note.buyer_message ? (
+                        <>
+                          <div className="csn-classify-row">
+                            {classifyBuyerMessage(note.buyer_message).map((tag) => (
+                              <span key={tag} className={`csn-classify-tag ${CLASSIFICATION_CLASS[tag] || "is-general"}`}>{tag}</span>
+                            ))}
+                          </div>
+                          <span className="csn-field-value">{note.buyer_message}</span>
+                        </>
+                      ) : (
+                        <span className="csn-field-value csn-muted">—</span>
+                      )}
+                    </div>
+                    <div className="csn-field csn-field-note">
+                      <span className="csn-field-label">Catatan Penjual</span>
+                      <span className="csn-field-value">{note.seller_memo || <span className="csn-muted">—</span>}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
 
           <div className="csn-pagination">
             <div className="csn-pagination-size">
