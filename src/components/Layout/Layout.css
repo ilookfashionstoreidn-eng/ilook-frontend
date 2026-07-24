@@ -324,24 +324,7 @@
   box-shadow: 4px 0 24px rgba(2, 6, 23, 0.35);
 }
 .sidebar.collapsed:not(.peek) .sidebar-header { padding: 0 8px; justify-content: center; cursor: pointer; }
-.sidebar.collapsed:not(.peek) .sidebar-title { font-size: 14px; letter-spacing: 0; }
-
-
-.sidebar-collapse-btn {
-  background: transparent;
-  border: none;
-  color: var(--side-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  padding: 6px;
-  border-radius: var(--r-sm);
-  transition: background 0.12s, color 0.12s;
-}
-.sidebar-collapse-btn:hover { background: var(--side-hover-bg); color: var(--side-text-hover); }
-.sidebar.collapsed:not(.peek) .sidebar-collapse-btn { font-size: 18px; }
+.sidebar-brand-icon { color: var(--brand-500); flex-shrink: 0; }
 
 .sidebar.collapsed:not(.peek) .sidebar-link {
   padding: 12px 0;
