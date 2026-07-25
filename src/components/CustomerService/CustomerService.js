@@ -183,6 +183,8 @@ const CustomerService = () => {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkDone, setBulkDone] = useState(false);
 
+  const [showFilters, setShowFilters] = useState(true);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [visibleCols, setVisibleCols] = useState(() => {
     try {
@@ -431,6 +433,9 @@ const CustomerService = () => {
             </div>
             <div className="csn-toolbar-spacer" />
             {bulkDone && <span className="csn-tag is-paid"><FaCheck size={10} /> Follow-up tersimpan</span>}
+            <button className="ks-btn" onClick={() => setShowFilters(f => !f)} title="Sembunyikan/Tampilkan Filter">
+              <FaLayerGroup size={12} /> {showFilters ? "Sembunyikan Filter" : "Tampilkan Filter"}
+            </button>
             {!someSelected && (
               <>
                 <button className="ks-btn" disabled={filtered.length === 0} onClick={exportCsv} title="Unduh baris yang sedang tampil sebagai CSV">
@@ -468,34 +473,36 @@ const CustomerService = () => {
             </div>
           )}
 
-          <div className="csn-chip-filters">
-            <div className="csn-chip-row">
-              <span className="csn-chip-label">Status Kirim</span>
-              <div className="csn-chip-group">
-                <button onClick={() => setShip("ALL")} className={`csn-chip ${ship === "ALL" ? "is-active" : ""}`}>Semua ({nf(shipCounts.ALL)})</button>
-                <button onClick={() => setShip("BELUM")} className={`csn-chip ${ship === "BELUM" ? "is-active" : ""}`}>Belum Terkirim ({nf(shipCounts.BELUM)})</button>
-                <button onClick={() => setShip("SUDAH")} className={`csn-chip ${ship === "SUDAH" ? "is-active" : ""}`}>Terkirim ({nf(shipCounts.SUDAH)})</button>
+          {showFilters && (
+            <div className="csn-chip-filters">
+              <div className="csn-chip-row">
+                <span className="csn-chip-label">Status Kirim</span>
+                <div className="csn-chip-group">
+                  <button onClick={() => setShip("ALL")} className={`csn-chip ${ship === "ALL" ? "is-active" : ""}`}>Semua ({nf(shipCounts.ALL)})</button>
+                  <button onClick={() => setShip("BELUM")} className={`csn-chip ${ship === "BELUM" ? "is-active" : ""}`}>Belum Terkirim ({nf(shipCounts.BELUM)})</button>
+                  <button onClick={() => setShip("SUDAH")} className={`csn-chip ${ship === "SUDAH" ? "is-active" : ""}`}>Terkirim ({nf(shipCounts.SUDAH)})</button>
+                </div>
+              </div>
+              <div className="csn-chip-row">
+                <span className="csn-chip-label">Follow-up CS</span>
+                <div className="csn-chip-group">
+                  <button onClick={() => setFu("ALL")} className={`csn-chip ${fu === "ALL" ? "is-active" : ""}`}>Semua ({nf(fuCounts.ALL)})</button>
+                  <button onClick={() => setFu("PENDING")} className={`csn-chip ${fu === "PENDING" ? "is-active" : ""}`}>Belum di-follow-up ({nf(fuCounts.PENDING)})</button>
+                  <button onClick={() => setFu("DONE")} className={`csn-chip ${fu === "DONE" ? "is-active" : ""}`}>Sudah di-follow-up ({nf(fuCounts.DONE)})</button>
+                </div>
+              </div>
+              <div className="csn-chip-row">
+                <span className="csn-chip-label">Kategori</span>
+                <div className="csn-chip-group">
+                  {availableTabs.map((t) => (
+                    <button key={t} onClick={() => setTab(t)} className={`csn-chip ${tab === t ? "is-active" : ""}`}>
+                      {tabLabel(t)} ({nf(getCount(t))})
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="csn-chip-row">
-              <span className="csn-chip-label">Follow-up CS</span>
-              <div className="csn-chip-group">
-                <button onClick={() => setFu("ALL")} className={`csn-chip ${fu === "ALL" ? "is-active" : ""}`}>Semua ({nf(fuCounts.ALL)})</button>
-                <button onClick={() => setFu("PENDING")} className={`csn-chip ${fu === "PENDING" ? "is-active" : ""}`}>Belum di-follow-up ({nf(fuCounts.PENDING)})</button>
-                <button onClick={() => setFu("DONE")} className={`csn-chip ${fu === "DONE" ? "is-active" : ""}`}>Sudah di-follow-up ({nf(fuCounts.DONE)})</button>
-              </div>
-            </div>
-            <div className="csn-chip-row">
-              <span className="csn-chip-label">Kategori</span>
-              <div className="csn-chip-group">
-                {availableTabs.map((t) => (
-                  <button key={t} onClick={() => setTab(t)} className={`csn-chip ${tab === t ? "is-active" : ""}`}>
-                    {tabLabel(t)} ({nf(getCount(t))})
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
         </section>
 
         <section className="dc-kpi-row">
