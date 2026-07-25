@@ -208,11 +208,35 @@ const CustomerService = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get("/orders/customer-notes", {
-        params: { start_date: startDate, end_date: endDate, type: "all", per_page: 10000, page: 1 },
-      });
-      setRows(Array.isArray(res.data.data) ? res.data.data : []);
-      setSummary(res.data.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 });
+      
+      const params = { start_date: startDate, end_date: endDate, type: "all", per_page: 100 };
+      const firstRes = await API.get("/orders/customer-notes", { params: { ...params, page: 1 } });
+      
+      let allData = Array.isArray(firstRes.data.data) ? firstRes.data.data : [];
+      const summary = firstRes.data.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 };
+      const lastPage = firstRes.data.last_page || 1;
+      
+      if (lastPage > 1) {
+        const promises = [];
+        for (let i = 2; i <= lastPage; i++) {
+          promises.push(() => API.get("/orders/customer-notes", { params: { ...params, page: i } }));
+        }
+        
+        // Proses dalam batch of 5 agar tidak membebani server
+        const chunkSize = 5;
+        for (let i = 0; i < promises.length; i += chunkSize) {
+          const chunk = promises.slice(i, i + chunkSize).map(fn => fn());
+          const results = await Promise.all(chunk);
+          results.forEach(res => {
+            if (Array.isArray(res.data.data)) {
+              allData = allData.concat(res.data.data);
+            }
+          });
+        }
+      }
+
+      setRows(allData);
+      setSummary(summary);
     } catch (err) {
       setRows([]);
       setError(err?.response?.data?.message || "Gagal memuat catatan pelanggan");
