@@ -7,7 +7,13 @@
   --erp-sidebar-bg: var(--side-bg);
   --erp-sidebar-border: var(--side-border);
   --erp-hover-bg: rgba(148, 163, 184, 0.08);
-  --erp-active-bg: var(--side-active-bg);
+  /* Sidebar active/accent colors — overridden here to the blue (#2458ce)
+     used by the ks-/dc- pages instead of theme.css's green Emerald brand,
+     so the "active" highlight matches the accent color in the page content. */
+  --erp-active-bg: #eef3fc;
+  --erp-active-text: #2458ce;
+  --erp-active-icon: #4f7fe0;
+  --erp-brand-dot: #2458ce;
 }
 
 /* ─── Layout Shell ────────────────────────────────────── */
@@ -59,7 +65,41 @@
   margin: 0;
   white-space: nowrap;
 }
-.sidebar-title-dot { color: var(--brand-500); }
+.sidebar-title-dot { color: var(--erp-brand-dot); }
+
+/* ─── Search ─────────────────────────────────────────── */
+.sidebar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 10px 8px 4px;
+  flex-shrink: 0;
+}
+.sidebar-search-icon {
+  position: absolute;
+  left: 9px;
+  color: var(--side-muted);
+  pointer-events: none;
+}
+.sidebar-search input {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px 0 28px;
+  border: 1px solid var(--side-border);
+  border-radius: 7px;
+  background: var(--side-bg-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.13s ease, box-shadow 0.13s ease;
+}
+.sidebar-search input::placeholder { color: var(--side-muted); }
+.sidebar-search input:focus {
+  border-color: var(--erp-active-text);
+  background: var(--side-bg);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.12);
+}
 
 /* ─── Menu ───────────────────────────────────────────── */
 .sidebar-menu {
@@ -136,8 +176,8 @@
 }
 
 .sidebar-link.active {
-  background: var(--side-active-bg);
-  color: var(--side-active-text);
+  background: var(--erp-active-bg);
+  color: var(--erp-active-text);
   font-weight: 600;
 }
 
@@ -150,7 +190,7 @@
   transition: color 0.12s;
 }
 .sidebar-link:hover .icon { color: var(--side-text); }
-.sidebar-link.active .icon { color: var(--brand-400); }
+.sidebar-link.active .icon { color: var(--erp-active-icon); }
 
 /* ─── Arrow ──────────────────────────────────────────── */
 .dropdown-toggle { justify-content: space-between; }
@@ -214,15 +254,25 @@
 }
 .dropdown-link:hover::before { width: 2px; background: var(--side-muted); }
 .dropdown-link.active {
-  color: var(--brand-500);
+  color: var(--erp-active-text);
   font-weight: 600;
-  background: var(--side-active-bg);
+  background: var(--erp-active-bg);
 }
-.dropdown-link.active::before { width: 2px; background: var(--brand-500); }
+.dropdown-link.active::before { width: 2px; background: var(--erp-active-text); }
 
-/* Hide icons in sub-menus */
-.dropdown-link .icon { display: none; }
-.dropdown-link svg { display: none !important; }
+/* Sub-menu icons — every dropdown-link already renders one in JSX, they were
+   just suppressed here. Showing them helps scanning the denser groups
+   (Packing now has 9 items across 2 sub-sections). */
+.dropdown-link .icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  color: var(--side-muted);
+  transition: color 0.12s;
+}
+.dropdown-link:hover .icon { color: var(--side-text-hover); }
+.dropdown-link.active .icon { color: var(--erp-active-icon); }
 
 /* Grouped sub-menu */
 .dropdown-menu-grouped li { margin-bottom: 1px; }
@@ -230,8 +280,8 @@
 
 /* ─── Footer / Logout ─────────────────────────────────── */
 .sidebar-footer-item {
-  margin-top: auto;
-  padding-top: 10px;
+  flex-shrink: 0;
+  padding: 10px 8px;
   border-top: 1px solid var(--side-border);
 }
 .sidebar-link.is-logout { color: #f87171; }
@@ -324,7 +374,7 @@
   margin: 0;
 }
 .sidebar.collapsed:not(.peek) .sidebar-link:hover .icon { color: var(--side-text-hover); }
-.sidebar.collapsed:not(.peek) .sidebar-link.active .icon { color: var(--brand-400); }
+.sidebar.collapsed:not(.peek) .sidebar-link.active .icon { color: var(--erp-active-icon); }
 .sidebar.collapsed:not(.peek) .arrow { display: none; }
 .sidebar.collapsed:not(.peek) .dropdown-menu { display: none !important; }
 .sidebar-brand-icon { color: var(--brand-500); flex-shrink: 0; }

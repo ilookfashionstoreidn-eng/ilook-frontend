@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Layout.css";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, Headphones } from "lucide-react";
+import { X, Menu, Home, TrendingUp, ClipboardCheck, ChevronUp, ChevronDown, CheckSquare, Layers, User, FileText, Package, ShoppingCart, ShoppingBag, Warehouse, Building, List, Undo, Barcode, History, Banknote, Scissors, CreditCard, PenTool, Shirt, Calendar, PackageOpen, Clock, QrCode, AlertTriangle, Printer, Key, LogOut, Headphones, Search } from "lucide-react";
 import API from "../../api";
 
 const Layout = () => {
@@ -23,10 +23,76 @@ const Layout = () => {
   const [isQcOpen, setIsQcOpen] = useState(false);
   const [isSampleOpen, setIsSampleOpen] = useState(false);
   const [isCsOpen, setIsCsOpen] = useState(false);
+  const [menuSearch, setMenuSearch] = useState("");
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "light");
     localStorage.setItem("theme", "light");
   }, []);
+
+  // Live menu search. Every dropdown's <ul> is only *mounted* while its
+  // isXOpen flag is true (see `{isPackingOpen && (<ul>...)}` etc. below) —
+  // it isn't just CSS-hidden — so a closed group's links don't exist in the
+  // DOM at all yet. That means search has to force every group open first
+  // (effect A, remembering prior state to restore on clear) and only then
+  // hide/show individual links by text match once they've actually mounted
+  // (effect B, re-run whenever an open flag changes too).
+  const prevMenuOpenRef = useRef(null);
+  useEffect(() => {
+    const setters = [
+      setIsCmtOpen, setIsCuttingOpen, setIsJasaOpen, setIsHppOpen, setIsPackingOpen, setIsReturnOpen,
+      setIsGudangOpen, setIsGudangProdukOpen, setIsAksesorisOpen, setIsQcOpen, setIsSampleOpen, setIsCsOpen,
+    ];
+    if (menuSearch.trim()) {
+      if (!prevMenuOpenRef.current) {
+        prevMenuOpenRef.current = [
+          isCmtOpen, isCuttingOpen, isJasaOpen, isHppOpen, isPackingOpen, isReturnOpen,
+          isGudangOpen, isGudangProdukOpen, isAksesorisOpen, isQcOpen, isSampleOpen, isCsOpen,
+        ];
+      }
+      setters.forEach((setOpen) => setOpen(true));
+    } else if (prevMenuOpenRef.current) {
+      setters.forEach((setOpen, i) => setOpen(prevMenuOpenRef.current[i]));
+      prevMenuOpenRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuSearch]);
+
+  useEffect(() => {
+    const menuEl = document.querySelector(".sidebar-menu");
+    if (!menuEl) return;
+    const query = menuSearch.trim().toLowerCase();
+    const links = menuEl.querySelectorAll("a.sidebar-link, a.dropdown-link");
+    const groupLabels = menuEl.querySelectorAll(".dropdown-group-label");
+
+    if (!query) {
+      links.forEach((a) => { a.closest("li").style.display = ""; });
+      groupLabels.forEach((el) => { el.style.display = ""; });
+      return;
+    }
+
+    links.forEach((a) => {
+      const li = a.closest("li");
+      li.style.display = a.textContent.trim().toLowerCase().includes(query) ? "" : "none";
+    });
+
+    // Sub-group headers ("Master Data", "Operasional", ...) sit as flat
+    // siblings of the <li> items inside each dropdown-menu-grouped <ul>.
+    // Hide any of them whose run of items (up to the next header) ends up
+    // fully hidden, so search doesn't leave a trail of empty headers.
+    groupLabels.forEach((label) => {
+      let sibling = label.nextElementSibling;
+      let hasVisibleItem = false;
+      while (sibling && !sibling.classList.contains("dropdown-group-label")) {
+        if (sibling.tagName === "LI" && sibling.style.display !== "none") hasVisibleItem = true;
+        sibling = sibling.nextElementSibling;
+      }
+      label.style.display = hasVisibleItem ? "" : "none";
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    menuSearch, isCmtOpen, isCuttingOpen, isJasaOpen, isHppOpen, isPackingOpen, isReturnOpen,
+    isGudangOpen, isGudangProdukOpen, isAksesorisOpen, isQcOpen, isSampleOpen, isCsOpen,
+  ]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,7 +103,7 @@ const Layout = () => {
     if (path) {
       setActiveMenu(path);
       // Auto open menus based on path
-      if (['packing', 'packing-random', 'packing-pendingan', 'packing-belum-barcode', 'packing-no-data-ginee', 'packing-inject', 'seri', 'monitoring', 'logs'].includes(path)) setIsPackingOpen(true);
+      if (['packing', 'packing-random', 'packing-pendingan', 'packing-belum-barcode', 'packing-no-data-ginee', 'packing-inject', 'seri', 'seri-report', 'monitoring', 'logs'].includes(path)) setIsPackingOpen(true);
       if (['gudang', 'list-stok-gudang', 'gudang-logs', 'scan-masuk-gudang'].includes(path)) setIsGudangOpen(true);
       if (['list-stok-product', 'riwayat-opname-product', 'riwayat-masuk-product', 'riwayat-keluar-product', 'riwayat-scan-pengiriman'].includes(path)) setIsGudangProdukOpen(true);
       if (['jahit', 'jahit-spk', 'pengiriman', 'jahit-hutang', 'jahit-cashbon', 'jahit-pendapatan', 'jahit-deadline', 'jahit-status', 'kinerja', 'kinerja-detail', 'jahit-riwayat-pendapatan'].includes(path)) setIsCmtOpen(true);
@@ -188,6 +254,17 @@ const Layout = () => {
             </h3>
           </div>
         </div>
+        {(!isSidebarCollapsed || isSidebarHovered) && (
+          <div className="sidebar-search">
+            <Search className="sidebar-search-icon" size={13} />
+            <input
+              type="text"
+              placeholder="Cari menu..."
+              value={menuSearch}
+              onChange={(e) => setMenuSearch(e.target.value)}
+            />
+          </div>
+        )}
         <nav className="sidebar-menu">
           <ul>
             {(hasAccess("dashboard") || hasAccess("laporan_daily_produksi")) && (
@@ -1003,7 +1080,7 @@ const Layout = () => {
               <li>
                 <div
                   onClick={togglePackingMenu}
-                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "monitoring"].includes(activeMenu) ? "active" : ""}`}
+                  className={`sidebar-link dropdown-toggle ${["packing", "packing-belum-barcode", "packing-random", "packing-pendingan", "packing-no-data-ginee", "packing-inject", "logs", "seri", "seri-report", "monitoring"].includes(activeMenu) ? "active" : ""}`}
                 >
                   <PackageOpen className="icon" /> Packing
                   <span className={`arrow ${isPackingOpen ? "open" : ""}`}>{isPackingOpen ? <ChevronUp /> : <ChevronDown />}</span>
@@ -1078,6 +1155,13 @@ const Layout = () => {
                       <li>
                         <Link to="logs" className={`dropdown-link ${activeMenu === "logs" ? "active" : ""}`} onClick={() => handleMenuClick("logs")}>
                           <History className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Riwayat Scan
+                        </Link>
+                      </li>
+                    )}
+                    {hasAccess("packing:seri") && (
+                      <li>
+                        <Link to="seri-report" className={`dropdown-link ${activeMenu === "seri-report" ? "active" : ""}`} onClick={() => handleMenuClick("seri-report")}>
+                          <FileText className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Laporan Seri
                         </Link>
                       </li>
                     )}
@@ -1165,14 +1249,17 @@ const Layout = () => {
                 </li>
               </>
             )}
-
-            <li className="sidebar-footer-item">
-              <button className="sidebar-link is-logout" onClick={handleLogout}>
-                <LogOut className="icon" /> Logout
-              </button>
-            </li>
           </ul>
         </nav>
+
+        {/* Outside .sidebar-menu (which scrolls internally) so Logout stays
+            pinned at the bottom of the sidebar instead of scrolling away
+            with the menu list when several groups are expanded at once. */}
+        <div className="sidebar-footer-item">
+          <button className="sidebar-link is-logout" onClick={handleLogout}>
+            <LogOut className="icon" /> Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
