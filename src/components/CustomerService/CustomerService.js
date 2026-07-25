@@ -207,7 +207,7 @@ const CustomerService = () => {
       setLoading(true);
       setError(null);
       const res = await API.get("/orders/customer-notes", {
-        params: { start_date: startDate, end_date: endDate, type: "all" },
+        params: { start_date: startDate, end_date: endDate, type: "all", per_page: 10000, page: 1 },
       });
       setRows(Array.isArray(res.data.data) ? res.data.data : []);
       setSummary(res.data.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 });

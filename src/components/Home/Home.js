@@ -19,11 +19,9 @@ const Home = () => {
         <div className="home-welcome-icon-container">
           <FaLayerGroup className="home-welcome-icon" />
         </div>
-        <h1 className="home-welcome-title">Selamat Datang di ILOOK System</h1>
+        <h1 className="home-welcome-title">Selamat Datang, {userName}</h1>
         <p className="home-welcome-subtitle">
-          Halo <strong>{userName}</strong>, selamat datang kembali. <br/>
-          Sistem manajemen terpadu ILOOK siap membantu alur kerja Anda hari ini. <br/>
-          Silakan gunakan menu navigasi di sebelah kiri untuk memulai.
+          Gunakan menu di sebelah kiri untuk mulai bekerja.
         </p>
       </div>
     </div>
