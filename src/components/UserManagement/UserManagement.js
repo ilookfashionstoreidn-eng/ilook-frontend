@@ -153,14 +153,14 @@ const AVAILABLE_MENUS = [
     label: "Packing",
     icon: FaBoxOpen,
     submenus: [
-      { key: "packing:packing", label: "Packing" },
+      { key: "packing:packing", label: "Input Packing" },
       { key: "packing:random", label: "Packing Random" },
-      { key: "packing:pendingan", label: "Pendingan" },
+      { key: "packing:pendingan", label: "Barang Pending" },
       { key: "packing:belum_barcode", label: "Produk Belum Barcode" },
-      { key: "packing:no_data_ginee", label: "No Data Ginee" },
-      { key: "packing:inject", label: "Inject Data" },
-      { key: "packing:logs", label: "History scan" },
-      { key: "packing:seri", label: "Seri" }
+      { key: "packing:no_data_ginee", label: "Order Tanpa Data Ginee" },
+      { key: "packing:inject", label: "Input Data Manual" },
+      { key: "packing:logs", label: "History Scan" },
+      { key: "packing:seri", label: "Input Nomor Seri" }
     ]
   },
   {

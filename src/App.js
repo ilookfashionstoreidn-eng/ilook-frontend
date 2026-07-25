@@ -72,6 +72,7 @@ import StokOpnameBahan from "./components/Bahan/StokOpnameBahan";
 import Pabrik from "./components/Bahan/Pabrik";
 import Gudang from "./components/Bahan/Gudang";
 import Seri from "./components/Packing/Seri";
+import SeriReport from "./components/Packing/SeriReport";
 import StokPerBahan from "./components/Bahan/StokPerBahan";
 import ScanBahan from "./components/Bahan/ScanBahan";
 import ScanStokBahanKeluar from "./components/Bahan/ScanStokBahanKeluar";
@@ -222,6 +223,7 @@ const App = () => {
             <Route path="packing-inject" element={<MenuProtectedRoute menuKey="packing:inject"><PackingInject /></MenuProtectedRoute>} />
             <Route path="logs" element={<MenuProtectedRoute menuKey="packing:logs"><Logs /></MenuProtectedRoute>} />
             <Route path="seri" element={<MenuProtectedRoute menuKey="packing:seri"><Seri /></MenuProtectedRoute>} />
+            <Route path="seri-report" element={<MenuProtectedRoute menuKey="packing:seri"><SeriReport /></MenuProtectedRoute>} />
             <Route path="monitoring" element={<MenuProtectedRoute menuKey="packing:logs"><PackingMonitoring /></MenuProtectedRoute>} />
             <Route path="packing-printed" element={<MenuProtectedRoute menuKey="packing:logs"><PackingPrintedComparison /></MenuProtectedRoute>} />
             <Route path="packing-daily-report" element={<MenuProtectedRoute menuKey="packing:logs"><PackingDailyPrintReport /></MenuProtectedRoute>} />

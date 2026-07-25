@@ -1,0 +1,161 @@
+/* SeriReport.css — sits inside ks-page/ks-board shell.
+   Only extends tokens already defined in KodeSeriBelumDikerjakanOptimized.css */
+
+/* ── Toolbar date/select inputs ── */
+.sr-toolbar {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sr-date-input {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 7px;
+  background: var(--ks-surface);
+  color: var(--ks-text);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.13s ease, box-shadow 0.13s ease;
+}
+.sr-date-input:focus {
+  border-color: var(--ks-accent);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+}
+
+.sr-select {
+  height: 30px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--ks-line-strong);
+  border-radius: 7px;
+  background: var(--ks-surface);
+  color: var(--ks-text);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.13s ease;
+  appearance: auto;
+}
+.sr-select:focus {
+  border-color: var(--ks-accent);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+}
+
+/* ── Overall progress bar ── */
+.sr-overall-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--ks-line);
+  background: #fafafb;
+}
+.sr-overall-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--ks-line-strong);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.sr-overall-pct {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ── Group rows ── */
+.sr-group {
+  border-bottom: 1px solid var(--ks-line);
+}
+.sr-group:last-child {
+  border-bottom: none;
+}
+
+.sr-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  height: 38px;
+  background: #fafafb;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-bottom: 1px solid var(--ks-line);
+}
+.sr-group-header:hover {
+  background: var(--ks-hover);
+}
+
+.sr-group-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.sr-group-key {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ks-accent);
+}
+
+.sr-group-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sr-mini-bar-track {
+  width: 72px;
+  height: 5px;
+  background: var(--ks-line-strong);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+/* ── Progress bars fills (shared tones) ── */
+.sr-bar-tone-safe    { background: var(--ks-safe);    }
+.sr-bar-tone-warning { background: var(--ks-warning); }
+.sr-bar-tone-overdue { background: var(--ks-overdue); }
+
+.sr-mini-bar-fill,
+.sr-row-bar-fill,
+.sr-overall-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* ── Detail table wrapper ── */
+.sr-detail-table {
+  border-top: none !important;
+  border-radius: 0 !important;
+}
+
+/* ── Row bar ── */
+.sr-row-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sr-row-bar-track {
+  width: 64px;
+  height: 5px;
+  background: var(--ks-line-strong);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+/* ── Tag extensions ── */
+.ks-tag.is-cmt  { color: #3b5bdb; background: #e8f0fe; border-color: #c5d5f8; }
+
+/* ── Tfoot ── */
+.sr-foot-row td {
+  background: #f6f7f9;
+  border-top: 1px solid var(--ks-line-strong);
+  font-size: 12.5px;
+  height: 33px;
+  padding: 0 12px;
+}

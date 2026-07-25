@@ -212,36 +212,52 @@ const CustomerService = () => {
       const params = { start_date: startDate, end_date: endDate, type: "all", per_page: 100 };
       const firstRes = await API.get("/orders/customer-notes", { params: { ...params, page: 1 } });
       
-      let allData = Array.isArray(firstRes.data.data) ? firstRes.data.data : [];
-      const summary = firstRes.data.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 };
+      let allData = Array.isArray(firstRes.data?.data) ? firstRes.data.data : [];
+      const summary = firstRes.data?.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 };
       
-      // Calculate last page dynamically if the backend doesn't explicitly return it
-      let lastPage = firstRes.data.last_page || firstRes.data.meta?.last_page;
-      if (!lastPage && summary.total > allData.length && allData.length > 0) {
-        lastPage = Math.ceil(summary.total / allData.length);
-      }
-      lastPage = lastPage || 1;
+      // Force recalculate last page because backend might return incorrect last_page meta
+      const actualLimit = allData.length > 0 ? allData.length : 25;
+      const lastPage = summary.total > actualLimit ? Math.ceil(summary.total / actualLimit) : 1;
       
       if (lastPage > 1) {
         const promises = [];
         for (let i = 2; i <= lastPage; i++) {
-          promises.push(() => API.get("/orders/customer-notes", { params: { ...params, page: i } }));
+          promises.push(() => API.get("/orders/customer-notes", { params: { ...params, page: i } })
+            .catch(err => {
+              console.error(`Failed to fetch page ${i}`, err);
+              return null; // Don't crash entire process if one page fails
+            })
+          );
         }
         
-        // Proses dalam batch of 10 agar lebih cepat namun tetap stabil
+        // Proses dalam batch of 10
         const chunkSize = 10;
         for (let i = 0; i < promises.length; i += chunkSize) {
           const chunk = promises.slice(i, i + chunkSize).map(fn => fn());
           const results = await Promise.all(chunk);
           results.forEach(res => {
-            if (Array.isArray(res.data.data)) {
+            if (res && Array.isArray(res.data?.data)) {
               allData = allData.concat(res.data.data);
             }
           });
+          
+          if (i + chunkSize < promises.length) {
+            await new Promise(r => setTimeout(r, 200)); // slight delay to prevent rate limits
+          }
         }
       }
 
-      setRows(allData);
+      // Deduplicate to avoid duplicates if backend ignores page param
+      const uniqueData = [];
+      const seenIds = new Set();
+      for (const item of allData) {
+        if (!seenIds.has(item.id)) {
+          seenIds.add(item.id);
+          uniqueData.push(item);
+        }
+      }
+
+      setRows(uniqueData);
       setSummary(summary);
     } catch (err) {
       setRows([]);

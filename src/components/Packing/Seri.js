@@ -409,9 +409,9 @@ const Seri = () => {
         </div>
       </div>
 
-      <section className="ks-board" style={{ margin: "20px" }}>
+      <section className="ks-board seri-board">
         <div className="ks-toolbar">
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", width: "100%", flexWrap: "wrap" }}>
+          <div className="seri-toolbar-row">
              <div className="ks-search">
                 <FiSearch className="ks-search-icon" />
                 <input
@@ -428,113 +428,102 @@ const Seri = () => {
           </div>
         </div>
 
-        <div style={{ padding: "0 20px", display: "flex", gap: "24px", borderBottom: "1px solid var(--ks-line)", marginBottom: "16px" }}>
-            <button
-                onClick={() => handleTabChange('all')}
-                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "all" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "all" ? "#155eef" : "#64748b", fontWeight: activeTab === "all" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
-            >
-                Semua
+        <div className="seri-segment-wrap">
+          <div className="ks-segment">
+            <button onClick={() => handleTabChange('all')} className={`ks-seg-btn ${activeTab === "all" ? "is-active" : ""}`}>
+              Semua
             </button>
-            <button
-                onClick={() => handleTabChange('unscanned')}
-                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "unscanned" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "unscanned" ? "#155eef" : "#64748b", fontWeight: activeTab === "unscanned" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
-            >
-                Belum Di-scan
+            <button onClick={() => handleTabChange('unscanned')} className={`ks-seg-btn ${activeTab === "unscanned" ? "is-active" : ""}`}>
+              Belum Di-scan
             </button>
-            <button
-                onClick={() => handleTabChange('scanned')}
-                style={{ padding: "12px 4px", border: "none", background: "none", cursor: "pointer", borderBottom: activeTab === "scanned" ? "2px solid #155eef" : "2px solid transparent", color: activeTab === "scanned" ? "#155eef" : "#64748b", fontWeight: activeTab === "scanned" ? 600 : 500, fontSize: "14px", display: "flex", alignItems: "center" }}
-            >
-                Sudah Di-scan
+            <button onClick={() => handleTabChange('scanned')} className={`ks-seg-btn ${activeTab === "scanned" ? "is-active" : ""}`}>
+              Sudah Di-scan
             </button>
+          </div>
         </div>
 
-        <div className="ks-grid-scroll" style={{ padding: '0 20px' }}>
+        <div className="ks-grid-scroll seri-grid-scroll">
           <table className="ks-grid">
             <thead>
               <tr>
                 <th style={{ width: '5%', textAlign: 'center' }}>No</th>
-                <th style={{ width: '30%' }}>Nomor Seri</th>
-                <th style={{ width: '20%' }}>Informasi SKU</th>
+                <th style={{ width: '25%' }}>Nomor Seri</th>
+                <th style={{ width: '15%' }}>Informasi SKU</th>
                 <th style={{ width: '15%' }}>Tanggal Dibuat</th>
+                <th style={{ width: '15%' }}>Sumber Pembuatan</th>
                 <th style={{ width: '15%' }}>Status Scan</th>
-                <th style={{ width: '10%' }}>Lokasi / Sumber</th>
                 <th style={{ width: '5%', textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
                 {loading ? (
                   <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '32px' }}>Memuat data seri...</td>
+                      <td colSpan="7" className="seri-empty-cell">Memuat data seri...</td>
                   </tr>
                 ) : error ? (
                   <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#ef4444' }}>{error}</td>
+                      <td colSpan="7" className="seri-empty-cell seri-empty-cell-danger">{error}</td>
                   </tr>
                 ) : (
                   <AnimatePresence>
                     {sortedData.map((item, index) => (
-                      <motion.tr 
+                      <motion.tr
                         key={item.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
-                        <td style={{ textAlign: 'center' }}>
+                        <td className="seri-td-center">
                             {index + 1}
                         </td>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#155eef' }}></span>
-                            <span style={{ fontWeight: 600, color: '#155eef' }}>{item.nomor_seri}</span>
+                          <div className="seri-serial">
+                            <span className="seri-serial-dot"></span>
+                            <span className="seri-serial-text">{item.nomor_seri}</span>
                           </div>
                         </td>
                         <td>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', border: '1px solid #dde3ed', width: 'fit-content' }}>
-                              <FiLayers color="#64748b" />
-                              <span style={{ color: '#334155' }}>{item.sku}</span>
+                          <span className="seri-sku-chip">
+                              <FiLayers />
+                              <span>{item.sku}</span>
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
+                          <span className="seri-date">
                             {dayjs(item.created_at).format('DD MMM YYYY')}
                           </span>
                         </td>
                         <td>
-                          {item.scanned_count > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span>
-                                <span style={{ color: '#10b981', fontWeight: 600, fontSize: '13px' }}>
-                                  {item.scanned_count} / {item.jumlah} Di-scan
-                                </span>
-                              </div>
-                            </div>
+                          {item.source === "Pengiriman CMT" ? (
+                             <span className="seri-source-tag" style={{ backgroundColor: "#e3f2fd", color: "#1976d2", border: "1px solid #bbdefb" }}>
+                               📦 Pengiriman CMT
+                             </span>
                           ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#94a3b8' }}></span>
-                              <span style={{ color: '#64748b', fontSize: '13px' }}>Belum di-scan</span>
-                            </div>
+                             <span className="seri-source-tag" style={{ backgroundColor: "#f5f5f5", color: "#616161", border: "1px solid #e0e0e0" }}>
+                               📝 Form Seri
+                             </span>
                           )}
                         </td>
                         <td>
                           {item.scanned_count > 0 ? (
-                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                {Array.from(new Set(item.scanned_details?.map(d => d.source) || [])).map(source => (
-                                  <span key={source} style={{ fontSize: '11px', background: '#ecfdf5', color: '#059669', padding: '2px 6px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>{source}</span>
-                                ))}
-                              </div>
+                            <div className="seri-scan-status is-scanned">
+                              <span className="seri-scan-dot"></span>
+                              <span>{item.scanned_count} / {item.jumlah} Di-scan</span>
+                            </div>
                           ) : (
-                              <span style={{ color: '#94a3b8', fontSize: '13px' }}>-</span>
+                            <div className="seri-scan-status">
+                              <span className="seri-scan-dot"></span>
+                              <span>Belum di-scan</span>
+                            </div>
                           )}
                         </td>
-                        <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                              <button onClick={() => downloadQR(item.id, item.nomor_seri)} title="Unduh QR" style={{ padding: '6px', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        <td className="seri-td-right">
+                            <div className="seri-row-actions">
+                              <button onClick={() => downloadQR(item.id, item.nomor_seri)} title="Unduh QR" className="seri-action-btn is-download">
                                 <FiDownload size={16} />
                               </button>
-                              <button onClick={() => handleDelete(item.id, item.nomor_seri)} title="Hapus Seri" style={{ padding: '6px', background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                              <button onClick={() => handleDelete(item.id, item.nomor_seri)} title="Hapus Seri" className="seri-action-btn is-delete">
                                 <FiTrash2 size={16} />
                               </button>
                             </div>
@@ -545,7 +534,7 @@ const Seri = () => {
                 )}
               {!loading && sortedData.length === 0 && !error && (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                  <td colSpan="7" className="seri-empty-cell">
                     Tidak ada data seri yang sesuai dengan kriteria.
                   </td>
                 </tr>
@@ -555,11 +544,11 @@ const Seri = () => {
         </div>
 
         {!loading && sortedData.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid var(--ks-line)' }}>
+          <div className="seri-footer-pagination">
             <button className="ks-btn" disabled={currentPage === 1} onClick={() => fetchSeri(currentPage - 1, searchTerm)}>
               Sebelumnya
             </button>
-            <span style={{ fontSize: '13px', color: 'var(--ks-text-soft)' }}>
+            <span className="seri-pagination-label">
               Halaman {currentPage} dari {lastPage}
             </span>
             <button className="ks-btn" disabled={currentPage === lastPage} onClick={() => fetchSeri(currentPage + 1, searchTerm)}>

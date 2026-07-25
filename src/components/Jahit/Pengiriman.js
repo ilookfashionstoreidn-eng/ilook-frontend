@@ -3,6 +3,7 @@ import "./KodeSeriBelumDikerjakanOptimized.css";
 import "./Pengiriman.css";
 import API from "../../api";
 import Select from "react-select";
+import Swal from "sweetalert2";
 import {
   FiAlertCircle,
   FiArrowLeft,
@@ -676,6 +677,39 @@ const Pengiriman = () => {
         await API.post("/pengiriman/petugas-bawah", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+
+        // Auto-generate seri untuk setiap SKU di pengiriman ini
+        const noSeri = newPengiriman.no_seri.trim();
+        const idPenjahit = newPengiriman.id_penjahit;
+        const noSeriPengiriman = noSeri && idPenjahit ? `${noSeri}.${idPenjahit}` : noSeri;
+
+        if (noSeriPengiriman && validItems.length > 0) {
+          const seriPromises = validItems.map((item) => {
+            const formData = new FormData();
+            formData.append("nomor_seri", noSeriPengiriman);
+            formData.append("sku", item.sku);
+            formData.append("jumlah", String(Number(item.qty) || 1));
+            formData.append("jenis_seri", "barang_masuk");
+            formData.append("source", "Pengiriman CMT");
+
+            return API.post("/seri", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            }).catch((err) => {
+              console.warn(`Gagal generate seri untuk SKU ${item.sku}:`, err?.response?.data?.message || err.message);
+            });
+          });
+          await Promise.all(seriPromises);
+          Swal.fire({
+            icon: "success",
+            title: "Pengiriman Tersimpan!",
+            html: `🏷️ <b>${validItems.length} SKU</b> berhasil dibuat serinya dengan prefix <code>${noSeri}</code>`,
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
+        }
       }
 
       setRefreshKey((prev) => prev + 1);
@@ -717,13 +751,55 @@ const Pengiriman = () => {
   };
 
   const handleDeletePengiriman = async (pengiriman) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus data pengiriman ini (No Seri: ${pengiriman.no_seri_pengiriman || "SPK-" + pengiriman.id_spk})?`)) {
+    const noSeriPrefix = pengiriman.no_seri_pengiriman ? pengiriman.no_seri_pengiriman.split('.')[0] : "";
+    let seriList = [];
+    let scannedCount = 0;
+
+    if (noSeriPrefix) {
+      try {
+        const seriRes = await API.get(`/seri?search=${encodeURIComponent(noSeriPrefix)}&per_page=500`);
+        seriList = seriRes.data?.data || [];
+        // Filter exactly matching the prefix
+        seriList = seriList.filter(s => s.nomor_seri && s.nomor_seri.startsWith(noSeriPrefix));
+        scannedCount = seriList.filter(s => s.scanned_count > 0).length;
+      } catch (err) {
+        console.warn("Gagal mengecek seri terkait pengiriman:", err);
+      }
+    }
+
+    let confirmMsg = `Apakah Anda yakin ingin menghapus data pengiriman ini (No Seri: ${pengiriman.no_seri_pengiriman || "SPK-" + pengiriman.id_spk})?`;
+    
+    if (seriList.length > 0) {
+      if (scannedCount > 0) {
+        confirmMsg += `\n\n⚠️ PERINGATAN: Terdapat ${seriList.length} seri terkait dan ${scannedCount} di antaranya SUDAH DI-SCAN masuk. Menghapus pengiriman ini juga akan menghapus data seri dan riwayat scannya! Tetap lanjutkan?`;
+      } else {
+        confirmMsg += `\n\nInfo: Terdapat ${seriList.length} seri terkait yang belum di-scan. Seri-seri tersebut akan ikut dihapus.`;
+      }
+    }
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
+    
     try {
+      // Hapus data seri satu per satu jika ada
+      if (seriList.length > 0) {
+        await Promise.all(seriList.map(s => API.delete(`/seri/${s.id}`).catch(e => console.warn("Gagal hapus seri", e))));
+      }
+
       await API.delete(`/pengiriman/${pengiriman.id_pengiriman}`);
       setPengirimans((prev) => prev.filter((p) => p.id_pengiriman !== pengiriman.id_pengiriman));
       setRefreshKey((prev) => prev + 1); // trigger fetch new aggregated data
+      
+      Swal.fire({
+        icon: "success",
+        title: "Terhapus",
+        text: `Data pengiriman${seriList.length > 0 ? ` dan ${seriList.length} seri terkait` : ""} berhasil dihapus.`,
+        timer: 3000,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end",
+      });
     } catch (err) {
       console.error("Gagal menghapus pengiriman:", err);
       alert(err.response?.data?.message || "Gagal menghapus data pengiriman.");

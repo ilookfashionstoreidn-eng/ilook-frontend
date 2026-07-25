@@ -1044,21 +1044,21 @@ const Layout = () => {
                     {hasAccess("packing:no_data_ginee") && (
                       <li>
                         <Link to="packing-no-data-ginee" className={`dropdown-link ${activeMenu === "packing-no-data-ginee" ? "active" : ""}`} onClick={() => handleMenuClick("packing-no-data-ginee")}>
-                          <AlertTriangle className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#f59e0b" }} /> No Data Ginee
+                          <AlertTriangle className="icon" style={{ fontSize: "12px", marginRight: "8px", color: "#f59e0b" }} /> Order Tanpa Data Ginee
                         </Link>
                       </li>
                     )}
                     {hasAccess("packing:inject") && (
                       <li>
                         <Link to="packing-inject" className={`dropdown-link ${activeMenu === "packing-inject" ? "active" : ""}`} onClick={() => handleMenuClick("packing-inject")}>
-                          <FileText className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Inject Data
+                          <FileText className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input Data Manual
                         </Link>
                       </li>
                     )}
                     {hasAccess("packing:seri") && (
                       <li>
                         <Link to="seri" className={`dropdown-link ${activeMenu === "seri" ? "active" : ""}`} onClick={() => handleMenuClick("seri")}>
-                          <QrCode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Seri
+                          <QrCode className="icon" style={{ fontSize: "12px", marginRight: "8px" }} /> Input Nomor Seri
                         </Link>
                       </li>
                     )}
