@@ -214,7 +214,13 @@ const CustomerService = () => {
       
       let allData = Array.isArray(firstRes.data.data) ? firstRes.data.data : [];
       const summary = firstRes.data.summary || { total: 0, buyer_message: 0, seller_memo: 0, both: 0 };
-      const lastPage = firstRes.data.last_page || 1;
+      
+      // Calculate last page dynamically if the backend doesn't explicitly return it
+      let lastPage = firstRes.data.last_page || firstRes.data.meta?.last_page;
+      if (!lastPage && summary.total > allData.length && allData.length > 0) {
+        lastPage = Math.ceil(summary.total / allData.length);
+      }
+      lastPage = lastPage || 1;
       
       if (lastPage > 1) {
         const promises = [];
@@ -222,8 +228,8 @@ const CustomerService = () => {
           promises.push(() => API.get("/orders/customer-notes", { params: { ...params, page: i } }));
         }
         
-        // Proses dalam batch of 5 agar tidak membebani server
-        const chunkSize = 5;
+        // Proses dalam batch of 10 agar lebih cepat namun tetap stabil
+        const chunkSize = 10;
         for (let i = 0; i < promises.length; i += chunkSize) {
           const chunk = promises.slice(i, i + chunkSize).map(fn => fn());
           const results = await Promise.all(chunk);
