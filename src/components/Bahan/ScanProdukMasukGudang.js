@@ -102,37 +102,23 @@ const findSkuMatch = (skus, seriSku) => {
   found = skus.find(s => s.label === cleanSeriSku);
   if (found) return found;
 
-  // 3. Normalized alphanumeric match
+  // 3. Normalized alphanumeric match (exact, just ignoring spaces/punctuation)
   found = skus.find(s => {
     const normCode = String(s.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     const normLabel = String(s.label || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     return normCode === normSeriSku || normLabel === normSeriSku;
   });
-  if (found) return found;
-
-  // 4. Loose contains match
-  found = skus.find(s => {
-    const normCode = String(s.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const normLabel = String(s.label || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (!normCode || !normSeriSku) return false;
-
-    const minLenCode = Math.min(normCode.length, normSeriSku.length);
-    const maxLenCode = Math.max(normCode.length, normSeriSku.length);
-    if (minLenCode >= 4 && (minLenCode / maxLenCode) >= 0.5) {
-      if (normCode.includes(normSeriSku) || normSeriSku.includes(normCode)) return true;
-    }
-
-    if (normLabel) {
-      const minLenLabel = Math.min(normLabel.length, normSeriSku.length);
-      const maxLenLabel = Math.max(normLabel.length, normSeriSku.length);
-      if (minLenLabel >= 4 && (minLenLabel / maxLenLabel) >= 0.5) {
-        if (normLabel.includes(normSeriSku) || normSeriSku.includes(normLabel)) return true;
-      }
-    }
-
-    return false;
-  });
   return found || null;
+  // NOTE: a 4th "loose contains" step used to live here (substring match with
+  // just a 50%-length-ratio threshold). It's gone: any product name ending in
+  // the same letter a short/generic SKU starts with (very common in Indonesian
+  // names — "ANGGUNA", "BELVARA", "IRANA", ...) could spuriously match, e.g.
+  // "SETANGGUNABLUEICEM" contains "ABLUEICEM" purely by coincidence. That's
+  // what collapsed several unrelated products into one bad "A - BLUE ICE M"
+  // SKU in production. sku_id is now resolved once at Seri-creation time
+  // (SeriController::store()) and read back via FK, so this fallback should
+  // rarely even be reached — exact/normalized matching above is deliberately
+  // the ceiling, not "best effort".
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
