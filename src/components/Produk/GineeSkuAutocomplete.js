@@ -7,7 +7,8 @@ const GineeSkuAutocomplete = ({ value, onChange, onSelectProduct, disabled, auto
     if (!inputValue) return [];
     try {
       const response = await API.get(`/ginee/products/search?q=${inputValue}`);
-      return response.data.map(item => ({
+      const dataArray = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return dataArray.map(item => ({
         label: item.sku,
         value: item.sku,
         originalData: item

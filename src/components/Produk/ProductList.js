@@ -1452,10 +1452,11 @@ const ProductList = () => {
                   onSelectProduct={async (gineeData) => {
                     if (isMultiSkuMode) {
                       try {
-                        const { data } = await API.get(`/ginee/products/variants?product_name=${encodeURIComponent(gineeData.product_name)}`);
-                        if (data && data.length > 0) {
-                          const parsedBase = parseGineeSku(data[0].sku, data[0].size);
-                          const newRows = data.map(variant => {
+                        const response = await API.get(`/ginee/products/variants?product_name=${encodeURIComponent(gineeData.product_name)}`);
+                        const variantsData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+                        if (variantsData && variantsData.length > 0) {
+                          const parsedBase = parseGineeSku(variantsData[0].sku, variantsData[0].size);
+                          const newRows = variantsData.map(variant => {
                             const parsedVariant = parseGineeSku(variant.sku, variant.size);
                             return {
                               sku_name: variant.sku,
@@ -1474,6 +1475,8 @@ const ProductList = () => {
                             product_colour: "",
                             product_size: ""
                           }));
+                        } else {
+                          alert("Tidak ada varian ditemukan.");
                         }
                       } catch (err) {
                         console.error("Error fetching variants", err);

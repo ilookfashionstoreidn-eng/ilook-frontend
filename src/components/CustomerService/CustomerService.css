@@ -1,20 +1,20 @@
 /* ═══════════════════════════════════════════════════════
    Monitoring Notes Pelanggan
-   Sits inside the shared .ks-page / .dc-page shell — only
-   page-specific bits live here (filters, two-layer order
-   cards, pagination). KPIs reuse DashboardCutting.css tokens.
+   Sits inside the shared .ks-page / .dc-page shell — reuses
+   the --ks-* tokens (Inter, flat Linear look) instead of an
+   ad-hoc palette so it matches the KPI cards above it.
    ═══════════════════════════════════════════════════════ */
 
+/* ─── Filters ────────────────────────────────────────── */
 .csn-filter-card {
-  flex-direction: row;
-  align-items: flex-end;
+  padding: 14px 16px;
 }
 
 .csn-filter-row {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -23,100 +23,182 @@
   flex-direction: column;
   gap: 6px;
 }
-.csn-filter-grow { flex: 1; min-width: 200px; }
+.csn-filter-grow { flex: 1; min-width: 220px; }
 
 .csn-filter-label {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: var(--ks-muted, #9a9aa3);
-  letter-spacing: 0.02em;
 }
 
 .csn-input {
-  height: 34px;
-  border: 1px solid var(--ks-line, #ececef);
-  border-radius: 8px;
+  height: 30px;
+  border: 1px solid var(--ks-line-strong, #e0e0e4);
+  border-radius: 7px;
   padding: 0 10px;
+  font: inherit;
   font-size: 12.5px;
   color: var(--ks-text, #1c1c1f);
-  background: var(--ks-surface, #fff);
+  background: var(--ks-surface, #ffffff);
   outline: none;
+  transition: border-color 0.13s ease, box-shadow 0.13s ease;
 }
-.csn-input:focus { border-color: var(--dc-blue); }
+.csn-input:focus {
+  border-color: var(--ks-accent, #2458ce);
+  box-shadow: 0 0 0 3px rgba(36, 88, 206, 0.1);
+}
 
 .csn-date-range { display: flex; align-items: center; gap: 8px; }
-.csn-date-sep { color: var(--ks-muted, #9a9aa3); }
+.csn-date-sep { color: var(--ks-muted, #9a9aa3); font-weight: 500; font-size: 12.5px; }
 
 .csn-search-wrap { position: relative; }
 .csn-search-icon {
-  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--ks-muted, #9a9aa3); font-size: 12px;
 }
-.csn-search-input { width: 100%; padding-left: 32px; background: var(--ks-bg, #fbfbfc); }
-.csn-search-input:focus { background: var(--ks-surface, #fff); }
+.csn-search-input { width: 100%; padding-left: 30px; }
 
 .csn-select { padding-right: 10px; cursor: pointer; }
 
-.csn-filter-btn { height: 34px; flex-shrink: 0; }
+.csn-filter-btn {
+  height: 30px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  font-size: 12.5px;
+}
 
-/* Order cards */
-.csn-table-card { gap: 0; }
-.csn-strong { font-weight: 600; color: var(--ks-text, #1c1c1f); }
-.csn-mono { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--ks-text-soft, #6b6b73); }
-.csn-muted { color: var(--ks-muted, #9a9aa3); }
+/* ─── Typography & Badges ────────────────────────────── */
+.csn-order-id { font-weight: 600; color: var(--ks-text, #1c1c1f); font-size: 12.5px; }
+.csn-tracking { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--ks-muted, #9a9aa3); font-size: 11.5px; letter-spacing: -0.01em; }
+.csn-datetime { font-size: 12.5px; color: var(--ks-text-soft, #6b6b73); line-height: 1.5; }
+.csn-strong { font-weight: 600; color: var(--ks-text, #1c1c1f); font-size: 12.5px; }
+.csn-mono { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--ks-muted, #9a9aa3); font-size: 11.5px; letter-spacing: -0.01em; }
+.csn-muted { color: var(--ks-muted, #9a9aa3); font-size: 12.5px; }
+
+/* Status Tag */
 .csn-tag {
-  background: var(--ks-hover, #f6f7f9); padding: 4px 8px; border-radius: 6px;
-  font-size: 11px; font-weight: 600; color: var(--ks-text-soft, #6b6b73); white-space: nowrap;
-}
-
-.csn-order-list { display: flex; flex-direction: column; gap: 12px; }
-
-.csn-order-card {
-  border: 1px solid var(--ks-line, #ececef);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.csn-order-layer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 12px 16px;
-}
-.csn-layer-1 {
-  background: var(--ks-bg, #fbfbfc);
-  border-bottom: 1px solid var(--ks-line, #ececef);
+  display: inline-flex;
   align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
-.csn-layer-2 { align-items: flex-start; }
+.csn-tag.is-paid, .csn-tag.is-delivered { background: #effaf3; color: var(--dc-green, #16a34a); }
+.csn-tag.is-cancelled, .csn-tag.is-returned { background: #fdecec; color: var(--dc-red, #e5484d); }
+.csn-tag.is-shipping { background: #eef3fc; color: var(--dc-blue, #2458ce); }
+.csn-tag.is-default { background: var(--ks-hover, #f6f7f9); color: var(--ks-text-soft, #6b6b73); }
 
-.csn-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.csn-field-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+/* Platform Tag */
+.csn-platform {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ks-text-soft, #6b6b73);
+  background: var(--ks-hover, #f6f7f9);
+  border: 1px solid var(--ks-line, #ececef);
+  padding: 3px 7px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* ─── Table Layout ───────────────────────────────────── */
+.csn-table-wrapper {
+  background: var(--ks-surface, #ffffff);
+  border: 1px solid var(--ks-line, #ececef);
+  border-radius: 11px;
+  overflow-x: auto;
+}
+
+.csn-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12.5px;
+  min-width: 1220px; /* Prevent squishing on small screens */
+}
+
+.csn-table th {
+  background: var(--ks-hover, #f6f7f9);
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 10.5px;
   color: var(--ks-muted, #9a9aa3);
-}
-.csn-field-value {
-  font-size: 12.5px; color: var(--ks-text, #1c1c1f);
-  overflow-wrap: break-word; word-break: break-word;
+  border-bottom: 1px solid var(--ks-line-strong, #e0e0e4);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.csn-field-order { min-width: 130px; }
-.csn-field-product { flex: 1.2; min-width: 180px; }
-.csn-field-note { flex: 1.4; min-width: 200px; }
+.csn-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ks-line, #ececef);
+  vertical-align: top;
+  color: var(--ks-text-soft, #6b6b73);
+  line-height: 1.5;
+}
 
-.csn-product-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.csn-product-list li { font-size: 12.5px; color: var(--ks-text, #1c1c1f); }
-.csn-qty { color: var(--ks-muted, #9a9aa3); font-variant-numeric: tabular-nums; }
+.csn-table tbody tr:last-child td { border-bottom: none; }
+.csn-table tbody tr:hover td { background: var(--ks-hover, #f6f7f9); }
+
+/* Order/Resi/Status/Pelanggan/Platform/Waktu/Batas columns hold a single short
+   value each — center them so they don't look stuck to the top next to the
+   taller SKU/Pesan/Catatan columns. */
+.csn-table td:nth-child(-n+7) { vertical-align: middle; }
+
+/* Product Layout in Table */
+.csn-products {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.csn-product-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px dashed var(--ks-line, #ececef);
+}
+.csn-product-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.csn-product-sku {
+  color: var(--ks-text, #1c1c1f);
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+.csn-product-qty {
+  font-weight: 700;
+  color: var(--dc-blue, #2458ce);
+  background: #eef3fc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+}
 
 /* Buyer message auto-classification */
-.csn-classify-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.csn-classify-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .csn-classify-tag {
-  font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
   white-space: nowrap; letter-spacing: 0.02em;
 }
-.csn-classify-tag.is-date   { background: #eef3fc; color: var(--dc-blue, #2458ce); }
-.csn-classify-tag.is-color  { background: #f5f0fe; color: var(--dc-purple, #7c3aed); }
-.csn-classify-tag.is-general{ background: var(--ks-hover, #f6f7f9); color: var(--ks-muted, #9a9aa3); }
+.csn-classify-tag.is-date    { background: #f5f0fe; color: var(--dc-purple, #7c3aed); }
+.csn-classify-tag.is-color   { background: #fef3ec; color: var(--dc-orange, #ea580c); }
+.csn-classify-tag.is-general { background: var(--ks-hover, #f6f7f9); color: var(--ks-text-soft, #6b6b73); }
+
+.csn-message-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
 
 /* Pagination */
 .csn-pagination {
@@ -124,18 +206,17 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
   margin-top: 14px;
-  padding-top: 13px;
-  border-top: 1px solid var(--ks-line, #ececef);
   font-size: 12.5px;
   color: var(--ks-text-soft, #6b6b73);
 }
-.csn-pagination-size { display: flex; align-items: center; gap: 8px; }
+.csn-pagination-size { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.csn-pagination-size .csn-select { height: 30px; }
 .csn-pagination-nav { display: flex; align-items: center; gap: 10px; }
-.csn-pagination-label { font-variant-numeric: tabular-nums; }
+.csn-pagination-label { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ks-text, #1c1c1f); }
 
 @media (max-width: 900px) {
-  .csn-filter-row { flex-direction: column; align-items: stretch; }
+  .csn-filter-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .csn-filter-grow { min-width: 0; }
 }

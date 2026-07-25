@@ -233,78 +233,89 @@ const CustomerService = () => {
           ) : visibleNotes.length === 0 ? (
             <div className="dc-empty">Tidak ada pesan dengan klasifikasi "{classifyFilter}" pada halaman ini.</div>
           ) : (
-            <div className="csn-order-list">
-              {visibleNotes.map((note) => (
-                <article key={note.id} className="csn-order-card">
-                  <div className="csn-order-layer csn-layer-1">
-                    <div className="csn-field csn-field-order">
-                      <span className="csn-field-label">Order</span>
-                      <span className="csn-field-value csn-strong">{note.order_number || "-"}</span>
-                    </div>
-                    <div className="csn-field">
-                      <span className="csn-field-label">Pelanggan</span>
-                      <span className="csn-field-value">{note.customer_name || "-"}</span>
-                    </div>
-                    <div className="csn-field">
-                      <span className="csn-field-label">Resi</span>
-                      <span className="csn-field-value csn-mono">{note.tracking_number || "-"}</span>
-                    </div>
-                    <div className="csn-field">
-                      <span className="csn-field-label">Status</span>
-                      <span className="csn-tag">{note.status || "-"}</span>
-                    </div>
-                    <div className="csn-field">
-                      <span className="csn-field-label">Platform</span>
-                      <span className="csn-field-value">{note.platform || "-"}</span>
-                    </div>
-                  </div>
-
-                  <div className="csn-order-layer csn-layer-2">
-                    <div className="csn-field">
-                      <span className="csn-field-label">Tanggal Order</span>
-                      <span className="csn-field-value csn-muted">{formatDateTime(note.order_date)}</span>
-                    </div>
-                    <div className="csn-field">
-                      <span className="csn-field-label">Batas Kirim</span>
-                      <span className="csn-field-value csn-muted">{formatDateTime(note.shipping_deadline)}</span>
-                    </div>
-                    <div className="csn-field csn-field-product">
-                      <span className="csn-field-label">Product</span>
-                      {note.items && note.items.length > 0 ? (
-                        <ul className="csn-product-list">
-                          {note.items.map((item, idx) => (
-                            <li key={idx}>
-                              {item.product_name || item.sku || "-"}
-                              {item.quantity ? <span className="csn-qty"> ×{item.quantity}</span> : null}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="csn-field-value csn-muted">—</span>
-                      )}
-                    </div>
-                    <div className="csn-field csn-field-note">
-                      <span className="csn-field-label">Pesan Pembeli</span>
-                      {note.buyer_message ? (
-                        <>
-                          <div className="csn-classify-row">
-                            {classifyBuyerMessage(note.buyer_message).map((tag) => (
-                              <span key={tag} className={`csn-classify-tag ${CLASSIFICATION_CLASS[tag] || "is-general"}`}>{tag}</span>
+            <div className="csn-table-wrapper">
+              <table className="csn-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "10%" }}>No. Order</th>
+                    <th style={{ width: "10%" }}>No. Resi</th>
+                    <th style={{ width: "8%" }}>Status</th>
+                    <th style={{ width: "10%" }}>Pelanggan</th>
+                    <th style={{ width: "7%" }}>Platform</th>
+                    <th style={{ width: "9%" }}>Waktu Order</th>
+                    <th style={{ width: "9%" }}>Batas Kirim</th>
+                    <th style={{ width: "13%" }}>SKU Produk</th>
+                    <th style={{ width: "13%" }}>Pesan Pembeli</th>
+                    <th style={{ width: "11%" }}>Catatan Penjual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleNotes.map((note) => (
+                    <tr key={note.id}>
+                      <td>
+                        <div className="csn-order-id">{note.order_number || "-"}</div>
+                      </td>
+                      <td>
+                        <div className="csn-tracking">{note.tracking_number || "-"}</div>
+                      </td>
+                      <td>
+                        <span className={`csn-tag ${
+                          note.status === 'PAID' || note.status === 'DELIVERED' ? 'is-paid' :
+                          note.status === 'CANCELLED' || note.status === 'RETURNED' ? 'is-cancelled' :
+                          note.status === 'SHIPPING' || note.status === 'SHIPPED' ? 'is-shipping' : 'is-default'
+                        }`}>
+                          {note.status || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="csn-order-id">{note.customer_name || "-"}</div>
+                      </td>
+                      <td>
+                        <span className="csn-platform">{note.platform || "-"}</span>
+                      </td>
+                      <td>
+                        <div className="csn-datetime">{formatDateTime(note.order_date)}</div>
+                      </td>
+                      <td>
+                        <div className="csn-datetime">{formatDateTime(note.shipping_deadline)}</div>
+                      </td>
+                      <td>
+                        {note.items && note.items.length > 0 ? (
+                          <div className="csn-products">
+                            {note.items.map((item, idx) => (
+                              <div key={idx} className="csn-product-card">
+                                <span className="csn-product-sku">{item.sku || "NO-SKU"}</span>
+                                {item.quantity ? <span className="csn-product-qty">Qty: {item.quantity}</span> : null}
+                              </div>
                             ))}
                           </div>
-                          <span className="csn-field-value">{note.buyer_message}</span>
-                        </>
-                      ) : (
-                        <span className="csn-field-value csn-muted">—</span>
-                      )}
-                    </div>
-                    <div className="csn-field csn-field-note">
-                      <span className="csn-field-label">Catatan Penjual</span>
-                      <span className="csn-field-value">{note.seller_memo || <span className="csn-muted">—</span>}</span>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                        ) : (
+                          <span className="csn-muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        {note.buyer_message ? (
+                          <>
+                            <div className="csn-classify-row">
+                              {classifyBuyerMessage(note.buyer_message).map((tag) => (
+                                <span key={tag} className={`csn-classify-tag ${CLASSIFICATION_CLASS[tag] || "is-general"}`}>{tag}</span>
+                              ))}
+                            </div>
+                            <div className="csn-message-text" title={note.buyer_message}>{note.buyer_message}</div>
+                          </>
+                        ) : (
+                          <span className="csn-muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        {note.seller_memo
+                          ? <div className="csn-message-text" title={note.seller_memo}>{note.seller_memo}</div>
+                          : <span className="csn-muted">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
