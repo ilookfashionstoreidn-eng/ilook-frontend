@@ -559,6 +559,18 @@
   gap: 16px 14px;
 }
 
+.product-list-form-layout-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+
+.product-list-form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+}
+
 .product-list-field {
   display: flex;
   flex-direction: column;
