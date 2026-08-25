@@ -82,7 +82,6 @@ import RefundBahan from "./components/Bahan/RefundBahan";
 import PendapatanPabrik from "./components/Bahan/PendapatanPabrik";
 import HistoryPendapatanPabrik from "./components/Bahan/HistoryPendapatanPabrik";
 import LaporanHasil from "./components/Cutting/SpkCutting/LaporanHasil";
-import LaporanDailyProduksi from "./components/Cutting/SpkCutting/LaporanDailyProduksi";
 import LaporanDataAcuan from "./components/Cutting/SpkCutting/LaporanDataAcuan";
 import Sku from "./components/Jahit/Sku";
 import HistoryProdukMasukGudang from "./components/Bahan/HistoryProdukMasukGudang";
@@ -137,10 +136,6 @@ const App = () => {
             <Route path="home" element={<Home />} />
           </Route>
 
-          {/* Laporan Daily Produksi */}
-          <Route element={<MenuProtectedRoute menuKey="laporan_daily_produksi" />}>
-            <Route path="laporan-daily-produksi" element={<LaporanDailyProduksi />} />
-          </Route>
 
           {/* CMT Group */}
           <Route element={<MenuProtectedRoute menuKey="cmt" />}>
