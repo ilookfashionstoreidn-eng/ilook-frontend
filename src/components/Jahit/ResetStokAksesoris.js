@@ -15,7 +15,7 @@ const ResetStokAksesoris = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await API.get(`/aksesoris?page=${currentPage}`);
+      const response = await API.get(`/aksesoris?page=${currentPage}&per_page=50`);
       setAksesoris(response.data);
     } catch (err) {
       setError("Gagal mengambil data aksesoris");

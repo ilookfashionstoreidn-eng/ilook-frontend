@@ -1,7 +1,35 @@
 import React, { useEffect, useState } from "react";
+import "./KodeSeriBelumDikerjakanOptimized.css";
 import "./Aksesoris.css";
 import API from "../../api";
-import { FaPlus, FaEdit, FaBox } from "react-icons/fa";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+import { FaPlus, FaEdit, FaTrash, FaUndo, FaBox, FaSearch, FaTimes } from "react-icons/fa";
+
+const initialAksesorisForm = {
+  nama_aksesoris: "",
+  jenis_aksesoris: "",
+  satuan: "",
+  harga_jual: "",
+  foto_aksesoris: null,
+  jumlah_per_satuan: "",
+};
+
+const SATUAN_AKSESORIS = {
+  pcs: "Pcs",
+  pack: "Pack",
+  lusin: "Lusin",
+  kodi: "Kodi",
+  roll: "Roll",
+  gross: "Gross",
+};
+
+const JENIS_AKSESORIS = {
+  handtag: "Handtag",
+  renda: "Renda",
+  kancing: "Kancing",
+  resleting: "Resetling",
+};
 
 const Aksesoris = () => {
   const [aksesoris, setAksesoris] = useState({ data: [] });
@@ -14,32 +42,29 @@ const Aksesoris = () => {
   const [editAksesoris, setEditAksesoris] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState(null);
+  const [resettingId, setResettingId] = useState(null);
 
-  const [newAksesoris, setNewAksesoris] = useState({
-    nama_aksesoris: "",
-    jenis_aksesoris: "",
-    satuan: "",
-    harga_jual: "",
-    foto_aksesoris: null,
-    jumlah_per_satuan: "",
+  const [newAksesoris, setNewAksesoris] = useState(initialAksesorisForm);
 
-  });
+  const showSuccessAlert = (title, text) =>
+    Swal.fire({
+      icon: "success",
+      title,
+      text,
+      timer: 1800,
+      showConfirmButton: false,
+      timerProgressBar: true,
+    });
 
-  const SATUAN_AKSESORIS = {
-    pcs: "Pcs",
-    pack: "Pack",
-    lusin: "Lusin",
-    kodi: "Kodi",
-    roll: "Roll",
-    gross: "Gross",
-  };
-
-  const JENIS_AKSESORIS = {
-    handtag: "Handtag",
-    renda: "Renda",
-    kancing: "Kancing",
-    resleting: "Resetling",
-  };
+  const showErrorAlert = (title, text) =>
+    Swal.fire({
+      icon: "error",
+      title,
+      text,
+      confirmButtonText: "Mengerti",
+      confirmButtonColor: "#2563eb",
+    });
 
   const handleJenisAksesorisChange = (e) => {
     const value = e.target.value;
@@ -56,7 +81,7 @@ const Aksesoris = () => {
   const fetchAksesoris = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await API.get("/aksesoris?page=" + page);
+      const response = await API.get("/aksesoris?page=" + page + "&per_page=50");
       setAksesoris(response.data);
     } catch (error) {
       setError("Gagal mengambil data");
@@ -69,14 +94,11 @@ const Aksesoris = () => {
     fetchAksesoris(page);
   }, [page]);
 
-
-
   const fetchPage = (newPage) => {
     if (newPage >= 1 && newPage <= aksesoris.last_page) {
       setPage(newPage);
     }
   };
-
 
   const sortedAksesoris = [...(aksesoris.data || [])].sort((a, b) => b.id - a.id);
 
@@ -84,25 +106,15 @@ const Aksesoris = () => {
     item.nama_aksesoris.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
   const handleFormSubmit = async (e) => {
     e.preventDefault(); // Mencegah refresh halaman
 
-    console.log("Form data yang dikirim:");
-    console.log({
-      nama_aksesoris: newAksesoris.nama_aksesoris,
-      jenis_aksesoris: newAksesoris.jenis_aksesoris,
-      satuan: newAksesoris.satuan,
-      harga_jual: newAksesoris.harga_jual,
-      foto_aksesoris: newAksesoris.foto_aksesoris,
-    });
     const formData = new FormData();
     formData.append("nama_aksesoris", newAksesoris.nama_aksesoris);
     formData.append("jenis_aksesoris", newAksesoris.jenis_aksesoris);
     formData.append("satuan", newAksesoris.satuan);
     formData.append("harga_jual", newAksesoris.harga_jual);
     formData.append("jumlah_per_satuan", newAksesoris.jumlah_per_satuan);
-
 
     if (newAksesoris.foto_aksesoris) {
       formData.append("foto_aksesoris", newAksesoris.foto_aksesoris);
@@ -115,27 +127,18 @@ const Aksesoris = () => {
         },
       });
 
-      console.log("Response API:", response);
-      console.log("Response Data:", response.data); // Debugging
-
-      alert("Produk berhasil ditambahkan!");
-
       setAksesoris((prev) => ({
         ...prev,
         data: [...prev.data, response.data], // ← untuk create, bukan map()
       }));
 
-
-
       await fetchAksesoris();
       setShowForm(false); // Tutup modal
-
-      // Reset form input
-      setNewAksesoris({ nama_aksesoris: "", jenis_aksesoris: "", satuan: "" });
+      setShowCustomJenisAksesoris(false);
+      setNewAksesoris(initialAksesorisForm);
+      await showSuccessAlert("Berhasil", "Aksesoris berhasil ditambahkan.");
     } catch (error) {
-      console.error("Error:", error.response?.data?.message || error.message);
-
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan produk.");
+      await showErrorAlert("Gagal Menyimpan", error.response?.data?.message || "Terjadi kesalahan saat menyimpan aksesoris.");
     }
   };
 
@@ -179,7 +182,6 @@ const Aksesoris = () => {
     formData.append("harga_jual", editAksesoris.harga_jual);
     formData.append("jumlah_per_satuan", editAksesoris.jumlah_per_satuan);
 
-
     // Hanya jika ada gambar baru
     if (editAksesoris.foto_aksesoris instanceof File) {
       formData.append("foto_aksesoris", editAksesoris.foto_aksesoris);
@@ -198,11 +200,10 @@ const Aksesoris = () => {
           a.id === editAksesoris.id ? response.data : a
         ),
       }));
-      alert("Aksesoris diperbarui!");
       setShowEditForm(false);
+      await showSuccessAlert("Berhasil", "Aksesoris berhasil diperbarui.");
     } catch (error) {
-      console.error(error.response?.data);
-      alert("Gagal update!");
+      await showErrorAlert("Gagal Memperbarui", error.response?.data?.message || "Aksesoris gagal diperbarui.");
     }
   };
 
@@ -222,205 +223,310 @@ const Aksesoris = () => {
     }));
   };
 
+  const handleDelete = async (item) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Hapus Aksesoris?",
+      text: `Data "${item.nama_aksesoris}" akan dihapus permanen.`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#be123c",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setDeletingId(item.id);
+      await API.delete(`/aksesoris/${item.id}`);
+      await fetchAksesoris(page);
+      await showSuccessAlert("Terhapus", "Aksesoris berhasil dihapus.");
+    } catch (error) {
+      await showErrorAlert(
+        "Gagal Menghapus",
+        error.response?.data?.error || "Aksesoris gagal dihapus."
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleResetStok = async (item) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Reset Stok?",
+      text: `Semua stok tersedia untuk "${item.nama_aksesoris}" akan dijadikan terpakai (stok jadi 0).`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, reset",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#b45309",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setResettingId(item.id);
+      await API.post(`/aksesoris/${item.id}/reset-stok`);
+      await fetchAksesoris(page);
+      await showSuccessAlert("Berhasil", `Stok "${item.nama_aksesoris}" berhasil direset.`);
+    } catch (error) {
+      await showErrorAlert(
+        "Gagal Reset Stok",
+        error.response?.data?.error || "Stok gagal direset."
+      );
+    } finally {
+      setResettingId(null);
+    }
+  };
+
+  const closeAddModal = () => {
+    setShowForm(false);
+    setShowCustomJenisAksesoris(false);
+    setNewAksesoris(initialAksesorisForm);
+  };
+
+  const closeEditModal = () => {
+    setShowEditForm(false);
+    setEditAksesoris(null);
+  };
+
   return (
-    <div className="aksesoris-page">
-      <div className="aksesoris-header">
-        <div className="aksesoris-header-icon">
-          <FaBox />
+    <div className="ks-page ak-page">
+      <header className="ks-header">
+        <div className="ks-header-id">
+          <h1>Data Aksesoris</h1>
+          <span className="ks-header-sub">
+            {aksesoris.total ?? filteredAksesoris.length} data ditemukan — Master data aksesoris, satuan, harga, dan stok
+          </span>
         </div>
-        <h1>Data Aksesoris</h1>
-      </div>
+      </header>
 
-      <div className="aksesoris-table-container">
-        <div className="aksesoris-filter-header">
-          <button className="aksesoris-btn-add" onClick={() => setShowForm(true)}>
-            <FaPlus /> Tambah
-          </button>
-
-          <div className="aksesoris-search-bar">
+      <section className="ks-board">
+        <div className="ks-toolbar">
+          <div className="ks-search">
+            <FaSearch className="ks-search-icon" style={{ fontSize: "12px" }} />
             <input
               type="text"
-              placeholder="Cari aksesoris..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Cari aksesoris..."
             />
+            {searchTerm && (
+              <button type="button" className="ak-search-clear" onClick={() => setSearchTerm("")}>
+                <FaTimes />
+              </button>
+            )}
           </div>
+
+          <button className="ks-btn is-primary" type="button" onClick={() => setShowForm(true)}>
+            <FaPlus /> Tambah
+          </button>
         </div>
 
-        {loading ? (
-          <div className="aksesoris-loading">Memuat data aksesoris...</div>
-        ) : error ? (
-          <div className="aksesoris-error">{error}</div>
-        ) : filteredAksesoris.length === 0 ? (
-          <div className="aksesoris-empty-state">
-            <div className="aksesoris-empty-state-icon">
-              <FaBox />
-            </div>
-            <p>Tidak ada data aksesoris ditemukan</p>
-          </div>
-        ) : (
-          <div className="aksesoris-table-wrapper">
-            <table className="aksesoris-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Nama Aksesoris</th>
-                  <th>Jenis</th>
-                  <th>Isi / Satuan</th>
-                  <th>Harga (Pack)</th>
-                  <th>Harga / Pcs</th>
-                  <th>Stok</th>
-                  <th>Foto</th>
-                  <th style={{ textAlign: "center" }}>Aksi</th>
-                </tr>
-              </thead>
+        <div className="ks-grid-scroll">
+          <table className="ks-grid">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Nama Aksesoris</th>
+                <th>Jenis</th>
+                <th>Isi / Satuan</th>
+                <th>Harga (Pack)</th>
+                <th>Harga / Pcs</th>
+                <th>Stok</th>
+                <th>Foto</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
 
-              <tbody>
-                {aksesoris.data && aksesoris.data.map((aksesoris, index) => (
-                  <tr key={aksesoris.id}>
-                    <td>{index + 1}</td>
-                    <td style={{ fontWeight: 500 }}>{aksesoris.nama_aksesoris}</td>
-                    <td>{aksesoris.jenis_aksesoris}</td>
-                    <td>{aksesoris.jumlah_per_satuan}</td>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="9" className="ak-state-cell">Memuat data aksesoris...</td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan="9" className="ak-state-cell ak-state-error">{error}</td>
+                </tr>
+              ) : filteredAksesoris.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="ak-state-cell">Tidak ada data aksesoris ditemukan.</td>
+                </tr>
+              ) : (
+                filteredAksesoris.map((item, index) => (
+                  <tr key={item.id}>
+                    <td className="ks-cell-num">{index + 1}</td>
+                    <td className="ks-cell-code">
+                      <strong>{item.nama_aksesoris}</strong>
+                    </td>
+                    <td>{item.jenis_aksesoris}</td>
+                    <td>{item.jumlah_per_satuan}</td>
+                    <td>Rp {Number(item.harga_jual).toLocaleString("id-ID")}</td>
+                    <td className="ks-muted">
+                      Rp {Number(item.harga_per_biji).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </td>
                     <td>
-                      <span className="aksesoris-price">
-                        Rp {Number(aksesoris.harga_jual).toLocaleString("id-ID")}
+                      <span className={`ak-stock-badge${item.jumlah_stok === 0 ? " out" : item.jumlah_stok < 10 ? " low" : ""}`}>
+                        {item.jumlah_stok} {item.satuan}
                       </span>
                     </td>
                     <td>
-                      <span className="aksesoris-price" style={{ color: "#6B7280" }}>
-                        Rp {Number(aksesoris.harga_per_biji).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`aksesoris-stok-badge ${aksesoris.jumlah_stok === 0 ? "out" : aksesoris.jumlah_stok < 10 ? "low" : ""}`}>
-                        {aksesoris.jumlah_stok} {aksesoris.satuan}
-                      </span>
-                    </td>
-                    <td>
-                      {aksesoris.foto_aksesoris ? (
+                      {item.foto_aksesoris ? (
                         <img
-                          src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${aksesoris.foto_aksesoris}`}
-                          alt={aksesoris.nama_aksesoris}
-                          className="aksesoris-image"
+                          src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${item.foto_aksesoris}`}
+                          alt={item.nama_aksesoris}
+                          className="ak-thumb"
                         />
                       ) : (
-                        <div className="aksesoris-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: 20 }}>
+                        <div className="ak-thumb ak-thumb-empty">
                           <FaBox />
                         </div>
                       )}
                     </td>
                     <td>
-                      <div className="aksesoris-action-card">
-                        <button className="aksesoris-btn-icon" onClick={() => handleEdit(aksesoris)} title="Edit">
-                          <FaEdit className="icon" />
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button className="ks-btn pl-act-btn" type="button" onClick={() => handleEdit(item)} title="Edit">
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="ks-btn pl-act-btn warning"
+                          type="button"
+                          onClick={() => handleResetStok(item)}
+                          disabled={resettingId === item.id || item.jumlah_stok === 0}
+                          title="Reset Stok"
+                        >
+                          <FaUndo />
+                        </button>
+                        <button
+                          className="ks-btn pl-act-btn danger"
+                          type="button"
+                          onClick={() => handleDelete(item)}
+                          disabled={deletingId === item.id}
+                          title="Hapus"
+                        >
+                          <FaTrash />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {aksesoris.data?.length > 0 && (
-              <div className="pembelian-aksesoris-pagination">
-                <button
-                  disabled={page === 1}
-                  onClick={() => fetchPage(page - 1)}
-                >
-                  ← Prev
-                </button>
-
-                <span>
-                  Halaman {aksesoris.current_page} / {aksesoris.last_page}
-                </span>
-
-                <button
-                  disabled={page === aksesoris.last_page}
-                  onClick={() => fetchPage(page + 1)}
-                >
-                  Next →
-                </button>
-              </div>
-            )}
-
+        {aksesoris.data?.length > 0 && aksesoris.last_page > 1 && (
+          <div className="ks-footer">
+            <span className="ak-footer-info">
+              Halaman {aksesoris.current_page} dari {aksesoris.last_page}
+            </span>
+            <div className="ks-pager">
+              <button className="ks-pg-btn" type="button" onClick={() => fetchPage(page - 1)} disabled={page === 1}>
+                Prev
+              </button>
+              <button className="ks-pg-btn" type="button" onClick={() => fetchPage(page + 1)} disabled={page === aksesoris.last_page}>
+                Next
+              </button>
+            </div>
           </div>
         )}
-      </div>
-      {/* Modal Form */}
+      </section>
+
+      {/* Modal Tambah */}
       {showForm && (
-        <div className="aksesoris-modal" onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
-          <div className="aksesoris-modal-content">
-            <h2>Tambah Aksesoris</h2>
-            <form onSubmit={handleFormSubmit} className="aksesoris-form">
-              <div className="aksesoris-form-group">
-                <label>Nama Aksesoris:</label>
-                <input type="text" name="nama_aksesoris" value={newAksesoris.nama_aksesoris} onChange={handleInputChange} placeholder="Masukkan nama aksesoris" required />
+        <div className="ak-modal-backdrop" onClick={(e) => e.target === e.currentTarget && closeAddModal()}>
+          <div className="ak-modal">
+            <div className="ak-modal-header">
+              <div>
+                <p className="ak-modal-kicker">Aksesoris</p>
+                <h2>Tambah Aksesoris</h2>
               </div>
-              <div className="aksesoris-form-group">
-                <label>Jenis Aksesoris</label>
-                <select name="jenis_aksesoris" value={showCustomJenisAksesoris ? "custom" : newAksesoris.jenis_aksesoris} onChange={handleJenisAksesorisChange}>
-                  <option value="">Pilih Jenis</option>
-                  {Object.keys(JENIS_AKSESORIS).map((key) => (
-                    <option key={key} value={key}>
-                      {JENIS_AKSESORIS[key]}
-                    </option>
-                  ))}
-                  <option value="custom">Lainnya...</option>
-                </select>
+              <button className="ak-modal-close" type="button" onClick={closeAddModal}>
+                <FaTimes />
+              </button>
+            </div>
 
-                {/* Muncul kalau user pilih "custom" */}
-                {showCustomJenisAksesoris && <input type="text" name="jenis_aksesoris" placeholder="Masukkan jenis aksesoris baru" value={newAksesoris.jenis_aksesoris} onChange={handleInputChange} className="form-control" />}
+            <form onSubmit={handleFormSubmit}>
+              <div className="ak-modal-body">
+                <div className="ak-form-grid">
+                  <label className="ak-field full">
+                    <span>Nama Aksesoris</span>
+                    <input type="text" name="nama_aksesoris" value={newAksesoris.nama_aksesoris} onChange={handleInputChange} placeholder="Masukkan nama aksesoris" required />
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Jenis Aksesoris</span>
+                    <select name="jenis_aksesoris" value={showCustomJenisAksesoris ? "custom" : newAksesoris.jenis_aksesoris} onChange={handleJenisAksesorisChange}>
+                      <option value="">Pilih Jenis</option>
+                      {Object.keys(JENIS_AKSESORIS).map((key) => (
+                        <option key={key} value={key}>
+                          {JENIS_AKSESORIS[key]}
+                        </option>
+                      ))}
+                      <option value="custom">Lainnya...</option>
+                    </select>
+                  </label>
+
+                  {showCustomJenisAksesoris && (
+                    <label className="ak-field">
+                      <span>Jenis Aksesoris (Baru)</span>
+                      <input type="text" name="jenis_aksesoris" placeholder="Masukkan jenis aksesoris baru" value={newAksesoris.jenis_aksesoris} onChange={handleInputChange} />
+                    </label>
+                  )}
+
+                  <label className="ak-field">
+                    <span>Satuan Aksesoris</span>
+                    <select name="satuan" value={newAksesoris.satuan} onChange={handleInputChange}>
+                      <option value="">Pilih Satuan</option>
+                      {Object.keys(SATUAN_AKSESORIS).map((key) => (
+                        <option key={key} value={key}>
+                          {SATUAN_AKSESORIS[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Jumlah per Satuan (biji per {newAksesoris.satuan || "satuan"})</span>
+                    <input
+                      type="number"
+                      name="jumlah_per_satuan"
+                      value={newAksesoris.jumlah_per_satuan}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: 12"
+                      min="1"
+                      required
+                    />
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Harga Jual</span>
+                    <input type="number" name="harga_jual" value={newAksesoris.harga_jual} onChange={handleInputChange} placeholder="Masukkan harga jual" min="0" />
+                  </label>
+
+                  <label className="ak-field full">
+                    <span>Gambar Produk</span>
+                    <input type="file" name="foto_aksesoris" accept="image/*" onChange={handleFileChange} />
+                    {newAksesoris.foto_aksesoris && !(newAksesoris.foto_aksesoris instanceof File) && (
+                      <div className="ak-preview-image">
+                        <p>Gambar Saat Ini:</p>
+                        <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${newAksesoris.foto_aksesoris}`} alt="Foto Aksesoris" />
+                      </div>
+                    )}
+                  </label>
+                </div>
               </div>
 
-              <div className="aksesoris-form-group">
-                <label>Satuan Aksesoris</label>
-                <select name="satuan" value={newAksesoris.satuan} onChange={handleInputChange}>
-                  <option value="">Pilih Satuan</option>
-                  {Object.keys(SATUAN_AKSESORIS).map((key) => (
-                    <option key={key} value={key}>
-                      {SATUAN_AKSESORIS[key]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="aksesoris-form-group">
-                <label>Jumlah per Satuan (biji per {newAksesoris.satuan || 'satuan'})</label>
-                <input
-                  type="number"
-                  name="jumlah_per_satuan"
-                  value={newAksesoris.jumlah_per_satuan}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: 12"
-                  min="1"
-                  required
-                />
-              </div>
-
-
-              <div className="aksesoris-form-group">
-                <label>Harga Jual:</label>
-                <input type="number" name="harga_jual" value={newAksesoris.harga_jual} onChange={handleInputChange} placeholder="Masukkan harga jual" min="0" />
-              </div>
-
-              <div className="aksesoris-form-group">
-                <label>Gambar Produk</label>
-                <input type="file" name="foto_aksesoris" accept="image/*" onChange={handleFileChange} />
-                {newAksesoris.foto_aksesoris && !(newAksesoris.foto_aksesoris instanceof File) && (
-                  <div className="aksesoris-preview-image">
-                    <p>Gambar Saat Ini:</p>
-                    <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${newAksesoris.foto_aksesoris}`} alt="Foto Aksesoris" />
-                  </div>
-                )}
-              </div>
-
-              <div className="aksesoris-form-actions">
-                <button type="submit" className="aksesoris-btn-submit">
-                  Simpan
-                </button>
-                <button type="button" className="aksesoris-btn-cancel" onClick={() => setShowForm(false)}>
+              <div className="ak-modal-actions">
+                <button type="button" className="ak-ghost-button" onClick={closeAddModal}>
                   Batal
+                </button>
+                <button type="submit" className="ak-primary-button">
+                  Simpan
                 </button>
               </div>
             </form>
@@ -428,84 +534,85 @@ const Aksesoris = () => {
         </div>
       )}
 
-      {showEditForm && (
-        <div className="aksesoris-modal" onClick={(e) => e.target === e.currentTarget && setShowEditForm(false)}>
-          <div className="aksesoris-modal-content">
-            <h2>Edit Aksesoris</h2>
+      {/* Modal Edit */}
+      {showEditForm && editAksesoris && (
+        <div className="ak-modal-backdrop" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
+          <div className="ak-modal">
+            <div className="ak-modal-header">
+              <div>
+                <p className="ak-modal-kicker">Aksesoris</p>
+                <h2>Edit Aksesoris</h2>
+              </div>
+              <button className="ak-modal-close" type="button" onClick={closeEditModal}>
+                <FaTimes />
+              </button>
+            </div>
 
-            <form onSubmit={handleUpdateAksesoris} className="aksesoris-form">
-              <div className="aksesoris-form-group">
-                <label>Nama Aksesoris</label>
-                <input type="text" name="nama_aksesoris" value={editAksesoris.nama_aksesoris} onChange={handleChangeEdit} required />
+            <form onSubmit={handleUpdateAksesoris}>
+              <div className="ak-modal-body">
+                <div className="ak-form-grid">
+                  <label className="ak-field full">
+                    <span>Nama Aksesoris</span>
+                    <input type="text" name="nama_aksesoris" value={editAksesoris.nama_aksesoris} onChange={handleChangeEdit} required />
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Jenis Aksesoris</span>
+                    <select name="jenis_aksesoris" value={editAksesoris.jenis_aksesoris} onChange={handleChangeEdit}>
+                      <option value="">Pilih Jenis</option>
+                      {Object.keys(JENIS_AKSESORIS).map((key) => (
+                        <option key={key} value={key}>
+                          {JENIS_AKSESORIS[key]}
+                        </option>
+                      ))}
+                      <option value="custom">Lainnya...</option>
+                    </select>
+                    {editAksesoris.jenis_aksesoris === "custom" && (
+                      <input type="text" name="jenis_aksesoris" placeholder="Masukkan jenis aksesoris baru" onChange={(e) => setEditAksesoris((prev) => ({ ...prev, jenis_aksesoris: e.target.value }))} style={{ marginTop: "6px" }} />
+                    )}
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Satuan Aksesoris</span>
+                    <select name="satuan" value={editAksesoris.satuan} onChange={handleChangeEdit}>
+                      <option value="">Pilih Satuan</option>
+                      {Object.keys(SATUAN_AKSESORIS).map((key) => (
+                        <option key={key} value={key}>
+                          {SATUAN_AKSESORIS[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Jumlah per Satuan</span>
+                    <input type="number" name="jumlah_per_satuan" value={editAksesoris.jumlah_per_satuan} onChange={handleChangeEdit} min="1" />
+                  </label>
+
+                  <label className="ak-field">
+                    <span>Harga Satuan</span>
+                    <input type="number" name="harga_jual" value={editAksesoris.harga_jual} onChange={handleChangeEdit} placeholder="Masukkan harga satuan" />
+                  </label>
+
+                  <label className="ak-field full">
+                    <span>Gambar Produk</span>
+                    <input type="file" accept="image/*" onChange={handleEditFileChange} />
+                    {editAksesoris.foto && !(editAksesoris.foto_aksesoris instanceof File) && (
+                      <div className="ak-preview-image">
+                        <p>Gambar Saat Ini:</p>
+                        <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${editAksesoris.foto}`} alt="Foto Aksesoris" />
+                      </div>
+                    )}
+                  </label>
+                </div>
               </div>
 
-              <div className="aksesoris-form-group">
-                <label>Jenis Aksesoris</label>
-                <select name="jenis_aksesoris" value={editAksesoris.jenis_aksesoris} onChange={handleChangeEdit}>
-                  <option value="">Pilih Jenis</option>
-
-                  {Object.keys(JENIS_AKSESORIS).map((key) => (
-                    <option key={key} value={key}>
-                      {JENIS_AKSESORIS[key]}
-                    </option>
-                  ))}
-
-                  <option value="custom">Lainnya...</option>
-                </select>
-
-                {/* Jika pilih custom → muncul input manual */}
-                {editAksesoris.jenis_aksesoris === "custom" && (
-                  <input type="text" name="jenis_aksesoris" placeholder="Masukkan jenis aksesoris baru" onChange={(e) => setEditAksesoris((prev) => ({ ...prev, jenis_aksesoris: e.target.value }))} className="form-control" />
-                )}
-              </div>
-
-              <div className="aksesoris-form-group">
-                <label>Satuan Aksesoris</label>
-                <select name="satuan" value={editAksesoris.satuan} onChange={handleChangeEdit}>
-                  <option value="">Pilih Satuan</option>
-
-                  {Object.keys(SATUAN_AKSESORIS).map((key) => (
-                    <option key={key} value={key}>
-                      {SATUAN_AKSESORIS[key]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="aksesoris-form-group">
-                <label>Jumlah per Satuan</label>
-                <input
-                  type="number"
-                  name="jumlah_per_satuan"
-                  value={editAksesoris.jumlah_per_satuan}
-                  onChange={handleChangeEdit}
-                  min="1"
-                />
-              </div>
-
-
-              <div className="aksesoris-form-group">
-                <label>Harga Satuan</label>
-                <input type="number" name="harga_jual" value={editAksesoris.harga_jual} onChange={handleChangeEdit} placeholder="Masukkan harga satuan" />
-              </div>
-
-              <div className="aksesoris-form-group">
-                <label>Gambar Produk:</label>
-                <input type="file" accept="image/*" onChange={handleEditFileChange} />
-                {editAksesoris.foto && !(editAksesoris.foto_aksesoris instanceof File) && (
-                  <div className="aksesoris-preview-image">
-                    <p>Gambar Saat Ini:</p>
-                    <img src={`${process.env.REACT_APP_FILE_URL || ""}/storage/${editAksesoris.foto}`} alt="Foto Aksesoris" />
-                  </div>
-                )}
-              </div>
-
-              <div className="aksesoris-form-actions">
-                <button type="submit" className="aksesoris-btn-submit">
-                  Simpan
-                </button>
-                <button type="button" className="aksesoris-btn-cancel" onClick={() => setShowEditForm(false)}>
+              <div className="ak-modal-actions">
+                <button type="button" className="ak-ghost-button" onClick={closeEditModal}>
                   Batal
+                </button>
+                <button type="submit" className="ak-primary-button">
+                  Simpan
                 </button>
               </div>
             </form>
