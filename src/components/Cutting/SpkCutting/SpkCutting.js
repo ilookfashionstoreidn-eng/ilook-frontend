@@ -3255,7 +3255,7 @@ const SpkCutting = () => {
 
                     <div className="spk-cutting-form-group spk-cutting-form-group-full" style={{ padding: '0', display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '12px' }}>
                       <label style={{ width: '130px', flexShrink: 0, marginTop: '8px', marginBottom: 0 }}>Keterangan:</label>
-                      <textarea name="keterangan" value={newSpkCutting.keterangan} onChange={handleInputChange} readOnly style={{ background: '#f1f5f9', flex: 1 }} />
+                      <textarea name="keterangan" value={newSpkCutting.keterangan} onChange={handleInputChange} placeholder="Catatan untuk tukang cutting (opsional)" rows={3} style={{ flex: 1 }} />
                     </div>
                   </div>
                 </section>
@@ -3912,7 +3912,7 @@ const SpkCutting = () => {
 
               <div className="spk-cutting-form-group spk-cutting-form-group-full" style={{ padding: '0', display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '12px' }}>
                 <label style={{ width: '130px', flexShrink: 0, marginTop: '8px', marginBottom: 0 }}>Keterangan:</label>
-                <textarea name="keterangan" value={editSpkCutting.keterangan} onChange={handleEditInputChange} readOnly style={{ background: '#f1f5f9', flex: 1 }} />
+                <textarea name="keterangan" value={editSpkCutting.keterangan} onChange={handleEditInputChange} placeholder="Catatan untuk tukang cutting (opsional)" rows={3} style={{ flex: 1 }} />
               </div>
 
               {/* Bagian dan Bahan */}
