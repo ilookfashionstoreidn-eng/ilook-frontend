@@ -81,9 +81,28 @@ const GineeSkuList = () => {
       },
     });
 
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    // Koneksi server ke Ginee kadang putus sesaat, jadi tiap halaman dicoba ulang
+    // beberapa kali sebelum seluruh sinkronisasi dibatalkan.
+    const syncPage = async (page, totalPages) => {
+      const maxAttempts = 3;
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return await API.post("/ginee/products/sync", { page });
+        } catch (error) {
+          if (attempt >= maxAttempts) throw error;
+          Swal.update({
+            html: `Halaman <b>${page + 1}</b>${totalPages ? ` dari <b>${totalPages}</b>` : ""} gagal, mencoba ulang (${attempt + 1}/${maxAttempts})...<br/><small style="color:#666">Telah memproses ${totalSynced} produk</small>`
+          });
+          await wait(5000 * attempt);
+        }
+      }
+    };
+
     try {
       // Fetch First Page to get total pages
-      let res = await API.post("/ginee/products/sync", { page: 0 });
+      let res = await syncPage(0);
       let totalPages = res.data.total_pages;
       let currentPage = res.data.current_page;
       totalSynced += res.data.synced_count || 0;
@@ -94,7 +113,8 @@ const GineeSkuList = () => {
           html: `Menarik halaman <b>${currentPage + 1}</b> dari <b>${totalPages}</b>...<br/><small style="color:#666">Telah memproses ${totalSynced} produk</small>`
         });
         
-        res = await API.post("/ginee/products/sync", { page: currentPage });
+        await wait(1000);
+        res = await syncPage(currentPage, totalPages);
         totalSynced += res.data.synced_count || 0;
       }
 
