@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
+import { parseGineeTime } from '../../utils/gineeTime';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './PickingQueue.css';
@@ -186,7 +187,7 @@ const PickingQueue = () => {
                                         <td>{order.tracking_number}</td>
                                         <td>{order.platform}</td>
                                         <td>{order.customer_name}</td>
-                                        <td>{new Date(order.label_print_time).toLocaleString('id-ID')}</td>
+                                        <td>{parseGineeTime(order.label_print_time)?.toLocaleString('id-ID') || '-'}</td>
                                         <td>
                                             <button 
                                                 className="btn-mark-picked"

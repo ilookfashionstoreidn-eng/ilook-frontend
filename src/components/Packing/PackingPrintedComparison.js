@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faPrint, faBoxOpen, faHourglassHalf, faSearch, faPercent, faStopwatch, faTriangleExclamation, faTruckFast } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
+import { parseGineeTime } from '../../utils/gineeTime';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/id';
 import './PackingMonitoring.css';
@@ -312,10 +313,10 @@ const PackingPrintedComparison = () => {
                                                 {order.total_qty}
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontSize: '12.5px' }}>
-                                                {order.order_date ? dayjs(order.order_date).format('DD MMM, HH:mm') : '-'}
+                                                {order.order_date ? dayjs(parseGineeTime(order.order_date)).format('DD MMM, HH:mm') : '-'}
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontSize: '12.5px' }}>
-                                                {order.label_print_time ? dayjs(order.label_print_time).format('DD MMM, HH:mm') : '-'}
+                                                {order.label_print_time ? dayjs(parseGineeTime(order.label_print_time)).format('DD MMM, HH:mm') : '-'}
                                             </td>
                                             <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle', color: '#475569', fontSize: '12.5px' }}>
                                                 {order.shipping_deadline ? (

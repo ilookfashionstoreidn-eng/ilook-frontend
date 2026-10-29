@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTruck, faCheckCircle, faTimesCircle, faBoxOpen, faCalendarAlt, faCheckDouble, faPercent, faChartLine, faBolt, faSearch, faListUl } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
+import { parseGineeTime } from '../../utils/gineeTime';
 import { Line, Doughnut, Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
 import '../Cutting/SpkCutting/DashboardCutting.css';
@@ -564,7 +565,7 @@ const PackingMonitoring = () => {
                                                     <td style={{ textAlign: 'center' }}>
                                                         <span className={statusPillClass(order.status)}>{order.status || '-'}</span>
                                                     </td>
-                                                    <td className="pm-muted">{order.order_date ? dayjs(order.order_date).format('DD MMM YYYY, HH:mm') : '-'}</td>
+                                                    <td className="pm-muted">{order.order_date ? dayjs(parseGineeTime(order.order_date)).format('DD MMM YYYY, HH:mm') : '-'}</td>
                                                     <td className="pm-muted">{order.picked_at ? dayjs(order.picked_at).format('DD MMM YYYY, HH:mm') : '-'}</td>
                                                     <td className="pm-muted">
                                                         {order.status === 'SHIPPING' && order.picked_at ? (

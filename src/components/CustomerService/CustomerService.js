@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "../../api";
+import { parseGineeTime } from "../../utils/gineeTime";
 import dayjs from "dayjs";
 import "../Cutting/SpkCutting/DashboardCutting.css";
 import "./CustomerService.css";
@@ -357,7 +358,7 @@ const CustomerService = () => {
     const lines = [headers.join(",")];
     targetRows.forEach((n) => {
       lines.push([
-        formatDateTime(n.order_date), n.order_number, n.tracking_number, formatDateTime(n.shipping_deadline),
+        formatDateTime(parseGineeTime(n.order_date)), n.order_number, n.tracking_number, formatDateTime(n.shipping_deadline),
         n.customer_name, n.store, n.platform, n.province, n.status, n.buyer_message, klas(n), n.extracted_date || "",
         n.seller_memo, FOLLOWUP_LABEL[n.follow_up?.status] || "Belum diproses", n.follow_up?.note || "", n.follow_up?.performed_by || "",
       ].map(csvEscape).join(","));
@@ -620,7 +621,7 @@ const CustomerService = () => {
                       <td className="csn-td-mid csn-td-center">
                         <input type="checkbox" checked={selected.has(n.id)} onChange={() => toggleRow(n.id)} title="Pilih baris ini" />
                       </td>
-                      {visibleCols.waktu && <td className="csn-td-mid"><div className="csn-datetime">{formatDateTime(n.order_date)}</div></td>}
+                      {visibleCols.waktu && <td className="csn-td-mid"><div className="csn-datetime">{formatDateTime(parseGineeTime(n.order_date))}</div></td>}
                       <td className="csn-td-mid"><div className="csn-order-id">{n.order_number || "-"}</div></td>
                       {visibleCols.noResi && <td className="csn-td-mid"><div className="csn-tracking">{n.tracking_number || "-"}</div></td>}
                       {visibleCols.batasKirim && <td className="csn-td-mid"><div className="csn-datetime">{formatDateTime(n.shipping_deadline)}</div></td>}
