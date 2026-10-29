@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./OrderMonitor.css";
 import "../Cutting/SpkCutting/DashboardCutting.css";
 import API from "../../api";
+import { parseGineeTime } from "../../utils/gineeTime";
 import {
   FaCheckCircle,
   FaDatabase,
@@ -558,7 +559,7 @@ const OrderMonitor = () => {
                           <tr key={order.id}>
                             <td>
                               <span className="om-code-badge">{order.order_number || "-"}</span>
-                              <div style={{ fontSize: "11px", color: "var(--ks-muted)", marginTop: "4px" }}>{order.platform || "-"} • {formatDateTime(order.order_date)}</div>
+                              <div style={{ fontSize: "11px", color: "var(--ks-muted)", marginTop: "4px" }}>{order.platform || "-"} • {formatDateTime(parseGineeTime(order.order_date))}</div>
                             </td>
                             <td>
                               <span className="om-code-badge" style={{ backgroundColor: "#f8fafc" }}>{order.tracking_number || "-"}</span>
@@ -1241,8 +1242,8 @@ const OrderMonitor = () => {
                     <span style={{ color: "var(--ks-muted)" }}>Memo Penjual</span>
                     <strong style={{ color: "var(--ks-text)" }}>{selectedOrder.seller_memo || "-"}</strong>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ color: "var(--ks-muted)" }}>Waktu Pembayaran</span><strong style={{ color: "var(--ks-text)" }}>{formatDateTime(selectedOrder.pay_time)}</strong></div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ color: "var(--ks-muted)" }}>Waktu Cetak Resi</span><strong style={{ color: "var(--ks-text)" }}>{formatDateTime(selectedOrder.label_print_time)}</strong></div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ color: "var(--ks-muted)" }}>Waktu Pembayaran</span><strong style={{ color: "var(--ks-text)" }}>{formatDateTime(parseGineeTime(selectedOrder.pay_time))}</strong></div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ color: "var(--ks-muted)" }}>Waktu Cetak Resi</span><strong style={{ color: "var(--ks-text)" }}>{formatDateTime(parseGineeTime(selectedOrder.label_print_time))}</strong></div>
                 </div>
               </div>
 
